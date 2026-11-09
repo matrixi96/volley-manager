@@ -16,7 +16,7 @@ function newSeason(n,phase){
 }
 const PHASE_NAMES={off:'Okno transferowe',spar:'Okres przygotowawczy',liga:'Faza zasadnicza',po:'Play-off',end:'Koniec sezonu'};
 function tName(i){return esc(TEAMS[i].name);}
-function tDot(i){return `<span class="dot" style="background:${TEAMS[i].color}"></span>`;}
+function tDot(i){if(SAVE.custom&&SAVE.custom.idx===i&&typeof crestSvg==='function')return `<span class="tcrest">${crestSvg(TEAMS[i].name,TEAMS[i].short,TEAMS[i].color,14,SAVE.custom.crest)}</span>`;return `<span class="dot" style="background:${TEAMS[i].color}"></span>`;}
 
 // ---- tabela ----
 function leagueTable(){return tableFrom(S().results);}
@@ -234,3 +234,21 @@ function teamStatsHtml(){const ts=S().ts;if(!ts)return '';
   return `<div class="card"><h2>Drużyny</h2><div class="tw"><table><thead><tr><th class="l">Drużyna</th><th>M</th>${cols.map(([l],j)=>`<th onclick="ui.tsort=${j};render()" class="${sk===j?'on':''}">${l}</th>`).join('')}</tr></thead><tbody>
   ${rows.map(({i,r})=>`<tr class="${i===SAVE.team?'starter':''}"><td class="l">${tDot(i)}${tName(i)}</td><td>${r.m}</td>${cols.map(([,f,d],j)=>{const v=f(r);return `<td class="${Math.abs(v-best[j])<1e-9?'best':''}">${v.toFixed(d).replace('.',',')}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div>
   <p class="mut small">Liga i play-off. Najlepsza wartość w kolumnie jest wyróżniona. Kliknij nagłówek, żeby posortować.</p></div>`;}
+
+// ---- zakładka Tabela ----
+function formOf(results,ti){const f=[];for(const rd of results)for(const g of rd){if(g.h!==ti&&g.a!==ti)continue;const my=g.h===ti?g.sw[0]:g.sw[1];const op=g.h===ti?g.sw[1]:g.sw[0];f.push({w:my>op,s:my+':'+op,op:g.h===ti?g.a:g.h,home:g.h===ti});}return f.slice(-5);}
+function tablesView(){
+  const s=S();const which=ui.tabSel||'sen';const jr=which==='jr';
+  const res=jr?(s.jres||[]):s.results;const tb=tableFrom(res);const played=res.length;
+  const ratio=(a,b)=>b?(a/b).toFixed(3).replace('.',','):(a?'MAX':'–');
+  const rows=tb.map((x,i)=>{const f=formOf(res,x.i);
+    return `<tr class="${x.i===SAVE.team?'starter':''} ${!jr&&i===7?'cut':''}"><td>${i+1}</td><td class="l">${tDot(x.i)}${tName(x.i)}${jr?' U20':''}</td><td>${x.m}</td><td>${x.w}</td><td>${x.l}</td><td><b>${x.pts}</b></td><td>${x.sw}:${x.sl}</td><td class="mut">${ratio(x.sw,x.sl)}</td><td>${x.pw}:${x.pl}</td><td class="mut">${ratio(x.pw,x.pl)}</td>
+    <td class="l"><span class="form">${f.map(r=>`<i class="${r.w?'fw':'fl'}" title="${r.home?'dom':'wyjazd'} vs ${esc(TEAMS[r.op].name)}: ${r.s}">${r.w?'Z':'P'}</i>`).join('')}</span></td></tr>`;}).join('');
+  const info=jr?`Liga juniorów U20 · ${played}/${s.rounds.length} kolejek${s.jchamp!=null?` · 🏆 mistrz: ${tName(s.jchamp)} U20`:''}`
+    :`Faza zasadnicza · ${played}/${s.rounds.length} kolejek · miejsca 1–8 grają w play-off${s.final?` · 🏆 mistrz Polski: ${tName(s.final[0])}`:''}`;
+  return `<div class="card"><div class="row wrap"><button class="tabb ${!jr?'on':''}" onclick="ui.tabSel='sen';render()">Seniorzy</button><button class="tabb ${jr?'on':''}" onclick="ui.tabSel='jr';render()">Juniorzy U20</button><span class="sp"></span><span class="small mut">Sezon ${sLabel(s.n)}</span></div>
+  <p class="small mut">${info}</p>
+  ${played?`<div class="tw"><table class="ltable"><thead><tr><th>#</th><th class="l">Drużyna</th><th title="Mecze">M</th><th title="Zwycięstwa">Z</th><th title="Porażki">P</th><th>Pkt</th><th>Sety</th><th title="Stosunek setów">Ratio</th><th>Małe pkt</th><th title="Stosunek małych punktów">Ratio</th><th class="l">Forma</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<p class="mut">Tabela pojawi się po pierwszej kolejce fazy zasadniczej.</p>'}
+  <p class="mut small">Punktacja: 3:0 i 3:1 to 3 pkt, 3:2 to 2 pkt dla zwycięzcy i 1 pkt dla przegranego. Kolejność: punkty, zwycięstwa, stosunek setów, stosunek małych punktów. Forma: ostatnie 5 meczów (Z = zwycięstwo, P = porażka), najnowszy po prawej.</p></div>
+  ${!jr&&s.po?bracketHtml():''}`;
+}
