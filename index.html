@@ -175,6 +175,13 @@ main.wide{max-width:1680px}
 .talk{border-color:var(--acc);border-width:2px}
 @media (max-width:1250px){.mgrid{grid-template-columns:1fr}.mcenter{order:1}.ml{order:2}.mr{order:3}.ppanel:not(.subbing) .prow.bench,.ppanel:not(.subbing) .benchh{display:none}}
 .mcenter .ctrl{margin-top:8px}
+.rotcard{margin-top:8px}.rboxes{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;margin-top:8px}
+.rbox{background:var(--panel2);border-radius:10px;padding:10px}.rtag{font-size:11px;font-weight:700;border-radius:6px;padding:2px 7px}.rtag.srv{background:#ffb02022;color:var(--acc)}.rtag.rcv{background:#3b82f622;color:#93c5fd}
+.rmain{display:flex;gap:12px;margin-top:8px;align-items:flex-start}.rgrid{position:relative;display:grid;grid-template-columns:repeat(2,40px);grid-template-rows:repeat(3,40px);gap:3px;background:#c9773a;padding:4px;border-radius:6px;flex:0 0 auto}
+.rgrid.l{padding-right:8px}.rgrid.r{padding-left:8px}.rnet{position:absolute;top:0;bottom:0;width:3px;background:#fff}.rgrid.l .rnet{right:0}.rgrid.r .rnet{left:0}
+.rz{position:relative;background:#00000022;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center}.rz.rs{box-shadow:inset 0 0 0 2px var(--acc)}
+.rz i{font-style:normal;font-weight:800;font-size:11px;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center}.rz small{font-size:8px;color:#fff;font-weight:700}.rzn{position:absolute;left:2px;top:0;font-size:8px;color:#ffffffaa}
+.rtxt{flex:1;min-width:0}.rtitle{font-size:16px;font-weight:800;color:var(--acc)}
 </style></head><body><div id="app"></div>
 <script>
 'use strict';
@@ -637,6 +644,7 @@ function liveView(){
     <label class="small">Zagrywka <select onchange="setServe(+this.value)">${SERVE_OPT.map((o,i)=>`<option value="${i}" ${a.tactics.serve===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>
     <label class="small">Rozegranie <select onchange="setDist(+this.value)">${DIST_OPT.map((o,i)=>`<option value="${i}" ${a.tactics.dist===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>
    </div></div>`}
+  ${rotCard(m)}
   ${subPanel}</div><div class="mside mr">${playersPanel(m,1)}</div></div>
   <div class="card"><div class="row"><button class="tabb ${ui.view==='log'?'on':''}" onclick="ui.view='log';render()">Komentarz</button><button class="tabb ${ui.view==='stats'?'on':''}" onclick="ui.view='stats';render()">Statystyki</button></div>
   ${ui.view==='stats'?statsBlock(m):`<div id="log" class="log">${m.log.slice(-150).reverse().map(e=>`<div class="le ${e.c}">${e.t}</div>`).join('')}</div>`}</div>`;
@@ -2030,6 +2038,24 @@ function applyTalk(k){const m=ui.match;if(!m)return;const s=m.sides[0];const oc=
 function talkCard(m){return `<div class="card talk"><div class="row"><h3 style="margin:0">⏱ Czas — co mówisz zawodnikom?</h3><span class="sp"></span><button class="ghost" onclick="ui.talk=false;render()">Bez przemowy</button></div>
   <p class="small mut">Każdy zawodnik reaguje inaczej (zależy od jego cech mentalnych i Twoich atrybutów trenera). Reakcje zobaczysz przy nazwiskach w panelu.</p>
   <div class="opts">${talkList(m).map(([k,n,d])=>`<button class="opt" onclick="applyTalk('${k}')"><b>${esc(n)}</b><small>${esc(d)}</small></button>`).join('')}</div></div>`;}
+// ---- karta ustawienia ----
+const ROT_TIP={1:'Rozgrywający z tyłu na prawej: trzech atakujących w pierwszej linii.',6:'Rozgrywający z tyłu w środku: trzech atakujących z przodu.',5:'Rozgrywający z tyłu na lewej: trzech atakujących z przodu, najdłuższy dobieg do siatki.',4:'Rozgrywający z przodu na lewej: tylko dwóch atakujących w pierwszej linii.',3:'Rozgrywający z przodu w środku: dwóch atakujących z przodu, możliwa kiwka.',2:'Rozgrywający z przodu na prawej: dwóch atakujących z przodu, klasyczna wystawa.'};
+function rotBox(m,i){const sd=m.sides[i];const sv=m.serving===i;const oc=onCourt(sd,sv);const kc=kitColors(m)[i];
+  const setter=oc.find(e=>e.role==='R');const rz=setter?setter.zone+1:0;const front=oc.filter(e=>isFrontZ(e.zone)),back=oc.filter(e=>!isFrontZ(e.zone));
+  const atk=front.filter(e=>e.role!=='R'&&e.role!=='L').length;const lib=oc.find(e=>e.role==='L');const libFor=lib?sd.slots[sd.rot[lib.zone]]:null;
+  const cell=z=>{const e=oc.find(x=>x.zone===z-1);if(!e)return '<div class="rz"></div>';const col=e.role==='L'?libColor(kc,'#000'):kc;
+    return `<div class="rz ${e.role==='R'?'rs':''}" title="Strefa ${z}: ${esc(e.p.first+' '+e.p.last)} (${POS_NAMES[e.role]})"><span class="rzn">${z}</span><i style="background:${col};color:${lum(col)>0.6?'#111':'#fff'}">${e.p.num}</i><small>${POS_SHORT[e.role]}</small></div>`;};
+  const grid=i===0?[[5,4],[6,3],[1,2]]:[[2,1],[3,6],[4,5]];
+  const tac=sd.tactics||{serve:1,dist:0};
+  return `<div class="rbox"><div class="row"><b style="color:${kc}">●</b> <b>${esc(sd.team.short)}</b><span class="sp"></span><span class="rtag ${sv?'srv':'rcv'}">${sv?'🏐 na zagrywce':'🛡️ w przyjęciu'}</span></div>
+   <div class="rmain"><div class="rgrid ${i===0?'l':'r'}">${grid.map(r=>r.map(cell).join('')).join('')}<div class="rnet"></div></div>
+   <div class="rtxt"><div class="rtitle">Ustawienie ${rz||'?'}</div><div class="small mut">${rz?`rozgrywający w strefie ${rz} · system 5-1`:'system 5-1'}</div>
+   <div class="small">${ROT_TIP[rz]||''}</div>
+   <div class="small mut" style="margin-top:4px">Atakujący z przodu: <b style="color:var(--txt)">${atk}</b>${lib?` · libero ${esc(lib.p.last)} za ${esc(libFor?libFor.p.last:'środkowego')}`:''}</div>
+   <div class="small mut">Zagrywka: <b style="color:var(--txt)">${SERVE_OPT[tac.serve][0]}</b> · rozegranie: <b style="color:var(--txt)">${DIST_OPT[tac.dist][0]}</b></div>
+   ${sd.tmp&&sd.tmp.n>0?`<div class="small tmpb">📋 ${esc(TALK_TMP[sd.tmp.k]||'')} — ${sd.tmp.n} akcji</div>`:''}</div></div></div>`;}
+function rotCard(m){if(m.over)return '';return `<div class="card rotcard"><div class="row"><h3 style="margin:0">Grane ustawienie</h3><span class="sp"></span><span class="small mut">Set ${m.setNo} · ${m.score[0]}:${m.score[1]}</span></div><div class="rboxes">${rotBox(m,0)}${rotBox(m,1)}</div>
+  <p class="small mut" style="margin:6px 0 0">Numer ustawienia = strefa, w której stoi rozgrywający. Ustawienie zmienia się, gdy drużyna odbiera zagrywkę rywalowi (rotacja zgodnie z ruchem wskazówek zegara).</p></div>`;}
 applyCustom();
 // ================= START =================
 if(SAVE.team!=null){if(!SAVE.date&&!SAVE.world)SAVE.date=GAME_START;if(!SAVE.world)initWorld();else syncTeams();if(!SAVE.season)newSeason(1);migrateDates();initClub();}

@@ -209,6 +209,7 @@ function liveView(){
     <label class="small">Zagrywka <select onchange="setServe(+this.value)">${SERVE_OPT.map((o,i)=>`<option value="${i}" ${a.tactics.serve===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>
     <label class="small">Rozegranie <select onchange="setDist(+this.value)">${DIST_OPT.map((o,i)=>`<option value="${i}" ${a.tactics.dist===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>
    </div></div>`}
+  ${rotCard(m)}
   ${subPanel}</div><div class="mside mr">${playersPanel(m,1)}</div></div>
   <div class="card"><div class="row"><button class="tabb ${ui.view==='log'?'on':''}" onclick="ui.view='log';render()">Komentarz</button><button class="tabb ${ui.view==='stats'?'on':''}" onclick="ui.view='stats';render()">Statystyki</button></div>
   ${ui.view==='stats'?statsBlock(m):`<div id="log" class="log">${m.log.slice(-150).reverse().map(e=>`<div class="le ${e.c}">${e.t}</div>`).join('')}</div>`}</div>`;
