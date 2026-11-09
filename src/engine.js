@@ -73,7 +73,7 @@ function validLineup(team,lu){if(!lu)return false;const ids=LINEUP_KEYS.map(k=>l
 function teamStrength(team){const lu=autoLineup(team);let s=0,t=0;for(const [k,,pos] of LINEUP_KEYS){const p=team.players.find(x=>x.id===lu[k]);if(!p){t+=1;continue;}const w=k==='L'?0.6:1;s+=rating(p,pos)*w;t+=w;}return Math.round(s/t);}
 
 // ---------- mecz ----------
-function cloneP(p){return Object.assign({},p,{en:100,st:{srv:0,srvErr:0,ace:0,rec:0,recPos:0,recPerf:0,recErr:0,att:0,kill:0,attErr:0,blocked:0,blk:0,dig:0}});}
+function cloneP(p){return Object.assign({},p,{en:100,mor:Math.round(clamp(60+nz()*12,30,90)),st:{srv:0,srvErr:0,ace:0,rec:0,recPos:0,recPerf:0,recErr:0,att:0,kill:0,attErr:0,blocked:0,blk:0,dig:0}});}
 function makeSide(team,lu,tac,home,x){
   const ids=new Set(Object.values(lu));const pl=team.players.filter(p=>!p.inj||ids.has(p.id)).map(cloneP);const g=id=>pl.find(p=>p.id===id);
   const slots=[['R',lu.R],['P',lu.P1],['S',lu.S1],['A',lu.A],['P',lu.P2],['S',lu.S2]].map(([role,id])=>({role,p:g(id)}));
@@ -89,7 +89,7 @@ function onCourt(side,serving){
     return {zone:z,role:s.role,p:s.p,slot:si};});
 }
 function pressure(m){const a=m.score[0],b=m.score[1],t=m.setNo===5?15:25;return Math.max(a,b)>=t-4&&Math.min(a,b)>=t-8;}
-function mb(p,m,i){let b=0;const sd=m.sides[i];if(pressure(m))b+=(p.opa-11)/20*0.14+(sd.prB||0);if(m.score[1-i]-m.score[i]>=3)b+=(p.wal-11)/20*0.1+(sd.trB||0);return b;}
+function mb(p,m,i){let b=(p.mor==null?0:(p.mor-60)/40*0.045);const sd=m.sides[i];if(pressure(m))b+=(p.opa-11)/20*0.14+(sd.prB||0);if(m.score[1-i]-m.score[i]>=3)b+=(p.wal-11)/20*0.1+(sd.trB||0);return b;}
 function kc(p,m){let k=1.25-p.kcj/20*0.5;if(pressure(m))k*=1.15-p.opa/20*0.3;return k;}
 function nerves(p,m){return pressure(m)&&p.opa<10?' Nerwy w końcówce!':'';}
 function bn(s){return s.mom*0.01*(s.momMul||1)+s.form;}
@@ -106,12 +106,13 @@ function rally(m,ex){
   const st=sS.tactics.serve;
   const n=(eff(server,'zag')*0.8+eff(server,'sil')*0.2)/20+bn(sS)+mb(server,m,S);
   server.st.srv++;
-  const errP=[0.075,0.15,0.25][st]*(1.45-0.9*n)*kc(server,m);
+  const errP=[0.075,0.15,0.25][st]*(1.45-0.9*n)*kc(server,m)*(sS.tmp&&sS.tmp.n>0&&sS.tmp.k==='srv'?1.25:1);
   if(R()<errP){server.st.srvErr++;const net=R()<0.5;seq.push({k:net?'net':'out',s:D});return {winner:D,type:'serr',act,seq,text:`${nm(server)} psuje zagrywkę (${net?'siatka':'aut'}).${nerves(server,m)}`};}
-  const pow=n+[-0.14,0,0.13][st];
+  const tS0=sS.tmp&&sS.tmp.n>0?sS.tmp.k:null,tD0=sD.tmp&&sD.tmp.n>0?sD.tmp.k:null;
+  const pow=n+[-0.14,0,0.13][st]+(tS0==='srv'?0.05:0);
   let recs=cD.filter(x=>x.role==='L'||x.role==='P');if(!recs.length)recs=cD.filter(x=>x.role!=='R');
-  const rec=pickW(recs,x=>x.role==='L'?1.4:1).p;act.push(rec.id);
-  const rn=(eff(rec,'prz')*0.7+eff(rec,'tod')*0.2+eff(rec,'zwi')*0.1)/20+bn(sD)+mb(rec,m,D);
+  const rec=pickW(recs,x=>(x.role==='L'?1.4:1)*(tS0==='target'&&x.p.id===sS.tmp.id?4:1)).p;act.push(rec.id);
+  const rn=(eff(rec,'prz')*0.7+eff(rec,'tod')*0.2+eff(rec,'zwi')*0.1)/20+bn(sD)+mb(rec,m,D)+(tD0==='rec'?0.05:0);
   const v=0.52+(rn-pow-0.18)*0.6+nz()*0.6;
   rec.st.rec++;
   if(v<0.17){server.st.ace++;rec.st.recErr++;seq.push({k:'ace',id:rec.id,s:D});return {winner:S,type:'ace',act,seq,text:`${nm(server)} — AS SERWISOWY! ${nm(rec)} bez szans.`};}
@@ -201,6 +202,8 @@ function stepRally(m){
   if(m.run.t===w)m.run.n++;else m.run={t:w,n:1};
   const ws=m.sides[w],ls=m.sides[1-w];ws.mom=Math.min(3,Math.max(0,ws.mom)+1);ls.mom=0;
   if(w!==m.serving){m.serving=w;ws.rot.push(ws.rot.shift());}
+  moraleAfter(m,r,w);
+  for(const sd of m.sides)if(sd.tmp&&sd.tmp.n>0)sd.tmp.n--;
   const ev=Object.assign({},r,{score:m.score.slice(),setNo:m.setNo});
   const tgt=m.setNo===5?15:25;
   if(m.score[w]>=tgt&&m.score[w]-m.score[1-w]>=2){
@@ -209,7 +212,17 @@ function stepRally(m){
   }
   return ev;
 }
-function callTimeout(m,i){const s=m.sides[i];if(s.to<=0)return false;s.to--;m.sides[1-i].mom=0;s.mom=Math.max(0,s.mom);m.run.n=0;return true;}
+function findPl(m,id){for(const sd of m.sides){const p=sd.pl.find(x=>x.id===id);if(p)return p;}return null;}
+function addMor(p,d){if(p)p.mor=Math.round(clamp((p.mor==null?60:p.mor)+d,5,100));}
+function moraleAfter(m,r,w){const seq=r.seq||[];const last=k=>{for(let i=seq.length-1;i>=0;i--)if(seq[i].k===k){const it=seq[i];return m.sides[it.s].pl.find(x=>x.id===it.id)||null;}return null;};
+  if(r.type==='kill')addMor(last('att'),5);
+  if(r.type==='ace'){addMor(last('srv'),6);addMor(last('rec'),-5);}
+  if(r.type==='block'){addMor(last('blk'),6);addMor(last('att'),-3);}
+  if(r.type==='serr')addMor(last('srv'),-4);
+  if(r.type==='attErr')addMor(last('att'),-5);
+  if(r.type==='setErr')addMor(last('set'),-4);
+  for(let i=0;i<2;i++){const oc=onCourt(m.sides[i],m.serving===i);for(const e of oc){const p=e.p;if(i===w)addMor(p,1);else{addMor(p,-1);if(m.run.t===w&&m.run.n>=3&&p.opa<11)addMor(p,-1);}}}}
+function callTimeout(m,i){const s=m.sides[i];if(s.to<=0)return false;s.to--;for(const e of onCourt(s,m.serving===i))addMor(e.p,2);m.sides[1-i].mom=0;s.mom=Math.max(0,s.mom);m.run.n=0;return true;}
 function benchOf(side){const on=new Set(side.slots.map(s=>s.p.id));if(side.libero)on.add(side.libero.id);return side.pl.filter(p=>!on.has(p.id));}
 function substitute(m,i,slot,pid){const s=m.sides[i];const p=s.pl.find(x=>x.id===pid);if(!p)return false;
   if(slot==='L'){s.libero=p;return true;}

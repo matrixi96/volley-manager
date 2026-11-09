@@ -156,5 +156,17 @@ td.best{color:var(--acc);font-weight:800}th.on{color:var(--acc)}
 .ltable td,.ltable th{padding:7px 8px}.tcrest{display:inline-flex;margin-right:6px;vertical-align:-3px}.tcrest .crest{margin:0}
 .mcv{width:100%;aspect-ratio:680/440;display:block;border-radius:10px;margin:4px 0 6px;cursor:pointer;background:#161c28}
 .hallbar{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;margin:2px 2px 0}.mph{margin-left:auto;color:var(--acc);font-weight:700}
+main.wide{max-width:1680px}
+.mgrid{display:grid;grid-template-columns:minmax(250px,330px) minmax(0,1fr) minmax(250px,330px);gap:12px;align-items:start}
+.mside .ppanel{margin:0;padding:10px}.prow{display:flex;gap:8px;align-items:center;padding:5px 4px;border-bottom:1px solid #ffffff0d;border-radius:6px}
+.prow.bench{opacity:.72}.prow.clk{cursor:pointer}.prow.clk:hover{background:#ffffff0a;opacity:1}.prow.pick{outline:1px dashed var(--acc);opacity:1}
+.pf{position:relative;flex:0 0 auto}.pn2{position:absolute;right:-4px;bottom:-3px;font-size:9px;font-weight:800;border-radius:5px;padding:0 3px;line-height:13px}
+.pm{flex:1;min-width:0}.pnm{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pbars{display:flex;gap:8px;font-size:10px;margin:2px 0}.pbars>span{display:flex;align-items:center;gap:3px;flex:1}
+.pbar2{flex:1;height:5px;background:#ffffff14;border-radius:3px;overflow:hidden;display:inline-block}.pbar2 i{display:block;height:100%}
+.pst{font-size:10px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.benchh{margin:8px 0 2px;text-transform:uppercase;font-size:10px;letter-spacing:.5px}
+.dlt{font-size:10px;font-weight:800;border-radius:4px;padding:0 4px;background:#ffffff12}.tmpb{background:#ffb02018;border-radius:6px;padding:4px 6px;margin:4px 0}
+.talk{border-color:var(--acc);border-width:2px}
+@media (max-width:1250px){.mgrid{grid-template-columns:1fr}.mcenter{order:1}.ml{order:2}.mr{order:3}.ppanel:not(.subbing) .prow.bench,.ppanel:not(.subbing) .benchh{display:none}}
+.mcenter .ctrl{margin-top:8px}
 </style></head><body><div id="app"></div>
 <script>

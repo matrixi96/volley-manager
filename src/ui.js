@@ -34,7 +34,8 @@ function render(){
   else if(ui.tab==='transfery')body=transferView();
   else if(ui.tab==='finanse')body=financeView();
   else if(ui.tab==='zapis')body=saveView();
-  app.innerHTML=hdr(true)+`<main>${body}</main>`+(ui.card?cardModal():'');
+  const wide=ui.tab==='mecz'&&ui.match&&!(ui.match.over&&ui.view==='post');
+  app.innerHTML=hdr(true)+`<main class="${wide?'wide':''}">${body}</main>`+(ui.card?cardModal():'');
   if(ui.tab==='mecz'&&ui.match){const lg=$('#log');if(lg)lg.scrollTop=0;if(typeof drawHallStatic==='function'&&typeof document.getElementById==='function')drawHallStatic();}
 }
 function hdr(nav){
@@ -139,7 +140,7 @@ function animateRally(ev,done){
   seg();
 }
 function flashLabel(t,w){const f=document.getElementById('cflash');if(!f)return;f.textContent=t;f.className='cflash show '+(w===0?'fw':'fl');}
-function doRally(m){let ret;
+function doRally(m){let ret;ui.talkRes=null;
   for(const s of aiTurn(m,1))m.log.push({t:esc(s),c:'sys'});
   const ev=stepRally(m);m.hl=ev.act;ret=ev;
   m.log.push({t:`<b class="sc">${ev.score[0]}:${ev.score[1]}</b> ${esc(ev.text)}`,c:ev.winner===0?'w':'l'});
@@ -152,7 +153,6 @@ function setSpeed(ms){ui.speed=ms;const m=ui.match;if(m&&!m.over){m.paused=false
 function togglePause(){const m=ui.match;if(!m||m.over)return;m.paused=!m.paused;persistLive();if(!m.paused)ui.subSel=null;render();schedule();}
 function simToSetEnd(){const m=ui.match;if(!m||m.over)return;const s=m.setNo;while(!m.over&&m.setNo===s)doRally(m);m.paused=true;persistLive();render();}
 function simToEnd(){const m=ui.match;if(!m)return;while(!m.over)doRally(m);render();}
-function myTimeout(){const m=ui.match;if(!m||m.over)return;if(callTimeout(m,0)){m.log.push({t:`Czas dla ${esc(m.sides[0].team.name)}.`,c:'sys'});}render();}
 function selSub(slot){const m=ui.match;if(!m||m.over||!m.paused){if(m&&!m.over){m.paused=true;}}ui.subSel=slot;render();}
 function doSub(pid){const m=ui.match;const s=m.sides[0];const slot=ui.subSel;const old=slot==='L'?s.libero:s.slots[slot].p;
   if(substitute(m,0,slot,pid)){const np=s.pl.find(p=>p.id===pid);m.log.push({t:`Zmiana: <b>${esc(np.last)}</b> za ${esc(old.last)}.`,c:'sys'});}
@@ -172,7 +172,7 @@ function jersey(p,color,isLib,opp){
 function chip(x,side,i,mine){
   const p=x.p;const hl=ui.match.hl.includes(p.id);const srv=ui.match.serving===i&&x.zone===0;
   return `<div class="pl ${hl?'hl':''} ${mine?'click':''}" data-pid="${p.id}" ${mine?`onclick="selSub(${x.slot==='L'?"'L'":x.slot})"`:''} title="${esc(p.first+' '+p.last)} — ${POS_NAMES[x.role]}">
-  ${jersey(p,side.team.color,x.role==='L',ui.match.sides[1-i].team.color)}${srv?'<span class="ball">🏐</span>':''}<span class="rl">${POS_SHORT[x.role]}</span><span class="en"><i style="width:${p.en}%;background:${p.en>75?'var(--good)':p.en>55?'#eab308':'var(--bad)'}"></i></span></div>`;
+  ${jersey(p,kitColors(ui.match)[i],x.role==='L',kitColors(ui.match)[1-i])}${srv?'<span class="ball">🏐</span>':''}<span class="rl">${POS_SHORT[x.role]}</span><span class="en"><i style="width:${p.en}%;background:${p.en>75?'var(--good)':p.en>55?'#eab308':'var(--bad)'}"></i></span></div>`;
 }
 function courtHtml(m){
   const L=onCourt(m.sides[0],m.serving===0),Rr=onCourt(m.sides[1],m.serving===1);
@@ -194,8 +194,10 @@ function liveView(){
    <div class="pts"><b class="${m.serving===0?'srv':''}">${m.over?'–':m.score[0]}</b><span>${m.over?'KONIEC':'SET '+m.setNo}</span><b class="${m.serving===1?'srv':''}">${m.over?'–':m.score[1]}</b></div>
    <div class="tm r" style="--c:${b.team.color}"><b class="sw">${m.setsWon[1]}</b><span>${esc(b.team.name)}</span></div>
    <div class="sets">${setsTxt||'&nbsp;'}</div></div>
+  ${ui.talk&&!m.over?talkCard(m):''}
+  <div class="mgrid"><div class="mside ml">${playersPanel(m,0)}</div><div class="mcenter">
   ${ui.mview==='klasyczny'?courtHtml(m):`<div class="hallbar small mut">🏟️ ${tName(m.homeIdx!=null?m.homeIdx:m.sides[0].team.idx)} · <b style="color:var(--txt)">${(m.att||0).toLocaleString('pl-PL')}</b> / ${(m.cap||0).toLocaleString('pl-PL')} widzów · <span id="mph" class="mph">${m.over?'Koniec meczu':'Przed zagrywką'}</span></div><canvas id="mcv" class="mcv"></canvas>`}
-  <div class="row small mut libl">Libero: <b style="color:var(--txt);margin:0 4px">${esc(a.libero.last)}</b> <button class="link" onclick="selSub('L')">zmień</button><span class="sp"></span>Kliknij swojego zawodnika na boisku, żeby go zmienić.</div>
+  <div class="row small mut libl">Libero: <b style="color:var(--txt);margin:0 4px">${esc(a.libero.last)}</b> <button class="link" onclick="selSub('L')">zmień</button><span class="sp"></span>Kliknij swojego zawodnika na boisku albo w panelu, żeby go zmienić.</div>
   ${m.over?`<div class="card row"><b>Mecz zakończony: ${esc(m.sides[m.winner].team.name)} wygrywa ${Math.max(...m.setsWon)}:${Math.min(...m.setsWon)}</b><span class="sp"></span><button class="btn" onclick="ui.view='post';render()">Podsumowanie</button><button class="ghost" onclick="ui.match=null;render()">Dalej</button></div>`:
   `<div class="card ctrl"><div class="row wrap">
     <button class="btn" onclick="togglePause()">${m.paused?'▶ Graj':'⏸ Pauza'}</button>
@@ -207,7 +209,7 @@ function liveView(){
     <label class="small">Zagrywka <select onchange="setServe(+this.value)">${SERVE_OPT.map((o,i)=>`<option value="${i}" ${a.tactics.serve===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>
     <label class="small">Rozegranie <select onchange="setDist(+this.value)">${DIST_OPT.map((o,i)=>`<option value="${i}" ${a.tactics.dist===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>
    </div></div>`}
-  ${subPanel}
+  ${subPanel}</div><div class="mside mr">${playersPanel(m,1)}</div></div>
   <div class="card"><div class="row"><button class="tabb ${ui.view==='log'?'on':''}" onclick="ui.view='log';render()">Komentarz</button><button class="tabb ${ui.view==='stats'?'on':''}" onclick="ui.view='stats';render()">Statystyki</button></div>
   ${ui.view==='stats'?statsBlock(m):`<div id="log" class="log">${m.log.slice(-150).reverse().map(e=>`<div class="le ${e.c}">${e.t}</div>`).join('')}</div>`}</div>`;
 }

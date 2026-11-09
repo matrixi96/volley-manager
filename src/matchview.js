@@ -57,7 +57,7 @@ function drawHall(m,scene,ball,flash){
   g.drawImage(standsCanvas(m),0,0,MV.W,MV.H);
   // siatka
   g.fillStyle='#e5e7eb';g.fillRect(MV.CX-2,MV.Y0-14,4,9*MV.SC+28);g.fillStyle='#111';g.fillRect(MV.CX-5,MV.Y0-18,10,6);g.fillRect(MV.CX-5,MV.Y0+9*MV.SC+12,10,6);
-  const c0=m.sides[0].team.color,c1=m.sides[1].team.color;
+  const [c0,c1]=kitColors(m);
   const ord=scene.slice().sort((a,b)=>a.y-b.y);
   for(const o of ord){const [x,y]=mvP(o.x,o.y);const j=o.j||0;
     g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(x+2,y+5,11,5,0,0,7);g.fill();
