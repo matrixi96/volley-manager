@@ -43,10 +43,9 @@ jobs:
           npx cap add android
 
       - name: Ikona i ekran startowy
-        continue-on-error: true
         run: |
           cd app
-          mkdir -p assets && cp ../android/assets/logo.png assets/logo.png
+          mkdir -p assets && cp ../android/assets/*.png assets/
           npx --yes @capacitor/assets@3 generate --android \
             --iconBackgroundColor '#0b1220' --iconBackgroundColorDark '#0b1220' \
             --splashBackgroundColor '#0b1220' --splashBackgroundColorDark '#0b1220'
