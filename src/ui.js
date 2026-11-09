@@ -15,7 +15,8 @@ function pName(p){return esc(p.first[0]+'. '+p.last);}
 
 function render(){
   const app=$('#app');const t=myTeam();
-  if(!t){app.innerHTML=hdr(false)+`<main>${pickTeamView()}</main>`;return;}
+  if(!t){app.innerHTML=hdr(false)+`<main>${coachCreateView()}</main>`;return;}
+  if(!SAVE.coach){app.innerHTML=hdr(false)+`<main>${coachCreateView()}</main>`;return;}
   if(!SAVE.season)newSeason(1);
   let body='';
   if(ui.tab==='sklad')body=squadView();
@@ -25,6 +26,7 @@ function render(){
   else if(ui.tab==='staty')body=statsView();
   else if(ui.tab==='trening')body=trainingView();
   else if(ui.tab==='kalendarz')body=calView();
+  else if(ui.tab==='trener')body=coachView();
   else if(ui.tab==='sztab')body=staffView();
   else if(ui.tab==='juniorzy')body=juniorsView();
   else if(ui.tab==='klub')body=clubView();
@@ -36,10 +38,10 @@ function render(){
 }
 function hdr(nav){
   const t=myTeam();
-  const tabs=[['mecz','Sezon'],['kalendarz','Kalendarz'],['sklad','Skład'],['taktyka','Taktyka'],['trening','Trening'],['sztab','Sztab'],['juniorzy','Juniorzy'],['klub','Infrastruktura'],['transfery','Transfery'],['finanse','Finanse'],['staty','Statystyki'],['zapis','Zapis'],['test','Test']];
+  const tabs=[['mecz','Sezon'],['trener','Trener'],['kalendarz','Kalendarz'],['sklad','Skład'],['taktyka','Taktyka'],['trening','Trening'],['sztab','Sztab'],['juniorzy','Juniorzy'],['klub','Infrastruktura'],['transfery','Transfery'],['finanse','Finanse'],['staty','Statystyki'],['zapis','Zapis'],['test','Test']];
   return `<header><div class="logo">🏐 Volley<span>Manager</span> <small class="mut">prototyp</small></div>
   ${nav?`<nav>${tabs.map(([k,l])=>`<button class="${ui.tab===k?'on':''}" onclick="go('${k}')">${l}</button>`).join('')}</nav>
-  <div class="club" style="--c:${t.color}"><span class="date" title="${fmtLong(today())}">📅 ${fmtShort(today())}.${today().slice(0,4)}</span><i></i>${esc(t.name)}${SAVE.fin?` <small class="${SAVE.fin.bal<0?'bad':'mut'}">${fmt(SAVE.fin.bal)}</small>`:''}</div>`:''}</header>`;
+  <div class="club" style="--c:${t.color}"><span class="date" title="${fmtLong(today())}">📅 ${fmtShort(today())}.${today().slice(0,4)}</span><i></i>${SAVE.coach?`<span class="hface" onclick="go('trener')" title="${esc(SAVE.coach.first+' '+SAVE.coach.last)}">${coachFace(SAVE.coach,26)}</span>`:''}${esc(t.name)}${SAVE.fin?` <small class="${SAVE.fin.bal<0?'bad':'mut'}">${fmt(SAVE.fin.bal)}</small>`:''}</div>`:''}</header>`;
 }
 function go(tab){ui.msg=null;ui.tmsg=null;ui.card=null;ui.confirm=null;if(ui.match&&!ui.match.over&&tab!=='mecz')ui.match.paused=true;ui.tab=tab;ui.subSel=null;render();}
 
@@ -47,7 +49,7 @@ function pickTeamView(){
   return `<div class="card"><h2>Wybierz klub</h2><p class="mut">Fikcyjna polska liga, 12 drużyn. Sezon: 7 sparingów, 22 kolejki (mecz i rewanż), a potem play-off dla czołowej ósemki. Słabszy klub to większe wyzwanie.</p>
   <div class="grid">${TEAMS.map(t=>`<button class="teamcard" style="--c:${t.color}" onclick="pickTeam(${t.idx})"><b>${esc(t.name)}</b><span class="stars">${stars(teamStrength(t))}</span><small class="mut">Siła składu: ${teamStrength(t)}</small></button>`).join('')}</div></div>`;
 }
-function pickTeam(i){SAVE={team:i,tactics:{serve:1,dist:0},date:GAME_START};initWorld();SAVE.lineup=autoLineup(TEAMS[i]);newSeason(1);syncDate();ui.match=null;ui.tab='mecz';render();}
+function pickTeam(i){const c=ui.pendingCoach;SAVE={team:i,tactics:{serve:1,dist:0},date:GAME_START};initWorld();SAVE.lineup=autoLineup(TEAMS[i]);if(c){SAVE.coach=c;c.joined=GAME_START;}newSeason(1);initBoard(true);ui.cc=null;ui.pendingCoach=null;syncDate();ui.match=null;ui.tab='mecz';render();}
 function changeClub(){if(!ui.confirmReset){ui.confirmReset=true;render();return;}ui.confirmReset=false;ui.match=null;clearTimeout(timer);SAVE={};resetTeams();save();render();}
 
 // ---------- skład ----------
@@ -71,7 +73,7 @@ function squadView(){
   <div class="card"><h2>Kadra (${t.players.length})</h2><div class="tw"><table class="squad"><thead><tr class="grp"><th colspan="5"></th><th colspan="${ATTRS.length}" class="msep gt">Techniczne</th><th colspan="${PHYS.length}" class="msep gf">Fizyczne</th><th colspan="${MENTAL.length}" class="msep men">Mentalne</th><th colspan="5" class="msep">Klub</th></tr><tr>
   <th onclick="srt('pos')">#</th><th class="l" onclick="srt('pos')">Zawodnik</th><th onclick="srt('pos')">Poz</th><th onclick="srt('wiek')">Wiek</th><th onclick="srt('h')">Wzrost</th>
   ${[[ATTRS,'gt'],[PHYS,'gf'],[MENTAL,'men']].map(([G,c])=>G.map(([k,l,s,d],j)=>`<th class="${j?'':'msep'} ${c}" onclick="srt('${k}')" title="${l}: ${d}">${s}</th>`).join('')).join('')}<th onclick="srt('ocena')" class="msep">Ocena</th><th onclick="srt('pot')">Potencjał</th><th onclick="srt('wart')">Wartość</th><th onclick="srt('pensja')">Pensja</th><th onclick="srt('kontrakt')">Kontrakt</th></tr></thead><tbody>
-  ${pl.map(p=>`<tr class="${inLu.has(p.id)?'starter':''}"><td>${p.num}</td><td class="l"><button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} <b>${esc(p.last)}</b></button>${p.inj?` 🚑<small class="bad">${p.inj}</small>`:''}${inLu.has(p.id)?` <span class="tag">${inLu.get(p.id)}</span>`:''}</td><td>${POS_SHORT[p.pos]}</td><td>${p.age}</td><td>${p.h}</td>
+  ${pl.map(p=>`<tr class="${inLu.has(p.id)?'starter':''}"><td>${p.num}</td><td class="l"><span class="fcell">${pFace(p,28)}<button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} <b>${esc(p.last)}</b></button></span>${p.inj?` 🚑<small class="bad">${p.inj}</small>`:''}${inLu.has(p.id)?` <span class="tag">${inLu.get(p.id)}</span>`:''}</td><td>${POS_SHORT[p.pos]}</td><td>${p.age}</td><td>${p.h}</td>
   ${[ATTRS,PHYS,MENTAL].map(G=>G.map(([k],j)=>{const d=p.base?p[k]-p.base[k]:0;return `<td class="${j?'':'msep'}"><span class="attr ${aCls(p[k])}">${p[k]}</span>${d?`<sup class="${d>0?'good':'bad'}">${d>0?'+':''}${d}</sup>`:''}</td>`;}).join('')).join('')}<td class="msep"><b>${rating(p)}</b></td><td class="stars">${potStars(p)}</td><td>${fmt(pValue(p))}</td><td>${fmt(p.wage)}</td><td class="${p.ce<=S().n?'bad':''}">${ceDate(p.ce)}</td></tr>`).join('')}
   </tbody></table></div><p class="mut small">Atrybuty w skali 1–20. Małe liczby to zmiana od początku sezonu. Kliknij nagłówek, żeby posortować, a nazwisko, żeby otworzyć kartę zawodnika (kontrakt, sprzedaż).</p>
   <details class="legend"><summary>Co oznaczają atrybuty?</summary>${[['Techniczne',ATTRS],['Fizyczne',PHYS],['Mentalne',MENTAL]].map(([n,G])=>`<div class="lg"><b class="gh">${n}</b>${G.map(([k,l,s,d])=>`<div><b>${s}</b> ${l}: ${d}</div>`).join('')}</div>`).join('')}</details></div>`;

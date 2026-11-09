@@ -5,6 +5,8 @@ Manager siatkówki na PC i telefon, działający offline.
 **Zagraj:** https://matrixi96.github.io/volley-manager/
 
 ## Co jest w grze
+- Kreator trenera (imię, wiek, doświadczenie, umiejętności i cechy mentalne), reputacja, cele zarządu, zwolnienia i oferty pracy.
+- Losowe twarze zawodników, juniorów i sztabu.
 - Prawdziwy kalendarz: daty i godziny meczów, sezony 2026/27 i kolejne, urodziny zawodników, kontrakty do 30 czerwca, pensje co miesiąc.
 - Fikcyjna polska liga, 12 drużyn: 7 sparingów, 22 kolejki (mecz i rewanż), play-off dla czołowej ósemki.
 - Mecz liczony akcja po akcji (zagrywka, przyjęcie, rozegranie, atak, blok, obrona) z animacją 2D, komentarzem, czasami i zmianami.
@@ -24,4 +26,4 @@ Po pierwszym otwarciu gra działa bez internetu.
 
 ## Dla twórcy
 Źródła są w katalogu `src/`. Po zmianach zbuduj grę: `python src/build.py` (tworzy `index.html`).
-Przy większych aktualizacjach podbij nazwę cache w `sw.js` (`volley-manager-v6` → `v7`), żeby telefony szybciej pobrały nową wersję.
+Przy większych aktualizacjach podbij nazwę cache w `sw.js` (`volley-manager-v7` → `v8`), żeby telefony szybciej pobrały nową wersję.

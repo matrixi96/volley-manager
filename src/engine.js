@@ -77,7 +77,7 @@ function cloneP(p){return Object.assign({},p,{en:100,st:{srv:0,srvErr:0,ace:0,re
 function makeSide(team,lu,tac,home,x){
   const ids=new Set(Object.values(lu));const pl=team.players.filter(p=>!p.inj||ids.has(p.id)).map(cloneP);const g=id=>pl.find(p=>p.id===id);
   const slots=[['R',lu.R],['P',lu.P1],['S',lu.S1],['A',lu.A],['P',lu.P2],['S',lu.S2]].map(([role,id])=>({role,p:g(id)}));
-  return {team,pl,slots,libero:g(lu.L),rot:[0,1,2,3,4,5],tactics:Object.assign({},tac),mom:0,home:!!home,fatMul:(x&&x.fat)||1,form:nz()*0.09+(home?(x&&x.hb!=null?x.hb:0.015):0)+((x&&x.sb)||0),to:2,subs:6};
+  return {team,pl,slots,libero:g(lu.L),rot:[0,1,2,3,4,5],tactics:Object.assign({},tac),mom:0,home:!!home,fatMul:(x&&x.fat)||1,momMul:(x&&x.momMul)||1,prB:(x&&x.prB)||0,trB:(x&&x.trB)||0,form:nz()*0.09+(home?(x&&x.hb!=null?x.hb:0.015):0)+((x&&x.sb)||0),to:2,subs:6};
 }
 function newMatch(a,b){
   const m={sides:[makeSide(a.team,a.lineup,a.tactics,a.home,a.x),makeSide(b.team,b.lineup,b.tactics,b.home,b.x)],setNo:1,score:[0,0],setsWon:[0,0],sets:[],firstServe:R()<0.5?0:1,run:{t:-1,n:0},over:false,rallies:0,sideout:[0,0]};
@@ -89,10 +89,10 @@ function onCourt(side,serving){
     return {zone:z,role:s.role,p:s.p,slot:si};});
 }
 function pressure(m){const a=m.score[0],b=m.score[1],t=m.setNo===5?15:25;return Math.max(a,b)>=t-4&&Math.min(a,b)>=t-8;}
-function mb(p,m,i){let b=0;if(pressure(m))b+=(p.opa-11)/20*0.14;if(m.score[1-i]-m.score[i]>=3)b+=(p.wal-11)/20*0.1;return b;}
+function mb(p,m,i){let b=0;const sd=m.sides[i];if(pressure(m))b+=(p.opa-11)/20*0.14+(sd.prB||0);if(m.score[1-i]-m.score[i]>=3)b+=(p.wal-11)/20*0.1+(sd.trB||0);return b;}
 function kc(p,m){let k=1.25-p.kcj/20*0.5;if(pressure(m))k*=1.15-p.opa/20*0.3;return k;}
 function nerves(p,m){return pressure(m)&&p.opa<10?' Nerwy w końcówce!':'';}
-function bn(s){return s.mom*0.01+s.form;}
+function bn(s){return s.mom*0.01*(s.momMul||1)+s.form;}
 function eff(p,k){return p[k]*(0.82+0.18*p.en/100);}
 function nm(p){return p.last;}
 const isFront=z=>z>=1&&z<=3;

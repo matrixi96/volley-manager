@@ -135,5 +135,15 @@ td.best{color:var(--acc);font-weight:800}th.on{color:var(--acc)}
 .stgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:0 12px}.staff h3{font-size:15px}
 .sk{display:inline-block;min-width:34px;text-align:center;border-radius:6px;padding:1px 6px;font-weight:800;font-size:12px}.cand{padding:5px 0;border-bottom:1px solid #ffffff10;gap:6px}
 .ghost.sm{padding:4px 8px;font-size:12px}button:disabled{opacity:.45;cursor:default}
+.face{display:block;border-radius:50%;flex:0 0 auto}.fcell{display:inline-flex;align-items:center;gap:8px;vertical-align:middle}.cface{margin-right:12px}
+.hface{display:inline-flex;margin-right:6px;cursor:pointer}.hface .face{border:1px solid var(--line)}
+.cc{display:grid;grid-template-columns:170px 1fr;gap:16px;align-items:start}.ccface{display:flex;flex-direction:column;align-items:center;gap:8px}
+.cc input:not([type=number]){background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;min-width:170px}
+.ccattrs{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:4px 20px;margin-top:8px}.ccattrs h4{margin:6px 0;color:var(--mut);font-size:12px;text-transform:uppercase}
+.ccrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #ffffff10}.ccv{display:flex;align-items:center;gap:6px}.ccv .ghost{padding:3px 10px}
+.teamcard.locked{opacity:.5;cursor:not-allowed}
+.board .conf,.repbox .conf{flex:1;height:10px;background:#ffffff14;border-radius:5px;overflow:hidden;margin:0 10px;min-width:80px}.board .conf i,.repbox .conf i{display:block;height:100%}
+.repbox{display:flex;flex-direction:column;min-width:160px}.repbox b{font-size:26px}.repbox .conf{margin:4px 0}.coachhead{gap:16px}
+@media (max-width:640px){.cc{grid-template-columns:1fr}}
 </style></head><body><div id="app"></div>
 <script>

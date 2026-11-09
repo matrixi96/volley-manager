@@ -52,8 +52,9 @@ function fireStaff(r){const cur=SAVE.staff[r];if(!cur)return;if(ui.confirm!=='f'
 function aiStaff(ti){return clamp(6+SAVE.ai[ti].rep/12,4,16);}
 function clubMods(ti){
   const inf=infraOf(ti),mine=ti===SAVE.team,st=r=>mine?staffSkill(r):aiStaff(ti);
-  return {all:1+0.08*(inf.tren-1),tech:0.8+st('asy')/50,phys:0.8+st('fiz')/50,ment:0.8+st('psy')/50,
-    jr:(1+0.1*(inf.akad-1))*(0.7+st('jr')/33),
+  const ct=mine&&SAVE.coach;
+  return {all:(1+0.08*(inf.tren-1))*(ct?0.85+cA('tre')/66:1),tech:0.8+st('asy')/50,phys:0.8+st('fiz')/50,ment:(0.8+st('psy')/50)*(ct?0.9+cA('aut')/100:1),
+    jr:(1+0.1*(inf.akad-1))*(0.7+st('jr')/33)*(ct?0.85+cA('mlo')/66:1),
     injChance:(1.05-0.05*(inf.med-1))*(1.2-st('fiz')/50),injDur:(1-0.07*(inf.med-1))*(1.3-st('med')/40),
     fat:1-0.04*(inf.odn-1),hb:0.012+0.003*inf.hala,sb:mine?(st('sta')-10)*0.0015:0};}
 // potencjał widziany przez skauta
@@ -63,7 +64,7 @@ function potSeen(p){if(p.tm===SAVE.team)return p.pot;const err=(20-staffSkill('s
 // ---- juniorzy ----
 const JR_PLAN=['R','R','A','A','P','P','P','S','S','S','L','L'];
 function genJunior(ti,age,pos){const t=TEAMS[ti];const inf=infraOf(ti);const mine=ti===SAVE.team;
-  const jq=teamQ(t)-2.5-4.5+0.4*inf.akad+((mine?staffSkill('jr'):aiStaff(ti))-10)*0.06+(age-16)*0.6;
+  const jq=teamQ(t)-2.5-4.5+0.4*inf.akad+((mine?staffSkill('jr'):aiStaff(ti))-10)*0.06+(mine&&SAVE.coach?(cA('mlo')-10)*0.04:0)+(age-16)*0.6;
   const p=genPlayer(pos||randPos(),jq+R()*1.2,age);p.tm=ti;p.jr=true;p.inj=0;p.xp={};p.wage=0;p.ce=0;
   p.pot=Math.min(92,Math.round(rating(p)+4+R()*12+inf.akad));p.base=snap(p);assignNum(p,ti);return p;}
 function initClub(){
@@ -163,8 +164,8 @@ function staffView(){
   const pool=SAVE.staffPool||[];
   const card=([r,n,d])=>{const s=SAVE.staff[r];const cands=pool.filter(x=>x.role===r).sort((a,b)=>b.skill-a.skill);
     return `<div class="card staff"><div class="row"><h3 style="margin:0">${n}</h3><span class="sp"></span>${s?`<span class="sk ${aCls(s.skill)}">${s.skill}/20</span>`:'<span class="bad small">wakat</span>'}</div><p class="small mut">${d}</p>
-    ${s?`<div class="row small"><span><b>${esc(s.first)} ${esc(s.last)}</b>, ${s.age} l. · ${fmt(s.wage)}/rok</span><span class="sp"></span><button class="link" onclick="fireStaff('${r}')">${ui.confirm==='f'+r?`Na pewno? Odprawa ${fmt(round5k(s.wage/4))}`:'Zwolnij'}</button></div>`:'<p class="small bad">Brak osoby na tym stanowisku — efekt jak przy bardzo słabym specjaliście.</p>'}
-    <details ${s?'':'open'}><summary class="link">Kandydaci (${cands.length})</summary>${cands.map(c=>`<div class="row small cand"><span class="sk ${aCls(c.skill)}">${c.skill}</span><span>${esc(c.first)} ${esc(c.last)}, ${c.age} l. · ${fmt(c.wage)}/rok</span><span class="sp"></span><button class="ghost" onclick="hireStaff('${c.id}')">${ui.confirm==='h'+c.id?'Na pewno? (zastąpi obecnego)':'Zatrudnij'}</button></div>`).join('')||'<p class="mut small">Brak kandydatów — nowi pojawią się w oknie transferowym.</p>'}</details></div>`;};
+    ${s?`<div class="row small">${sFace(s,40)}<span><b>${esc(s.first)} ${esc(s.last)}</b>, ${s.age} l. · ${fmt(s.wage)}/rok</span><span class="sp"></span><button class="link" onclick="fireStaff('${r}')">${ui.confirm==='f'+r?`Na pewno? Odprawa ${fmt(round5k(s.wage/4))}`:'Zwolnij'}</button></div>`:'<p class="small bad">Brak osoby na tym stanowisku — efekt jak przy bardzo słabym specjaliście.</p>'}
+    <details ${s?'':'open'}><summary class="link">Kandydaci (${cands.length})</summary>${cands.map(c=>`<div class="row small cand"><span class="sk ${aCls(c.skill)}">${c.skill}</span>${sFace(c,30)}<span>${esc(c.first)} ${esc(c.last)}, ${c.age} l. · ${fmt(c.wage)}/rok</span><span class="sp"></span><button class="ghost" onclick="hireStaff('${c.id}')">${ui.confirm==='h'+c.id?'Na pewno? (zastąpi obecnego)':'Zatrudnij'}</button></div>`).join('')||'<p class="mut small">Brak kandydatów — nowi pojawią się w oknie transferowym.</p>'}</details></div>`;};
   return `${ui.tmsg?`<div class="card tmsg ${ui.tmsg.ok?'ok':'no'}">${esc(ui.tmsg.t)}</div>`:''}<div class="card"><div class="row wrap"><h2 style="margin:0">Sztab szkoleniowy</h2><span class="sp"></span><span class="small">Pensje sztabu: <b>${fmt(staffPay())}/rok</b> · saldo ${fmt(SAVE.fin.bal)}</span></div>
   <p class="small mut">Jakość w skali 1–20. Lepszy specjalista to silniejszy efekt, ale wyższa pensja (płatna co miesiąc). Zwolnienie kosztuje odprawę (3 miesiące pensji). Nowi kandydaci pojawiają się co roku w oknie transferowym.</p></div>
   <div class="stgrid">${STAFF_ROLES.map(card).join('')}</div>`;
@@ -177,7 +178,7 @@ function juniorsView(){
   <div class="card"><div class="row wrap"><h2 style="margin:0">${esc(myTeam().name)} U20</h2><span class="sp"></span><span class="small mut">Akademia: ${'★'.repeat(inf.akad)} · trener juniorów: ${SAVE.staff.jr?SAVE.staff.jr.skill+'/20':'brak'}</span></div>
   <p class="small mut">Juniorzy grają w lidze juniorów w tych samych kolejkach co seniorzy. Rozwijają się szybciej niż dorośli. Najlepszych awansuj do pierwszej drużyny. Po skończeniu 20 lat junior musi awansować albo odejść (decyzja w oknie transferowym).</p>
   <div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th>Poz</th><th>Wiek</th><th>Ocena</th><th>Potencjał</th><th>Rozwój</th><th>M</th><th>Pkt</th><th></th></tr></thead><tbody>
-  ${js.map(p=>{const d=rating(p)-baseRating(p);const st=jps[p.id];return `<tr><td class="l"><button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} <b>${esc(p.last)}</b></button>${p.inj?' 🚑':''}${p.age>=20?' <span class="tag">20+</span>':''}</td><td>${POS_SHORT[p.pos]}</td><td>${p.age}</td><td><b>${rating(p)}</b></td><td class="stars">${potStars(p)}</td><td class="${d>0?'good':''}">${d>0?'+'+d:'–'}</td><td>${st?st.m:0}</td><td>${st?st.pts:0}</td><td><button class="ghost sm" onclick="promote('${p.id}')">⬆️ Awans</button></td></tr>`;}).join('')}</tbody></table></div></div>
+  ${js.map(p=>{const d=rating(p)-baseRating(p);const st=jps[p.id];return `<tr><td class="l"><span class="fcell">${pFace(p,26)}<button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} <b>${esc(p.last)}</b></button></span>${p.inj?' 🚑':''}${p.age>=20?' <span class="tag">20+</span>':''}</td><td>${POS_SHORT[p.pos]}</td><td>${p.age}</td><td><b>${rating(p)}</b></td><td class="stars">${potStars(p)}</td><td class="${d>0?'good':''}">${d>0?'+'+d:'–'}</td><td>${st?st.m:0}</td><td>${st?st.pts:0}</td><td><button class="ghost sm" onclick="promote('${p.id}')">⬆️ Awans</button></td></tr>`;}).join('')}</tbody></table></div></div>
   <div class="card"><h2>Liga juniorów ${sLabel(s.n)}</h2>${tb.some(x=>x.m)?`<div class="tw"><table><thead><tr><th>#</th><th class="l">Drużyna</th><th>M</th><th>Z</th><th>P</th><th>Pkt</th><th>Sety</th></tr></thead><tbody>${tb.map((x,i)=>`<tr class="${x.i===SAVE.team?'starter':''}"><td>${i+1}</td><td class="l">${tDot(x.i)}${tName(x.i)} U20</td><td>${x.m}</td><td>${x.w}</td><td>${x.l}</td><td><b>${x.pts}</b></td><td>${x.sw}:${x.sl}</td></tr>`).join('')}</tbody></table></div>`:'<p class="mut">Liga juniorów rusza razem z fazą zasadniczą seniorów.</p>'}
   ${last?`<h3>Ostatnia kolejka juniorów</h3>${last.map(g=>`<div class="res ${g.me?'me':''}">${resTxt(g)}</div>`).join('')}`:''}${s.jchamp!=null?`<p>🏆 Mistrz: <b>${tName(s.jchamp)} U20</b></p>`:''}</div>
   ${juniorLeaders()}`;

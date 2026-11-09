@@ -89,7 +89,7 @@ function posCount(t,pos){return t.players.filter(p=>p.pos===pos).length;}
 function isStarter(p){if(p.tm<0)return false;const lu=autoLineup(TEAMS[p.tm]);return Object.values(lu).includes(p.id);}
 function askingPrice(p){return Math.round(pValue(p)*(isStarter(p)?1.35:1.05)/10000)*10000;}
 function canSellAI(p){const t=TEAMS[p.tm];return posCount(t,p.pos)-1>=POS_MIN[p.pos]&&t.players.length-1>=SQUAD_MIN;}
-function wageNeeded(p){if(p.tm===SAVE.team)return wageDemand(p);const my=SAVE.ai[SAVE.team].rep;const cur=p.tm>=0?SAVE.ai[p.tm].rep:0;return round5k(wageDemand(p)*(p.tm<0?0.9:cur>my+10?1.15:1));}
+function wageNeeded(p){if(p.tm===SAVE.team)return round5k(wageDemand(p)*negF());const my=SAVE.ai[SAVE.team].rep;const cur=p.tm>=0?SAVE.ai[p.tm].rep:0;return round5k(wageDemand(p)*(p.tm<0?0.9:cur>my+10?1.15:1)*negF());}
 function contractEndFor(years){const s=S();return (s.phase==='off'?s.n-1:s.n)+years;}
 function movePlayer(p,tm){p.tm=tm;if(tm>=0)assignNum(p,tm);syncTeams();}
 function tradeMsg(ok,t){ui.tmsg={ok,t};render();}
@@ -100,7 +100,7 @@ function makeOffer(pid,fee,wage,years){
   fee=p.tm>=0?Math.max(0,Math.round(fee)):0;
   if(p.tm>=0){const club=TEAMS[p.tm].name;
     if(!canSellAI(p))return tradeMsg(false,`${club} nie sprzeda zawodnika — nie ma go kim zastąpić.`);
-    const ask=askingPrice(p);if(fee<ask)return tradeMsg(false,`${club} odrzuca ofertę. Oczekuje co najmniej ${fmt(ask)}.`);}
+    const ask=Math.round(askingPrice(p)*(1.05-cA('neg')/200)/10000)*10000;if(fee<ask)return tradeMsg(false,`${club} odrzuca ofertę. Oczekuje co najmniej ${fmt(ask)}.`);}
   if(SAVE.fin.bal-fee<-500000)return tradeMsg(false,'Za mało pieniędzy. Dopuszczalny debet to 500 tys. zł.');
   const need=wageNeeded(p);if(wage<need)return tradeMsg(false,`${p.first} ${p.last} odrzuca warunki. Chce co najmniej ${fmt(need)} rocznie.`);
   const from=p.tm;
@@ -113,7 +113,7 @@ function findBuyers(pid){const p=PLAYERS[pid].p;const r=rating(p);const out=[];
   for(const t of TEAMS){if(t.idx===SAVE.team||t.players.length>=17)continue;
     const best=t.players.filter(x=>x.pos===p.pos).map(x=>rating(x)).sort((a,b)=>b-a);
     const need=best.length<POS_STD[p.pos]||r>(best[1]||0);if(!need)continue;
-    const fee=Math.round(pValue(p)*(0.8+R()*0.3)/10000)*10000;if(SAVE.ai[t.idx].bud<fee)continue;out.push({tm:t.idx,fee});}
+    const fee=Math.round(pValue(p)*(0.8+R()*0.3)*(0.95+cA('neg')/200)/10000)*10000;if(SAVE.ai[t.idx].bud<fee)continue;out.push({tm:t.idx,fee});}
   return out.sort((a,b)=>b.fee-a.fee).slice(0,3);}
 function seekBuyers(pid){if(!windowOpen())return tradeMsg(false,'Okno transferowe jest zamknięte.');ui.offers={pid,list:findBuyers(pid)};render();}
 function acceptBuy(pid,tm,fee){const p=PLAYERS[pid].p;
@@ -225,7 +225,7 @@ function cardModal(){
     <p class="mut small">Saldo klubu: ${fmt(SAVE.fin.bal)} · kadra: ${myTeam().players.length}/${SQUAD_MAX}</p>`:'<p class="mut small">Okno transferowe jest zamknięte. Otwiera się przed sezonem i trwa do końca sparingów.</p>'}</div>`;
   }
   return `<div class="modal" onclick="if(event.target===this){ui.card=null;ui.offers=null;render()}"><div class="mcard">
-   <div class="row"><div><div class="mut small">${p.tm>=0?tDot(p.tm)+esc(TEAMS[p.tm].name)+(p.jr?' · juniorzy U20':''):'Wolny zawodnik'}</div><h2>${p.num&&t?p.num+'. ':''}${esc(p.first)} ${esc(p.last)}</h2></div><span class="sp"></span><button class="ghost" onclick="ui.card=null;ui.offers=null;render()">✕</button></div>
+   <div class="row"><span class="cface">${pFace(p,84)}</span><div><div class="mut small">${p.tm>=0?tDot(p.tm)+esc(TEAMS[p.tm].name)+(p.jr?' · juniorzy U20':''):'Wolny zawodnik'}</div><h2>${p.num&&p.tm>=0?p.num+'. ':''}${esc(p.first)} ${esc(p.last)}</h2></div><span class="sp"></span><button class="ghost" onclick="ui.card=null;ui.offers=null;render()">✕</button></div>
    ${ui.tmsg?`<div class="tmsg ${ui.tmsg.ok?'ok':'no'}">${esc(ui.tmsg.t)}</div>`:''}
    <div class="cinfo"><div><span class="mut small">Pozycja</span><b>${POS_NAMES[p.pos]}</b></div><div><span class="mut small">Wiek</span><b>${p.age} <small class="mut">(ur. ${p.dob?fmtDMY(p.dob):'?'})</small></b></div><div><span class="mut small">Wzrost</span><b>${p.h} cm</b></div>
    <div><span class="mut small">Ocena</span><b>${r}${r!==br?` <small class="${r>br?'good':'bad'}">${r>br?'+':''}${r-br}</small>`:''}</b></div><div><span class="mut small">Potencjał${p.tm!==SAVE.team?' (wg skauta)':''}</span><b class="stars">${potStars(p)}</b></div><div><span class="mut small">Wartość</span><b>${fmt(pValue(p))}</b></div>
@@ -269,7 +269,7 @@ function transferView(){
    ${sel('maxVal',[[0,'Dowolna cena'],[200000,'Do 200 tys.'],[500000,'Do 500 tys.'],[1000000,'Do 1 mln']])}
    ${sel('sort',[['ocena','Sortuj: ocena'],['pot','Sortuj: potencjał'],['wiek','Sortuj: wiek'],['cena','Sortuj: cena rosnąco']])}</div>
   <div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th>Poz</th><th>Wiek</th><th>Ocena</th><th>Potencjał</th><th class="l">Klub</th><th>Wartość</th><th>Pensja</th><th>Kontrakt</th></tr></thead><tbody>
-  ${shown.map(p=>`<tr onclick="openCard('${p.id}')" class="clickrow"><td class="l">${esc(p.first)} <b>${esc(p.last)}</b>${p.inj?' 🚑':''}</td><td>${POS_SHORT[p.pos]}</td><td>${p.age}</td><td><b>${rating(p)}</b></td><td class="stars">${potStars(p)}</td><td class="l">${p.tm>=0?tDot(p.tm)+esc(TEAMS[p.tm].short):'<span class="good">wolny</span>'}</td><td>${p.tm>=0?fmt(pValue(p)):'—'}</td><td>${p.tm>=0?fmt(p.wage):'<small class="mut">chce '+fmt(wageNeeded(p))+'</small>'}</td><td>${p.tm>=0?ceDate(p.ce):'—'}</td></tr>`).join('')}
+  ${shown.map(p=>`<tr onclick="openCard('${p.id}')" class="clickrow"><td class="l"><span class="fcell">${pFace(p,26)}<span>${esc(p.first)} <b>${esc(p.last)}</b></span></span>${p.inj?' 🚑':''}</td><td>${POS_SHORT[p.pos]}</td><td>${p.age}</td><td><b>${rating(p)}</b></td><td class="stars">${potStars(p)}</td><td class="l">${p.tm>=0?tDot(p.tm)+esc(TEAMS[p.tm].short):'<span class="good">wolny</span>'}</td><td>${p.tm>=0?fmt(pValue(p)):'—'}</td><td>${p.tm>=0?fmt(p.wage):'<small class="mut">chce '+fmt(wageNeeded(p))+'</small>'}</td><td>${p.tm>=0?ceDate(p.ce):'—'}</td></tr>`).join('')}
   </tbody></table></div><p class="mut small">Pokazano ${shown.length} z ${list.length} zawodników.</p></div>`;
 }
 function financeView(){
