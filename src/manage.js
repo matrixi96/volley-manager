@@ -17,7 +17,8 @@ function potStars(p){const n=Math.max(1,Math.min(5,Math.round(((p.pot!=null?potS
 function potBonus(age,r){const k=r>=85?0.5:r>=80?0.75:1;return k*(age<=21?3+R()*12:age<=24?2+R()*7:age<=27?R()*3:0);}
 function initRep(t){return Math.round(clamp((teamStrength(t)-65)*3.5,20,90));}
 function teamQ(t){return teamStrength(t)/5;}
-function resetTeams(){TEAMS.forEach((t,i)=>{t.players=genTeam(TEAM_DEFS[i],i).players;});rebuildIndex();}
+function restoreDefs(){TEAMS.forEach((t,i)=>{const d=TEAM_DEFS[i];t.name=d.name;t.short=d.short;t.color=d.color;t.city='';});applyCustom();}
+function resetTeams(){restoreDefs();TEAMS.forEach((t,i)=>{t.players=genTeam(TEAM_DEFS[i],i).players;});rebuildIndex();}
 function syncTeams(){for(const t of TEAMS)t.players=W().players.filter(p=>p.tm===t.idx&&!p.jr);rebuildIndex();}
 function initPlayerMeta(p,season,free){const r=rating(p);p.pot=Math.min(95,Math.round(r+potBonus(p.age,r)));p.inj=0;p.xp={};p.base=snap(p);
   if(free){p.wage=0;p.ce=0;}else{p.wage=round5k(wageDemand(p)*(0.85+R()*0.3));p.ce=season+(R()<0.2?0:1+Math.floor(R()*3));}}
@@ -225,7 +226,7 @@ function cardModal(){
     <p class="mut small">Saldo klubu: ${fmt(SAVE.fin.bal)} · kadra: ${myTeam().players.length}/${SQUAD_MAX}</p>`:'<p class="mut small">Okno transferowe jest zamknięte. Otwiera się przed sezonem i trwa do końca sparingów.</p>'}</div>`;
   }
   return `<div class="modal" onclick="if(event.target===this){ui.card=null;ui.offers=null;render()}"><div class="mcard">
-   <div class="row"><span class="cface">${pFace(p,84)}</span><div><div class="mut small">${p.tm>=0?tDot(p.tm)+esc(TEAMS[p.tm].name)+(p.jr?' · juniorzy U20':''):'Wolny zawodnik'}</div><h2>${p.num&&p.tm>=0?p.num+'. ':''}${esc(p.first)} ${esc(p.last)}</h2></div><span class="sp"></span><button class="ghost" onclick="ui.card=null;ui.offers=null;render()">✕</button></div>
+   <div class="row"><span class="cface">${pFace(p,84)}</span><div><div class="mut small">${p.tm>=0?tDot(p.tm)+esc(TEAMS[p.tm].name)+(p.jr?' · juniorzy U20':''):'Wolny zawodnik'}</div><h2>${p.num&&p.tm>=0?p.num+'. ':''}${esc(p.first)} ${esc(p.last)}${p.star?' <span title="Gwiazda zespołu">⭐</span>':''}</h2></div><span class="sp"></span><button class="ghost" onclick="ui.card=null;ui.offers=null;render()">✕</button></div>
    ${ui.tmsg?`<div class="tmsg ${ui.tmsg.ok?'ok':'no'}">${esc(ui.tmsg.t)}</div>`:''}
    <div class="cinfo"><div><span class="mut small">Pozycja</span><b>${POS_NAMES[p.pos]}</b></div><div><span class="mut small">Wiek</span><b>${p.age} <small class="mut">(ur. ${p.dob?fmtDMY(p.dob):'?'})</small></b></div><div><span class="mut small">Wzrost</span><b>${p.h} cm</b></div>
    <div><span class="mut small">Ocena</span><b>${r}${r!==br?` <small class="${r>br?'good':'bad'}">${r>br?'+':''}${r-br}</small>`:''}</b></div><div><span class="mut small">Potencjał${p.tm!==SAVE.team?' (wg skauta)':''}</span><b class="stars">${potStars(p)}</b></div><div><span class="mut small">Wartość</span><b>${fmt(pValue(p))}</b></div>

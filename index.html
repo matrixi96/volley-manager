@@ -152,6 +152,12 @@ td.best{color:var(--acc);font-weight:800}th.on{color:var(--acc)}
 .board .conf,.repbox .conf{flex:1;height:10px;background:#ffffff14;border-radius:5px;overflow:hidden;margin:0 10px;min-width:80px}.board .conf i,.repbox .conf i{display:block;height:100%}
 .repbox{display:flex;flex-direction:column;min-width:160px}.repbox b{font-size:26px}.repbox .conf{margin:4px 0}.coachhead{gap:16px}
 @media (max-width:640px){.cc{grid-template-columns:1fr}}
+.foundcard{border-left:5px solid var(--acc);background:linear-gradient(135deg,#ffb02022,var(--panel2))}.foundcard small{color:var(--mut)}
+.oc{display:grid;grid-template-columns:180px 1fr;gap:18px;align-items:start;margin-top:12px}.ocprev{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.oc input{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;min-width:170px}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}.sw{width:34px;height:34px;border-radius:50%;border:3px solid transparent;cursor:pointer;box-shadow:inset 0 0 0 1px #ffffff55}.sw.on{border-color:#fff;box-shadow:0 0 0 2px var(--acc)}
+.ocinfo{margin-top:14px;background:var(--panel2)}.ocinfo ul{margin:6px 0 0;padding-left:18px}.crest{display:inline-block;vertical-align:middle;margin-right:4px}
+@media (max-width:640px){.oc{grid-template-columns:1fr}}
 </style></head><body><div id="app"></div>
 <script>
 'use strict';
@@ -433,7 +439,7 @@ function hdr(nav){
   const tabs=[['mecz','Sezon'],['trener','Trener'],['kalendarz','Kalendarz'],['sklad','Skład'],['taktyka','Taktyka'],['trening','Trening'],['sztab','Sztab'],['juniorzy','Juniorzy'],['klub','Infrastruktura'],['transfery','Transfery'],['finanse','Finanse'],['staty','Statystyki'],['zapis','Zapis'],['test','Test']];
   return `<header><div class="logo">🏐 Volley<span>Manager</span> <small class="mut">prototyp</small></div>
   ${nav?`<nav>${tabs.map(([k,l])=>`<button class="${ui.tab===k?'on':''}" onclick="go('${k}')">${l}</button>`).join('')}</nav>
-  <div class="club" style="--c:${t.color}"><span class="date" title="${fmtLong(today())}">📅 ${fmtShort(today())}.${today().slice(0,4)}</span><i></i>${SAVE.coach?`<span class="hface" onclick="go('trener')" title="${esc(SAVE.coach.first+' '+SAVE.coach.last)}">${coachFace(SAVE.coach,26)}</span>`:''}${esc(t.name)}${SAVE.fin?` <small class="${SAVE.fin.bal<0?'bad':'mut'}">${fmt(SAVE.fin.bal)}</small>`:''}</div>`:''}</header>`;
+  <div class="club" style="--c:${t.color}">${SAVE.custom&&SAVE.custom.idx===SAVE.team?crestSvg(t.name,t.short,t.color,20):''}<span class="date" title="${fmtLong(today())}">📅 ${fmtShort(today())}.${today().slice(0,4)}</span><i></i>${SAVE.coach?`<span class="hface" onclick="go('trener')" title="${esc(SAVE.coach.first+' '+SAVE.coach.last)}">${coachFace(SAVE.coach,26)}</span>`:''}${esc(t.name)}${SAVE.fin?` <small class="${SAVE.fin.bal<0?'bad':'mut'}">${fmt(SAVE.fin.bal)}</small>`:''}</div>`:''}</header>`;
 }
 function go(tab){ui.msg=null;ui.tmsg=null;ui.card=null;ui.confirm=null;if(ui.match&&!ui.match.over&&tab!=='mecz')ui.match.paused=true;ui.tab=tab;ui.subSel=null;render();}
 
@@ -465,7 +471,7 @@ function squadView(){
   <div class="card"><h2>Kadra (${t.players.length})</h2><div class="tw"><table class="squad"><thead><tr class="grp"><th colspan="5"></th><th colspan="${ATTRS.length}" class="msep gt">Techniczne</th><th colspan="${PHYS.length}" class="msep gf">Fizyczne</th><th colspan="${MENTAL.length}" class="msep men">Mentalne</th><th colspan="5" class="msep">Klub</th></tr><tr>
   <th onclick="srt('pos')">#</th><th class="l" onclick="srt('pos')">Zawodnik</th><th onclick="srt('pos')">Poz</th><th onclick="srt('wiek')">Wiek</th><th onclick="srt('h')">Wzrost</th>
   ${[[ATTRS,'gt'],[PHYS,'gf'],[MENTAL,'men']].map(([G,c])=>G.map(([k,l,s,d],j)=>`<th class="${j?'':'msep'} ${c}" onclick="srt('${k}')" title="${l}: ${d}">${s}</th>`).join('')).join('')}<th onclick="srt('ocena')" class="msep">Ocena</th><th onclick="srt('pot')">Potencjał</th><th onclick="srt('wart')">Wartość</th><th onclick="srt('pensja')">Pensja</th><th onclick="srt('kontrakt')">Kontrakt</th></tr></thead><tbody>
-  ${pl.map(p=>`<tr class="${inLu.has(p.id)?'starter':''}"><td>${p.num}</td><td class="l"><span class="fcell">${pFace(p,28)}<button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} <b>${esc(p.last)}</b></button></span>${p.inj?` 🚑<small class="bad">${p.inj}</small>`:''}${inLu.has(p.id)?` <span class="tag">${inLu.get(p.id)}</span>`:''}</td><td>${POS_SHORT[p.pos]}</td><td>${p.age}</td><td>${p.h}</td>
+  ${pl.map(p=>`<tr class="${inLu.has(p.id)?'starter':''}"><td>${p.num}</td><td class="l"><span class="fcell">${pFace(p,28)}<button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} <b>${esc(p.last)}</b>${p.star?' ⭐':''}</button></span>${p.inj?` 🚑<small class="bad">${p.inj}</small>`:''}${inLu.has(p.id)?` <span class="tag">${inLu.get(p.id)}</span>`:''}</td><td>${POS_SHORT[p.pos]}</td><td>${p.age}</td><td>${p.h}</td>
   ${[ATTRS,PHYS,MENTAL].map(G=>G.map(([k],j)=>{const d=p.base?p[k]-p.base[k]:0;return `<td class="${j?'':'msep'}"><span class="attr ${aCls(p[k])}">${p[k]}</span>${d?`<sup class="${d>0?'good':'bad'}">${d>0?'+':''}${d}</sup>`:''}</td>`;}).join('')).join('')}<td class="msep"><b>${rating(p)}</b></td><td class="stars">${potStars(p)}</td><td>${fmt(pValue(p))}</td><td>${fmt(p.wage)}</td><td class="${p.ce<=S().n?'bad':''}">${ceDate(p.ce)}</td></tr>`).join('')}
   </tbody></table></div><p class="mut small">Atrybuty w skali 1–20. Małe liczby to zmiana od początku sezonu. Kliknij nagłówek, żeby posortować, a nazwisko, żeby otworzyć kartę zawodnika (kontrakt, sprzedaż).</p>
   <details class="legend"><summary>Co oznaczają atrybuty?</summary>${[['Techniczne',ATTRS],['Fizyczne',PHYS],['Mentalne',MENTAL]].map(([n,G])=>`<div class="lg"><b class="gh">${n}</b>${G.map(([k,l,s,d])=>`<div><b>${s}</b> ${l}: ${d}</div>`).join('')}</div>`).join('')}</details></div>`;
@@ -877,7 +883,7 @@ function slotKey(i){return KEY+'_slot'+i;}
 function slotInfo(i){try{const o=JSON.parse(localStorage.getItem(slotKey(i)));return o;}catch(e){return null;}}
 function descSave(o){if(!o||o.team==null)return 'pusty';const s=o.season;return `${esc(TEAMS[o.team].name)} · sezon ${s?sLabel(s.n):''} · ${s?PHASE_NAMES[s.phase]:''}${s&&s.phase==='liga'?' (kolejka '+(s.round+1)+')':''}${o.savedAt?' · '+esc(o.savedAt):''}`;}
 function saveSlot(i){persistLive();const o=Object.assign({},SAVE,{savedAt:new Date().toLocaleString('pl-PL')});try{localStorage.setItem(slotKey(i),JSON.stringify(o));ui.msg=`Zapisano w slocie ${i}.`;}catch(e){ui.msg='Nie udało się zapisać — przeglądarka blokuje pamięć. Użyj kodu zapisu.';}render();}
-function loadObj(o){clearTimeout(timer);SAVE=o;delete SAVE.savedAt;if(!SAVE.world)initWorld();else syncTeams();migrateDates();initClub();ui.match=SAVE.live?deserMatch(SAVE.live):null;ui.confirm=null;ui.card=null;save();}
+function loadObj(o){clearTimeout(timer);SAVE=o;delete SAVE.savedAt;restoreDefs();if(!SAVE.world)initWorld();else syncTeams();migrateDates();initClub();ui.match=SAVE.live?deserMatch(SAVE.live):null;ui.confirm=null;ui.card=null;save();}
 function loadSlot(i){const o=slotInfo(i);if(!o)return;loadObj(o);ui.msg=`Wczytano slot ${i}.`;ui.tab='mecz';render();}
 function delSlot(i){if(ui.confirm!=='del'+i){ui.confirm='del'+i;render();return;}try{localStorage.removeItem(slotKey(i));}catch(e){}ui.confirm=null;ui.msg=`Usunięto slot ${i}.`;render();}
 function exportCode(){persistLive();ui.code=btoa(unescape(encodeURIComponent(JSON.stringify(SAVE))));render();}
@@ -923,7 +929,8 @@ function potStars(p){const n=Math.max(1,Math.min(5,Math.round(((p.pot!=null?potS
 function potBonus(age,r){const k=r>=85?0.5:r>=80?0.75:1;return k*(age<=21?3+R()*12:age<=24?2+R()*7:age<=27?R()*3:0);}
 function initRep(t){return Math.round(clamp((teamStrength(t)-65)*3.5,20,90));}
 function teamQ(t){return teamStrength(t)/5;}
-function resetTeams(){TEAMS.forEach((t,i)=>{t.players=genTeam(TEAM_DEFS[i],i).players;});rebuildIndex();}
+function restoreDefs(){TEAMS.forEach((t,i)=>{const d=TEAM_DEFS[i];t.name=d.name;t.short=d.short;t.color=d.color;t.city='';});applyCustom();}
+function resetTeams(){restoreDefs();TEAMS.forEach((t,i)=>{t.players=genTeam(TEAM_DEFS[i],i).players;});rebuildIndex();}
 function syncTeams(){for(const t of TEAMS)t.players=W().players.filter(p=>p.tm===t.idx&&!p.jr);rebuildIndex();}
 function initPlayerMeta(p,season,free){const r=rating(p);p.pot=Math.min(95,Math.round(r+potBonus(p.age,r)));p.inj=0;p.xp={};p.base=snap(p);
   if(free){p.wage=0;p.ce=0;}else{p.wage=round5k(wageDemand(p)*(0.85+R()*0.3));p.ce=season+(R()<0.2?0:1+Math.floor(R()*3));}}
@@ -1131,7 +1138,7 @@ function cardModal(){
     <p class="mut small">Saldo klubu: ${fmt(SAVE.fin.bal)} · kadra: ${myTeam().players.length}/${SQUAD_MAX}</p>`:'<p class="mut small">Okno transferowe jest zamknięte. Otwiera się przed sezonem i trwa do końca sparingów.</p>'}</div>`;
   }
   return `<div class="modal" onclick="if(event.target===this){ui.card=null;ui.offers=null;render()}"><div class="mcard">
-   <div class="row"><span class="cface">${pFace(p,84)}</span><div><div class="mut small">${p.tm>=0?tDot(p.tm)+esc(TEAMS[p.tm].name)+(p.jr?' · juniorzy U20':''):'Wolny zawodnik'}</div><h2>${p.num&&p.tm>=0?p.num+'. ':''}${esc(p.first)} ${esc(p.last)}</h2></div><span class="sp"></span><button class="ghost" onclick="ui.card=null;ui.offers=null;render()">✕</button></div>
+   <div class="row"><span class="cface">${pFace(p,84)}</span><div><div class="mut small">${p.tm>=0?tDot(p.tm)+esc(TEAMS[p.tm].name)+(p.jr?' · juniorzy U20':''):'Wolny zawodnik'}</div><h2>${p.num&&p.tm>=0?p.num+'. ':''}${esc(p.first)} ${esc(p.last)}${p.star?' <span title="Gwiazda zespołu">⭐</span>':''}</h2></div><span class="sp"></span><button class="ghost" onclick="ui.card=null;ui.offers=null;render()">✕</button></div>
    ${ui.tmsg?`<div class="tmsg ${ui.tmsg.ok?'ok':'no'}">${esc(ui.tmsg.t)}</div>`:''}
    <div class="cinfo"><div><span class="mut small">Pozycja</span><b>${POS_NAMES[p.pos]}</b></div><div><span class="mut small">Wiek</span><b>${p.age} <small class="mut">(ur. ${p.dob?fmtDMY(p.dob):'?'})</small></b></div><div><span class="mut small">Wzrost</span><b>${p.h} cm</b></div>
    <div><span class="mut small">Ocena</span><b>${r}${r!==br?` <small class="${r>br?'good':'bad'}">${r>br?'+':''}${r-br}</small>`:''}</b></div><div><span class="mut small">Potencjał${p.tm!==SAVE.team?' (wg skauta)':''}</span><b class="stars">${potStars(p)}</b></div><div><span class="mut small">Wartość</span><b>${fmt(pValue(p))}</b></div>
@@ -1608,6 +1615,7 @@ function coachAge(c){return ageAt(c.dob,SAVE.date||GAME_START);}
 function coachFace(c,size){return faceSvg(c.face,{size:size||48,age:coachAge(c),color:SAVE.team!=null?TEAMS[SAVE.team].color:'#ffb020',kind:'coach'});}
 function coachCreateView(){
   const d=ccDraft();const pool=ccPool();
+  if(d.step===3&&ui.pendingCoach)return ownClubView();
   if(d.step===2&&ui.pendingCoach)return clubPickView();
   const migr=SAVE.team!=null;
   return `<div class="card"><h2>${migr?'Stwórz swojego trenera':'Nowa gra: stwórz trenera'}</h2><p class="mut">${migr?'Twój zapis nie ma jeszcze trenera. Stwórz go, a gra potoczy się dalej od miejsca, w którym skończyłeś.':'To Ty prowadzisz drużynę. Od doświadczenia zależą punkty do rozdania i reputacja, a od reputacji to, które kluby będą chciały Cię zatrudnić.'}</p>
@@ -1622,7 +1630,7 @@ function coachCreateView(){
 function clubPickView(){const c=ui.pendingCoach;
   return `<div class="card"><div class="row wrap">${coachFace(c,64)}<div><h2 style="margin:0">${esc(c.first)} ${esc(c.last)}</h2><div class="mut small">${C_EXP.find(x=>x[0]===c.exp)[1]} · reputacja <b>${c.rep}</b></div></div><span class="sp"></span><button class="ghost" onclick="ui.cc.step=1;ui.pendingCoach=null;render()">← Wróć do trenera</button></div>
   <h2 style="margin-top:14px">Wybierz klub</h2><p class="mut">Fikcyjna polska liga, 12 drużyn. Kluby z kłódką nie zatrudnią trenera z tak niską reputacją: na lepszą pracę trzeba zasłużyć wynikami. Cel zarządu zależy od siły składu.</p>
-  <div class="grid">${TEAMS.map(t=>{const ok=canTake(t.idx,c.rep);const g=goalFor(t.idx);return `<button class="teamcard ${ok?'':'locked'}" style="--c:${t.color}" ${ok?`onclick="pickTeam(${t.idx})"`:'disabled'}><b>${ok?'':'🔒 '}${esc(t.name)}</b><span class="stars">${stars(teamStrength(t))}</span><small class="mut">Siła: ${teamStrength(t)} · cel: ${GOAL_TXT[g]}</small>${ok?'':`<small class="bad">Wymagana reputacja: ${clubReq(t)-25}</small>`}</button>`;}).join('')}</div></div>`;}
+  <div class="grid">${foundCard()}${TEAMS.map(t=>{const ok=canTake(t.idx,c.rep);const g=goalFor(t.idx);return `<button class="teamcard ${ok?'':'locked'}" style="--c:${t.color}" ${ok?`onclick="pickTeam(${t.idx})"`:'disabled'}><b>${ok?'':'🔒 '}${esc(t.name)}</b><span class="stars">${stars(teamStrength(t))}</span><small class="mut">Siła: ${teamStrength(t)} · cel: ${GOAL_TXT[g]}</small>${ok?'':`<small class="bad">Wymagana reputacja: ${clubReq(t)-25}</small>`}</button>`;}).join('')}</div></div>`;}
 // ---- zarząd ----
 const GOAL_TXT={2:'finał (top 2)',4:'półfinał (top 4)',8:'play-off (top 8)',10:'miejsce w pierwszej dziesiątce',12:'budowa zespołu (bez presji wyniku)'};
 function goalFor(ti){const rk=TEAMS.map(t=>({i:t.idx,s:teamStrength(t)})).sort((a,b)=>b.s-a.s).findIndex(x=>x.i===ti)+1;return rk<=2?2:rk<=4?4:rk<=8?8:rk<=10?10:12;}
@@ -1633,7 +1641,7 @@ function boardAfterMatch(res){const b=SAVE.board;if(!b||!coach())return;
   const won=my>op?1:0;let d=(won-p)*5;if(won&&op===0)d+=0.5;if(!won&&my===0)d-=0.5;
   if(d>0)d*=0.9+cA('aut')/100;else d*=1.1-cA('aut')/100;
   b.conf=clamp(b.conf+d,0,100);
-  const s=S();if(b.conf<8&&s.phase==='liga'&&s.round>=8&&!SAVE.fired)fireCoach('Zarząd stracił zaufanie po serii słabych wyników w trakcie sezonu.');}
+  const s=S();if(b.conf<8&&s.phase==='liga'&&s.round>=8&&!SAVE.fired&&!SAVE.ownClub)fireCoach('Zarząd stracił zaufanie po serii słabych wyników w trakcie sezonu.');}
 function seasonEvaluation(){const s=S(),c=coach();if(!c||!s.final)return;const place=s.final.indexOf(SAVE.team)+1;const g=s.goal||goalFor(SAVE.team);const b=SAVE.board;
   const met=place<=g;const diff=g-place;
   b.conf=clamp(b.conf+(met?15+Math.min(15,diff*4):-10*Math.min(4,1-diff)),0,100);
@@ -1645,7 +1653,7 @@ function seasonEvaluation(){const s=S(),c=coach();if(!c||!s.final)return;const p
   if(s.jchamp===SAVE.team)c.trophies.push(`🏆 Mistrzostwo juniorów ${sLabel(s.n)} (${TEAMS[SAVE.team].name})`);
   s.eval={place,goal:g,met,dr:Math.round(dr)};
   news(met?`👔 Zarząd zadowolony: cel „${GOAL_TXT[g]}” wykonany (${place}. miejsce). Reputacja trenera: ${c.rep}.`:`👔 Zarząd rozczarowany: cel „${GOAL_TXT[g]}” niewykonany (${place}. miejsce). Zaufanie: ${Math.round(b.conf)}%.`);
-  if(b.conf<20)fireCoach('Zarząd nie przedłużył współpracy po nieudanym sezonie.');
+  if(b.conf<20&&!SAVE.ownClub)fireCoach('Zarząd nie przedłużył współpracy po nieudanym sezonie.');
   else if(met)SAVE.offers=makeOffers(false);}
 function makeOffers(fired){const c=coach();const cur=initRepStatic(myTeam());
   let pool=TEAMS.filter(t=>t.idx!==SAVE.team&&canTake(t.idx,c.rep));
@@ -1660,7 +1668,7 @@ function acceptJob(ti){const old=SAVE.team;const c=coach();
   SAVE.team=ti;SAVE.lineup=autoLineup(TEAMS[ti]);SAVE.tactics={serve:1,dist:0};
   const rep=SAVE.ai[ti].rep;SAVE.fin={bal:round5k(1000000+rep*15000),log:[],sea:{},prev:null};
   SAVE.staff=null;SAVE.staffPool=null;SAVE.inbox=[];initClub();
-  SAVE.board={conf:60};const s=S();s.goal=goalFor(ti);c.joined=today();
+  SAVE.board={conf:60};SAVE.ownClub=false;const s=S();s.goal=goalFor(ti);c.joined=today();
   news(`✍️ ${c.first} ${c.last} nowym trenerem ${TEAMS[ti].name}! Cel zarządu: ${GOAL_TXT[s.goal]}.`);
   SAVE.fired=null;SAVE.offers=null;ui.match=null;ui.tab='mecz';save();render();}
 function declineOffers(){SAVE.offers=null;save();render();}
@@ -1669,7 +1677,7 @@ function coachOffseason(){const c=coach();if(!c)return;if(coachAge(c)<60){for(le
 // ---- widoki ----
 function boardCard(){const s=S(),b=SAVE.board;if(!b||!coach())return '';const g=s.goal||goalFor(SAVE.team);const cf=Math.round(b.conf);
   return `<div class="card board"><div class="row wrap"><span class="mut small">Zarząd ${esc(myTeam().name)}</span><span class="sp"></span><span class="small">Cel sezonu: <b>${GOAL_TXT[g]}</b></span></div>
-  <div class="row"><span class="small">Zaufanie zarządu</span><div class="conf"><i style="width:${cf}%;background:${cf>=60?'var(--good)':cf>=30?'#eab308':'var(--bad)'}"></i></div><b>${cf}%</b></div></div>`;}
+  ${SAVE.ownClub?'<div class="small mut">Jesteś założycielem klubu: zarząd Cię nie zwolni, ale wyniki wpływają na Twoją reputację.</div>':''}<div class="row"><span class="small">Zaufanie zarządu</span><div class="conf"><i style="width:${cf}%;background:${cf>=60?'var(--good)':cf>=30?'#eab308':'var(--bad)'}"></i></div><b>${cf}%</b></div></div>`;}
 function firedView(){const f=SAVE.fired;return `<div class="card post lost"><h2>❌ Zostałeś zwolniony</h2><p>${esc(f.why)}</p><p class="mut small">Twoja reputacja: ${coach().rep}. Oto kluby, które chcą Cię zatrudnić:</p>${offersList(true)}</div>`;}
 function offersList(must){const o=SAVE.offers||[];if(!o.length)return '<p class="mut">Brak ofert.</p>';
   return o.map(x=>`<div class="row wrap offer">${tDot(x.tm)}<b>${tName(x.tm)}</b><small class="mut">siła ${teamStrength(TEAMS[x.tm])} · cel: ${GOAL_TXT[x.goal]}</small><span class="sp"></span><button class="btn" onclick="acceptJob(${x.tm})">Przyjmij</button></div>`).join('')+(must?'':`<button class="link" onclick="declineOffers()">Zostaję w obecnym klubie</button>`);}
@@ -1684,6 +1692,71 @@ function coachView(){const c=coach();if(!c)return '';const ev=S().eval;
 // ---- efekty w grze ----
 function coachMatchX(){if(!coach())return {};return {sb:(cA('tak')-10)*0.0012,momMul:0.7+cA('mot')/33,prB:(cA('opa')-10)*0.004,trB:(cA('det')-10)*0.004};}
 function negF(){return 1.1-cA('neg')/100;}
+// ================= WŁASNY KLUB =================
+const OWN_COLORS=['#0ea5e9','#2563eb','#7c3aed','#db2777','#dc2626','#ea580c','#ca8a04','#16a34a','#0d9488','#475569','#111827','#be123c'];
+function applyCustom(){const c=SAVE.custom;if(!c)return;const t=TEAMS[c.idx];t.name=c.name;t.short=c.short;t.color=c.color;t.city=c.city;}
+function crestSvg(name,short,color,size){size=size||64;
+  return `<svg viewBox="0 0 100 110" width="${size}" height="${size*1.1}" class="crest"><path d="M50 4 L92 16 L88 62 Q82 92 50 106 Q18 92 12 62 L8 16Z" fill="${color}" stroke="#fff" stroke-width="4"/><path d="M50 14 L82 23 L79 60 Q74 84 50 96 Q26 84 21 60 L18 23Z" fill="none" stroke="#ffffff66" stroke-width="2"/>
+  <circle cx="50" cy="42" r="14" fill="#fff"/><path d="M38 36 Q50 42 62 36 M37 47 Q50 41 63 47 M50 28 Q44 42 50 56" stroke="${color}" stroke-width="2.2" fill="none"/>
+  <text x="50" y="80" text-anchor="middle" font-size="19" font-weight="900" fill="#fff" font-family="Arial Black,Arial,sans-serif">${esc((short||'').slice(0,4))}</text></svg>`;}
+function ocDraft(){const weakest=TEAMS.slice().sort((a,b)=>teamStrength(a)-teamStrength(b))[0].idx;
+  if(!ui.oc)ui.oc={name:'',short:'',city:'',color:OWN_COLORS[0],star:'A',replace:weakest};return ui.oc;}
+function autoShort(n){const w=n.trim().split(/\s+/).filter(Boolean);if(!w.length)return '';if(w.length===1)return w[0].slice(0,3).toUpperCase();return w.map(x=>x[0]).join('').slice(0,4).toUpperCase();}
+function ownClubView(){const o=ocDraft();const c=ui.pendingCoach;
+  const avg=leagueAvg();
+  return `<div class="card"><div class="row wrap">${coachFace(c,56)}<div><h2 style="margin:0">Załóż nowy klub</h2><div class="mut small">Trener: ${esc(c.first)} ${esc(c.last)}</div></div><span class="sp"></span><button class="ghost" onclick="ui.cc.step=2;render()">← Wróć do listy klubów</button></div>
+  ${ui.ocErr?`<div class="tmsg no">${esc(ui.ocErr)}</div>`:''}
+  <div class="oc"><div class="ocprev">${crestSvg(o.name,o.short||autoShort(o.name)||'???',o.color,120)}<b>${esc(o.name||'Nazwa klubu')}</b><span class="mut small">${esc(o.city||'Miasto')}</span></div>
+  <div><div class="row wrap"><label class="lu"><span>Nazwa klubu</span><input id="ocn" value="${esc(o.name)}" maxlength="28" placeholder="np. Iskra Łódź" oninput="ui.oc.name=this.value;if(!ui.oc.shortTouched){ui.oc.short=autoShort(this.value);document.getElementById('ocs').value=ui.oc.short;}"></label>
+  <label class="lu"><span>Skrót (3–4 litery)</span><input id="ocs" value="${esc(o.short)}" maxlength="4" style="min-width:90px;width:90px;text-transform:uppercase" oninput="ui.oc.short=this.value.toUpperCase();ui.oc.shortTouched=true"></label>
+  <label class="lu"><span>Miasto</span><input id="occ" value="${esc(o.city)}" maxlength="24" oninput="ui.oc.city=this.value"></label></div>
+  <h3>Barwy klubu</h3><div class="swatches">${OWN_COLORS.map(col=>`<button class="sw ${o.color===col?'on':''}" style="background:${col}" onclick="ui.oc.color='${col}';render()" title="${col}"></button>`).join('')}</div>
+  <h3>Pozycja gwiazdy zespołu</h3><div class="opts">${['R','A','P','S','L'].map(p=>`<button class="opt ${o.star===p?'on':''}" onclick="ui.oc.star='${p}';render()"><b>${POS_NAMES[p]}</b></button>`).join('')}</div>
+  <h3>Który klub wycofa się z ligi?</h3><p class="small mut">Liga ma 12 miejsc, więc Twój klub zajmie miejsce jednego z obecnych.</p>
+  <select onchange="ui.oc.replace=+this.value">${TEAMS.slice().sort((a,b)=>teamStrength(a)-teamStrength(b)).map(t=>`<option value="${t.idx}" ${o.replace===t.idx?'selected':''}>${esc(t.name)} (siła ${teamStrength(t)})</option>`).join('')}</select></div></div>
+  <div class="card ocinfo"><b>Start od zera — co dostaniesz:</b><ul class="small">
+   <li>13 młodych zawodników (20–21 lat, świeżo po juniorach), ocena ok. ${avg-9} przy średniej ligowej ${avg}, ale z dużym potencjałem</li>
+   <li>⭐ 1 gwiazdę (${POS_NAMES[o.star]}), ocena ok. ${avg+7}</li>
+   <li>nową drużynę juniorów U20</li>
+   <li>wszystkie obiekty na poziomie 1, mały sztab (3 słabych specjalistów)</li>
+   <li>budżet od inwestora: 1,5 mln zł, renoma 20/100</li>
+   <li>jesteś założycielem, więc zarząd Cię nie zwolni</li></ul></div>
+  <div class="row"><span class="sp"></span><button class="btn" onclick="foundClub()">🏗️ Załóż klub i zacznij grę</button></div></div>`;}
+function leagueAvg(){const ps=TEAMS.flatMap(t=>t.players);return Math.round(ps.reduce((s,p)=>s+rating(p),0)/ps.length);}
+function genTarget(pos,target,age){let best=null;for(let i=0;i<10;i++){const p=genPlayer(pos,target/5-2.5,age);const d=Math.abs(rating(p)-target);if(!best||d<best.d)best={p,d};if(d<=1)break;}return best.p;}
+function foundClub(){const o=ocDraft();const c=ui.pendingCoach;
+  o.name=(($('#ocn')||{}).value||o.name).trim();o.city=(($('#occ')||{}).value||o.city).trim();o.short=((($('#ocs')||{}).value||o.short||autoShort(o.name)).trim()).toUpperCase();
+  if(o.name.length<3){ui.ocErr='Podaj nazwę klubu (min. 3 znaki).';render();return;}
+  if(o.short.length<2){ui.ocErr='Skrót klubu: 2–4 litery.';render();return;}
+  if(TEAMS.some(t=>t.idx!==o.replace&&t.name.toLowerCase()===o.name.toLowerCase())){ui.ocErr='Taki klub już jest w lidze.';render();return;}
+  ui.ocErr=null;const ti=o.replace;const oldName=TEAMS[ti].name;
+  SAVE={team:ti,tactics:{serve:1,dist:0},date:GAME_START};
+  initWorld();
+  const avg=leagueAvg();
+  // nowa kadra
+  W().players=W().players.filter(p=>p.tm!==ti);
+  SAVE.custom={idx:ti,name:o.name,short:o.short,color:o.color,city:o.city||'',replaced:oldName};applyCustom();
+  const plan=['R','R','A','A','P','P','P','P','S','S','S','S','L','L'];const si=plan.indexOf(o.star);plan.splice(si,1);
+  const squad=[];
+  const star=genTarget(o.star,avg+7,26+Math.floor(R()*4));squad.push(star);star.star=true;
+  for(const pos of plan){const p=genTarget(pos,avg-9+Math.round(nz()*3),20+(R()<0.35?1:0));squad.push(p);}
+  for(const p of squad){p.tm=ti;p.jr=false;p.inj=0;p.xp={};p.base=snap(p);p.wage=wageDemand(p);
+    if(p.star){p.pot=rating(p)+2;p.wage=round5k(p.wage*1.1);p.ce=2;}else{p.pot=Math.min(92,rating(p)+14+Math.round(R()*8));p.ce=3;}
+    assignNum(p,ti);W().players.push(p);}
+  SAVE.ai[ti].rep=20;SAVE.ai[ti].infra=Object.fromEntries(INFRA.map(f=>[f.k,1]));SAVE.ai[ti].bud=0;
+  for(let i=0;i<12;i++)W().players.push(genJunior(ti,16+(i%4),JR_PLAN[i]));
+  SAVE.staff={};for(const [r] of STAFF_ROLES)SAVE.staff[r]=null;
+  for(const r of ['asy','fiz','jr']){const s=genStaff(r,5+R()*3);s.wage=staffWage(s.skill);SAVE.staff[r]=s;}
+  refreshStaffPool();
+  SAVE.fin={bal:1500000,log:[],sea:{},prev:null};
+  SAVE.ownClub=true;syncTeams();
+  SAVE.lineup=autoLineup(TEAMS[ti]);SAVE.coach=c;c.joined=GAME_START;c.founder=ti;
+  newSeason(1);initBoard(true);
+  news(`🏗️ Powstaje nowy klub: ${o.name}${o.city?' ('+o.city+')':''}! Zajmuje w lidze miejsce ${oldName}. Pierwszym trenerem zostaje ${c.first} ${c.last}.`);
+  news(`⭐ Gwiazda zespołu: ${star.first} ${star.last} (${POS_NAMES[star.pos]}, ${star.age} l., ocena ${rating(star)}).`);
+  ui.cc=null;ui.pendingCoach=null;ui.oc=null;ui.tab='mecz';syncDate();save();render();}
+function foundCard(){return `<button class="teamcard foundcard" onclick="ui.cc.step=3;render()"><b>🏗️ Załóż nowy klub</b><small>Własna nazwa, barwy i herb. Start od zera: infrastruktura na poziomie 1, młodzi zawodnicy z dużym potencjałem i jedna gwiazda. Zawsze dostępny, bez wymagań co do reputacji.</small></button>`;}
+applyCustom();
 // ================= START =================
 if(SAVE.team!=null){if(!SAVE.date&&!SAVE.world)SAVE.date=GAME_START;if(!SAVE.world)initWorld();else syncTeams();if(!SAVE.season)newSeason(1);migrateDates();initClub();}
 if(SAVE.live){try{ui.match=deserMatch(SAVE.live);ui.match.log.push({t:'Wznowiono zapisany mecz — kliknij „Graj”, żeby kontynuować.',c:'sys'});}catch(e){SAVE.live=null;ui.match=null;}}

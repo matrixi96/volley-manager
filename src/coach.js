@@ -41,6 +41,7 @@ function coachAge(c){return ageAt(c.dob,SAVE.date||GAME_START);}
 function coachFace(c,size){return faceSvg(c.face,{size:size||48,age:coachAge(c),color:SAVE.team!=null?TEAMS[SAVE.team].color:'#ffb020',kind:'coach'});}
 function coachCreateView(){
   const d=ccDraft();const pool=ccPool();
+  if(d.step===3&&ui.pendingCoach)return ownClubView();
   if(d.step===2&&ui.pendingCoach)return clubPickView();
   const migr=SAVE.team!=null;
   return `<div class="card"><h2>${migr?'Stwórz swojego trenera':'Nowa gra: stwórz trenera'}</h2><p class="mut">${migr?'Twój zapis nie ma jeszcze trenera. Stwórz go, a gra potoczy się dalej od miejsca, w którym skończyłeś.':'To Ty prowadzisz drużynę. Od doświadczenia zależą punkty do rozdania i reputacja, a od reputacji to, które kluby będą chciały Cię zatrudnić.'}</p>
@@ -55,7 +56,7 @@ function coachCreateView(){
 function clubPickView(){const c=ui.pendingCoach;
   return `<div class="card"><div class="row wrap">${coachFace(c,64)}<div><h2 style="margin:0">${esc(c.first)} ${esc(c.last)}</h2><div class="mut small">${C_EXP.find(x=>x[0]===c.exp)[1]} · reputacja <b>${c.rep}</b></div></div><span class="sp"></span><button class="ghost" onclick="ui.cc.step=1;ui.pendingCoach=null;render()">← Wróć do trenera</button></div>
   <h2 style="margin-top:14px">Wybierz klub</h2><p class="mut">Fikcyjna polska liga, 12 drużyn. Kluby z kłódką nie zatrudnią trenera z tak niską reputacją: na lepszą pracę trzeba zasłużyć wynikami. Cel zarządu zależy od siły składu.</p>
-  <div class="grid">${TEAMS.map(t=>{const ok=canTake(t.idx,c.rep);const g=goalFor(t.idx);return `<button class="teamcard ${ok?'':'locked'}" style="--c:${t.color}" ${ok?`onclick="pickTeam(${t.idx})"`:'disabled'}><b>${ok?'':'🔒 '}${esc(t.name)}</b><span class="stars">${stars(teamStrength(t))}</span><small class="mut">Siła: ${teamStrength(t)} · cel: ${GOAL_TXT[g]}</small>${ok?'':`<small class="bad">Wymagana reputacja: ${clubReq(t)-25}</small>`}</button>`;}).join('')}</div></div>`;}
+  <div class="grid">${foundCard()}${TEAMS.map(t=>{const ok=canTake(t.idx,c.rep);const g=goalFor(t.idx);return `<button class="teamcard ${ok?'':'locked'}" style="--c:${t.color}" ${ok?`onclick="pickTeam(${t.idx})"`:'disabled'}><b>${ok?'':'🔒 '}${esc(t.name)}</b><span class="stars">${stars(teamStrength(t))}</span><small class="mut">Siła: ${teamStrength(t)} · cel: ${GOAL_TXT[g]}</small>${ok?'':`<small class="bad">Wymagana reputacja: ${clubReq(t)-25}</small>`}</button>`;}).join('')}</div></div>`;}
 // ---- zarząd ----
 const GOAL_TXT={2:'finał (top 2)',4:'półfinał (top 4)',8:'play-off (top 8)',10:'miejsce w pierwszej dziesiątce',12:'budowa zespołu (bez presji wyniku)'};
 function goalFor(ti){const rk=TEAMS.map(t=>({i:t.idx,s:teamStrength(t)})).sort((a,b)=>b.s-a.s).findIndex(x=>x.i===ti)+1;return rk<=2?2:rk<=4?4:rk<=8?8:rk<=10?10:12;}
@@ -66,7 +67,7 @@ function boardAfterMatch(res){const b=SAVE.board;if(!b||!coach())return;
   const won=my>op?1:0;let d=(won-p)*5;if(won&&op===0)d+=0.5;if(!won&&my===0)d-=0.5;
   if(d>0)d*=0.9+cA('aut')/100;else d*=1.1-cA('aut')/100;
   b.conf=clamp(b.conf+d,0,100);
-  const s=S();if(b.conf<8&&s.phase==='liga'&&s.round>=8&&!SAVE.fired)fireCoach('Zarząd stracił zaufanie po serii słabych wyników w trakcie sezonu.');}
+  const s=S();if(b.conf<8&&s.phase==='liga'&&s.round>=8&&!SAVE.fired&&!SAVE.ownClub)fireCoach('Zarząd stracił zaufanie po serii słabych wyników w trakcie sezonu.');}
 function seasonEvaluation(){const s=S(),c=coach();if(!c||!s.final)return;const place=s.final.indexOf(SAVE.team)+1;const g=s.goal||goalFor(SAVE.team);const b=SAVE.board;
   const met=place<=g;const diff=g-place;
   b.conf=clamp(b.conf+(met?15+Math.min(15,diff*4):-10*Math.min(4,1-diff)),0,100);
@@ -78,7 +79,7 @@ function seasonEvaluation(){const s=S(),c=coach();if(!c||!s.final)return;const p
   if(s.jchamp===SAVE.team)c.trophies.push(`🏆 Mistrzostwo juniorów ${sLabel(s.n)} (${TEAMS[SAVE.team].name})`);
   s.eval={place,goal:g,met,dr:Math.round(dr)};
   news(met?`👔 Zarząd zadowolony: cel „${GOAL_TXT[g]}” wykonany (${place}. miejsce). Reputacja trenera: ${c.rep}.`:`👔 Zarząd rozczarowany: cel „${GOAL_TXT[g]}” niewykonany (${place}. miejsce). Zaufanie: ${Math.round(b.conf)}%.`);
-  if(b.conf<20)fireCoach('Zarząd nie przedłużył współpracy po nieudanym sezonie.');
+  if(b.conf<20&&!SAVE.ownClub)fireCoach('Zarząd nie przedłużył współpracy po nieudanym sezonie.');
   else if(met)SAVE.offers=makeOffers(false);}
 function makeOffers(fired){const c=coach();const cur=initRepStatic(myTeam());
   let pool=TEAMS.filter(t=>t.idx!==SAVE.team&&canTake(t.idx,c.rep));
@@ -93,7 +94,7 @@ function acceptJob(ti){const old=SAVE.team;const c=coach();
   SAVE.team=ti;SAVE.lineup=autoLineup(TEAMS[ti]);SAVE.tactics={serve:1,dist:0};
   const rep=SAVE.ai[ti].rep;SAVE.fin={bal:round5k(1000000+rep*15000),log:[],sea:{},prev:null};
   SAVE.staff=null;SAVE.staffPool=null;SAVE.inbox=[];initClub();
-  SAVE.board={conf:60};const s=S();s.goal=goalFor(ti);c.joined=today();
+  SAVE.board={conf:60};SAVE.ownClub=false;const s=S();s.goal=goalFor(ti);c.joined=today();
   news(`✍️ ${c.first} ${c.last} nowym trenerem ${TEAMS[ti].name}! Cel zarządu: ${GOAL_TXT[s.goal]}.`);
   SAVE.fired=null;SAVE.offers=null;ui.match=null;ui.tab='mecz';save();render();}
 function declineOffers(){SAVE.offers=null;save();render();}
@@ -102,7 +103,7 @@ function coachOffseason(){const c=coach();if(!c)return;if(coachAge(c)<60){for(le
 // ---- widoki ----
 function boardCard(){const s=S(),b=SAVE.board;if(!b||!coach())return '';const g=s.goal||goalFor(SAVE.team);const cf=Math.round(b.conf);
   return `<div class="card board"><div class="row wrap"><span class="mut small">Zarząd ${esc(myTeam().name)}</span><span class="sp"></span><span class="small">Cel sezonu: <b>${GOAL_TXT[g]}</b></span></div>
-  <div class="row"><span class="small">Zaufanie zarządu</span><div class="conf"><i style="width:${cf}%;background:${cf>=60?'var(--good)':cf>=30?'#eab308':'var(--bad)'}"></i></div><b>${cf}%</b></div></div>`;}
+  ${SAVE.ownClub?'<div class="small mut">Jesteś założycielem klubu: zarząd Cię nie zwolni, ale wyniki wpływają na Twoją reputację.</div>':''}<div class="row"><span class="small">Zaufanie zarządu</span><div class="conf"><i style="width:${cf}%;background:${cf>=60?'var(--good)':cf>=30?'#eab308':'var(--bad)'}"></i></div><b>${cf}%</b></div></div>`;}
 function firedView(){const f=SAVE.fired;return `<div class="card post lost"><h2>❌ Zostałeś zwolniony</h2><p>${esc(f.why)}</p><p class="mut small">Twoja reputacja: ${coach().rep}. Oto kluby, które chcą Cię zatrudnić:</p>${offersList(true)}</div>`;}
 function offersList(must){const o=SAVE.offers||[];if(!o.length)return '<p class="mut">Brak ofert.</p>';
   return o.map(x=>`<div class="row wrap offer">${tDot(x.tm)}<b>${tName(x.tm)}</b><small class="mut">siła ${teamStrength(TEAMS[x.tm])} · cel: ${GOAL_TXT[x.goal]}</small><span class="sp"></span><button class="btn" onclick="acceptJob(${x.tm})">Przyjmij</button></div>`).join('')+(must?'':`<button class="link" onclick="declineOffers()">Zostaję w obecnym klubie</button>`);}
