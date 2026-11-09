@@ -67,6 +67,13 @@ jobs:
           cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
           cp app/build/outputs/apk/debug/app-debug.apk ../../VolleyManager.apk
 
+      - name: Podpisz stałym kluczem
+        run: |
+          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          $BT/apksigner sign --ks android/debug.keystore --ks-pass pass:android \
+            --key-pass pass:android --ks-key-alias androiddebugkey VolleyManager.apk
+          $BT/apksigner verify --print-certs VolleyManager.apk | grep -i "DN"
+
       - uses: actions/upload-artifact@v4
         with:
           name: VolleyManager-apk
