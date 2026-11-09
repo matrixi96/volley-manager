@@ -1,0 +1,8 @@
+{
+  "appId": "pl.matrixi96.volleymanager",
+  "appName": "Volley Manager",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#0b1220"
+  }
+}
