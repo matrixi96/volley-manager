@@ -35,7 +35,7 @@ function render(){
   else if(ui.tab==='finanse')body=financeView();
   else if(ui.tab==='zapis')body=saveView();
   app.innerHTML=hdr(true)+`<main>${body}</main>`+(ui.card?cardModal():'');
-  if(ui.tab==='mecz'&&ui.match){const lg=$('#log');if(lg)lg.scrollTop=0;}
+  if(ui.tab==='mecz'&&ui.match){const lg=$('#log');if(lg)lg.scrollTop=0;if(typeof drawHallStatic==='function'&&typeof document.getElementById==='function')drawHallStatic();}
 }
 function hdr(nav){
   const t=myTeam();
@@ -105,8 +105,9 @@ function matchView(){
 function schedule(ms){clearTimeout(timer);const m=ui.match;if(!m||m.over||m.paused)return;timer=setTimeout(tick,ms==null?ui.speed:ms);}
 function animOn(){return ui.anim!==false&&ui.speed>=800&&typeof requestAnimationFrame!=='undefined';}
 function tick(){const m=ui.match;if(!m||m.over||m.paused||m.animating)return;if(ui.tab!=='mecz'){m.paused=true;persistLive();return;}
+  const hall=ui.mview!=='klasyczny'&&document.getElementById('mcv');const pre=animOn()&&hall?formation(m):null;
   const ev=doRally(m);if(!m.over)persistLive();
-  if(animOn()){m.animating=true;animateRally(ev,()=>{m.animating=false;render();schedule(ui.speed>=1600?650:220);});}
+  if(animOn()){m.animating=true;const fin=()=>{m.animating=false;render();schedule(ui.speed>=1600?650:220);};if(hall)hallAnim(m,pre,ev,fin);else animateRally(ev,fin);}
   else{render();schedule();}}
 function animateRally(ev,done){
   const court=document.querySelector('.court'),ball=document.getElementById('vball');
@@ -193,13 +194,13 @@ function liveView(){
    <div class="pts"><b class="${m.serving===0?'srv':''}">${m.over?'–':m.score[0]}</b><span>${m.over?'KONIEC':'SET '+m.setNo}</span><b class="${m.serving===1?'srv':''}">${m.over?'–':m.score[1]}</b></div>
    <div class="tm r" style="--c:${b.team.color}"><b class="sw">${m.setsWon[1]}</b><span>${esc(b.team.name)}</span></div>
    <div class="sets">${setsTxt||'&nbsp;'}</div></div>
-  ${courtHtml(m)}
+  ${ui.mview==='klasyczny'?courtHtml(m):`<div class="hallbar small mut">🏟️ ${tName(m.homeIdx!=null?m.homeIdx:m.sides[0].team.idx)} · <b style="color:var(--txt)">${(m.att||0).toLocaleString('pl-PL')}</b> / ${(m.cap||0).toLocaleString('pl-PL')} widzów · <span id="mph" class="mph">${m.over?'Koniec meczu':'Przed zagrywką'}</span></div><canvas id="mcv" class="mcv"></canvas>`}
   <div class="row small mut libl">Libero: <b style="color:var(--txt);margin:0 4px">${esc(a.libero.last)}</b> <button class="link" onclick="selSub('L')">zmień</button><span class="sp"></span>Kliknij swojego zawodnika na boisku, żeby go zmienić.</div>
   ${m.over?`<div class="card row"><b>Mecz zakończony: ${esc(m.sides[m.winner].team.name)} wygrywa ${Math.max(...m.setsWon)}:${Math.min(...m.setsWon)}</b><span class="sp"></span><button class="btn" onclick="ui.view='post';render()">Podsumowanie</button><button class="ghost" onclick="ui.match=null;render()">Dalej</button></div>`:
   `<div class="card ctrl"><div class="row wrap">
     <button class="btn" onclick="togglePause()">${m.paused?'▶ Graj':'⏸ Pauza'}</button>
     ${sp.map(([ms,l])=>`<button class="ghost ${ui.speed===ms&&!m.paused?'on':''}" onclick="setSpeed(${ms})">${l}</button>`).join('')}
-    <button class="ghost" onclick="simToSetEnd()">Do końca seta</button><button class="ghost" onclick="simToEnd()">Do końca meczu</button><button class="ghost ${ui.anim!==false?'on':''}" onclick="ui.anim=ui.anim===false;render()" title="Animacja piłki przy prędkości Wolno i Normalnie">🏐 Animacja: ${ui.anim!==false?'wł.':'wył.'}</button></div>
+    <button class="ghost" onclick="simToSetEnd()">Do końca seta</button><button class="ghost" onclick="simToEnd()">Do końca meczu</button><button class="ghost" onclick="ui.mview=ui.mview==='klasyczny'?'hala':'klasyczny';render()">${ui.mview==='klasyczny'?'🏟️ Widok hali':'▦ Widok klasyczny'}</button><button class="ghost ${ui.anim!==false?'on':''}" onclick="ui.anim=ui.anim===false;render()" title="Animacja piłki przy prędkości Wolno i Normalnie">🏐 Animacja: ${ui.anim!==false?'wł.':'wył.'}</button></div>
    <div class="row wrap" style="margin-top:8px">
     <button class="ghost" ${a.to<=0?'disabled':''} onclick="myTimeout()">⏱ Czas (${a.to})</button>
     <span class="mut small">Zmiany: ${a.subs}/6</span><span class="sp"></span>

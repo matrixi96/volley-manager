@@ -71,7 +71,7 @@ function injuryCheck(m,mult){
       const P=PLAYERS[cp.id];if(!P)continue;const p=P.p;if(p.inj)continue;
       if(R()<0.012*im*(1.3-p.kon/20*0.6)*mult){const d=1+Math.floor(R()*R()*7);const days=Math.max(3,Math.round((d*7-3+R()*6)*md.injDur));p.inj=days;p.injUntil=addDays(today(),days);if(mine)news(`🚑 ${p.first} ${p.last} doznał kontuzji — przerwa ok. ${days} dni (powrót ok. ${fmtDMY(p.injUntil)}).`);}}}
 }
-function roundTick(kind,home){
+function roundTick(kind,home,att){
   const tr=SAVE.training;
   const MODS={};const mm=ti=>MODS[ti]||(MODS[ti]=clubMods(ti));
   for(const p of W().players){
@@ -79,9 +79,9 @@ function roundTick(kind,home){
   ROUND_PLAYED=new Set();
   const s=S();
   if(kind==='liga'){money(TV_ROUND,'Prawa TV');
-    let t=null;if(home){t=ticketIncome(1);money(t.inc,'Bilety');}
+    let t=null;if(home){t=att!=null?{att,inc:att*TICKET}:ticketIncome(1);money(t.inc,'Bilety');}
     finLog(`Kolejka ${s.round}: prawa TV${t?`, bilety (${t.att} widzów)`:''}`,TV_ROUND+(t?t.inc:0));}
-  if(kind==='po'&&home){const t=ticketIncome(1.5);money(t.inc,'Bilety');finLog(`Play-off: bilety (${t.att} widzów)`,t.inc);}
+  if(kind==='po'&&home){const t=att!=null?{att,inc:att*TICKET}:ticketIncome(1.5);money(t.inc,'Bilety');finLog(`Play-off: bilety (${t.att} widzów)`,t.inc);}
 }
 
 // ---- transfery ----
