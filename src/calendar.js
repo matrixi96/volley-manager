@@ -46,10 +46,11 @@ function updateInjuries(){if(!SAVE.world)return;const d=today();
   for(const p of W().players){if(!p.injUntil){if(p.inj>0){p.injUntil=addDays(d,p.inj*7);p.inj=daysBetween(d,p.injUntil);}continue;}
     const rem=daysBetween(d,p.injUntil);if(rem<=0){p.inj=0;delete p.injUntil;if(p.tm===SAVE.team)news(`✅ ${p.first} ${p.last} wrócił do zdrowia.`);}else p.inj=rem;}}
 function monthly(d){if(!SAVE.fin||SAVE.team==null)return;const m=+d.slice(5,7);const pay=payroll()/12,sp=sponsorAmt()/12;
-  money(-pay,'Pensje');money(sp,'Sponsor');const f=SAVE.fin;f.log.unshift({d,t:`${MON_NOM[m-1]}: pensje (−${fmt(pay)}) i sponsor (+${fmt(sp)})`,a:sp-pay});f.log=f.log.slice(0,80);}
+  const stp=staffPay()/12,mnt=maintenance(),shp=shopIncome(myInfra().sklep);
+  money(-pay,'Pensje');money(sp,'Sponsor');money(-stp,'Sztab');money(-mnt,'Utrzymanie');money(shp,'Sklep');const f=SAVE.fin;f.log.unshift({d,t:`${MON_NOM[m-1]}: pensje zawodników (−${fmt(pay)}) i sztabu (−${fmt(stp)}), utrzymanie (−${fmt(mnt)}), sponsor (+${fmt(sp)}), sklep (+${fmt(shp)})`,a:sp+shp-pay-stp-mnt});f.log=f.log.slice(0,80);}
 function advanceTo(t){
   let d=today();const born=[];const mine=SAVE.team!=null&&SAVE.world?myTeam().players:[];
-  while(d<t){d=addDays(d,1);if(d.endsWith('-01'))monthly(d);const md=d.slice(5);for(const p of mine)if(p.dob&&p.dob.slice(5)===md)born.push(p);}
+  while(d<t){d=addDays(d,1);if(d.endsWith('-01'))monthly(d);if(SAVE.build)checkBuild(d);const md=d.slice(5);for(const p of mine)if(p.dob&&p.dob.slice(5)===md)born.push(p);}
   SAVE.date=d;updateAges();updateInjuries();
   for(const p of born)if(p.tm===SAVE.team)news(`🎂 ${p.first} ${p.last} kończy ${p.age} lat.`);
 }
@@ -81,7 +82,7 @@ function calView(){
     cells+=`<div class="cd ${d===td?'today':''} ${d<td?'past':''} ${winOpen(d)?'win':''} ${brk(d)?'brk':''}"><div class="dn">${dd}${d.endsWith('-01')?' <span title="Wypłata pensji i rata sponsora">💰</span>':''}</div>
     ${es.map(e=>{let res='';if(e.r){const my=e.r.h===SAVE.team?e.r.sw[0]:e.r.sw[1],op=e.r.h===SAVE.team?e.r.sw[1]:e.r.sw[0];res=`<b class="${my>op?'good':'bad'}">${my}:${op}</b>`;}
       return `<div class="ce ${e.kind}" style="--c:${TEAMS[e.op].color}"><span>${e.home?'🏠':'✈️'} ${esc(TEAMS[e.op].short)}</span>${res||`<small>${e.t||''}</small>`}<div class="ck">${e.kind==='spar'?'sparing':e.kind==='po'?STAGE[e.st]:'liga · K'+e.k}</div></div>`;}).join('')}
-    ${b.map(p=>`<div class="cb" title="Urodziny">🎂 ${esc(p.last)}</div>`).join('')}</div>`;}
+    ${b.map(p=>`<div class="cb" title="Urodziny">🎂 ${esc(p.last)}</div>`).join('')}${SAVE.build&&SAVE.build.until===d?`<div class="cb" style="color:#facc15">🏗️ koniec budowy</div>`:''}</div>`;}
   return `<div class="card"><div class="row wrap"><button class="ghost" onclick="ui.calM='${shift(-1)}';render()">◀</button><h2 style="margin:0;min-width:200px;text-align:center">${MON_NOM[M-1]} ${Y}</h2><button class="ghost" onclick="ui.calM='${shift(1)}';render()">▶</button><span class="sp"></span><button class="ghost" onclick="ui.calM=null;render()">Dziś</button></div>
   <p class="small mut">Dziś: <b style="color:var(--txt)">${fmtLong(td)}</b> · Sezon ${sLabel(s.n)}</p>
   <div class="cal"><div class="ch">pn.</div><div class="ch">wt.</div><div class="ch">śr.</div><div class="ch">czw.</div><div class="ch">pt.</div><div class="ch">sob.</div><div class="ch">nd.</div>${cells}</div>

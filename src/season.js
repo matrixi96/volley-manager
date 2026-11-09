@@ -1,6 +1,6 @@
 // ================= SEZON =================
 let PLAYERS={};
-function rebuildIndex(){PLAYERS={};for(const t of TEAMS)for(const p of t.players)PLAYERS[p.id]={p,t};if(SAVE.world)for(const p of SAVE.world.players)if(p.tm<0)PLAYERS[p.id]={p,t:null};}
+function rebuildIndex(){PLAYERS={};if(SAVE.world){for(const p of SAVE.world.players)PLAYERS[p.id]={p,t:p.tm>=0&&!p.jr?TEAMS[p.tm]:null};}else for(const t of TEAMS)for(const p of t.players)PLAYERS[p.id]={p,t};}
 rebuildIndex();
 const N_SPAR=7;
 function S(){return SAVE.season;}
@@ -18,8 +18,9 @@ function tName(i){return esc(TEAMS[i].name);}
 function tDot(i){return `<span class="dot" style="background:${TEAMS[i].color}"></span>`;}
 
 // ---- tabela ----
-function leagueTable(){const T=TEAMS.map(t=>({i:t.idx,m:0,w:0,l:0,pts:0,sw:0,sl:0,pw:0,pl:0}));
-  for(const rd of S().results)for(const g of rd){const h=T[g.h],a=T[g.a];h.m++;a.m++;h.sw+=g.sw[0];h.sl+=g.sw[1];a.sw+=g.sw[1];a.sl+=g.sw[0];
+function leagueTable(){return tableFrom(S().results);}
+function tableFrom(results){const T=TEAMS.map(t=>({i:t.idx,m:0,w:0,l:0,pts:0,sw:0,sl:0,pw:0,pl:0}));
+  for(const rd of results)for(const g of rd){const h=T[g.h],a=T[g.a];h.m++;a.m++;h.sw+=g.sw[0];h.sl+=g.sw[1];a.sw+=g.sw[1];a.sl+=g.sw[0];
     for(const st of g.sets){h.pw+=st[0];h.pl+=st[1];a.pw+=st[1];a.pl+=st[0];}
     const hw=g.sw[0]===3,W=hw?h:a,Lo=hw?a:h,ls=Math.min(...g.sw);W.w++;Lo.l++;W.pts+=ls<=1?3:2;Lo.pts+=ls===2?1:0;}
   const ratio=(x,y)=>y?x/y:x?99:0;
@@ -27,7 +28,7 @@ function leagueTable(){const T=TEAMS.map(t=>({i:t.idx,m:0,w:0,l:0,pts:0,sw:0,sl:
 function rankOf(i){return leagueTable().findIndex(x=>x.i===i)+1;}
 
 // ---- uczestnicy / symulacja ----
-function participant(i,home){const t=TEAMS[i];const mine=i===SAVE.team;return {team:t,lineup:mine?healthyLineup(t,myLineup()).lu:autoLineup(t),tactics:mine?Object.assign({},myTac()):{serve:1,dist:0},home};}
+function participant(i,home){const t=TEAMS[i];const mine=i===SAVE.team;return {team:t,lineup:mine?healthyLineup(t,myLineup()).lu:autoLineup(t),tactics:mine?Object.assign({},myTac()):{serve:1,dist:0},home,x:(()=>{const md=clubMods(i);return {hb:md.hb,fat:md.fat,sb:md.sb};})()};}
 function resultOf(m,h,a){const flip=m.sides[0].team.idx!==h;return {h,a,sets:m.sets.map(x=>flip?[x[1],x[0]]:x.slice()),sw:flip?[m.setsWon[1],m.setsWon[0]]:m.setsWon.slice()};}
 function recordStats(m){const s=S();const ps=s.ps;const ts=s.ts||(s.ts={});
   m.sides.forEach((sd,i)=>{const r=ts[sd.team.idx]||(ts[sd.team.idx]={m:0,sets:0,kill:0,att:0,attErr:0,blk:0,ace:0,srvErr:0,srv:0,rec:0,recPos:0,dig:0,pw:0,pl:0});
@@ -62,7 +63,7 @@ function finishMatch(m){
   const res=resultOf(m,c.h,c.a);res.me=true;res.d=today();
   if(c.kind==='spar'){s.spar.res.push(res);injuryCheck(m,0.5);roundTick('spar',false);}
   else if(c.kind==='liga'){recordStats(m);const rd=[];for(const f of s.rounds[s.round]){if(f[0]===c.h&&f[1]===c.a)rd.push(res);else rd.push(simFixture(f[0],f[1],true));}
-    s.results.push(rd);s.round++;roundTick('liga',c.h===SAVE.team);if(s.round>=s.rounds.length)startPlayoff();}
+    s.results.push(rd);simJrRound(s.round);s.round++;roundTick('liga',c.h===SAVE.team);if(s.round>=s.rounds.length)startPlayoff();}
   else if(c.kind==='po'){recordStats(m);playPoDay(c.sid,res);roundTick('po',c.h===SAVE.team);}
   syncDate();SAVE.live=null;save();
 }
@@ -188,12 +189,12 @@ function statsView(){
 }
 
 // ---- zapis gry ----
-function serMatch(m){return {sides:m.sides.map(s=>({ti:s.team.idx,pl:s.pl.map(p=>({id:p.id,en:p.en,st:p.st})),slots:s.slots.map(x=>({role:x.role,id:x.p.id})),lib:s.libero.id,rot:s.rot,tactics:s.tactics,mom:s.mom,home:s.home,form:s.form,to:s.to,subs:s.subs})),
+function serMatch(m){return {sides:m.sides.map(s=>({ti:s.team.idx,pl:s.pl.map(p=>({id:p.id,en:p.en,st:p.st})),slots:s.slots.map(x=>({role:x.role,id:x.p.id})),lib:s.libero.id,rot:s.rot,tactics:s.tactics,mom:s.mom,home:s.home,fatMul:s.fatMul,form:s.form,to:s.to,subs:s.subs})),
   setNo:m.setNo,score:m.score,setsWon:m.setsWon,sets:m.sets,firstServe:m.firstServe,serving:m.serving,run:m.run,rallies:m.rallies,sideout:m.sideout,log:m.log.slice(-150),ctx:m.ctx,hist:m.hist||[]};}
 function deserMatch(o){const m=Object.assign({},o,{over:false,paused:true,hl:[]});
   m.sides=o.sides.map(x=>{const t=TEAMS[x.ti];const pl=t.players.map(cloneP);const g=id=>pl.find(p=>p.id===id);
     for(const q of x.pl){const p=g(q.id);p.en=q.en;p.st=q.st;}
-    return {team:t,pl,slots:x.slots.map(s=>({role:s.role,p:g(s.id)})),libero:g(x.lib),rot:x.rot,tactics:x.tactics,mom:x.mom,home:x.home,form:x.form,to:x.to,subs:x.subs};});
+    return {team:t,pl,slots:x.slots.map(s=>({role:s.role,p:g(s.id)})),libero:g(x.lib),rot:x.rot,tactics:x.tactics,mom:x.mom,home:x.home,fatMul:x.fatMul||1,form:x.form,to:x.to,subs:x.subs};});
   return m;}
 function persistLive(){const m=ui.match;SAVE.live=m&&!m.over&&m.ctx?serMatch(m):null;save();}
 let storageOk=true;
@@ -202,7 +203,7 @@ function slotKey(i){return KEY+'_slot'+i;}
 function slotInfo(i){try{const o=JSON.parse(localStorage.getItem(slotKey(i)));return o;}catch(e){return null;}}
 function descSave(o){if(!o||o.team==null)return 'pusty';const s=o.season;return `${esc(TEAMS[o.team].name)} · sezon ${s?sLabel(s.n):''} · ${s?PHASE_NAMES[s.phase]:''}${s&&s.phase==='liga'?' (kolejka '+(s.round+1)+')':''}${o.savedAt?' · '+esc(o.savedAt):''}`;}
 function saveSlot(i){persistLive();const o=Object.assign({},SAVE,{savedAt:new Date().toLocaleString('pl-PL')});try{localStorage.setItem(slotKey(i),JSON.stringify(o));ui.msg=`Zapisano w slocie ${i}.`;}catch(e){ui.msg='Nie udało się zapisać — przeglądarka blokuje pamięć. Użyj kodu zapisu.';}render();}
-function loadObj(o){clearTimeout(timer);SAVE=o;delete SAVE.savedAt;if(!SAVE.world)initWorld();else syncTeams();migrateDates();ui.match=SAVE.live?deserMatch(SAVE.live):null;ui.confirm=null;ui.card=null;save();}
+function loadObj(o){clearTimeout(timer);SAVE=o;delete SAVE.savedAt;if(!SAVE.world)initWorld();else syncTeams();migrateDates();initClub();ui.match=SAVE.live?deserMatch(SAVE.live):null;ui.confirm=null;ui.card=null;save();}
 function loadSlot(i){const o=slotInfo(i);if(!o)return;loadObj(o);ui.msg=`Wczytano slot ${i}.`;ui.tab='mecz';render();}
 function delSlot(i){if(ui.confirm!=='del'+i){ui.confirm='del'+i;render();return;}try{localStorage.removeItem(slotKey(i));}catch(e){}ui.confirm=null;ui.msg=`Usunięto slot ${i}.`;render();}
 function exportCode(){persistLive();ui.code=btoa(unescape(encodeURIComponent(JSON.stringify(SAVE))));render();}

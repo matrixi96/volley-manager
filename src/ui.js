@@ -25,6 +25,9 @@ function render(){
   else if(ui.tab==='staty')body=statsView();
   else if(ui.tab==='trening')body=trainingView();
   else if(ui.tab==='kalendarz')body=calView();
+  else if(ui.tab==='sztab')body=staffView();
+  else if(ui.tab==='juniorzy')body=juniorsView();
+  else if(ui.tab==='klub')body=clubView();
   else if(ui.tab==='transfery')body=transferView();
   else if(ui.tab==='finanse')body=financeView();
   else if(ui.tab==='zapis')body=saveView();
@@ -33,7 +36,7 @@ function render(){
 }
 function hdr(nav){
   const t=myTeam();
-  const tabs=[['mecz','Sezon'],['kalendarz','Kalendarz'],['sklad','Skład'],['taktyka','Taktyka'],['trening','Trening'],['transfery','Transfery'],['finanse','Finanse'],['staty','Statystyki'],['zapis','Zapis'],['test','Test']];
+  const tabs=[['mecz','Sezon'],['kalendarz','Kalendarz'],['sklad','Skład'],['taktyka','Taktyka'],['trening','Trening'],['sztab','Sztab'],['juniorzy','Juniorzy'],['klub','Infrastruktura'],['transfery','Transfery'],['finanse','Finanse'],['staty','Statystyki'],['zapis','Zapis'],['test','Test']];
   return `<header><div class="logo">🏐 Volley<span>Manager</span> <small class="mut">prototyp</small></div>
   ${nav?`<nav>${tabs.map(([k,l])=>`<button class="${ui.tab===k?'on':''}" onclick="go('${k}')">${l}</button>`).join('')}</nav>
   <div class="club" style="--c:${t.color}"><span class="date" title="${fmtLong(today())}">📅 ${fmtShort(today())}.${today().slice(0,4)}</span><i></i>${esc(t.name)}${SAVE.fin?` <small class="${SAVE.fin.bal<0?'bad':'mut'}">${fmt(SAVE.fin.bal)}</small>`:''}</div>`:''}</header>`;
