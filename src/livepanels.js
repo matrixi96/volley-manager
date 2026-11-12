@@ -65,6 +65,7 @@ function rotBox(m,i){const sd=m.sides[i];const sv=m.serving===i;const oc=onCourt
    <div class="rtxt"><div class="rtitle">Ustawienie ${rz||'?'}</div><div class="small mut">${rz?`rozgrywający w strefie ${rz} · system 5-1`:'system 5-1'}</div>
    <div class="small">${ROT_TIP[rz]||''}</div>
    <div class="small mut" style="margin-top:4px">Atakujący z przodu: <b style="color:var(--txt)">${atk}</b>${lib?` · libero ${esc(lib.p.last)} za ${esc(libFor?libFor.p.last:'środkowego')}`:''}</div>
+   <div class="small mut">W obronie: ${[1,6,5].map(z=>{const e=back.find(x=>defZone(x)===z);return e?`<b style="color:var(--txt)">${z}</b> ${POS_SHORT[e.role]} ${esc(e.p.last)}`:''}).filter(Boolean).join(' · ')}</div>
    <div class="small mut">Zagrywka: <b style="color:var(--txt)">${SERVE_OPT[tac.serve][0]}</b> · rozegranie: <b style="color:var(--txt)">${DIST_OPT[tac.dist][0]}</b></div>
    ${sd.tmp&&sd.tmp.n>0?`<div class="small tmpb">📋 ${esc(TALK_TMP[sd.tmp.k]||'')} — ${sd.tmp.n} akcji</div>`:''}</div></div></div>`;}
 function rotCard(m){if(m.over)return '';return `<div class="card rotcard"><div class="row"><h3 style="margin:0">Grane ustawienie</h3><span class="sp"></span><span class="small mut">Set ${m.setNo} · ${m.score[0]}:${m.score[1]}</span></div><div class="rboxes">${rotBox(m,0)}${rotBox(m,1)}</div>

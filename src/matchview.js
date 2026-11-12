@@ -5,6 +5,11 @@ const ZXY=[[2.6,7.4],[7.6,7.4],[7.6,4.5],[7.6,1.6],[2.6,1.6],[2.6,4.5]];
 function mvP(x,y){return [MV.X0+x*MV.SC,MV.Y0+y*MV.SC];}
 function gl(i,x,y){return i===0?[x,y]:[18-x,9-y];}
 function isFrontZ(z){return z>=1&&z<=3;}
+// system 5-1 — stałe strefy w obronie (po zagrywce): druga linia: libero/środkowy → 5, rozgrywający/atakujący → 1, przyjmujący → 6;
+// pierwsza linia: rozgrywający/atakujący → 2 (prawa), przyjmujący → 4 (lewa), środkowy → 3
+function defZone(o){if(isFrontZ(o.zone))return (o.role==='R'||o.role==='A')?2:o.role==='P'?4:3;
+  return (o.role==='L'||o.role==='S')?5:(o.role==='R'||o.role==='A')?1:6;}
+function defY(o){return {1:7.4,2:7.4,3:4.5,4:1.6,5:1.6,6:4.5}[defZone(o)];}
 // ---- frekwencja meczu ----
 function matchCrowd(m){const c=m.ctx;if(!c)return;const home=c.h;const L=infraOf(home).hala;const rep=SAVE.ai[home].rep;
   const k=c.kind==='spar'?0.35:c.kind==='po'?1.5:1;
@@ -88,28 +93,32 @@ function hallAnim(m,pre,ev,done){
   const steps=[];let ball=staticBall(m,pre)||{x:9,y:4.5,h:2};
   const mvTo=(o,lx,ly,j)=>{const [X,Y]=gl(o.i,lx,ly);return {id:o.id,x:X,y:Y,j:j||0};};
   const loc=o=>o.i===0?[o.x,o.y]:[18-o.x,9-o.y];
-  const baseDef=(i,moves)=>{for(const o of side(i)){const [lx,ly]=loc(o);const fr=isFrontZ(o.zone);moves.push(mvTo(o,fr?8.2:2.9,ZXY[o.zone][1]));}};
+  const baseDef=(i,moves)=>{for(const o of side(i)){const [lx,ly]=loc(o);const fr=isFrontZ(o.zone);moves.push(mvTo(o,fr?8.2:2.9,defY(o)));}};
+  const cur={};for(const o of scene)cur[o.id]=[o.x,o.y];const cx=o=>cur[o.id][0],cy=o=>cur[o.id][1];
   const seq=ev.seq;let lastAtt=null,lastK='srv';
   for(let t=1;t<seq.length;t++){const s=seq[t];const o=s.id?P[s.id]:null;const moves=[];let to,peak=0,dur=700,ph='';
     if(s.k==='rec'||s.k==='ace'){const rs=s.s,ss=1-rs;baseDef(ss,moves);
       const st=side(rs).find(x=>x.role==='R');if(st&&s.k==='rec')moves.push(mvTo(st,8.2,5.8));
-      to={x:o.x+(s.k==='ace'?(rs===0?0.6:-0.6):0),y:o.y+(s.k==='ace'?0.6:0),h:s.k==='ace'?0:0.9};peak=4.3;dur=1050;ph='Zagrywka';}
-    else if(s.k==='set'){const i=s.s;const real=o.role==='R';let tx,ty;if(real){[tx,ty]=gl(i,8.2,5.8);moves.push({id:o.id,x:tx,y:ty});}else{tx=o.x;ty=o.y;}
-      for(const a of side(i)){if(a.id===o.id||a.role==='L'||a.role==='R')continue;const fr=isFrontZ(a.zone);if(!fr&&a.role!=='A'&&a.role!=='P')continue;moves.push(mvTo(a,fr?5.6:3.9,lane(a)));}
-      const d=side(1-i);for(const b of d){const fr=isFrontZ(b.zone);if(b.role==='L'||!fr)moves.push(mvTo(b,b.role==='L'?2.6:3.0,ZXY[b.zone][1]));else moves.push(mvTo(b,8.4,ZXY[b.zone][1]));}
+      to={x:cx(o)+(s.k==='ace'?(rs===0?0.6:-0.6):0),y:cy(o)+(s.k==='ace'?0.6:0),h:s.k==='ace'?0:0.9};peak=4.3;dur=1050;ph='Zagrywka';}
+    else if(s.k==='set'){const i=s.s;const real=o.role==='R';let tx,ty;if(real){[tx,ty]=gl(i,8.2,5.8);moves.push({id:o.id,x:tx,y:ty});}else{tx=cx(o);ty=cy(o);}
+      if(!real){const st=side(i).find(x=>x.role==='R');if(st)moves.push(mvTo(st,isFrontZ(st.zone)?7.6:2.6,isFrontZ(st.zone)?7.4:defY(st)));}
+      for(const a of side(i)){if(a.id===o.id||a.role==='R')continue;const fr=isFrontZ(a.zone);if(!fr&&a.role!=='A'&&a.role!=='P'){moves.push(mvTo(a,2.6,defY(a)));continue;}moves.push(mvTo(a,fr?5.6:3.9,lane(a)));}
+      const d=side(1-i);for(const b of d){const fr=isFrontZ(b.zone);if(b.role==='L'||!fr)moves.push(mvTo(b,defZone(b)===6?2.2:3.0,defY(b)));else moves.push(mvTo(b,8.4,defY(b)));}
       to={x:tx,y:ty,h:2.4};peak=lastK==='rec'||lastK==='dig'?3.0:1.2;dur=lastK==='dig'?850:900;ph=lastK==='rec'?'Przyjęcie':lastK==='dig'?'Obrona':'Piłka po bloku';}
     else if(s.k==='att'){const i=s.s;const fr=isFrontZ(o.zone);const ly=lane(o);const hit=mvTo(o,fr?8.3:6.0,ly,1);moves.push(hit);
       for(const a of side(i)){if(a.id===o.id||a.role==='L'||a.role==='R'||!isFrontZ(a.zone))continue;moves.push(mvTo(a,8.2,lane(a),0.5));}
-      const [hx,hy]=[hit.x,hit.y];const opp=side(1-i).filter(b=>isFrontZ(b.zone)&&b.role!=='L').sort((a,b)=>Math.abs(a.y-hy)-Math.abs(b.y-hy)).slice(0,o.role==='S'?1:2);
+      const [hx,hy]=[hit.x,hit.y];const opp=side(1-i).filter(b=>isFrontZ(b.zone)&&b.role!=='L').sort((a,b)=>Math.abs(cy(a)-hy)-Math.abs(cy(b)-hy)).slice(0,o.role==='S'?1:2);
       opp.forEach((b,k)=>{const [ly2]=[9-ly];moves.push(mvTo(b,8.5,ly2+(k?(ly2<4.5?0.8:-0.8):0),1));});
-      const dl=[1.7,4.5,7.3];side(1-i).filter(b=>!opp.includes(b)&&!isFrontZ(b.zone)).forEach((b,k)=>moves.push(mvTo(b,3.4,dl[k%3])));
+      side(1-i).filter(b=>!opp.includes(b)&&!isFrontZ(b.zone)).forEach(b=>moves.push(mvTo(b,defZone(b)===6?2.0:3.4,defY(b))));
+      side(1-i).filter(b=>!opp.includes(b)&&isFrontZ(b.zone)).forEach(b=>moves.push(mvTo(b,6.3,defY(b)<3?0.9:defY(b)>6?8.1:4.5)));
       to={x:hx,y:hy,h:3.4};peak=1.6;dur=780;ph=o.role==='R'?'Wystawa':'Rozegranie';lastAtt=o;}
-    else if(s.k==='blk'){to={x:o.x,y:o.y,h:3.0};dur=230;ph='Blok!';}
-    else if(s.k==='dig'){const dx=(R()-0.5)*1.4,dy=(R()-0.5)*1.4;moves.push({id:o.id,x:o.x+dx,y:o.y+dy});to={x:o.x+dx,y:o.y+dy,h:0.35};dur=430;ph='Atak — obrona';}
+    else if(s.k==='blk'){to={x:cx(o),y:cy(o),h:3.0};dur=230;ph='Blok!';}
+    else if(s.k==='dig'){const dx=(R()-0.5)*1.4,dy=(R()-0.5)*1.4;moves.push({id:o.id,x:cx(o)+dx,y:cy(o)+dy});to={x:cx(o)+dx,y:cy(o)+dy,h:0.35};dur=430;ph='Atak — obrona';}
     else if(s.k==='floor'){const i=s.s;let lx,ly;if(s.blk){lx=7.4+R()*0.8;ly=lastAtt?lane(lastAtt)+(R()-0.5):4.5;}else{lx=0.6+R()*7.2;ly=0.6+R()*7.8;}const [X,Y]=gl(i,lx,ly);to={x:X,y:Y,h:0};dur=s.blk?520:440;ph=s.blk?'Blok punktowy':'Atak — punkt';}
     else if(s.k==='out'){const i=s.s;const [X,Y]=gl(i,-1.6,0.5+R()*8);to={x:X,y:Y,h:0};dur=lastK==='srv'?1050:480;peak=lastK==='srv'?4.3:0;ph='Aut';}
     else if(s.k==='net'){to={x:9+(R()<0.5?-0.25:0.25),y:1+R()*7,h:1.6};dur=lastK==='srv'?900:420;peak=lastK==='srv'?3.2:0;ph='Siatka';}
     else continue;
+    for(const mv of moves)cur[mv.id]=[mv.x,mv.y];
     steps.push({to,peak,dur:dur*sf,moves,ph});lastK=s.k;
     if(s.k==='net')steps.push({to:{x:to.x+(to.x<9?-0.4:0.4),y:to.y,h:0},peak:0,dur:300*sf,moves:[],ph:'Siatka'});}
   const label={ace:'AS!',block:'BLOK!',kill:'PUNKT',serr:'BŁĄD ZAGRYWKI',attErr:'BŁĄD ATAKU',setErr:'BŁĄD'}[ev.type]||'PUNKT';
