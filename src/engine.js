@@ -118,7 +118,7 @@ function rally(m,ex){
   server.st.srv++;
   const aim=sS.tactics.tgt&&cD.some(x=>x.p.id===sS.tactics.tgt&&(x.role==='L'||x.role==='P'));
   const errP=[0.075,0.15,0.25][st]*(1.45-0.9*n)*kc(server,m)*(sS.tmp&&sS.tmp.n>0&&sS.tmp.k==='srv'?1.25:1)*(aim?1+Math.max(0,13-server.zag)*0.025:1);
-  if(R()<errP){server.st.srvErr++;const net=R()<0.5;seq.push({k:net?'net':'out',s:D});return {winner:D,type:'serr',act,seq,text:`${nm(server)} psuje zagrywkę (${net?'siatka':'aut'}).${nerves(server,m)}`};}
+  if(R()<errP){server.st.srvErr++;const r2=R();const how=r2<0.42?'net':r2<0.75?'long':'wide';seq.push({k:how==='net'?'net':'out',s:D,how,srv:1});return {winner:D,type:'serr',act,seq,text:`${nm(server)} psuje zagrywkę (${how==='net'?'siatka':how==='long'?'aut za linią końcową':'aut obok boiska'}).${nerves(server,m)}`};}
   const tS0=sS.tmp&&sS.tmp.n>0?sS.tmp.k:null,tD0=sD.tmp&&sD.tmp.n>0?sD.tmp.k:null;
   const pow=n+[-0.14,0,0.13][st]+(tS0==='srv'?0.05:0);
   let recs=cD.filter(x=>x.role==='L'||x.role==='P');if(!recs.length)recs=cD.filter(x=>x.role!=='R');
@@ -127,7 +127,7 @@ function rally(m,ex){
   const rn=(eff(rec,'prz')*0.7+eff(rec,'tod')*0.2+eff(rec,'zwi')*0.1)/20+bn(sD)+mb(rec,m,D)+(tD0==='rec'?0.05:0);
   const v=0.52+(rn-pow-0.18)*0.6+nz()*0.6;
   rec.st.rec++;
-  if(v<0.17){server.st.ace++;rec.st.recErr++;seq.push({k:'ace',id:rec.id,s:D});return {winner:S,type:'ace',act,seq,text:`${nm(server)} — AS SERWISOWY! ${nm(rec)} bez szans.`};}
+  if(v<0.17){server.st.ace++;rec.st.recErr++;const sh=v>=0.09;seq.push({k:'ace',id:rec.id,s:D,sh});return {winner:S,type:'ace',act,seq,text:sh?`${nm(server)} — AS SERWISOWY! ${nm(rec)} odbija piłkę poza boisko.`:`${nm(server)} — AS SERWISOWY! ${nm(rec)} nie zdążył do piłki.`};}
   const q=v<0.42?1:v<0.74?2:3;
   seq.push({k:'rec',id:rec.id,s:D});
   if(q>=2)rec.st.recPos++;if(q===3)rec.st.recPerf++;

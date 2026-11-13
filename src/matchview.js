@@ -113,7 +113,10 @@ function hallAnim(m,pre,ev,done){
   for(let t=1;t<seq.length;t++){const s=seq[t];const o=s.id?P[s.id]:null;const moves=[];let to,peak=0,dur=700,ph='';
     if(s.k==='rec'||s.k==='ace'){const rs=s.s,ss=1-rs;baseDef(ss,moves);
       const st=side(rs).find(x=>x.role==='R');if(st&&s.k==='rec')moves.push(mvTo(st,8.2,5.8));
-      to={x:cx(o)+(s.k==='ace'?(rs===0?0.6:-0.6):0),y:cy(o)+(s.k==='ace'?0.6:0),h:s.k==='ace'?0:0.9};peak=4.3;dur=1050;ph='Zagrywka';}
+      if(s.k==='ace'&&!s.sh){// piłka spada obok przyjmującego – nikt jej nie dotyka
+        const lx=(rs===0?cx(o)+0.9:cx(o)-0.9),ly=cy(o)+(cy(o)<4.5?1.0:-1.0);moves.push({id:o.id,x:(cx(o)+lx)/2,y:(cy(o)+ly)/2});to={x:lx,y:ly,h:0};ph='As — piłka nie do przyjęcia';}
+      else{to={x:cx(o),y:cy(o),h:0.9};ph=s.k==='ace'?'Zagrywka — przyjęcie nieudane':'Zagrywka';}
+      peak=4.3;dur=1050;}
     else if(s.k==='mix'){const i=s.s;const [X,Y]=gl(i,s.px??7,s.py??4.5);(s.ids||[]).forEach((id,k)=>{if(P[id])moves.push({id,x:X+(k?0.7:0),y:Y+(k?0.35:0)});});to={x:X,y:Y,h:0.9};peak=1.6;dur=900;ph='Nieporozumienie!';lastMix=[s.px??7,s.py??4.5];}
     else if(s.k==='set'){const i=s.s;const real=o.role==='R';let tx,ty;
       if(s.px!=null&&!s.mix){[tx,ty]=gl(i,s.px,s.py);moves.push({id:o.id,x:tx,y:ty});}else if(real){[tx,ty]=gl(i,8.2,5.8);moves.push({id:o.id,x:tx,y:ty});}else{tx=cx(o);ty=cy(o);}
@@ -149,14 +152,16 @@ function hallAnim(m,pre,ev,done){
     else if(s.k==='blk'){to={x:cx(o),y:cy(o),h:3.0};dur=230;ph='Blok!';}
     else if(s.k==='dig'){const dx=(R()-0.5)*1.4,dy=(R()-0.5)*1.4;moves.push({id:o.id,x:cx(o)+dx,y:cy(o)+dy});to={x:cx(o)+dx,y:cy(o)+dy,h:0.35};dur=s.free?900:s.tip?620:430;peak=s.free?2.6:s.tip?1.4:0;ph=s.free?'Przebicie':s.tip?'Kiwka — obrona':'Atak — obrona';}
     else if(s.k==='floor'){const i=s.s;let lx,ly;if(s.mix&&lastMix){lx=lastMix[0]+(R()-0.5)*0.6;ly=lastMix[1]+(R()-0.5)*0.6;}else if(s.blk){lx=7.4+R()*0.8;ly=lastAtt?lane(lastAtt)+(R()-0.5):4.5;}else if(s.tip){lx=6.4+R()*1.2;ly=9-lastLy+(R()-0.5)*1.6;}else if(s.d==='line'){lx=0.5+R()*2.6;ly=clamp(9-lastLy+(R()-0.5)*1.2,0.3,8.7);}else if(s.d==='cross'){lx=1+R()*3.2;ly=clamp(lastLy+(R()-0.5)*1.8,0.3,8.7);}else if(s.d==='midS'){lx=0.8+R()*3;ly=3.6+R()*1.8;}else if(s.d==='midL'){lx=1+R()*3;ly=0.6+R()*2;}else if(s.d==='midR'){lx=1+R()*3;ly=6.4+R()*2;}else{lx=0.6+R()*7.2;ly=0.6+R()*7.8;}const [X,Y]=gl(i,lx,ly);to={x:X,y:Y,h:0};dur=s.blk?520:s.tip?620:440;peak=s.tip?1.2:0;ph=s.mix?'Piłka spada między zawodnikami':s.blk?'Blok punktowy':s.tip?'Kiwka — punkt':s.d==='line'?'Po prostej — punkt':s.d==='cross'?'Po skosie — punkt':s.d==='midS'?'Prosto przez środek — punkt':s.d==='midL'||s.d==='midR'?'Ze środka po skosie — punkt':'Atak — punkt';}
-    else if(s.k==='out'){const i=s.s;const [X,Y]=gl(i,-1.6,0.5+R()*8);to={x:X,y:Y,h:0};dur=lastK==='srv'?1050:480;peak=lastK==='srv'?4.3:0;ph='Aut';}
-    else if(s.k==='net'){to={x:9+(R()<0.5?-0.25:0.25),y:1+R()*7,h:1.6};dur=lastK==='srv'?900:420;peak=lastK==='srv'?3.2:0;ph='Siatka';}
+    else if(s.k==='out'){const i=s.s;const how=s.how||(R()<0.6?'long':'wide');const lx=how==='long'?-1.3:1+R()*6,ly=how==='long'?1+R()*7:(R()<0.5?-0.8:9.8);const [X,Y]=gl(i,lx,ly);to={x:X,y:Y,h:0};
+      const srv=lastK==='srv';dur=srv?1100:480;peak=srv?4.3:0.4;ph=(srv?'Zagrywka w aut':'Atak w aut')+(how==='long'?' (za linią końcową)':' (obok boiska)');}
+    else if(s.k==='net'){const srv=lastK==='srv';const fromLeft=srv?(1-s.s)===0:(1-s.s)===0;to={x:9+(fromLeft?-0.25:0.25),y:1+R()*7,h:1.7};dur=srv?950:420;peak=srv?3.0:0;ph=srv?'Zagrywka w siatkę — piłka nie przeszła na drugą stronę':'Atak w siatkę';}
     else continue;
     for(const mv of moves)cur[mv.id]=[mv.x,mv.y];
-    let touch=null;if(['rec','dig','set','att','free'].includes(s.k)&&s.id){if(s.s!==tSide){tSide=s.s;tCnt=0;}tCnt++;touch={id:s.id,n:tCnt};}else if(s.k==='blk'&&s.id){touch={id:s.id,n:'B'};tSide=s.s;tCnt=0;}
+    let touch=null;if((['rec','dig','set','att','free'].includes(s.k)||(s.k==='ace'&&s.sh))&&s.id){if(s.s!==tSide){tSide=s.s;tCnt=0;}tCnt++;touch={id:s.id,n:tCnt};}else if(s.k==='blk'&&s.id){touch={id:s.id,n:'B'};tSide=s.s;tCnt=0;}
     steps.push({to,peak,dur:dur*sf,moves,ph,touch});lastK=s.k;
-    if(s.k==='net')steps.push({to:{x:to.x+(to.x<9?-0.4:0.4),y:to.y,h:0},peak:0,dur:300*sf,moves:[],ph:'Siatka'});}
-  const label={ace:'AS!',block:'BLOK!',kill:'PUNKT',serr:'BŁĄD ZAGRYWKI',attErr:'BŁĄD ATAKU',setErr:'BŁĄD',mix:'NIEPOROZUMIENIE'}[ev.type]||'PUNKT';
+    if(s.k==='net')steps.push({to:{x:to.x+(to.x<9?-0.5:0.5),y:to.y,h:0},peak:0,dur:320*sf,moves:[],ph});
+    if(s.k==='ace'&&s.sh){const rs=s.s;const lx=R()<0.5?-1.2:2+R()*5,ly=lx<0?2+R()*5:(cy(o)<4.5?-1:10);const [X,Y]=gl(rs,lx,ly);steps.push({to:{x:X,y:Y,h:0},peak:2.2,dur:700*sf,moves:[],ph:'Przyjęcie poza boisko — as!'});}}
+  const sErr=(ev.seq||[]).find(x=>x.srv);const label={ace:'AS!',block:'BLOK!',kill:'PUNKT',serr:sErr?(sErr.how==='net'?'ZAGRYWKA W SIATKĘ':'ZAGRYWKA W AUT'):'BŁĄD ZAGRYWKI',attErr:'BŁĄD ATAKU',setErr:'BŁĄD',mix:'NIEPOROZUMIENIE'}[ev.type]||'PUNKT';
   let k=0;const phEl=()=>document.getElementById('mph');
   const run=()=>{if(!document.getElementById('mcv')){done();return;}
     if(k>=steps.length){drawHall(m,scene,ball,{t:label,w:ev.winner});const wEnd=()=>m.paused?setTimeout(wEnd,100):done();setTimeout(wEnd,ui.speed>=1600?750:560);return;}

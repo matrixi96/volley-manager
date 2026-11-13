@@ -281,8 +281,8 @@ function rallyComment(m,ev,setEnded,pre){const seq=ev.seq||[];const N=id=>{const
   const w=ev.winner,T=i=>m.sides[i].team.short;const att=last('att'),blk=last('blk'),srv=seq[0],rec=seq.find(x=>x.k==='rec'),setI=att?seq.slice(0,seq.indexOf(att)).reverse().find(x=>x.k==='set'):last('set');
   const digs=seq.filter(x=>x.k==='dig'&&!x.free).length,atts=seq.filter(x=>x.k==='att').length;let t='';
   switch(ev.type){
-    case 'ace':t=pickT([`AS! ${N(srv.id)} — ${rec?N(rec.id):'przyjmujący'} bez szans!`,`Bomba z zagrywki: ${N(srv.id)}! As serwisowy.`,`${N(srv.id)} trafia w sam róg — as!`]);break;
-    case 'serr':t=pickT([`${N(srv.id)} psuje zagrywkę.`,`Zagrywka w ${seq.some(x=>x.k==='net')?'siatkę':'aut'} — ${N(srv.id)}.`,`Błąd w polu serwisowym: ${N(srv.id)}.`]);break;
+    case 'ace':{const ac=last('ace');t=ac&&ac.sh?pickT([`AS! ${N(ac.id)} odbija zagrywkę poza boisko.`,`Zagrywka ${N(srv.id)} nie do opanowania — ${N(ac.id)} wybija ją w aut. As!`]):pickT([`AS! ${ac?N(ac.id):'Przyjmujący'} nie zdążył do piłki — zagrywał ${N(srv.id)}.`,`Bomba z zagrywki: ${N(srv.id)}! Nikt nie zdążył.`,`${N(srv.id)} trafia w wolne miejsce — as!`]);break;}
+    case 'serr':{const e=seq.find(x=>x.srv)||{};t=e.how==='net'?`${N(srv.id)} w siatkę — zagrywka nie przeszła na drugą stronę.`:e.how==='wide'?`${N(srv.id)} zagrywa w aut obok boiska.`:`${N(srv.id)} za długo — aut za linią końcową.`;break;}
     case 'block':t=att&&att.tr?`Potrójny blok! ${N(att.id)} zatrzymany.`:pickT([`Monster blok: ${N(blk.id)}! Atakował ${N(att.id)}.`,`Ściana! ${N(blk.id)} zatrzymuje atak (${N(att.id)}).`,`${N(blk.id)} zamyka drogę — punkt blokiem!`]);break;
     case 'attErr':t=att?(att.d==='tip'?`${N(att.id)} kiwa prosto w siatkę.`:pickT([`${N(att.id)} psuje atak.`,`Za mocno! ${N(att.id)} w aut.`,`${N(att.id)} nie trafia w boisko.`])):'Błąd w ataku.';break;
     case 'setErr':t=`Błąd rozegrania${setI?': '+N(setI.id):''}.`;break;

@@ -435,7 +435,7 @@ function rally(m,ex){
   server.st.srv++;
   const aim=sS.tactics.tgt&&cD.some(x=>x.p.id===sS.tactics.tgt&&(x.role==='L'||x.role==='P'));
   const errP=[0.075,0.15,0.25][st]*(1.45-0.9*n)*kc(server,m)*(sS.tmp&&sS.tmp.n>0&&sS.tmp.k==='srv'?1.25:1)*(aim?1+Math.max(0,13-server.zag)*0.025:1);
-  if(R()<errP){server.st.srvErr++;const net=R()<0.5;seq.push({k:net?'net':'out',s:D});return {winner:D,type:'serr',act,seq,text:`${nm(server)} psuje zagrywkę (${net?'siatka':'aut'}).${nerves(server,m)}`};}
+  if(R()<errP){server.st.srvErr++;const r2=R();const how=r2<0.42?'net':r2<0.75?'long':'wide';seq.push({k:how==='net'?'net':'out',s:D,how,srv:1});return {winner:D,type:'serr',act,seq,text:`${nm(server)} psuje zagrywkę (${how==='net'?'siatka':how==='long'?'aut za linią końcową':'aut obok boiska'}).${nerves(server,m)}`};}
   const tS0=sS.tmp&&sS.tmp.n>0?sS.tmp.k:null,tD0=sD.tmp&&sD.tmp.n>0?sD.tmp.k:null;
   const pow=n+[-0.14,0,0.13][st]+(tS0==='srv'?0.05:0);
   let recs=cD.filter(x=>x.role==='L'||x.role==='P');if(!recs.length)recs=cD.filter(x=>x.role!=='R');
@@ -444,7 +444,7 @@ function rally(m,ex){
   const rn=(eff(rec,'prz')*0.7+eff(rec,'tod')*0.2+eff(rec,'zwi')*0.1)/20+bn(sD)+mb(rec,m,D)+(tD0==='rec'?0.05:0);
   const v=0.52+(rn-pow-0.18)*0.6+nz()*0.6;
   rec.st.rec++;
-  if(v<0.17){server.st.ace++;rec.st.recErr++;seq.push({k:'ace',id:rec.id,s:D});return {winner:S,type:'ace',act,seq,text:`${nm(server)} — AS SERWISOWY! ${nm(rec)} bez szans.`};}
+  if(v<0.17){server.st.ace++;rec.st.recErr++;const sh=v>=0.09;seq.push({k:'ace',id:rec.id,s:D,sh});return {winner:S,type:'ace',act,seq,text:sh?`${nm(server)} — AS SERWISOWY! ${nm(rec)} odbija piłkę poza boisko.`:`${nm(server)} — AS SERWISOWY! ${nm(rec)} nie zdążył do piłki.`};}
   const q=v<0.42?1:v<0.74?2:3;
   seq.push({k:'rec',id:rec.id,s:D});
   if(q>=2)rec.st.recPos++;if(q===3)rec.st.recPerf++;
@@ -2214,7 +2214,10 @@ function hallAnim(m,pre,ev,done){
   for(let t=1;t<seq.length;t++){const s=seq[t];const o=s.id?P[s.id]:null;const moves=[];let to,peak=0,dur=700,ph='';
     if(s.k==='rec'||s.k==='ace'){const rs=s.s,ss=1-rs;baseDef(ss,moves);
       const st=side(rs).find(x=>x.role==='R');if(st&&s.k==='rec')moves.push(mvTo(st,8.2,5.8));
-      to={x:cx(o)+(s.k==='ace'?(rs===0?0.6:-0.6):0),y:cy(o)+(s.k==='ace'?0.6:0),h:s.k==='ace'?0:0.9};peak=4.3;dur=1050;ph='Zagrywka';}
+      if(s.k==='ace'&&!s.sh){// piłka spada obok przyjmującego – nikt jej nie dotyka
+        const lx=(rs===0?cx(o)+0.9:cx(o)-0.9),ly=cy(o)+(cy(o)<4.5?1.0:-1.0);moves.push({id:o.id,x:(cx(o)+lx)/2,y:(cy(o)+ly)/2});to={x:lx,y:ly,h:0};ph='As — piłka nie do przyjęcia';}
+      else{to={x:cx(o),y:cy(o),h:0.9};ph=s.k==='ace'?'Zagrywka — przyjęcie nieudane':'Zagrywka';}
+      peak=4.3;dur=1050;}
     else if(s.k==='mix'){const i=s.s;const [X,Y]=gl(i,s.px??7,s.py??4.5);(s.ids||[]).forEach((id,k)=>{if(P[id])moves.push({id,x:X+(k?0.7:0),y:Y+(k?0.35:0)});});to={x:X,y:Y,h:0.9};peak=1.6;dur=900;ph='Nieporozumienie!';lastMix=[s.px??7,s.py??4.5];}
     else if(s.k==='set'){const i=s.s;const real=o.role==='R';let tx,ty;
       if(s.px!=null&&!s.mix){[tx,ty]=gl(i,s.px,s.py);moves.push({id:o.id,x:tx,y:ty});}else if(real){[tx,ty]=gl(i,8.2,5.8);moves.push({id:o.id,x:tx,y:ty});}else{tx=cx(o);ty=cy(o);}
@@ -2250,14 +2253,16 @@ function hallAnim(m,pre,ev,done){
     else if(s.k==='blk'){to={x:cx(o),y:cy(o),h:3.0};dur=230;ph='Blok!';}
     else if(s.k==='dig'){const dx=(R()-0.5)*1.4,dy=(R()-0.5)*1.4;moves.push({id:o.id,x:cx(o)+dx,y:cy(o)+dy});to={x:cx(o)+dx,y:cy(o)+dy,h:0.35};dur=s.free?900:s.tip?620:430;peak=s.free?2.6:s.tip?1.4:0;ph=s.free?'Przebicie':s.tip?'Kiwka — obrona':'Atak — obrona';}
     else if(s.k==='floor'){const i=s.s;let lx,ly;if(s.mix&&lastMix){lx=lastMix[0]+(R()-0.5)*0.6;ly=lastMix[1]+(R()-0.5)*0.6;}else if(s.blk){lx=7.4+R()*0.8;ly=lastAtt?lane(lastAtt)+(R()-0.5):4.5;}else if(s.tip){lx=6.4+R()*1.2;ly=9-lastLy+(R()-0.5)*1.6;}else if(s.d==='line'){lx=0.5+R()*2.6;ly=clamp(9-lastLy+(R()-0.5)*1.2,0.3,8.7);}else if(s.d==='cross'){lx=1+R()*3.2;ly=clamp(lastLy+(R()-0.5)*1.8,0.3,8.7);}else if(s.d==='midS'){lx=0.8+R()*3;ly=3.6+R()*1.8;}else if(s.d==='midL'){lx=1+R()*3;ly=0.6+R()*2;}else if(s.d==='midR'){lx=1+R()*3;ly=6.4+R()*2;}else{lx=0.6+R()*7.2;ly=0.6+R()*7.8;}const [X,Y]=gl(i,lx,ly);to={x:X,y:Y,h:0};dur=s.blk?520:s.tip?620:440;peak=s.tip?1.2:0;ph=s.mix?'Piłka spada między zawodnikami':s.blk?'Blok punktowy':s.tip?'Kiwka — punkt':s.d==='line'?'Po prostej — punkt':s.d==='cross'?'Po skosie — punkt':s.d==='midS'?'Prosto przez środek — punkt':s.d==='midL'||s.d==='midR'?'Ze środka po skosie — punkt':'Atak — punkt';}
-    else if(s.k==='out'){const i=s.s;const [X,Y]=gl(i,-1.6,0.5+R()*8);to={x:X,y:Y,h:0};dur=lastK==='srv'?1050:480;peak=lastK==='srv'?4.3:0;ph='Aut';}
-    else if(s.k==='net'){to={x:9+(R()<0.5?-0.25:0.25),y:1+R()*7,h:1.6};dur=lastK==='srv'?900:420;peak=lastK==='srv'?3.2:0;ph='Siatka';}
+    else if(s.k==='out'){const i=s.s;const how=s.how||(R()<0.6?'long':'wide');const lx=how==='long'?-1.3:1+R()*6,ly=how==='long'?1+R()*7:(R()<0.5?-0.8:9.8);const [X,Y]=gl(i,lx,ly);to={x:X,y:Y,h:0};
+      const srv=lastK==='srv';dur=srv?1100:480;peak=srv?4.3:0.4;ph=(srv?'Zagrywka w aut':'Atak w aut')+(how==='long'?' (za linią końcową)':' (obok boiska)');}
+    else if(s.k==='net'){const srv=lastK==='srv';const fromLeft=srv?(1-s.s)===0:(1-s.s)===0;to={x:9+(fromLeft?-0.25:0.25),y:1+R()*7,h:1.7};dur=srv?950:420;peak=srv?3.0:0;ph=srv?'Zagrywka w siatkę — piłka nie przeszła na drugą stronę':'Atak w siatkę';}
     else continue;
     for(const mv of moves)cur[mv.id]=[mv.x,mv.y];
-    let touch=null;if(['rec','dig','set','att','free'].includes(s.k)&&s.id){if(s.s!==tSide){tSide=s.s;tCnt=0;}tCnt++;touch={id:s.id,n:tCnt};}else if(s.k==='blk'&&s.id){touch={id:s.id,n:'B'};tSide=s.s;tCnt=0;}
+    let touch=null;if((['rec','dig','set','att','free'].includes(s.k)||(s.k==='ace'&&s.sh))&&s.id){if(s.s!==tSide){tSide=s.s;tCnt=0;}tCnt++;touch={id:s.id,n:tCnt};}else if(s.k==='blk'&&s.id){touch={id:s.id,n:'B'};tSide=s.s;tCnt=0;}
     steps.push({to,peak,dur:dur*sf,moves,ph,touch});lastK=s.k;
-    if(s.k==='net')steps.push({to:{x:to.x+(to.x<9?-0.4:0.4),y:to.y,h:0},peak:0,dur:300*sf,moves:[],ph:'Siatka'});}
-  const label={ace:'AS!',block:'BLOK!',kill:'PUNKT',serr:'BŁĄD ZAGRYWKI',attErr:'BŁĄD ATAKU',setErr:'BŁĄD',mix:'NIEPOROZUMIENIE'}[ev.type]||'PUNKT';
+    if(s.k==='net')steps.push({to:{x:to.x+(to.x<9?-0.5:0.5),y:to.y,h:0},peak:0,dur:320*sf,moves:[],ph});
+    if(s.k==='ace'&&s.sh){const rs=s.s;const lx=R()<0.5?-1.2:2+R()*5,ly=lx<0?2+R()*5:(cy(o)<4.5?-1:10);const [X,Y]=gl(rs,lx,ly);steps.push({to:{x:X,y:Y,h:0},peak:2.2,dur:700*sf,moves:[],ph:'Przyjęcie poza boisko — as!'});}}
+  const sErr=(ev.seq||[]).find(x=>x.srv);const label={ace:'AS!',block:'BLOK!',kill:'PUNKT',serr:sErr?(sErr.how==='net'?'ZAGRYWKA W SIATKĘ':'ZAGRYWKA W AUT'):'BŁĄD ZAGRYWKI',attErr:'BŁĄD ATAKU',setErr:'BŁĄD',mix:'NIEPOROZUMIENIE'}[ev.type]||'PUNKT';
   let k=0;const phEl=()=>document.getElementById('mph');
   const run=()=>{if(!document.getElementById('mcv')){done();return;}
     if(k>=steps.length){drawHall(m,scene,ball,{t:label,w:ev.winner});const wEnd=()=>m.paused?setTimeout(wEnd,100):done();setTimeout(wEnd,ui.speed>=1600?750:560);return;}
@@ -2627,8 +2632,8 @@ function rallyComment(m,ev,setEnded,pre){const seq=ev.seq||[];const N=id=>{const
   const w=ev.winner,T=i=>m.sides[i].team.short;const att=last('att'),blk=last('blk'),srv=seq[0],rec=seq.find(x=>x.k==='rec'),setI=att?seq.slice(0,seq.indexOf(att)).reverse().find(x=>x.k==='set'):last('set');
   const digs=seq.filter(x=>x.k==='dig'&&!x.free).length,atts=seq.filter(x=>x.k==='att').length;let t='';
   switch(ev.type){
-    case 'ace':t=pickT([`AS! ${N(srv.id)} — ${rec?N(rec.id):'przyjmujący'} bez szans!`,`Bomba z zagrywki: ${N(srv.id)}! As serwisowy.`,`${N(srv.id)} trafia w sam róg — as!`]);break;
-    case 'serr':t=pickT([`${N(srv.id)} psuje zagrywkę.`,`Zagrywka w ${seq.some(x=>x.k==='net')?'siatkę':'aut'} — ${N(srv.id)}.`,`Błąd w polu serwisowym: ${N(srv.id)}.`]);break;
+    case 'ace':{const ac=last('ace');t=ac&&ac.sh?pickT([`AS! ${N(ac.id)} odbija zagrywkę poza boisko.`,`Zagrywka ${N(srv.id)} nie do opanowania — ${N(ac.id)} wybija ją w aut. As!`]):pickT([`AS! ${ac?N(ac.id):'Przyjmujący'} nie zdążył do piłki — zagrywał ${N(srv.id)}.`,`Bomba z zagrywki: ${N(srv.id)}! Nikt nie zdążył.`,`${N(srv.id)} trafia w wolne miejsce — as!`]);break;}
+    case 'serr':{const e=seq.find(x=>x.srv)||{};t=e.how==='net'?`${N(srv.id)} w siatkę — zagrywka nie przeszła na drugą stronę.`:e.how==='wide'?`${N(srv.id)} zagrywa w aut obok boiska.`:`${N(srv.id)} za długo — aut za linią końcową.`;break;}
     case 'block':t=att&&att.tr?`Potrójny blok! ${N(att.id)} zatrzymany.`:pickT([`Monster blok: ${N(blk.id)}! Atakował ${N(att.id)}.`,`Ściana! ${N(blk.id)} zatrzymuje atak (${N(att.id)}).`,`${N(blk.id)} zamyka drogę — punkt blokiem!`]);break;
     case 'attErr':t=att?(att.d==='tip'?`${N(att.id)} kiwa prosto w siatkę.`:pickT([`${N(att.id)} psuje atak.`,`Za mocno! ${N(att.id)} w aut.`,`${N(att.id)} nie trafia w boisko.`])):'Błąd w ataku.';break;
     case 'setErr':t=`Błąd rozegrania${setI?': '+N(setI.id):''}.`;break;
