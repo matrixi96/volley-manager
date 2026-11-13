@@ -183,12 +183,14 @@ function attackPhase(m,A,q,by,log,act,pd){
     if(tac===2&&x.role==='S')w*=1.7;
     if(tac===3&&x.role==='A')w*=1.6;
     if(m._noQuick&&x.p.id===m._noQuick)w*=0.15;
+    if(opp.tactics.blk3===2&&x.role==='S'&&isFront(x.zone))w*=1+clamp((rz-0.45)*2,0,0.9);
     return w*(0.5+eff(x.p,'ata')/20);
   });
   const a=att.p,fr=isFront(att.zone),quick=att.role==='S'&&fr;m._noQuick=null;
   act.push(a.id);
   const wing=quick||(att.role==='P'&&!fr)||att.role==='S'?'M':att.role==='P'?'L4':'R2';
-  const bset=wing==='M'?1:(opp.tactics[wing==='L4'?'blkR':'blkL']??1);
+  const bset=wing==='M'?(opp.tactics.blkM??1):(opp.tactics[wing==='L4'?'blkR':'blkL']??1);
+  const triple=wing!=='M'&&!quick&&((opp.tactics.blk3===2)||(opp.tactics.blk3===1&&sq<0.55));
   const ds=m.dirStats||(m.dirStats=[]);const rec=(d,r)=>ds.push({i:A,id:a.id,w:wing,d,r,set:m.setNo});
   const setTxt=real?`${nm(setter)} → atak ${nm(a)}`:`podbija ${nm(setter)} → atak ${nm(a)}`;
   // piłka sytuacyjna: przebicie zamiast ataku
@@ -196,43 +198,51 @@ function attackPhase(m,A,q,by,log,act,pd){
   const kiwN=eff(a,'kiw')/20,czA=eff(a,'czy')/20;
   const tipP=quick?0.02:sq<0.42?0.1+kiwN*0.3:0.025+kiwN*0.05;
   let dir;
-  if(R()<tipP)dir='tip';else if(wing==='M')dir='mid';
+  if(R()<tipP)dir='tip';else if(wing==='M'){const t=midTend(a);let pS=t[0],pL=t[1];const sh=clamp((eff(a,'czy')-8)/12,0,1)*0.1;
+    if(bset===0){pS-=sh;pL+=sh/2;}else if(bset===2){pL-=sh;pS+=sh/2;}else if(bset===3){pS+=sh/2;}
+    const r=R();dir=r<pS?'midS':r<pS+pL?'midL':'midR';}
   else{let c=dirTend(a);const sh=clamp((eff(a,'czy')-8)/12,0,1)*0.12;if(bset===0)c-=sh;if(bset===2)c+=sh;dir=R()<c?'cross':'line';}
-  seq.push({k:'att',id:a.id,s:A,q:quick,d:dir,w:wing});
+  seq.push({k:'att',id:a.id,s:A,q:quick,d:dir,w:wing,tr:triple?1:0});
   a.st.att++;
   const blockers=cO.filter(x=>isFront(x.zone)&&x.role!=='L');const backO=cO.filter(x=>!isFront(x.zone));
   const lineZ=wing==='L4'?1:5,crossZ=wing==='L4'?5:1;
   // zawodnik pierwszej linii poza blokiem schodzi do asekuracji za blok / środek boiska (blok na prawej → strefa 4, na lewej → strefa 2)
-  const offB=wing==='M'?null:cO.find(x=>isFront(x.zone)&&x.role!=='L'&&dZone(x)===(wing==='L4'?4:2));
+  const offB=wing==='M'||triple?null:cO.find(x=>isFront(x.zone)&&x.role!=='L'&&dZone(x)===(wing==='L4'?4:2));
   const covO=offB?backO.concat([offB]):backO;
   if(dir==='tip'){
     const cover=bset===2;const tz=wing==='M'?6:lineZ;
     if(R()<0.03*kc(a,m)){a.st.attErr++;seq.push({k:'net',s:1-A});log.push(setTxt,`kiwka w siatkę${nerves(a,m)}`);rec('tip','err');return {done:true,winner:1-A,type:'attErr'};}
     const d=pickW(covO,x=>(x===offB?2.6:dZone(x)===tz?(cover?4:2):dZone(x)===6?1.3:1)*(0.5+eff(x.p,'czy')/20)).p;
     const dc=(eff(d,'czy')*0.5+eff(d,'szy')*0.25+eff(d,'obr')*0.25)/20;
-    const killT=clamp(0.34+(kiwN-0.5)*0.42+(czA-0.5)*0.12+bn(side)-(cover?0.15:0)-(dc-0.5)*0.3+mb(a,m,A),0.06,0.62);
+    const killT=clamp(0.34+(triple?0.1:0)+(kiwN-0.5)*0.42+(czA-0.5)*0.12+bn(side)-(cover?0.15:0)-(dc-0.5)*0.3+mb(a,m,A),0.06,0.62);
     if(R()<killT){a.st.kill++;seq.push({k:'floor',s:1-A,tip:1});log.push(setTxt,`KIWKA — PUNKT!`);rec('tip','kill');return {done:true,winner:A,type:'kill'};}
     d.st.dig++;act.push(d.id);seq.push({k:'dig',id:d.id,s:1-A,tip:1});log.push(setTxt,`kiwka, podbija ${nm(d)}${cover?' (asekuracja za blokiem)':''}`);rec('tip','dig');
     return {done:false,next:1-A,q:R()<0.45+dc*0.35?2:1,by:d};
   }
   const an=0.1+eff(a,'ata')/20*0.4+eff(a,'sil')/20*0.08+eff(a,'sko')/20*0.22+(a.h-197)/100+sq*0.42+bn(side)-(fr?0:0.06)+(quick&&sq>0.7?(0.05+(a.szy-12)/20*0.08)*(0.4+ch):0)+mb(a,m,A);
-  const nb=quick?1.4:sq<0.4?2.8:2.2;
+  const nb=quick?1.4:triple?3.0:sq<0.4?2.8:2.2;
   const bs=blockers.reduce((s,x)=>s+(eff(x.p,'blo')*0.55+eff(x.p,'czy')*0.2+eff(x.p,'sko')*0.15+eff(x.p,'szy')*0.1)/20+(x.p.h-197)/120,0)/blockers.length*(0.75+nb*0.12)+bn(opp);
   const errP=(0.075+(1-sq)*0.08+(0.75-eff(a,'ata')/20)*0.08)*kc(a,m);
   if(R()<errP){a.st.attErr++;const net=R()<0.5;seq.push({k:net?'net':'out',s:1-A});log.push(setTxt,`atak ${net?'w siatkę':'w aut'}${nerves(a,m)}`);rec(dir,'err');return {done:true,winner:1-A,type:'attErr'};}
-  let mult=1;if(wing!=='M'){if(bset===1){const cz=blockers.reduce((s,x)=>s+eff(x.p,'czy'),0)/blockers.length;mult=1+(cz-10)/10*0.12;}else mult=((bset===0)===(dir==='cross'))?1.55:0.5;}
+  let mult=1;const MD={midS:0,midL:2,midR:3};
+  if(wing!=='M'){if(bset===1){const cz=blockers.reduce((s,x)=>s+eff(x.p,'czy'),0)/blockers.length;mult=1+(cz-10)/10*0.12;}else mult=((bset===0)===(dir==='cross'))?1.55:0.5;}
+  else if(dir in MD){if(bset===1){const cz=blockers.reduce((s,x)=>s+eff(x.p,'czy'),0)/blockers.length;mult=1+(cz-10)/10*0.1;}else mult=MD[dir]===bset?1.8:0.55;if(opp.tactics.blk3===2)mult*=0.6;}
+  if(triple)mult*=1.28;
   const blockP=clamp((0.17+(bs-an+0.17)*0.3)*mult,0.02,0.45);
   if(R()<blockP){
     const b=pickW(blockers,x=>eff(x.p,'blo')+eff(x.p,'czy')*0.3+(x.role==='S'?4:0)).p;act.push(b.id);seq.push({k:'blk',id:b.id,s:1-A});
     if(R()<0.55){a.st.blocked++;b.st.blk++;seq.push({k:'floor',s:A,blk:1});log.push(setTxt,`BLOK ${nm(b)}!`);rec(dir,'blk');return {done:true,winner:1-A,type:'block'};}
     log.push(setTxt,`wybloka ${nm(b)}`);rec(dir,'wyb');return {done:false,next:1-A,q:2,by:b};
   }
-  const tz=dir==='line'?lineZ:dir==='cross'?crossZ:6;
+  const tz=dir==='line'?lineZ:dir==='cross'?crossZ:dir==='midL'?5:dir==='midR'?1:6;
   const d=pickW(covO,x=>{if(x===offB)return dir==='cross'?0.5:0.2;const z=dZone(x);return (z===tz?3:z===6?1.4:0.5)*(x.role==='L'?1.2:1)*(0.5+eff(x.p,'obr')/20);}).p;
   const dn=(eff(d,'obr')*0.45+eff(d,'czy')*0.2+eff(d,'zwi')*0.15+eff(d,'szy')*0.2)/20+mb(d,m,1-A)+(d.zaa-11)/20*0.06;
   let adj=0;if(wing!=='M'&&bset!==1){if(bset===0)adj=dir==='line'?-0.07:0.03;else adj=dir==='line'?0.04:-0.04;}
+  else if(wing==='M'&&bset!==1&&dir in MD)adj=MD[dir]===bset?0.012:-0.012;
+  if(wing==='M'&&opp.tactics.blk3===2)adj+=0.04;
+  if(triple)adj+=0.025;
   const killP=clamp(KB+(an-0.95)*0.6-(dn-0.7)*0.3-(bs-0.8)*0.2+adj,0.15,0.86);
-  if(R()<killP){a.st.kill++;seq.push({k:'floor',s:1-A,d:dir});log.push(setTxt,`${quick?'krótka — ':dir==='line'?'po prostej — ':dir==='cross'?'po skosie — ':''}PUNKT!`);rec(dir,'kill');return {done:true,winner:A,type:'kill'};}
+  if(R()<killP){a.st.kill++;seq.push({k:'floor',s:1-A,d:dir});log.push(setTxt,`${quick?'krótka — ':dir==='line'?'po prostej — ':dir==='cross'?'po skosie — ':''}${triple?'(przez potrójny blok) ':''}PUNKT!`);rec(dir,'kill');return {done:true,winner:A,type:'kill'};}
   d.st.dig++;act.push(d.id);seq.push({k:'dig',id:d.id,s:1-A});
   const dq=R()<0.25+dn*0.3+eff(d,'tod')/20*0.15?2:1;
   log.push(setTxt,`broni ${nm(d)}`);rec(dir,'dig');
@@ -242,6 +252,7 @@ function attackPhase(m,A,q,by,log,act,pd){
 function dZone(e){if(isFront(e.zone))return (e.role==='R'||e.role==='A')?2:e.role==='P'?4:3;return (e.role==='L'||e.role==='S')?5:(e.role==='R'||e.role==='A')?1:6;}
 // ukryta skłonność atakującego do skosu (0,28–0,80)
 function dirTend(p){if(p.dirC==null){let h=7;for(const c of String(p.id))h=(h*131+c.charCodeAt(0))>>>0;p.dirC=0.28+(h%53)/100;}return p.dirC;}
+function midTend(p){let h=11;for(const c of String(p.id))h=(h*137+c.charCodeAt(0))>>>0;const s=0.3+(h%31)/100;const l=(1-s)*(0.3+((h>>>5)%41)/100);return [s,l];}
 const FREE_TXT=['na środek boiska','na rozgrywającego','na środkowego'];
 function freeBall(m,A,a,log,act,seq,setTxt){const side=m.sides[A],opp=m.sides[1-A];const cO=onCourt(opp,m.serving!==A);
   const f=side.tactics.free||0;let tgt=null;
@@ -302,7 +313,8 @@ function aiTurn(m,i){
   const s=m.sides[i],msgs=[];
   const isUser=typeof SAVE!=='undefined'&&SAVE&&SAVE.team!=null&&s.team.idx===SAVE.team;
   if(!isUser&&!s.tactics.lock&&m.dirStats&&m.rallies%5===0){const t=s.tactics;for(const [w,key] of [['L4','blkR'],['R2','blkL']]){const xs=m.dirStats.filter(d=>d.i===1-i&&d.w===w&&(d.d==='cross'||d.d==='line'));
-    if(xs.length>=6){const c=xs.filter(d=>d.d==='cross').length/xs.length;t[key]=c>0.6?0:c<0.4?2:1;}}}
+    if(xs.length>=6){const c=xs.filter(d=>d.d==='cross').length/xs.length;t[key]=c>0.6?0:c<0.4?2:1;}}
+    const ms=m.dirStats.filter(d=>d.i===1-i&&d.w==='M'&&/^mid/.test(d.d));if(ms.length>=6){const cnt={midS:0,midL:0,midR:0};for(const d of ms)cnt[d.d]++;const best=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];t.blkM=best[1]/ms.length>0.5?{midS:0,midL:2,midR:3}[best[0]]:1;}}
   if(m.run.t===1-i&&m.run.n>=3&&s.to>0&&(m.score[1-i]>=8||m.run.n>=4)){callTimeout(m,i);msgs.push(`Czas dla ${s.team.name}.`);}
   if(s.subs>0)for(let k=0;k<6;k++){const sl=s.slots[k];
     if(sl.p.en<58){const c=benchOf(s).filter(p=>p.pos===sl.role&&p.en>80).sort((a,b)=>rating(b)-rating(a))[0];

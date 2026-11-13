@@ -102,14 +102,13 @@ function fmTop(m){const [a,b]=m.sides;const kc=kitColors(m);const sp=[[1600,'0,5
      <b class="fmsw">${m.setsWon[1]}</b>${chip(1)}
      <span class="fmsets small mut">${m.sets.map(s=>`${s[0]}:${s[1]}`).join(' · ')}</span></div>
    <div class="fmtr2">${m.over?'':`<button class="ghost sm" onclick="setSpeed(${nxt})" title="Prędkość">⏩ ${curSp>=0?sp[curSp][1]:'1x'}</button>
-     <button class="ghost sm ${ui.fmPanel==='more'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='more'?null:'more';render()" aria-label="Więcej">⋯</button>
-     <button class="btn sm ppbtn" id="fmpause" onclick="togglePause()">${m.paused?'▶ Graj':'⏸ Pauza'}</button>`}</div></div>`;}
+     <button class="ghost sm ${ui.fmPanel==='more'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='more'?null:'more';render()" aria-label="Więcej">⋯</button>`}</div></div>`;}
 function fmPanel(m){const a=m.sides[0];
   if(ui.fmPanel==='tac')return `<div class="card fmpanel"><div class="row wrap" style="gap:12px">
     <label class="small">Zagrywka <select onchange="setServe(+this.value)">${SERVE_OPT.map((o,i)=>`<option value="${i}" ${a.tactics.serve===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>
     <label class="small">Rozegranie <select onchange="setDist(+this.value)">${DIST_OPT.map((o,i)=>`<option value="${i}" ${a.tactics.dist===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>
     <span class="small mut">${esc(SERVE_OPT[a.tactics.serve][1])} ${esc(DIST_OPT[a.tactics.dist][1])}</span></div>
-    <div class="tacgrid">${tgtTacHtml(m)}${freeTacHtml(a.tactics)}</div><div class="tacgrid">${blockTacHtml(a.tactics)}</div>${rotCard(m)}</div>`;
+    <div class="tacgrid">${tgtTacHtml(m)}${freeTacHtml(a.tactics)}</div><div class="tacgrid wide">${blockTacHtml(a.tactics)}</div>${rotCard(m)}</div>`;
   if(ui.fmPanel==='more')return `<div class="card fmpanel"><div class="row wrap" style="gap:6px">
     <button class="ghost sm" onclick="ui.fmPanel=null;simToSetEnd()">⏭ Do końca seta</button><button class="ghost sm" onclick="ui.fmPanel=null;simToEnd()">⏭⏭ Do końca meczu</button>
     <button class="ghost sm" onclick="ui.mview=ui.mview==='klasyczny'?'hala':'klasyczny';ui.fmPanel=null;render()">${ui.mview==='klasyczny'?'🏟️ Widok hali':'▦ Widok klasyczny'}</button>
@@ -161,6 +160,10 @@ function fmBench(m){const a=m.sides[0];const bench=benchOf(a);if(!bench.length)r
       ${inj?'<div class="small bad">kontuzja</div>':`<span class="fmen" style="width:100%"><i style="width:${Math.round(p.en)}%;background:${energyCol(p.en)}"></i></span>`}</div>`;}).join('')}</div>`;}
 // ================= TAKTYKA: BLOK, OBRONA, PIŁKI SYTUACYJNE, CEL ZAGRYWKI =================
 const BLK_OPT=[['Skos','Blok zamyka skos.'],['Zrównoważony','Blokujący czytają atak.'],['Prosta','Blok zamyka prostą.']];
+const MID_OPT=[['Prosto','Blok zamyka środek boiska.'],['Zrównoważony','Blokujący czyta atak.'],['Skos na 5','Blok zamyka skos na strefę 5 (lewą).'],['Skos na 1','Blok zamyka skos na strefę 1 (prawą).']];
+const MID_ORDER=[1,0,2,3];
+const B3_OPT=[['Podwójny','Dwóch blokuje, trzeci asekuruje za blokiem.'],['Potrójny przy wysokiej piłce','Gdy rywal źle wystawi: trzech w bloku.'],['Zawsze potrójny na skrzydłach','Najmocniejszy blok na skrzydłach, ale odsłania środek i nikt nie asekuruje kiwek.']];
+function midDefTxt(v){return v===0?'Obrońcy wychodzą z linii bloku: strefy 5 i 1 bronią skosów, szóstka cofa się poza cień bloku.':v===2?'Blok zamyka skos na strefę 5: obrona kryje przeciwny skos (strefa 1) i środek.':v===3?'Blok zamyka skos na strefę 1: obrona kryje przeciwny skos (strefa 5) i środek.':'Obrona standardowa, środkowy czyta kierunek ataku.';}
 const FREE_OPT=[['Na środek boiska','Między zawodników: możliwe nieporozumienie rywala.'],['Na rozgrywającego','Rozgrywający musi przyjąć, wystawia ktoś inny.'],['Na środkowego','Środkowy przyjmuje, więc nie zaatakuje szybkiej piłki.']];
 function defTxt(side,v){const who=side==='L'?'Libero / środkowy (strefa 5)':'Rozgrywający / atakujący (strefa 1)';
   return v===0?`${who} broni prostej.`:v===2?`${who} asekuruje za blokiem i środek boiska (kiwki).`:`${who} broni standardowo, blokujący czytają kierunek ataku.`;}
@@ -171,7 +174,9 @@ function segBtns(cur,fn){return `<div class="seg">${BLK_OPT.map((o,i)=>`<button 
 function blockTacHtml(t){return `
   <div class="tacrow"><div class="tacl"><b>Blok — lewa strona siatki</b><small class="mut">przeciw atakującemu rywala (jego prawe skrzydło)</small></div>${segBtns(t.blkL,"setBlk.bind(null,'L')")}<div class="small mut tacd">${defTxt('L',t.blkL??1)}</div></div>
   <div class="tacrow"><div class="tacl"><b>Blok — prawa strona siatki</b><small class="mut">przeciw przyjmującemu rywala (jego lewe skrzydło)</small></div>${segBtns(t.blkR,"setBlk.bind(null,'R')")}<div class="small mut tacd">${defTxt('R',t.blkR??1)}</div></div>
-  <div class="small mut">Zawodnik pierwszej linii, który nie blokuje (strefa 4 przy bloku na prawej, strefa 2 przy bloku na lewej), schodzi do asekuracji za blok i na środek boiska: łapie kiwki i krótkie skosy.</div>
+  <div class="tacrow"><div class="tacl"><b>Blok — środek siatki</b><small class="mut">przeciw szybkiej piłce i atakowi z drugiej linii</small></div><div class="seg">${MID_ORDER.map(i=>`<button class="${(t.blkM??1)===i?'on':''}" onclick="tacSet('blkM',${i})" title="${esc(MID_OPT[i][1])}">${MID_OPT[i][0]}</button>`).join('')}</div><div class="small mut tacd">${midDefTxt(t.blkM??1)}</div></div>
+  <div class="tacrow"><div class="tacl"><b>Liczba blokujących</b><small class="mut">blok podwójny czy potrójny</small></div><select onchange="tacSet('blk3',+this.value)">${B3_OPT.map((o,i)=>`<option value="${i}" ${(t.blk3||0)===i?'selected':''}>${o[0]}</option>`).join('')}</select><div class="small mut tacd">${esc(B3_OPT[t.blk3||0][1])}</div></div>
+  <div class="small mut">Przy bloku podwójnym zawodnik pierwszej linii, który nie blokuje (strefa 4 przy bloku na prawej, strefa 2 przy bloku na lewej), schodzi do asekuracji za blok i na środek boiska: łapie kiwki i krótkie skosy.</div>
   <div class="small mut">Obie strony naraz: ${BLK_OPT.map((o,i)=>`<button class="link" onclick="setBlk('B',${i})">${o[0].toLowerCase()}</button>`).join(' · ')}. Przyjmujący w strefie 6 zawsze broni szóstki i asekuruje plecy stref 1 i 5.</div>`;}
 function freeTacHtml(t){return `<div class="tacrow"><div class="tacl"><b>Piłki sytuacyjne</b><small class="mut">gdy nie da się zaatakować: przebicie</small></div>
   <select onchange="tacSet('free',+this.value)">${FREE_OPT.map((o,i)=>`<option value="${i}" ${(t.free||0)===i?'selected':''}>${o[0]}</option>`).join('')}</select><div class="small mut tacd">${esc(FREE_OPT[t.free||0][1])} Przy złej wystawie zawodnicy z dobrą kiwką częściej kiwają zamiast przebijać.</div></div>`;}
@@ -189,8 +194,8 @@ function anaData(m,i){const sk=anaSkill();let ds=(m.dirStats||[]).filter(d=>d.i=
   const step=sk>=15?1:sk>=9?5:10;
   const noise=(k)=>{if(sk>=15)return 0;let h=m.setNo*7+k.length*13+i*31;return ((h%7)-3)*(sk>=9?1:3);};
   const rnd=v=>Math.max(0,Math.min(100,Math.round(v/step)*step));
-  const agg=(xs,key)=>{const n=xs.length;if(!n)return null;const c=xs.filter(d=>d.d==='cross').length,l=xs.filter(d=>d.d==='line').length,t=xs.filter(d=>d.d==='tip').length,mi=xs.filter(d=>d.d==='mid').length,k=xs.filter(d=>d.r==='kill').length;
-    const cr=rnd(c/n*100+noise(key)),ln=rnd(l/n*100-noise(key));return {n,cross:c?cr:0,line:l?ln:0,tip:rnd(t/n*100),mid:rnd(mi/n*100),kill:rnd(k/n*100),rawC:c/(c+l||1)};};
+  const agg=(xs,key)=>{const n=xs.length;if(!n)return null;const c=xs.filter(d=>d.d==='cross').length,l=xs.filter(d=>d.d==='line').length,t=xs.filter(d=>d.d==='tip').length,mi=xs.filter(d=>/^mid/.test(d.d)).length,mS=xs.filter(d=>d.d==='midS').length,mL=xs.filter(d=>d.d==='midL').length,mR=xs.filter(d=>d.d==='midR').length,k=xs.filter(d=>d.r==='kill').length;
+    const cr=rnd(c/n*100+noise(key)),ln=rnd(l/n*100-noise(key));return {n,cross:c?cr:0,line:l?ln:0,tip:rnd(t/n*100),mid:rnd(mi/n*100),mS:rnd(mS/n*100),mL:rnd(mL/n*100),mR:rnd(mR/n*100),kill:rnd(k/n*100),rawC:c/(c+l||1)};};
   const wings={L4:agg(ds.filter(d=>d.w==='L4'),'L4'),R2:agg(ds.filter(d=>d.w==='R2'),'R2'),M:agg(ds.filter(d=>d.w==='M'),'M')};
   const sd=m.sides[i];const ids=[...new Set(ds.map(d=>d.id))];
   const pl=ids.map(id=>{const p=sd.pl.find(x=>x.id===id);const xs=ds.filter(d=>d.id===id);return {p,w:xs[0].w,...agg(xs,id)};}).filter(x=>x.p&&x.n>=2).sort((a,b)=>b.n-a.n);
@@ -200,11 +205,13 @@ function anaAdvice(m){const sk=anaSkill();if(sk<9)return null;const D=anaData(m,
     const best=x.rawC>=0.62?0:x.rawC<=0.38?2:null;if(best==null||(t[key]??1)===best)continue;
     const pp=sk>=15?D.pl.filter(q=>q.w===w)[0]:null;
     const src=pp&&pp.n>=4?pp:x;return {k:'ana'+w+best+m.setNo,t:`Analityk: ${pp&&pp.n>=4?esc(pp.p.last)+' ('+who+')':who+' rywala'} bije ${best===0?'po skosie':'po prostej'} w ${best===0?src.cross:src.line}% ataków. Ustaw blok „${BLK_OPT[best][0].toLowerCase()}” na ${side==='L'?'lewej':'prawej'} stronie siatki.`,btn:`Blok ${BLK_OPT[best][0].toLowerCase()} (${side==='L'?'lewa':'prawa'})`,act:`setBlk('${side}',${best})`};}
+  const x=D.wings.M;if(x&&x.n>=(sk>=15?6:9)){const arr=[['midS',0,x.mS,'prosto'],['midL',2,x.mL,'skos na strefę 5'],['midR',3,x.mR,'skos na strefę 1']].sort((a,b)=>b[2]-a[2]);const b=arr[0];
+    if(b[2]>=55&&(t.blkM??1)!==b[1])return {k:'anaM'+b[1]+m.setNo,t:`Analityk: ataki rywala ze środka idą głównie ${b[3]} (${b[2]}%). Ustaw blok na środku: „${MID_OPT[b[1]][0].toLowerCase()}”.`,btn:`Blok środek: ${MID_OPT[b[1]][0].toLowerCase()}`,act:`tacSet('blkM',${b[1]})`};}
   return null;}
 function anaBars(m,i,D){const kc=kitColors(m)[i];if(!D.n)return '<div class="small mut">Jeszcze bez ataków.</div>';
   if(!D.sk){const x=[['L4','PRZ'],['R2','ATA']].map(([w,r])=>{const v=D.wings[w];if(!v||v.n<5)return '';return `${r}: ${v.rawC>0.55?'raczej skos':v.rawC<0.45?'raczej prosta':'po równo'}`;}).filter(Boolean).join(' · ');return `<div class="small mut">${x||'Za mało danych.'}</div>`;}
   const row=(w,l)=>{const v=D.wings[w];if(!v)return '';
-    if(w==='M')return `<div class="anarow"><span class="mut">${l}</span><span class="small">${v.n} ataków · kiwka ${v.tip}% · skut. ${v.kill}%</span></div>`;
+    if(w==='M')return `<div class="anarow"><span class="mut">${l} <small>(${v.n})</small></span><span class="small">prosto <b>${v.mS}%</b> · skos 5 <b>${v.mL}%</b> · skos 1 <b>${v.mR}%</b>${v.tip?` · kiwka ${v.tip}%`:''}</span></div>`;
     const tot=Math.max(1,v.cross+v.line+v.tip);
     return `<div class="anarow"><span class="mut">${l} <small>(${v.n})</small></span><span class="anab"><i style="width:${v.cross/tot*100}%;background:${kc}" title="skos"></i><i style="width:${v.line/tot*100}%;background:${kc};opacity:.45" title="prosta"></i><i style="width:${v.tip/tot*100}%;background:#8b99b6" title="kiwka"></i></span><span class="small"><b>${v.cross}%</b> skos · <b>${v.line}%</b> prosta${v.tip?` · ${v.tip}% kiwka`:''}</span></div>`;};
   return row('L4','PRZ (lewe skrzydło)')+row('R2','ATA (prawe skrzydło)')+row('M','Środek / pipe');}
