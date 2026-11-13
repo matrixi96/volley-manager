@@ -131,7 +131,7 @@ function hallAnim(m,pre,ev,done){
         else if(w!=='M'&&z===lz&&bset===2)moves.push(mvTo(b,6.0,z===5?1.7:7.3));
         else if(w!=='M'&&z===lz&&bset===0)moves.push(mvTo(b,2.4,z===5?0.6:8.4));
         else moves.push(mvTo(b,3.2,zy));});
-      side(d).filter(b=>!opp.includes(b)&&isFrontZ(b.zone)).forEach(b=>moves.push(mvTo(b,6.3,defY(b)<3?0.9:defY(b)>6?8.1:4.5)));
+      side(d).filter(b=>!opp.includes(b)&&isFrontZ(b.zone)).forEach(b=>{const dy=defY(b);moves.push(w!=='M'&&!fb?mvTo(b,6.1,dy<3?3.1:dy>6?5.9:4.5):mvTo(b,6.3,dy<3?0.9:dy>6?8.1:4.5));});
       to={x:hx,y:hy,h:fb?2.6:3.4};peak=fb?1.0:1.6;dur=780;ph=fb?'Piłka sytuacyjna':o.role==='R'?'Wystawa':'Rozegranie';lastAtt=o;lastAttD=fb?'free':s.d;}
     else if(s.k==='blk'){to={x:cx(o),y:cy(o),h:3.0};dur=230;ph='Blok!';}
     else if(s.k==='dig'){const dx=(R()-0.5)*1.4,dy=(R()-0.5)*1.4;moves.push({id:o.id,x:cx(o)+dx,y:cy(o)+dy});to={x:cx(o)+dx,y:cy(o)+dy,h:0.35};dur=s.free?900:s.tip?620:430;peak=s.free?2.6:s.tip?1.4:0;ph=s.free?'Przebicie':s.tip?'Kiwka — obrona':'Atak — obrona';}

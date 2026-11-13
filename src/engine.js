@@ -202,10 +202,13 @@ function attackPhase(m,A,q,by,log,act,pd){
   a.st.att++;
   const blockers=cO.filter(x=>isFront(x.zone)&&x.role!=='L');const backO=cO.filter(x=>!isFront(x.zone));
   const lineZ=wing==='L4'?1:5,crossZ=wing==='L4'?5:1;
+  // zawodnik pierwszej linii poza blokiem schodzi do asekuracji za blok / środek boiska (blok na prawej → strefa 4, na lewej → strefa 2)
+  const offB=wing==='M'?null:cO.find(x=>isFront(x.zone)&&x.role!=='L'&&dZone(x)===(wing==='L4'?4:2));
+  const covO=offB?backO.concat([offB]):backO;
   if(dir==='tip'){
     const cover=bset===2;const tz=wing==='M'?6:lineZ;
     if(R()<0.03*kc(a,m)){a.st.attErr++;seq.push({k:'net',s:1-A});log.push(setTxt,`kiwka w siatkę${nerves(a,m)}`);rec('tip','err');return {done:true,winner:1-A,type:'attErr'};}
-    const d=pickW(backO,x=>(dZone(x)===tz?(cover?4:2):dZone(x)===6?1.3:1)*(0.5+eff(x.p,'czy')/20)).p;
+    const d=pickW(covO,x=>(x===offB?2.6:dZone(x)===tz?(cover?4:2):dZone(x)===6?1.3:1)*(0.5+eff(x.p,'czy')/20)).p;
     const dc=(eff(d,'czy')*0.5+eff(d,'szy')*0.25+eff(d,'obr')*0.25)/20;
     const killT=clamp(0.34+(kiwN-0.5)*0.42+(czA-0.5)*0.12+bn(side)-(cover?0.15:0)-(dc-0.5)*0.3+mb(a,m,A),0.06,0.62);
     if(R()<killT){a.st.kill++;seq.push({k:'floor',s:1-A,tip:1});log.push(setTxt,`KIWKA — PUNKT!`);rec('tip','kill');return {done:true,winner:A,type:'kill'};}
@@ -225,7 +228,7 @@ function attackPhase(m,A,q,by,log,act,pd){
     log.push(setTxt,`wybloka ${nm(b)}`);rec(dir,'wyb');return {done:false,next:1-A,q:2,by:b};
   }
   const tz=dir==='line'?lineZ:dir==='cross'?crossZ:6;
-  const d=pickW(backO,x=>{const z=dZone(x);return (z===tz?3:z===6?1.4:0.5)*(x.role==='L'?1.2:1)*(0.5+eff(x.p,'obr')/20);}).p;
+  const d=pickW(covO,x=>{if(x===offB)return dir==='cross'?0.5:0.2;const z=dZone(x);return (z===tz?3:z===6?1.4:0.5)*(x.role==='L'?1.2:1)*(0.5+eff(x.p,'obr')/20);}).p;
   const dn=(eff(d,'obr')*0.45+eff(d,'czy')*0.2+eff(d,'zwi')*0.15+eff(d,'szy')*0.2)/20+mb(d,m,1-A)+(d.zaa-11)/20*0.06;
   let adj=0;if(wing!=='M'&&bset!==1){if(bset===0)adj=dir==='line'?-0.07:0.03;else adj=dir==='line'?0.04:-0.04;}
   const killP=clamp(KB+(an-0.95)*0.6-(dn-0.7)*0.3-(bs-0.8)*0.2+adj,0.15,0.86);

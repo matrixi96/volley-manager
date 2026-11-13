@@ -180,6 +180,12 @@ main.wide{max-width:1680px}
 .rtxt{flex:1;min-width:0}.rtitle{font-size:16px;font-weight:800;color:var(--acc)}
 
 /* ---- ekran meczu: układ menedżerski ---- */
+.fmctl{display:flex;align-items:center;gap:10px;justify-content:center;margin:6px 0 2px}.fmbig{font-size:16px;padding:10px 28px;border-radius:10px;min-width:150px}.fmbig.go{background:var(--good);color:#06210f}
+.lcourt{max-width:640px;margin:6px auto 14px;padding:10px 12px;border-radius:12px;background:#c8733d22;border:1px solid #c8733d55}
+.lcgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.lcz{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px 7px;border-radius:10px;background:#0b122099;cursor:pointer;min-width:0}.lcz:hover{background:#0b1220}
+.lczn{position:absolute;top:4px;left:7px;font-size:11px;color:var(--mut);font-weight:800}.lcinj{position:absolute;top:3px;right:6px}
+.lcst{display:flex;gap:10px}.lcst span{display:flex;flex-direction:column;align-items:center}.lcst small{font-size:9px;color:var(--mut);font-weight:700;text-transform:uppercase}.lcst b{font-size:15px}
 .seg{justify-self:start;display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.seg button{background:transparent;border:0;border-right:1px solid var(--line);color:var(--txt);padding:6px 12px;font-size:12px;cursor:pointer;border-radius:0}.seg button:last-child{border-right:0}.seg button.on{background:var(--acc);color:#1a1200;font-weight:700}
 .tacrow{display:grid;grid-template-columns:minmax(180px,260px) auto;gap:4px 12px;align-items:center;padding:8px 0;border-bottom:1px solid #ffffff0d}.tacl{display:flex;flex-direction:column}.tacd{grid-column:1/-1}
 .tacgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:0 18px;margin-top:6px}

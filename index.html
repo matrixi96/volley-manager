@@ -187,6 +187,12 @@ main.wide{max-width:1680px}
 .rtxt{flex:1;min-width:0}.rtitle{font-size:16px;font-weight:800;color:var(--acc)}
 
 /* ---- ekran meczu: układ menedżerski ---- */
+.fmctl{display:flex;align-items:center;gap:10px;justify-content:center;margin:6px 0 2px}.fmbig{font-size:16px;padding:10px 28px;border-radius:10px;min-width:150px}.fmbig.go{background:var(--good);color:#06210f}
+.lcourt{max-width:640px;margin:6px auto 14px;padding:10px 12px;border-radius:12px;background:#c8733d22;border:1px solid #c8733d55}
+.lcgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.lcz{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px 7px;border-radius:10px;background:#0b122099;cursor:pointer;min-width:0}.lcz:hover{background:#0b1220}
+.lczn{position:absolute;top:4px;left:7px;font-size:11px;color:var(--mut);font-weight:800}.lcinj{position:absolute;top:3px;right:6px}
+.lcst{display:flex;gap:10px}.lcst span{display:flex;flex-direction:column;align-items:center}.lcst small{font-size:9px;color:var(--mut);font-weight:700;text-transform:uppercase}.lcst b{font-size:15px}
 .seg{justify-self:start;display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.seg button{background:transparent;border:0;border-right:1px solid var(--line);color:var(--txt);padding:6px 12px;font-size:12px;cursor:pointer;border-radius:0}.seg button:last-child{border-right:0}.seg button.on{background:var(--acc);color:#1a1200;font-weight:700}
 .tacrow{display:grid;grid-template-columns:minmax(180px,260px) auto;gap:4px 12px;align-items:center;padding:8px 0;border-bottom:1px solid #ffffff0d}.tacl{display:flex;flex-direction:column}.tacd{grid-column:1/-1}
 .tacgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:0 18px;margin-top:6px}
@@ -453,10 +459,13 @@ function attackPhase(m,A,q,by,log,act,pd){
   a.st.att++;
   const blockers=cO.filter(x=>isFront(x.zone)&&x.role!=='L');const backO=cO.filter(x=>!isFront(x.zone));
   const lineZ=wing==='L4'?1:5,crossZ=wing==='L4'?5:1;
+  // zawodnik pierwszej linii poza blokiem schodzi do asekuracji za blok / środek boiska (blok na prawej → strefa 4, na lewej → strefa 2)
+  const offB=wing==='M'?null:cO.find(x=>isFront(x.zone)&&x.role!=='L'&&dZone(x)===(wing==='L4'?4:2));
+  const covO=offB?backO.concat([offB]):backO;
   if(dir==='tip'){
     const cover=bset===2;const tz=wing==='M'?6:lineZ;
     if(R()<0.03*kc(a,m)){a.st.attErr++;seq.push({k:'net',s:1-A});log.push(setTxt,`kiwka w siatkę${nerves(a,m)}`);rec('tip','err');return {done:true,winner:1-A,type:'attErr'};}
-    const d=pickW(backO,x=>(dZone(x)===tz?(cover?4:2):dZone(x)===6?1.3:1)*(0.5+eff(x.p,'czy')/20)).p;
+    const d=pickW(covO,x=>(x===offB?2.6:dZone(x)===tz?(cover?4:2):dZone(x)===6?1.3:1)*(0.5+eff(x.p,'czy')/20)).p;
     const dc=(eff(d,'czy')*0.5+eff(d,'szy')*0.25+eff(d,'obr')*0.25)/20;
     const killT=clamp(0.34+(kiwN-0.5)*0.42+(czA-0.5)*0.12+bn(side)-(cover?0.15:0)-(dc-0.5)*0.3+mb(a,m,A),0.06,0.62);
     if(R()<killT){a.st.kill++;seq.push({k:'floor',s:1-A,tip:1});log.push(setTxt,`KIWKA — PUNKT!`);rec('tip','kill');return {done:true,winner:A,type:'kill'};}
@@ -476,7 +485,7 @@ function attackPhase(m,A,q,by,log,act,pd){
     log.push(setTxt,`wybloka ${nm(b)}`);rec(dir,'wyb');return {done:false,next:1-A,q:2,by:b};
   }
   const tz=dir==='line'?lineZ:dir==='cross'?crossZ:6;
-  const d=pickW(backO,x=>{const z=dZone(x);return (z===tz?3:z===6?1.4:0.5)*(x.role==='L'?1.2:1)*(0.5+eff(x.p,'obr')/20);}).p;
+  const d=pickW(covO,x=>{if(x===offB)return dir==='cross'?0.5:0.2;const z=dZone(x);return (z===tz?3:z===6?1.4:0.5)*(x.role==='L'?1.2:1)*(0.5+eff(x.p,'obr')/20);}).p;
   const dn=(eff(d,'obr')*0.45+eff(d,'czy')*0.2+eff(d,'zwi')*0.15+eff(d,'szy')*0.2)/20+mb(d,m,1-A)+(d.zaa-11)/20*0.06;
   let adj=0;if(wing!=='M'&&bset!==1){if(bset===0)adj=dir==='line'?-0.07:0.03;else adj=dir==='line'?0.04:-0.04;}
   const killP=clamp(KB+(an-0.95)*0.6-(dn-0.7)*0.3-(bs-0.8)*0.2+adj,0.15,0.86);
@@ -641,6 +650,7 @@ function squadView(){
     t.players.slice().sort((a,b)=>(a.pos===pos?0:1)-(b.pos===pos?0:1)||rating(b,pos)-rating(a,pos)).map(p=>`<option value="${p.id}" ${lu[k]===p.id?'selected':''}>${p.inj?'🚑 ':''}${esc(p.last)} (${POS_SHORT[p.pos]}) — ${rating(p,pos)}</option>`).join('')}</select></label>`;
   return `<div class="card"><div class="row"><h2>Skład wyjściowy</h2><span class="sp"></span><button class="ghost" onclick="autoLu()">Ustaw automatycznie</button></div>
   <p class="mut small">System 5-1. Ocena w nawiasie dotyczy wybranej pozycji: zawodnik grający poza swoją pozycją wypada słabiej. Libero wchodzi za środkowego w drugiej linii.</p>
+  ${lineupCourt(t,lu)}
   <div class="lugrid">${LINEUP_KEYS.map(sel).join('')}</div>${injWarn()}
   <div class="row small mut" style="margin-top:8px">Siła składu: <b style="color:var(--txt);margin-left:4px">${lineupStrength(t,lu)}</b><span style="margin-left:14px">${chemBadge(t,lu)}</span><span class="sp"></span>${ui.confirmReset?`<span class="bad">Zmiana klubu kasuje obecną grę (sloty zostają). Na pewno?</span> <button class="link" onclick="changeClub()">Tak, zmień</button> <button class="link" onclick="ui.confirmReset=false;render()">Nie</button>`:`<button class="link" onclick="changeClub()">Zmień klub</button>`}</div></div>
   <div class="card"><h2>Kadra (${t.players.length})</h2><div class="tw"><table class="squad"><thead><tr class="grp"><th colspan="5"></th><th colspan="${ATTRS.length}" class="msep gt">Techniczne</th><th colspan="${PHYS.length}" class="msep gf">Fizyczne</th><th colspan="${MENTAL.length}" class="msep men">Mentalne</th><th colspan="5" class="msep">Klub</th></tr><tr>
@@ -724,7 +734,7 @@ function doRally(m){let ret;ui.talkRes=null;
 }
 function setSpeed(ms){ui.speed=ms;const m=ui.match;if(m&&!m.over){m.paused=false;ui.subSel=null;}render();schedule();}
 function togglePause(){const m=ui.match;if(!m||m.over)return;m.paused=!m.paused;persistLive();
-  if(m.animating){const b=document.getElementById('fmpause');if(b)b.textContent=m.paused?'▶ Graj':'⏸ Pauza';return;}
+  if(m.animating){document.querySelectorAll('.ppbtn').forEach(b=>{b.textContent=m.paused?'▶ Graj':'⏸ Pauza';b.classList.toggle('go',m.paused);});return;}
   if(!m.paused)ui.subSel=null;render();schedule();}
 function simToSetEnd(){const m=ui.match;if(!m||m.over)return;const s=m.setNo;while(!m.over&&m.setNo===s)doRally(m);m.paused=true;persistLive();render();}
 function simToEnd(){const m=ui.match;if(!m)return;while(!m.over)doRally(m);render();}
@@ -2136,7 +2146,7 @@ function hallAnim(m,pre,ev,done){
         else if(w!=='M'&&z===lz&&bset===2)moves.push(mvTo(b,6.0,z===5?1.7:7.3));
         else if(w!=='M'&&z===lz&&bset===0)moves.push(mvTo(b,2.4,z===5?0.6:8.4));
         else moves.push(mvTo(b,3.2,zy));});
-      side(d).filter(b=>!opp.includes(b)&&isFrontZ(b.zone)).forEach(b=>moves.push(mvTo(b,6.3,defY(b)<3?0.9:defY(b)>6?8.1:4.5)));
+      side(d).filter(b=>!opp.includes(b)&&isFrontZ(b.zone)).forEach(b=>{const dy=defY(b);moves.push(w!=='M'&&!fb?mvTo(b,6.1,dy<3?3.1:dy>6?5.9:4.5):mvTo(b,6.3,dy<3?0.9:dy>6?8.1:4.5));});
       to={x:hx,y:hy,h:fb?2.6:3.4};peak=fb?1.0:1.6;dur=780;ph=fb?'Piłka sytuacyjna':o.role==='R'?'Wystawa':'Rozegranie';lastAtt=o;lastAttD=fb?'free':s.d;}
     else if(s.k==='blk'){to={x:cx(o),y:cy(o),h:3.0};dur=230;ph='Blok!';}
     else if(s.k==='dig'){const dx=(R()-0.5)*1.4,dy=(R()-0.5)*1.4;moves.push({id:o.id,x:cx(o)+dx,y:cy(o)+dy});to={x:cx(o)+dx,y:cy(o)+dy,h:0.35};dur=s.free?900:s.tip?620:430;peak=s.free?2.6:s.tip?1.4:0;ph=s.free?'Przebicie':s.tip?'Kiwka — obrona':'Atak — obrona';}
@@ -2337,7 +2347,7 @@ function fmTop(m){const [a,b]=m.sides;const kc=kitColors(m);const sp=[[1600,'0,5
      <span class="fmsets small mut">${m.sets.map(s=>`${s[0]}:${s[1]}`).join(' · ')}</span></div>
    <div class="fmtr2">${m.over?'':`<button class="ghost sm" onclick="setSpeed(${nxt})" title="Prędkość">⏩ ${curSp>=0?sp[curSp][1]:'1x'}</button>
      <button class="ghost sm ${ui.fmPanel==='more'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='more'?null:'more';render()" aria-label="Więcej">⋯</button>
-     <button class="btn sm" id="fmpause" onclick="togglePause()">${m.paused?'▶ Graj':'⏸ Pauza'}</button>`}</div></div>`;}
+     <button class="btn sm ppbtn" id="fmpause" onclick="togglePause()">${m.paused?'▶ Graj':'⏸ Pauza'}</button>`}</div></div>`;}
 function fmPanel(m){const a=m.sides[0];
   if(ui.fmPanel==='tac')return `<div class="card fmpanel"><div class="row wrap" style="gap:12px">
     <label class="small">Zagrywka <select onchange="setServe(+this.value)">${SERVE_OPT.map((o,i)=>`<option value="${i}" ${a.tactics.serve===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>
@@ -2359,9 +2369,10 @@ function fmLiveView(subPanel){const m=ui.match;
   <div class="fmwrap"><div class="fmlay">
    <div class="fml">${fmFormation(m,0)}${fmLiveTable(m)}${fmPlayerStats(m,0)}</div>
    <div class="fmc">
-    <div class="fmws">${fmAssistant(m)}${fmMomentum(m)}${fmAnalyst(m)}</div>
     <div class="card fmcourt">${fmTeamStats(m,0)}<div class="fmcv">
-      ${ui.mview==='klasyczny'?courtHtml(m):`<div class="hallbar small mut">🏟️ ${tName(m.homeIdx!=null?m.homeIdx:m.sides[0].team.idx)} · <b style="color:var(--txt)">${(m.att||0).toLocaleString('pl-PL')}</b> / ${(m.cap||0).toLocaleString('pl-PL')} widzów · <span id="mph" class="mph">${m.over?'Koniec meczu':'Przed zagrywką'}</span></div><canvas id="mcv" class="mcv"></canvas>`}</div>${fmTeamStats(m,1)}</div>
+      ${ui.mview==='klasyczny'?courtHtml(m):`<div class="hallbar small mut">🏟️ ${tName(m.homeIdx!=null?m.homeIdx:m.sides[0].team.idx)} · <b style="color:var(--txt)">${(m.att||0).toLocaleString('pl-PL')}</b> / ${(m.cap||0).toLocaleString('pl-PL')} widzów · <span id="mph" class="mph">${m.over?'Koniec meczu':'Przed zagrywką'}</span></div><canvas id="mcv" class="mcv"></canvas>`}
+      ${m.over?'':`<div class="fmctl"><button class="btn ppbtn fmbig ${m.paused?'go':''}" onclick="togglePause()">${m.paused?'▶ Graj':'⏸ Pauza'}</button><button class="ghost sm" ${m.sides[0].to<=0?'disabled':''} onclick="myTimeout()">⏱ Czas (${m.sides[0].to})</button><span class="small mut">Spacja = pauza</span></div>`}</div>${fmTeamStats(m,1)}</div>
+    <div class="fmws">${fmAssistant(m)}${fmMomentum(m)}${fmAnalyst(m)}</div>
    </div>
    <div class="fmr">${fmFormation(m,1)}${fmRecent(m)}${fmPlayerStats(m,1)}</div>
   </div>
@@ -2404,6 +2415,7 @@ function segBtns(cur,fn){return `<div class="seg">${BLK_OPT.map((o,i)=>`<button 
 function blockTacHtml(t){return `
   <div class="tacrow"><div class="tacl"><b>Blok — lewa strona siatki</b><small class="mut">przeciw atakującemu rywala (jego prawe skrzydło)</small></div>${segBtns(t.blkL,"setBlk.bind(null,'L')")}<div class="small mut tacd">${defTxt('L',t.blkL??1)}</div></div>
   <div class="tacrow"><div class="tacl"><b>Blok — prawa strona siatki</b><small class="mut">przeciw przyjmującemu rywala (jego lewe skrzydło)</small></div>${segBtns(t.blkR,"setBlk.bind(null,'R')")}<div class="small mut tacd">${defTxt('R',t.blkR??1)}</div></div>
+  <div class="small mut">Zawodnik pierwszej linii, który nie blokuje (strefa 4 przy bloku na prawej, strefa 2 przy bloku na lewej), schodzi do asekuracji za blok i na środek boiska: łapie kiwki i krótkie skosy.</div>
   <div class="small mut">Obie strony naraz: ${BLK_OPT.map((o,i)=>`<button class="link" onclick="setBlk('B',${i})">${o[0].toLowerCase()}</button>`).join(' · ')}. Przyjmujący w strefie 6 zawsze broni szóstki i asekuruje plecy stref 1 i 5.</div>`;}
 function freeTacHtml(t){return `<div class="tacrow"><div class="tacl"><b>Piłki sytuacyjne</b><small class="mut">gdy nie da się zaatakować: przebicie</small></div>
   <select onchange="tacSet('free',+this.value)">${FREE_OPT.map((o,i)=>`<option value="${i}" ${(t.free||0)===i?'selected':''}>${o[0]}</option>`).join('')}</select><div class="small mut tacd">${esc(FREE_OPT[t.free||0][1])} Przy złej wystawie zawodnicy z dobrą kiwką częściej kiwają zamiast przebijać.</div></div>`;}
@@ -2458,11 +2470,27 @@ function chemPct(c){return Math.round(((c-0.3)/0.7)*100);}
 function chemBadge(t,lu){const ids=Object.values(lu||{});const ps=ids.map(id=>t.players.find(p=>p.id===id)).filter(Boolean);const c=chemOf(ps,t.idx);const v=chemPct(c);
   const low=ps.filter(p=>togetherOf(p,t.idx)<10).map(p=>p.last);
   return `Zgranie zespołu: <b style="color:${v>=75?'var(--good)':v>=45?'var(--acc)':'var(--bad)'}">${v}%</b> <span title="Rośnie z każdym meczem rozegranym razem w tym klubie (pełne po ok. 30). Nowi zawodnicy zaczynają od zera. Zgranie i komunikacja decydują o nieporozumieniach przy niedokładnym przyjęciu, o wystawach w trudnych sytuacjach i o szybkich piłkach.">ⓘ</span>${low.length?` <span class="mut">· mało gry razem: ${esc(low.slice(0,3).join(', '))}${low.length>3?'…':''}</span>`:''}`;}
+// ---- boisko w zakładce Skład ----
+function lineupCourt(t,lu){const g=k=>t.players.find(p=>p.id===lu[k]);const col=t.color||'#ffb020';
+  const Z={1:['R','Rozgrywający'],2:['P1','Przyjmujący 1'],3:['S1','Środkowy 1'],4:['A','Atakujący'],5:['P2','Przyjmujący 2'],6:['L','Libero (za środkowego)']};
+  const lc=libColor(col,'#000');
+  const card=z=>{const [k,lab]=Z[z];const p=g(k);if(!p)return `<div class="lcz empty">${z}</div>`;const r=rating(p,LINEUP_KEYS.find(x=>x[0]===k)[2]);const mor=p.mor==null?60:p.mor;const c=k==='L'?lc:col;
+    return `<div class="lcz" onclick="openCard('${p.id}')" title="${esc(p.first+' '+p.last)} · ${lab}">
+      <span class="lczn">${z}</span>${p.inj?'<span class="lcinj" title="Kontuzja">🚑</span>':''}
+      <span class="fmj" style="width:36px;height:36px;font-size:15px;background:${c};color:${lum(c)>0.6?'#111':'#fff'}">${p.num}</span>
+      <b class="fmnm" style="font-size:13px">${esc(p.last)}</b><span class="fmps2">${lab.toUpperCase()}</span>
+      <div class="lcst"><span title="Ocena ogólna na tej pozycji"><small>ocena</small><b style="color:var(--acc)">${r}</b></span><span title="Kondycja (umiejętność): jak szybko się męczy"><small>kon</small><b style="color:${attrCol(p.kon)}">${p.kon}</b></span><span title="Morale ${mor}"><small>mor.</small><b>${mor>=62?'😀':mor>=45?'😐':'😟'}</b></span></div>
+      <span class="fmen" style="width:86%"><i style="width:${p.kon*5}%;background:${attrCol(p.kon)}"></i></span></div>`;};
+  const s2=g('S2');
+  return `<div class="lcourt"><div class="fmnet">siatka</div><div class="lcgrid">${[4,3,2,5,6,1].map(card).join('')}</div>
+   <div class="small mut" style="margin-top:6px">Ustawienie startowe (ustawienie 1). ${s2?`Środkowy 2 <b style="color:var(--txt)">${esc(s2.last)}</b> wchodzi w pierwszej linii, w drugiej zastępuje go libero.`:''} Kliknij zawodnika, by zobaczyć kartę. Pasek = kondycja (im dłuższy, tym wolniej się męczy).</div></div>`;}
 applyCustom();
 // ================= START =================
 if(SAVE.team!=null){if(!SAVE.date&&!SAVE.world)SAVE.date=GAME_START;if(!SAVE.world)initWorld();else syncTeams();if(!SAVE.season)newSeason(1);migrateDates();initClub();}
 if(SAVE.live){try{ui.match=deserMatch(SAVE.live);ui.match.log.push({t:'Wznowiono zapisany mecz — kliknij „Graj”, żeby kontynuować.',c:'sys'});}catch(e){SAVE.live=null;ui.match=null;}}
 render();
+
+if(document.addEventListener)document.addEventListener('keydown',e=>{if(e.code==='Space'&&ui.match&&!ui.match.over&&ui.tab==='mecz'&&!/INPUT|SELECT|TEXTAREA/.test((e.target||{}).tagName||'')){e.preventDefault();togglePause();}});
 
 </script><script>if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
 </body></html>
