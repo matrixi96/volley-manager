@@ -71,7 +71,7 @@ function squadView(){
   return `<div class="card"><div class="row"><h2>Skład wyjściowy</h2><span class="sp"></span><button class="ghost" onclick="autoLu()">Ustaw automatycznie</button></div>
   <p class="mut small">System 5-1. Ocena w nawiasie dotyczy wybranej pozycji: zawodnik grający poza swoją pozycją wypada słabiej. Libero wchodzi za środkowego w drugiej linii.</p>
   <div class="lugrid">${LINEUP_KEYS.map(sel).join('')}</div>${injWarn()}
-  <div class="row small mut" style="margin-top:8px">Siła składu: <b style="color:var(--txt);margin-left:4px">${lineupStrength(t,lu)}</b><span class="sp"></span>${ui.confirmReset?`<span class="bad">Zmiana klubu kasuje obecną grę (sloty zostają). Na pewno?</span> <button class="link" onclick="changeClub()">Tak, zmień</button> <button class="link" onclick="ui.confirmReset=false;render()">Nie</button>`:`<button class="link" onclick="changeClub()">Zmień klub</button>`}</div></div>
+  <div class="row small mut" style="margin-top:8px">Siła składu: <b style="color:var(--txt);margin-left:4px">${lineupStrength(t,lu)}</b><span style="margin-left:14px">${chemBadge(t,lu)}</span><span class="sp"></span>${ui.confirmReset?`<span class="bad">Zmiana klubu kasuje obecną grę (sloty zostają). Na pewno?</span> <button class="link" onclick="changeClub()">Tak, zmień</button> <button class="link" onclick="ui.confirmReset=false;render()">Nie</button>`:`<button class="link" onclick="changeClub()">Zmień klub</button>`}</div></div>
   <div class="card"><h2>Kadra (${t.players.length})</h2><div class="tw"><table class="squad"><thead><tr class="grp"><th colspan="5"></th><th colspan="${ATTRS.length}" class="msep gt">Techniczne</th><th colspan="${PHYS.length}" class="msep gf">Fizyczne</th><th colspan="${MENTAL.length}" class="msep men">Mentalne</th><th colspan="5" class="msep">Klub</th></tr><tr>
   <th onclick="srt('pos')">#</th><th class="l" onclick="srt('pos')">Zawodnik</th><th onclick="srt('pos')">Poz</th><th onclick="srt('wiek')">Wiek</th><th onclick="srt('h')">Wzrost</th>
   ${[[ATTRS,'gt'],[PHYS,'gf'],[MENTAL,'men']].map(([G,c])=>G.map(([k,l,s,d],j)=>`<th class="${j?'':'msep'} ${c}" onclick="srt('${k}')" title="${l}: ${d}">${s}</th>`).join('')).join('')}<th onclick="srt('ocena')" class="msep">Ocena</th><th onclick="srt('pot')">Potencjał</th><th onclick="srt('wart')">Wartość</th><th onclick="srt('pensja')">Pensja</th><th onclick="srt('kontrakt')">Kontrakt</th></tr></thead><tbody>
@@ -130,7 +130,7 @@ function animateRally(ev,done){
     p.high=prev==='set'||prev==='srv'||prev==='rec'||prev==='dig';p.fast=prev==='att';p.kind=t.k;pts.push(p);prev=t.k;}
   if(pts.length<2){done();return;}
   const base=ui.speed>=1600?470:300;
-  const label={ace:'AS!',block:'BLOK!',kill:'PUNKT',serr:'BŁĄD ZAGRYWKI',attErr:'BŁĄD ATAKU',setErr:'BŁĄD'}[ev.type]||'PUNKT';
+  const label={ace:'AS!',block:'BLOK!',kill:'PUNKT',serr:'BŁĄD ZAGRYWKI',attErr:'BŁĄD ATAKU',setErr:'BŁĄD',mix:'NIEPOROZUMIENIE'}[ev.type]||'PUNKT';
   ball.style.display='block';ball.style.transform=`translate(${pts[0].x}px,${pts[0].y}px)`;
   let i=0;
   const seg=()=>{if(i>=pts.length-1){flashLabel(label,ev.winner);setTimeout(()=>{ball.style.display='none';done();},ui.speed>=1600?650:380);return;}
