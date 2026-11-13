@@ -261,6 +261,58 @@ button.sm{padding:5px 10px;font-size:12px}
  .fmws{grid-template-columns:1fr}.fmcourt{grid-template-columns:1fr 1fr;padding:6px}.fmcv{grid-column:1/-1;order:-1}.fmpt{font-size:26px}
  .fmsp{min-width:76px}
  .fmwrap{display:flex;flex-direction:column;gap:10px}.fmlay{display:contents}.fmc{order:1}.fmstrip{order:2;margin-top:0}.fmbench{order:3;margin-top:0}.fmsub{order:4}.fml{order:4}.fmr{order:5}.fmdef{display:none}.fmsi .small:last-child{display:none}.fmsi{min-width:84px}}
+
+/* ================= SZKIELET: MENU BOCZNE + PASEK KLUBU ================= */
+.shell{display:grid;grid-template-columns:210px minmax(0,1fr);grid-template-rows:auto 1fr;min-height:100vh}
+.shell.live{grid-template-columns:62px minmax(0,1fr)}
+.shell>main{grid-column:2;width:100%;max-width:1320px;margin:0 auto;padding:10px 12px}.shell>main.wide{max-width:1760px}
+.topbar{grid-column:1/-1;position:sticky;top:0;z-index:20;display:flex;align-items:stretch;min-height:64px;padding-top:env(safe-area-inset-top,0px);background:linear-gradient(#18294a,#0f1c34);border-bottom:2px solid #050a14}
+.topbar>div{display:flex;flex-direction:column;justify-content:center;padding:0 14px;border-right:1px solid #ffffff12}
+.topbar .lab,.pan .ttl,.hsum .lab{font-size:9.5px;color:var(--mut);font-style:italic;font-weight:800;text-transform:uppercase;letter-spacing:.03em}
+.tlogo{width:210px;font-weight:900;font-size:19px;font-style:italic;letter-spacing:-.01em}.tlogo b{color:var(--acc)}
+.tcr{cursor:pointer;padding:0 10px!important}.tcr svg{display:block}
+.tclub{flex:1;align-items:center;text-align:center}.tclub b{font-size:19px;font-style:italic;font-weight:900;text-transform:uppercase;letter-spacing:.02em}
+.tbars{width:210px;gap:2px}.tbr{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--mut)}.tbr i{display:block;height:8px;border-radius:2px;max-width:90px;flex:none}.tbr span{white-space:nowrap}
+.tcell{min-width:96px;cursor:default}.tcell[onclick]{cursor:pointer}.tcell:hover[onclick]{background:#ffffff08}.tcell b{font-size:15px;font-style:italic;font-weight:700;line-height:1.2}
+.burger{display:none;background:transparent;border:0;color:var(--txt);font-size:24px;padding:0 14px;cursor:pointer}
+.side{grid-column:1;position:sticky;top:64px;height:calc(100vh - 64px);overflow-y:auto;background:#0b1526;border-right:1px solid #ffffff0a;padding:8px 6px;display:flex;flex-direction:column;gap:2px;z-index:15}
+.nav{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:7px;background:transparent;border:0;color:#cfd9ee;font:italic 500 14px system-ui,sans-serif;cursor:pointer;text-align:left;width:100%}
+.nav:hover{background:#ffffff0c}.nav.on{background:#ffffff14;color:#fff;box-shadow:inset 3px 0 0 var(--acc)}.nav .ic{width:20px;text-align:center;flex:none}
+.nav.act{background:var(--acc);color:#1a1200;font-weight:800}.nav.act:hover{filter:brightness(1.08)}.nav.small{font-size:12px;opacity:.7}
+.navsep{height:1px;background:#ffffff10;margin:4px 6px}.navgap{flex:1;min-height:10px}
+.side.mini{padding:8px 4px}.side.mini .tx{display:none}.side.mini .nav{justify-content:center;padding:10px 0}.side.mini .navsep{margin:4px 2px}
+.navshade{position:fixed;inset:0;background:#0008;z-index:14}
+/* ================= EKRAN GŁÓWNY ================= */
+.pan{background:var(--panel);border:1px solid #ffffff0d;border-radius:10px;padding:10px 12px}
+.pan .ttl{margin-bottom:8px;font-size:10.5px}
+.hgrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:10px;margin-bottom:10px}.hcol{display:flex;flex-direction:column;gap:10px;min-width:0}
+.hnx{display:grid;grid-template-columns:130px minmax(0,1fr) 130px;align-items:center;gap:6px;min-height:170px}
+.hcr{display:flex;flex-direction:column;align-items:center;gap:8px}.hcr svg{filter:drop-shadow(0 4px 8px #0008)}
+.hdots{display:flex;gap:5px}.hdots span{width:11px;height:11px;border-radius:50%;background:#3a4763}.hdots .w{background:var(--good)}.hdots .l{background:var(--bad)}
+.hvs{text-align:center}.hvs>b{display:block;font-size:16px;font-style:italic;font-weight:900;text-transform:uppercase;margin-bottom:4px}.hvs .mut{font-size:12.5px}
+.hday{margin-top:6px;font-weight:800;font-style:italic;color:var(--acc)}
+.htb,.hfx{width:100%;border-collapse:collapse;font-size:13px}.htb th{font-size:10.5px;color:var(--mut);font-weight:700;padding:3px 4px;text-align:center}
+.htb td,.hfx td{padding:5px 4px;text-align:center;border-top:1px solid #ffffff08;font-style:italic;white-space:nowrap}.htb .tl,.hfx .tl{text-align:left;font-weight:600;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.htb tr:nth-child(even) td{background:#ffffff04}.htb tr.me td{background:#ffb02024}.htb tr.op td{background:#ffffff0d}.htb tr.cut td{border-bottom:2px solid #ffb02066}.htb .pk{color:var(--acc);font-weight:800}
+.hres{display:inline-block;font-weight:800;font-style:normal;padding:1px 8px;border-radius:5px;font-size:12px}.hres.w{background:var(--good);color:#06210f}.hres.l{background:var(--bad);color:#fff}
+.hnews{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:6px}
+.hncard{background:var(--panel2);border-radius:8px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:150px;text-align:center}
+.hncard .d{align-self:flex-start;font-size:10.5px;font-style:italic;color:var(--mut)}.hncard .ico{font-size:40px;line-height:1.1;margin:4px 0}.hncard .t{font-size:11.5px;font-weight:800;font-style:italic;text-transform:uppercase;line-height:1.3}
+.hnl{display:grid;grid-template-columns:26px 62px minmax(0,1fr);gap:8px;align-items:center;padding:6px 4px;border-top:1px solid #ffffff0a}.hnl .t{font-size:12.5px;font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hlast{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel2);border-radius:8px;padding:8px 10px;margin-bottom:8px}.hlast b{font-style:italic}
+.hsum{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));text-align:center}.hsum>div{display:flex;flex-direction:column;gap:4px;padding:6px;border-right:1px solid #ffffff10}.hsum>div:last-child{border:0}.hsum b{font-size:15px;font-style:italic;font-weight:600}
+.hcal{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.hdaycol{background:var(--panel2);border-radius:10px;padding:7px;min-height:84px}.hdaycol.today{box-shadow:inset 0 0 0 2px #ffb02066}.hdh{text-align:center;font-size:12px;font-weight:900;font-style:italic;text-transform:uppercase;margin-bottom:6px}
+.hev{background:#07101e;border-radius:12px;padding:4px 8px;margin:4px 0;text-align:center;font-style:italic;font-size:12px}.hev.m{background:var(--acc);color:#1a1200;font-weight:800}
+@media (max-width:1100px){.hgrid{grid-template-columns:1fr}.tbars{display:none!important}}
+@media (max-width:900px){
+ .shell,.shell.live{grid-template-columns:minmax(0,1fr)}.shell>main{grid-column:1;padding:8px}
+ .burger{display:block}.tlogo{display:none!important}.tcell:nth-of-type(n){display:none}.tcell:last-of-type{display:flex}.tclub{align-items:flex-start;text-align:left}.tclub b{font-size:15px}.topbar>div{padding:0 10px}
+ .side{position:fixed;left:-260px;top:0;bottom:0;height:auto;width:240px;padding-top:calc(70px + env(safe-area-inset-top,0px));transition:left .2s}.side.open{left:0}.side.mini .tx{display:inline}.side.mini .nav{justify-content:flex-start;padding:9px 12px}
+ .hnx{grid-template-columns:76px minmax(0,1fr) 76px}.hcr svg{width:70px;height:auto}.hvs>b{font-size:14px}
+ .hnews{grid-template-columns:1fr}.hncard{flex-direction:row;min-height:0;text-align:left}.hncard .ico{font-size:28px}.hncard .d{align-self:center;min-width:70px}
+ .hsum{grid-template-columns:repeat(3,1fr)}.hcal{grid-template-columns:repeat(5,minmax(110px,1fr));overflow-x:auto}
+ .htb th:nth-child(7),.htb td:nth-child(7){display:none}}
 </style></head><body><div id="app"></div>
 <script>
 'use strict';
@@ -602,7 +654,7 @@ if(typeof module!=='undefined')module.exports={MENTAL,PHYS,TEAM_DEFS,genTeam,run
 const TEAMS=TEAM_DEFS.map(genTeam);
 const KEY='vm_save_v2';
 let SAVE={};try{SAVE=JSON.parse(localStorage.getItem(KEY))||null;if(!SAVE){const old=JSON.parse(localStorage.getItem('vm_proto_v1'));SAVE=old&&old.team!=null?{team:old.team,lineup:old.lineup,tactics:old.tactics}:{};}}catch(e){SAVE={};}
-const ui={confirmReset:false,confirm:null,msg:null,code:null,tab:'mecz',sort:'pos',match:null,view:'log',subSel:null,speed:800,test:null,testA:1,testB:0,testN:200};
+const ui={confirmReset:false,confirm:null,msg:null,code:null,tab:'home',sort:'pos',match:null,view:'log',subSel:null,speed:800,test:null,testA:1,testB:0,testN:200};
 let timer=null;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -619,7 +671,8 @@ function render(){
   if(!SAVE.coach){app.innerHTML=hdr(false)+`<main>${coachCreateView()}</main>`;return;}
   if(!SAVE.season)newSeason(1);
   let body='';
-  if(ui.tab==='sklad')body=squadView();
+  if(ui.tab==='home')body=homeView();
+  else if(ui.tab==='sklad')body=squadView();
   else if(ui.tab==='taktyka')body=tacticsView();
   else if(ui.tab==='mecz')body=matchView();
   else if(ui.tab==='test')body=testView();
@@ -635,7 +688,7 @@ function render(){
   else if(ui.tab==='finanse')body=financeView();
   else if(ui.tab==='zapis')body=saveView();
   const wide=ui.tab==='mecz'&&ui.match&&!(ui.match.over&&ui.view==='post');
-  app.innerHTML=hdr(true)+`<main class="${wide?'wide':''}">${body}</main>`+(ui.card?cardModal():'');
+  app.innerHTML=`<div class="shell ${wide?'live':''}">${topBar()}${sideNav()}<main class="${wide?'wide':''}">${body}</main></div>`+(ui.card?cardModal():'');
   if(ui.tab==='mecz'&&ui.match){const lg=$('#log');if(lg)lg.scrollTop=0;if(typeof drawHallStatic==='function'&&typeof document.getElementById==='function')drawHallStatic();}
 }
 function hdr(nav){
@@ -651,7 +704,7 @@ function pickTeamView(){
   return `<div class="card"><h2>Wybierz klub</h2><p class="mut">Fikcyjna polska liga, 12 drużyn. Sezon: 7 sparingów, 22 kolejki (mecz i rewanż), a potem play-off dla czołowej ósemki. Słabszy klub to większe wyzwanie.</p>
   <div class="grid">${TEAMS.map(t=>`<button class="teamcard" style="--c:${t.color}" onclick="pickTeam(${t.idx})"><b>${esc(t.name)}</b><span class="stars">${stars(teamStrength(t))}</span><small class="mut">Siła składu: ${teamStrength(t)}</small></button>`).join('')}</div></div>`;
 }
-function pickTeam(i){const c=ui.pendingCoach;SAVE={team:i,tactics:{serve:1,dist:0},date:GAME_START};initWorld();SAVE.lineup=autoLineup(TEAMS[i]);if(c){SAVE.coach=c;c.joined=GAME_START;}newSeason(1);initBoard(true);ui.cc=null;ui.pendingCoach=null;syncDate();ui.match=null;ui.tab='mecz';render();}
+function pickTeam(i){const c=ui.pendingCoach;SAVE={team:i,tactics:{serve:1,dist:0},date:GAME_START};initWorld();SAVE.lineup=autoLineup(TEAMS[i]);if(c){SAVE.coach=c;c.joined=GAME_START;}newSeason(1);initBoard(true);ui.cc=null;ui.pendingCoach=null;syncDate();ui.match=null;ui.tab='home';render();}
 function changeClub(){if(!ui.confirmReset){ui.confirmReset=true;render();return;}ui.confirmReset=false;ui.match=null;clearTimeout(timer);SAVE={};resetTeams();save();render();}
 
 // ---------- skład ----------
@@ -953,8 +1006,8 @@ function buildMatch(ctx){
   m.log.push({t:`${ctx.kind==='spar'?'Sparing':ctx.kind==='po'?'Play-off':'Liga'} · ${meHome?'mecz u siebie':'mecz wyjazdowy'}. Losowanie: seta zaczyna zagrywką <b>${esc(m.sides[m.serving].team.name)}</b>.`,c:'sys'});
   return m;
 }
-function playNext(){if(SAVE.fired)return;const c=myNext();if(!c)return;const m=buildMatch(c);ui.match=m;ui.view='log';ui.subSel=null;ui.tab='mecz';persistLive();render();schedule();}
-function simNext(){if(SAVE.fired)return;const c=myNext();if(!c)return;const m=buildMatch(c);m.quick=true;while(!m.over)doRally(m);ui.match=m;ui.view='post';ui.tab='mecz';render();}
+function playNext(){if(SAVE.fired)return;syncDate();const c=myNext();if(!c)return;const m=buildMatch(c);ui.match=m;ui.view='log';ui.subSel=null;ui.tab='mecz';persistLive();render();schedule();}
+function simNext(){if(SAVE.fired)return;syncDate();const c=myNext();if(!c)return;const m=buildMatch(c);m.quick=true;while(!m.over)doRally(m);ui.match=m;ui.view='post';ui.tab='mecz';render();}
 function finishMatch(m){
   if(m.recorded||!m.ctx)return;m.recorded=true;const c=m.ctx,s=S();
   const res=resultOf(m,c.h,c.a);res.me=true;res.d=today();
@@ -962,8 +1015,13 @@ function finishMatch(m){
   else if(c.kind==='liga'){recordStats(m);boardAfterMatch(res);const rd=[];for(const f of s.rounds[s.round]){if(f[0]===c.h&&f[1]===c.a)rd.push(res);else rd.push(simFixture(f[0],f[1],true));}
     s.results.push(rd);simJrRound(s.round);s.round++;roundTick('liga',c.h===SAVE.team,m.att);if(s.round>=s.rounds.length)startPlayoff();}
   else if(c.kind==='po'){recordStats(m);boardAfterMatch(res);playPoDay(c.sid,res);roundTick('po',c.h===SAVE.team,m.att);}
-  syncDate();SAVE.live=null;save();
+  storeLast(m,c);SAVE.live=null;save();
 }
+function storeLast(m,c){try{const me=m.sides[0];const T=teamTotals(me);const w=m.sides[m.winner];const mvp=w.pl.slice().sort((a,b)=>mvpScore(b)-mvpScore(a))[0];
+  const r=resultOf(m,c.h,c.a);const won=m.winner===0;const sc=c.h===SAVE.team?r.sw[0]+':'+r.sw[1]:r.sw[1]+':'+r.sw[0];const op=TEAMS[c.h===SAVE.team?c.a:c.h];
+  news(`${won?'✅ Wygrana':'❌ Porażka'} ${sc} z ${op.short} (${c.kind==='spar'?'sparing':c.kind==='po'?'play-off':'liga'}) · MVP: ${mvp?mvp.first+' '+mvp.last:'—'}`);
+  if(c.kind==='liga'){const ld=leagueTable()[0].i;if(SAVE.lastLeader!==ld){SAVE.lastLeader=ld;news(`🏆 ${TEAMS[ld].name} ${ld===SAVE.team?'— jesteśmy liderem ligi!':'nowym liderem ligi'}`);}}
+  SAVE.lastMatch={h:c.h,a:c.a,sets:r.sets,sw:r.sw,d:today(),home:c.h===SAVE.team,att:m.att||0,mvp:mvp?mvp.last:'',atk:T.att?Math.round(T.kill/T.att*100):0,blk:T.blk,ace:T.ace};}catch(e){}}
 function skipSpar(){const s=S();s.phase='liga';syncDate();save();render();}
 function endSpar(){const s=S();if(s.phase==='spar'&&s.spar.res.length>=N_SPAR){s.phase='liga';syncDate();save();}}
 function simRound(){/* runda bez meczu użytkownika nie występuje w lidze */}
@@ -2036,7 +2094,7 @@ function foundClub(){const o=ocDraft();const c=ui.pendingCoach;
   newSeason(1);initBoard(true);
   news(`🏗️ Powstaje nowy klub: ${o.name}${o.city?' ('+o.city+')':''}! Zajmuje w lidze miejsce ${oldName}. Pierwszym trenerem zostaje ${c.first} ${c.last}.`);
   news(`⭐ Gwiazda zespołu: ${star.first} ${star.last} (${POS_NAMES[star.pos]}, ${star.age} l., ocena ${rating(star)}).`);
-  ui.cc=null;ui.pendingCoach=null;ui.oc=null;ui.tab='mecz';syncDate();save();render();}
+  ui.cc=null;ui.pendingCoach=null;ui.oc=null;ui.tab='home';syncDate();save();render();}
 function foundCard(){return `<button class="teamcard foundcard" onclick="ui.cc.step=3;render()"><b>🏗️ Załóż nowy klub</b><small>Własna nazwa, barwy i herb. Start od zera: infrastruktura na poziomie 1, młodzi zawodnicy z dużym potencjałem i jedna gwiazda. Zawsze dostępny, bez wymagań co do reputacji.</small></button>`;}
 // ================= WIDOK HALI (canvas) =================
 const MV={W:680,H:440,SC:20};MV.CX=340;MV.CY=222;MV.X0=MV.CX-9*MV.SC;MV.Y0=MV.CY-4.5*MV.SC;
@@ -2123,6 +2181,8 @@ function drawHall(m,scene,ball,flash){
     g.fillStyle=col;g.beginPath();g.arc(x,yy,R0,0,7);g.fill();g.strokeStyle='#ffffffcc';g.lineWidth=1.5;g.stroke();
     g.fillStyle=ink;g.font='700 11px system-ui,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(o.p.num,x,yy+0.5);
     g.font='600 9px system-ui,sans-serif';g.fillStyle='#fff';g.textBaseline='top';g.fillText(o.p.last.length>9?o.p.last.slice(0,8)+'.':o.p.last,x,y+13);
+    const tch=ui._touch;if(tch&&tch.id===o.id&&performance.now()-tch.t0<1100){const a=1-Math.max(0,(performance.now()-tch.t0-700)/400);g.globalAlpha=a;g.strokeStyle='#fde047';g.lineWidth=3;g.beginPath();g.arc(x,yy,R0+4,0,7);g.stroke();
+      const bx2=x+13,by2=yy-17;g.fillStyle=tch.n==='B'?'#38bdf8':'#fde047';g.beginPath();g.arc(bx2,by2,8.5,0,7);g.fill();g.fillStyle='#111';g.font='900 11px system-ui,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(tch.n,bx2,by2+0.5);g.globalAlpha=1;g.textBaseline='top';}
     const en=o.p.en==null?100:o.p.en;g.fillStyle='#00000080';g.fillRect(x-10,y+24,20,3);g.fillStyle=en>75?'#22c55e':en>55?'#eab308':'#ef4444';g.fillRect(x-10,y+24,20*en/100,3);}
   if(ball){const [bx,by]=mvP(ball.x,ball.y);g.fillStyle='rgba(0,0,0,.38)';g.beginPath();g.ellipse(bx,by,5.5,2.8,0,0,7);g.fill();
     const yy=by-ball.h*10,rr=5+ball.h*0.9;g.fillStyle='#fff7d6';g.beginPath();g.arc(bx,yy,rr,0,7);g.fill();g.lineWidth=1.4;g.strokeStyle='#1d4ed8';g.beginPath();g.arc(bx,yy,rr*0.62,0.4,2.6);g.stroke();g.strokeStyle='#eab308';g.beginPath();g.arc(bx,yy,rr*0.62,3.5,5.8);g.stroke();}
@@ -2147,7 +2207,7 @@ function hallAnim(m,pre,ev,done){
   const loc=o=>o.i===0?[o.x,o.y]:[18-o.x,9-o.y];
   const baseDef=(i,moves)=>{for(const o of side(i)){const [lx,ly]=loc(o);const fr=isFrontZ(o.zone);moves.push(mvTo(o,fr?8.2:2.9,defY(o)));}};
   const cur={};for(const o of scene)cur[o.id]=[o.x,o.y];const cx=o=>cur[o.id][0],cy=o=>cur[o.id][1];
-  const seq=ev.seq;let lastAtt=null,lastK='srv',lastLy=4.5,lastAttD=null,lastMix=null,lastSq=0.7;
+  const seq=ev.seq;let lastAtt=null,lastK='srv',lastLy=4.5,lastAttD=null,lastMix=null,lastSq=0.7,tSide=null,tCnt=0;
   for(let t=1;t<seq.length;t++){const s=seq[t];const o=s.id?P[s.id]:null;const moves=[];let to,peak=0,dur=700,ph='';
     if(s.k==='rec'||s.k==='ace'){const rs=s.s,ss=1-rs;baseDef(ss,moves);
       const st=side(rs).find(x=>x.role==='R');if(st&&s.k==='rec')moves.push(mvTo(st,8.2,5.8));
@@ -2160,7 +2220,7 @@ function hallAnim(m,pre,ev,done){
         const lc=(X,Y)=>i===0?[X,Y]:[18-X,9-Y];const [sx,sy]=lc(cx(st),cy(st));const bx=s.px!=null?s.px:lc(tx,ty)[0],by=s.px!=null?s.py:lc(tx,ty)[1];
         const nx=seq[t+1];let hx=8.3,hy=4.5;if(nx&&(nx.k==='att'||nx.k==='free')&&P[nx.id]){const h=P[nx.id];hx=nx.k==='free'?7.4:isFrontZ(h.zone)?8.3:6.0;hy=lane(h);}
         const segD=(x,y)=>{const ax=hx-bx,ay=hy-by,L=ax*ax+ay*ay||1;const u=clamp(((x-bx)*ax+(y-by)*ay)/L,0,1);return Math.hypot(x-(bx+ax*u),y-(by+ay*u));};
-        let best=null,bs=-1;for(let a=0;a<16;a++){const ang=a/16*Math.PI*2;const x=clamp(bx+Math.cos(ang)*1.6,0.5,7.2),y=clamp(by+Math.sin(ang)*1.6,0.5,8.5);const sc=segD(x,y)-Math.hypot(x-sx,y-sy)*0.15;if(sc>bs){bs=sc;best=[x,y];}}
+        let best=null,bs=-1;for(let a=0;a<16;a++){const ang=a/16*Math.PI*2;const x=clamp(bx+Math.cos(ang)*2.5,0.5,7.2),y=clamp(by+Math.sin(ang)*2.5,0.5,8.5);const sc=segD(x,y)-Math.hypot(x-sx,y-sy)*0.15;if(sc>bs){bs=sc;best=[x,y];}}
         moves.push(mvTo(st,best[0],best[1]));}}
       for(const a of side(i)){if(a.id===o.id||a.role==='R')continue;const fr=isFrontZ(a.zone);if(!fr&&a.role!=='A'&&a.role!=='P'){moves.push(mvTo(a,2.6,defY(a)));continue;}moves.push(mvTo(a,fr?5.6:3.9,lane(a)));}
       const d=side(1-i);for(const b of d){const fr=isFrontZ(b.zone);if(b.role==='L'||!fr)moves.push(mvTo(b,defZone(b)===6?2.2:3.0,defY(b)));else moves.push(mvTo(b,8.4,defY(b)));}
@@ -2189,7 +2249,8 @@ function hallAnim(m,pre,ev,done){
     else if(s.k==='net'){to={x:9+(R()<0.5?-0.25:0.25),y:1+R()*7,h:1.6};dur=lastK==='srv'?900:420;peak=lastK==='srv'?3.2:0;ph='Siatka';}
     else continue;
     for(const mv of moves)cur[mv.id]=[mv.x,mv.y];
-    steps.push({to,peak,dur:dur*sf,moves,ph});lastK=s.k;
+    let touch=null;if(['rec','dig','set','att','free'].includes(s.k)&&s.id){if(s.s!==tSide){tSide=s.s;tCnt=0;}tCnt++;touch={id:s.id,n:tCnt};}else if(s.k==='blk'&&s.id){touch={id:s.id,n:'B'};tSide=s.s;tCnt=0;}
+    steps.push({to,peak,dur:dur*sf,moves,ph,touch});lastK=s.k;
     if(s.k==='net')steps.push({to:{x:to.x+(to.x<9?-0.4:0.4),y:to.y,h:0},peak:0,dur:300*sf,moves:[],ph:'Siatka'});}
   const label={ace:'AS!',block:'BLOK!',kill:'PUNKT',serr:'BŁĄD ZAGRYWKI',attErr:'BŁĄD ATAKU',setErr:'BŁĄD',mix:'NIEPOROZUMIENIE'}[ev.type]||'PUNKT';
   let k=0;const phEl=()=>document.getElementById('mph');
@@ -2200,7 +2261,7 @@ function hallAnim(m,pre,ev,done){
     const fr=now=>{if(last!=null&&!m.paused)el+=now-last;last=now;const t=Math.min(1,el/st.dur),e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
       ball={x:from.x+(st.to.x-from.x)*t,y:from.y+(st.to.y-from.y)*t,h:from.h+(st.to.h-from.h)*t+st.peak*4*t*(1-t)};
       for(const o of scene){const mv=tgt[o.id];if(!mv){o.j=0;continue;}const f=fromP[o.id];o.x=f[0]+(mv.x-f[0])*e;o.y=f[1]+(mv.y-f[1])*e;o.j=mv.j?Math.sin(Math.PI*Math.min(1,t*1.15))*mv.j:0;}
-      drawHall(m,scene,ball,null);if(t<1)requestAnimationFrame(fr);else run();};
+      if(t>=1&&st.touch)ui._touch={id:st.touch.id,n:st.touch.n,t0:performance.now()};drawHall(m,scene,ball,null);if(t<1)requestAnimationFrame(fr);else run();};
     requestAnimationFrame(fr);};
   run();
 }
@@ -2615,6 +2676,105 @@ function asstPanel(m){const sk=staffSkill('asy');const s=SAVE.staff&&SAVE.staff.
   return `<div class="card fmpanel"><div class="row"><h3 style="margin:0">💬 Asystent: ${s?esc((s.first||'')+' '+(s.last||'')):'bez asystenta'} <small class="mut">${s?sk+'/20':''}</small></h3><span class="sp"></span><button class="ghost sm" onclick="render()">↻ Odśwież</button><button class="ghost sm" onclick="ui.fmPanel=null;render()">Zamknij</button></div>
    <div class="asl">${L.map(x=>`<div class="asi"><span class="asg">${x.g}</span><span class="ast">${esc(x.t)}</span>${x.btn?`<button class="btn sm" onclick="${x.act};ui.fmPanel='asst';render()">✓ ${esc(x.btn)}</button>`:''}</div>`).join('')}</div>
    <p class="small mut" style="margin:6px 0 0">${sk<6?'Słaby asystent widzi tylko najważniejsze rzeczy. Lepszy (Sztab) da więcej i trafniejszych rad, np. o rozegraniu.':sk<8?'Lepszy asystent (8+) podpowie też, na kogo rozgrywać.':'Rady odświeżają się po każdej akcji.'}</p></div>`;}
+// ================= SZKIELET INTERFEJSU: MENU BOCZNE, PASEK KLUBU, EKRAN GŁÓWNY =================
+const NAV=[['home','🏠','Ekran główny'],['mecz','🏐','Mecz i sezon'],['sklad','👥','Skład'],['taktyka','📋','Taktyka'],['trening','🏋️','Trening'],['kalendarz','📅','Terminarz'],['tabela','🏆','Tabela'],['staty','📈','Statystyki'],['transfery','🔁','Transfery'],['finanse','💰','Finanse'],['sztab','🧑‍🏫','Sztab'],['juniorzy','🌱','Juniorzy'],['klub','🏟️','Infrastruktura'],['trener','🎓','Trener']];
+function teamCrest(i,size){const t=TEAMS[i];if(!t)return '';if(SAVE.custom&&SAVE.custom.idx===i)return crestSvg(t.name,t.short,t.color,size,SAVE.custom.crest);return crestSvg(t.name,t.short,t.color,size,(i*7+3)%20);}
+function liveMatch(){return ui.match&&!ui.match.over;}
+function sideNav(){const mini=ui.tab==='mecz'&&liveMatch();const newsN=(SAVE.news||[]).filter(x=>x.d===today()).length;
+  const item=([k,ic,l])=>`<button class="nav ${ui.tab===k?'on':''}" onclick="ui.navOpen=false;go('${k}')" title="${l}"><span class="ic">${ic}</span><span class="tx">${l}</span></button>`;
+  return `<aside class="side ${mini?'mini':''} ${ui.navOpen?'open':''}">
+   <button class="nav act" onclick="ui.navOpen=false;nextAction()" title="Następna akcja"><span class="ic">⏩</span><span class="tx">Następna akcja</span></button>
+   <button class="nav" onclick="ui.navOpen=false;nextDay()" title="Następny dzień"><span class="ic">▶</span><span class="tx">Następny dzień</span></button>
+   <div class="navsep"></div>
+   ${NAV.map(item).join('')}
+   <div class="navgap"></div>
+   <button class="nav ${ui.tab==='zapis'?'on':''}" onclick="ui.navOpen=false;go('zapis')" title="Zapis i wczytanie"><span class="ic">💾</span><span class="tx">Zapis gry</span></button>
+   <button class="nav small ${ui.tab==='test'?'on':''}" onclick="ui.navOpen=false;go('test')" title="Test silnika"><span class="ic">🧪</span><span class="tx">Test silnika</span></button>
+  </aside>${ui.navOpen?'<div class="navshade" onclick="ui.navOpen=false;render()"></div>':''}`;}
+// ---- pasek klubu ----
+function myLineupPlayers(){const t=myTeam();const lu=SAVE.lineup||{};return Object.values(lu).map(id=>t.players.find(p=>p.id===id)).filter(Boolean);}
+function topBar(){const t=myTeam();const ps=t.players;const mor=Math.round(ps.reduce((s,p)=>s+(p.mor==null?60:p.mor),0)/Math.max(1,ps.length));
+  const chem=chemPct(chemOf(myLineupPlayers(),t.idx));const conf=SAVE.board?Math.round(SAVE.board.conf):60;
+  const lu=SAVE.lineup;const okLu=validLineup(t,lu)&&!myLineupPlayers().some(p=>p.inj);
+  const s=S();let pos='—';if(s&&(s.phase==='liga'||s.phase==='po'||s.phase==='end')){const tb=leagueTable();pos=(tb.findIndex(x=>x.i===SAVE.team)+1)+'. miejsce';}
+  const bar=(l,v)=>`<div class="tbr"><i style="width:${Math.max(4,v)}%;background:${v>=70?'#22c55e':v>=45?'#eab308':'#ef4444'}"></i><span>${l} ${v}%</span></div>`;
+  const d=today();
+  return `<div class="topbar">
+   <button class="burger" onclick="ui.navOpen=!ui.navOpen;render()" aria-label="Menu">☰</button>
+   <div class="tlogo">🏐 Volley<b>Manager</b></div>
+   <div class="tcr" onclick="go('home')">${teamCrest(SAVE.team,40)}</div>
+   <div class="tclub"><span class="lab">Klub</span><b>${esc(t.name)}</b></div>
+   <div class="tbars"><span class="lab">Drużyna</span>${bar('Morale',mor)}${bar('Zgranie',chem)}${bar('Zarząd',conf)}</div>
+   <div class="tcell" onclick="go('sklad')" title="${okLu?'Skład gotowy':'W składzie jest kontuzjowany zawodnik albo brakuje pozycji'}"><span class="lab">Skład</span><b style="font-size:22px;color:${okLu?'var(--good)':'var(--bad)'}">${okLu?'✔':'⚠'}</b></div>
+   <div class="tcell"><span class="lab">Pozycja</span><b>${pos}</b></div>
+   <div class="tcell" onclick="go('finanse')"><span class="lab">Budżet</span><b>${fmt(SAVE.fin?SAVE.fin.bal:0)}</b></div>
+   <div class="tcell"><span class="lab">Data</span><b>${DOW[dow(d)]}<br>${fmtDMY(d)}</b></div>
+  </div>`;}
+// ---- czas gry ----
+function nextAction(){if(liveMatch()){go('mecz');return;}const s=S();if(!s||SAVE.fired){go('mecz');return;}
+  const e=nextEvent();if(!e){go('mecz');return;}
+  if(e.d>today()){advanceTo(e.d);save();ui.tab='home';render();return;}
+  const c=myNext();if(c&&(s.phase==='spar'||s.phase==='liga'||s.phase==='po')){playNext();return;}
+  go('mecz');}
+function nextDay(){if(liveMatch()){go('mecz');return;}const e=nextEvent();const t=addDays(today(),1);
+  if(e&&t>e.d){ui.msg='Dziś jest dzień meczowy — najpierw rozegraj mecz („Następna akcja”).';ui.tab='home';render();return;}
+  advanceTo(t);save();ui.tab='home';render();}
+// ---- ekran główny ----
+function teamForm(i){const s=S();const out=[];
+  if(i===SAVE.team&&s.spar)for(const g of s.spar.res)out.push(g);
+  for(const rd of s.results||[])for(const g of rd)if(g.h===i||g.a===i)out.push(g);
+  if(s.po)for(const sr of s.po.series)for(const g of sr.games)if(g.h===i||g.a===i)out.push(g);
+  return out.slice(-5).map(g=>{const w=(g.h===i)===(g.sw[0]===3);return w;});}
+function formDots(i){const f=teamForm(i);const pad=Array(Math.max(0,5-f.length)).fill(null);return `<div class="hdots">${pad.concat(f).map(w=>`<span class="${w==null?'n':w?'w':'l'}"></span>`).join('')}</div>`;}
+function hNext(){const s=S();
+  if(SAVE.fired)return `<div class="pan hnext"><div class="ttl">Następny mecz</div><div class="hvs"><b>Jesteś bez klubu</b><div class="mut">Sprawdź oferty w zakładce Trener.</div><button class="btn" onclick="go('trener')">Oferty pracy</button></div></div>`;
+  if(s.phase==='off'||s.phase==='end')return `<div class="pan hnext"><div class="ttl">Następny mecz</div><div class="hvs"><b>${s.phase==='off'?'Przerwa między sezonami':'Sezon zakończony'}</b><div class="mut">${s.phase==='off'?'Okno transferowe otwarte. Kontrakty, transfery i przygotowania.':'Podsumowanie sezonu czeka w zakładce Mecz i sezon.'}</div><button class="btn" onclick="go('mecz')">Przejdź</button></div></div>`;
+  const c=myNext();const e=nextEvent();
+  if(!c)return `<div class="pan hnext"><div class="ttl">Następny mecz</div><div class="hvs"><b>Brak planowanych spotkań</b><div class="mut">Twoja drużyna nie gra w tej fazie.</div><button class="btn" onclick="go('mecz')">Pozostałe mecze</button></div></div>`;
+  const home=c.h===SAVE.team,op=home?c.a:c.h;
+  const comp=s.phase==='spar'?`Sparing ${s.spar.res.length+1}/${N_SPAR}`:s.phase==='liga'?`Liga · ${s.round+1}. kolejka`:`Play-off · ${STAGE[s.po.series.find(x=>x.id===c.sid).st]}`;
+  const days=e?daysBetween(today(),e.d):0;const isDay=days<=0;
+  return `<div class="pan hnext"><div class="ttl">Następny mecz</div><div class="hnx">
+   <div class="hcr">${teamCrest(c.h,96)}${formDots(c.h)}</div>
+   <div class="hvs"><b>${esc(TEAMS[c.h].name)} – ${esc(TEAMS[c.a].name)}</b>
+    <div class="mut">${comp} · ${home?'u siebie':'na wyjeździe'}</div>
+    <div class="mut">${e?fmtLong(e.d)+(e.t?' · '+e.t:''):''}</div>
+    ${isDay?`<div class="hday">Dzień meczowy!</div><div class="row" style="justify-content:center;gap:8px;margin-top:8px"><button class="btn" onclick="playNext()">▶ Przejdź do meczu</button><button class="ghost" onclick="simNext()">Symuluj</button></div>`
+     :`<div class="hday mut">za ${days} ${days===1?'dzień':'dni'}</div><button class="btn" style="margin-top:8px" onclick="nextAction()">⏩ Do dnia meczu</button>`}
+    <div class="small mut" style="margin-top:6px">Rywal: ${tDot(op)}${esc(TEAMS[op].short)} · siła ${teamStrength(TEAMS[op])} (Twoja ${teamStrength(myTeam())})</div></div>
+   <div class="hcr">${teamCrest(c.a,96)}${formDots(c.a)}</div></div></div>`;}
+function hTable(){const s=S();if(!(s.phase==='liga'||s.phase==='po'||s.phase==='end'))return `<div class="pan"><div class="ttl">Tabela ligowa</div><div class="mut small">Tabela ruszy po sparingach, w pierwszej kolejce ligi.</div>${s.phase==='spar'?`<table class="htb">${TEAMS.map(t=>t).sort((a,b)=>teamStrength(b)-teamStrength(a)).slice(0,12).map((t,k)=>`<tr class="${t.idx===SAVE.team?'me':''}"><td>${k+1}.</td><td class="tl">${tDot(t.idx)}${esc(t.name)}</td><td class="mut">siła ${teamStrength(t)}</td></tr>`).join('')}</table><div class="small mut">Kolejność według siły składu.</div>`:''}</div>`;
+  const tb=leagueTable();const c=myNext();const op=c?(c.h===SAVE.team?c.a:c.h):-1;
+  return `<div class="pan"><div class="ttl">Tabela ligowa</div><table class="htb"><tr><th></th><th class="tl">Drużyna</th><th>M</th><th>Pkt</th><th>Z</th><th>P</th><th>Sety</th><th>+/−</th></tr>
+   ${tb.map((x,k)=>`<tr class="${x.i===SAVE.team?'me':x.i===op?'op':''} ${k===7?'cut':''}"><td>${k+1}.</td><td class="tl">${tDot(x.i)}${esc(TEAMS[x.i].name)}</td><td>${x.m}</td><td class="pk">${x.pts}</td><td>${x.w}</td><td>${x.l}</td><td>${x.sw}:${x.sl}</td><td>${x.pw-x.pl>0?'+':''}${x.pw-x.pl}</td></tr>`).join('')}</table>
+   <div class="small mut" style="margin-top:4px">Linia pod 8. miejscem: awans do play-off.</div></div>`;}
+function hFixtures(){const ev=myEvents();const ds=Object.keys(ev).sort();const up=[],done=[];
+  for(const d of ds)for(const e of ev[d]){(e.r?done:up).push({d,...e});}
+  const kind=e=>e.kind==='spar'?'Sparing':e.kind==='liga'?`Liga, ${e.k}. kolejka`:'Play-off';
+  const row=(e,res)=>{const my=res?e.r:null;let badge='';if(my){const w=(my.h===SAVE.team)===(my.sw[0]===3);const sc=my.h===SAVE.team?my.sw[0]+':'+my.sw[1]:my.sw[1]+':'+my.sw[0];badge=`<span class="hres ${w?'w':'l'}">${sc}</span>`;}
+    return `<tr><td>${e.d.slice(8)}.${e.d.slice(5,7)}</td><td class="tl">${tDot(e.op)}${esc(TEAMS[e.op].name)} <span class="mut">(${e.home?'D':'W'})</span></td><td>${badge}</td><td class="mut">${kind(e)}</td></tr>`;};
+  return `<div class="pan"><div class="ttl">Nadchodzące mecze</div><table class="hfx">${up.slice(0,4).map(e=>row(e,false)).join('')||'<tr><td class="mut">Brak.</td></tr>'}</table>
+   <div class="ttl" style="margin-top:10px">Rozegrane mecze</div><table class="hfx">${done.slice(-4).reverse().map(e=>row(e,true)).join('')||'<tr><td class="mut">Jeszcze nic nie rozegrano.</td></tr>'}</table></div>`;}
+function newsIcon(t){const m=String(t).match(/^\p{Extended_Pictographic}/u);return m?m[0]:'📰';}
+function hNews(){const n=SAVE.news||[];
+  const strip=t=>String(t).replace(/^\p{Extended_Pictographic}️?\s*/u,'');
+  const big=n.slice(0,3),rest=n.slice(3,9);
+  return `<div class="pan"><div class="ttl">Wiadomości</div>${n.length?`<div class="hnews">${big.map(x=>`<div class="hncard"><span class="d">${x.d?fmtLong(x.d).replace(/ \d{4}$/,''):''}</span><span class="ico">${newsIcon(x.t)}</span><span class="t">${esc(strip(x.t))}</span></div>`).join('')}</div>
+   ${rest.map(x=>`<div class="hnl"><span>${newsIcon(x.t)}</span><span class="mut small">${x.d?fmtShort(x.d):''}</span><span class="t">${esc(strip(x.t))}</span></div>`).join('')}`:'<div class="mut small">Brak wiadomości. Tu pojawią się wyniki, kontuzje, transfery i decyzje zarządu.</div>'}</div>`;}
+function hLast(){const L=SAVE.lastMatch;if(!L)return `<div class="pan"><div class="ttl">Podsumowanie ostatniego meczu</div><div class="mut small">Po pierwszym meczu zobaczysz tu wynik, MVP i najważniejsze liczby.</div></div>`;
+  const w=(L.h===SAVE.team)===(L.sw[0]===3);
+  return `<div class="pan"><div class="ttl">Podsumowanie ostatniego meczu</div>
+   <div class="hlast"><span>${tDot(L.h)}</span><b>${esc(TEAMS[L.h].name)} – ${esc(TEAMS[L.a].name)} ${L.sw[0]}:${L.sw[1]}</b><span class="hres ${w?'w':'l'}">${w?'Wygrana':'Porażka'}</span><span class="mut small" style="margin-left:auto">${L.sets.map(x=>x[0]+':'+x[1]).join(' · ')} · ${L.d?fmtDMY(L.d):''}</span></div>
+   <div class="hsum"><div><span class="lab">MVP</span><b>${esc(L.mvp||'—')}</b></div><div><span class="lab">Atak</span><b>${L.atk}%</b></div><div><span class="lab">Bloki</span><b>${L.blk}</b></div><div><span class="lab">Asy</span><b>${L.ace}</b></div><div><span class="lab">${L.home?'Widzów':'Mecz'}</span><b>${L.home?(L.att||0).toLocaleString('pl-PL'):'wyjazdowy'}</b></div></div></div>`;}
+function hCalendar(){const ev=myEvents();const s=S();const tr=SAVE.training?(TRAIN_FOCUS.find(x=>x[0]===SAVE.training.focus)||[])[1]:null;const out=[];
+  for(let k=0;k<5;k++){const d=addDays(today(),k);const list=[];
+    for(const e of ev[d]||[]){const lab=e.kind==='spar'?'Sparing':e.kind==='liga'?'Liga':'Play-off';list.push(`<div class="hev m">${lab}: ${esc(TEAMS[e.home?SAVE.team:e.op].short)} – ${esc(TEAMS[e.home?e.op:SAVE.team].short)}${e.r?` (${e.r.sw[0]}:${e.r.sw[1]})`:''}</div>`);if(e.kind==='liga')list.push('<div class="hev">Liga juniorów</div>');}
+    if(s.offDate===d)list.push('<div class="hev">Otwarcie okna transferowego</div>');
+    if(!list.length)list.push(s.phase==='off'?'<div class="hev">Urlop / przygotowania</div>':`<div class="hev">Trening${tr?': '+esc(tr.toLowerCase()):''}</div>`);
+    out.push(`<div class="hdaycol ${k===0?'today':''}"><div class="hdh">${k===0?'Dziś':fmtShort(d)}</div>${list.join('')}</div>`);}
+  return `<div class="hcal">${out.join('')}</div>`;}
+function homeView(){const s=S();if(!s)return '';
+  return `${ui.msg?`<div class="card msg">${ui.msg}</div>`:''}${s.phase==='off'?'':boardCard()}<div class="hgrid"><div class="hcol">${hNext()}${hTable()}${hFixtures()}</div><div class="hcol">${hNews()}${hLast()}</div></div>${hCalendar()}`;}
 applyCustom();
 // ================= START =================
 if(SAVE.team!=null){if(!SAVE.date&&!SAVE.world)SAVE.date=GAME_START;if(!SAVE.world)initWorld();else syncTeams();if(!SAVE.season)newSeason(1);migrateDates();initClub();}

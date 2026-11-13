@@ -101,5 +101,5 @@ function foundClub(){const o=ocDraft();const c=ui.pendingCoach;
   newSeason(1);initBoard(true);
   news(`🏗️ Powstaje nowy klub: ${o.name}${o.city?' ('+o.city+')':''}! Zajmuje w lidze miejsce ${oldName}. Pierwszym trenerem zostaje ${c.first} ${c.last}.`);
   news(`⭐ Gwiazda zespołu: ${star.first} ${star.last} (${POS_NAMES[star.pos]}, ${star.age} l., ocena ${rating(star)}).`);
-  ui.cc=null;ui.pendingCoach=null;ui.oc=null;ui.tab='mecz';syncDate();save();render();}
+  ui.cc=null;ui.pendingCoach=null;ui.oc=null;ui.tab='home';syncDate();save();render();}
 function foundCard(){return `<button class="teamcard foundcard" onclick="ui.cc.step=3;render()"><b>🏗️ Załóż nowy klub</b><small>Własna nazwa, barwy i herb. Start od zera: infrastruktura na poziomie 1, młodzi zawodnicy z dużym potencjałem i jedna gwiazda. Zawsze dostępny, bez wymagań co do reputacji.</small></button>`;}
