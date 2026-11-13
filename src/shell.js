@@ -68,7 +68,7 @@ function hNext(){const s=S();
 function hTable(){const s=S();if(!(s.phase==='liga'||s.phase==='po'||s.phase==='end'))return `<div class="pan"><div class="ttl">Tabela ligowa</div><div class="mut small">Tabela ruszy po sparingach, w pierwszej kolejce ligi.</div>${s.phase==='spar'?`<table class="htb">${TEAMS.map(t=>t).sort((a,b)=>teamStrength(b)-teamStrength(a)).slice(0,12).map((t,k)=>`<tr class="${t.idx===SAVE.team?'me':''}"><td>${k+1}.</td><td class="tl">${tDot(t.idx)}${esc(t.name)}</td><td class="mut">siła ${teamStrength(t)}</td></tr>`).join('')}</table><div class="small mut">Kolejność według siły składu.</div>`:''}</div>`;
   const tb=leagueTable();const c=myNext();const op=c?(c.h===SAVE.team?c.a:c.h):-1;
   return `<div class="pan"><div class="ttl">Tabela ligowa</div><table class="htb"><tr><th></th><th class="tl">Drużyna</th><th>M</th><th>Pkt</th><th>Z</th><th>P</th><th>Sety</th><th>+/−</th></tr>
-   ${tb.map((x,k)=>`<tr class="${x.i===SAVE.team?'me':x.i===op?'op':''} ${k===7?'cut':''}"><td>${k+1}.</td><td class="tl">${tDot(x.i)}${esc(TEAMS[x.i].name)}</td><td>${x.m}</td><td class="pk">${x.pts}</td><td>${x.w}</td><td>${x.l}</td><td>${x.sw}:${x.sl}</td><td>${x.pw-x.pl>0?'+':''}${x.pw-x.pl}</td></tr>`).join('')}</table>
+   ${tb.map((x,k)=>`<tr class="${x.i===SAVE.team?'me':x.i===op?'op':''} ${k===7?'cut':''}"><td>${k+1}.</td><td class="tl"><button class="link tlk" onclick="openTeam(${x.i})">${tDot(x.i)}${esc(TEAMS[x.i].name)}</button></td><td>${x.m}</td><td class="pk">${x.pts}</td><td>${x.w}</td><td>${x.l}</td><td>${x.sw}:${x.sl}</td><td>${x.pw-x.pl>0?'+':''}${x.pw-x.pl}</td></tr>`).join('')}</table>
    <div class="small mut" style="margin-top:4px">Linia pod 8. miejscem: awans do play-off.</div></div>`;}
 function hFixtures(){const ev=myEvents();const ds=Object.keys(ev).sort();const up=[],done=[];
   for(const d of ds)for(const e of ev[d]){(e.r?done:up).push({d,...e});}
@@ -96,4 +96,4 @@ function hCalendar(){const ev=myEvents();const s=S();const tr=SAVE.training?(TRA
     out.push(`<div class="hdaycol ${k===0?'today':''}"><div class="hdh">${k===0?'Dziś':fmtShort(d)}</div>${list.join('')}</div>`);}
   return `<div class="hcal">${out.join('')}</div>`;}
 function homeView(){const s=S();if(!s)return '';
-  return `${ui.msg?`<div class="card msg">${ui.msg}</div>`:''}${s.phase==='off'?'':boardCard()}<div class="hgrid"><div class="hcol">${hNext()}${hTable()}${hFixtures()}</div><div class="hcol">${hNews()}${hLast()}</div></div>${hCalendar()}`;}
+  return `${ui.msg?`<div class="card msg">${ui.msg}</div>`:''}${s.phase==='off'?'':boardCard()}<div class="hgrid"><div class="hcol">${hNext()}${hTable()}${hFixtures()}</div><div class="hcol">${hLeague()}${hNews()}${hLast()}</div></div>${hCalendar()}`;}

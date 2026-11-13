@@ -36,7 +36,7 @@ function render(){
   else if(ui.tab==='finanse')body=financeView();
   else if(ui.tab==='zapis')body=saveView();
   const wide=ui.tab==='mecz'&&ui.match&&!(ui.match.over&&ui.view==='post');
-  app.innerHTML=`<div class="shell ${wide?'live':''}">${topBar()}${sideNav()}<main class="${wide?'wide':''}">${body}</main></div>`+(ui.card?cardModal():'');
+  app.innerHTML=`<div class="shell ${wide?'live':''}">${topBar()}${sideNav()}<main class="${wide?'wide':''}">${body}</main></div>`+(ui.card?cardModal():ui.pop?popModal():ui.teamPop!=null?teamModal():'');
   if(ui.tab==='mecz'&&ui.match){const lg=$('#log');if(lg)lg.scrollTop=0;if(typeof drawHallStatic==='function'&&typeof document.getElementById==='function')drawHallStatic();}
 }
 function hdr(nav){
@@ -65,7 +65,7 @@ function squadView(){
   else if(ui.sort==='ocena')pl.sort((a,b)=>rating(b)-rating(a));
   else if(ui.sort==='wiek')pl.sort((a,b)=>a.age-b.age);
   else if(ui.sort==='h')pl.sort((a,b)=>b.h-a.h);
-  else if(ui.sort==='pot')pl.sort((a,b)=>b.pot-a.pot);else if(ui.sort==='wart')pl.sort((a,b)=>pValue(b)-pValue(a));else if(ui.sort==='pensja')pl.sort((a,b)=>b.wage-a.wage);else if(ui.sort==='kontrakt')pl.sort((a,b)=>a.ce-b.ce);
+  else if(ui.sort==='pot')pl.sort((a,b)=>b.pot-a.pot);else if(ui.sort==='wart')pl.sort((a,b)=>pValue(b)-pValue(a));else if(ui.sort==='kon')pl.sort((a,b)=>b.kon-a.kon);else if(ui.sort==='pensja')pl.sort((a,b)=>b.wage-a.wage);else if(ui.sort==='kontrakt')pl.sort((a,b)=>a.ce-b.ce);
   else pl.sort((a,b)=>b[ui.sort]-a[ui.sort]);
   const sel=([k,l,pos])=>`<label class="lu"><span>${l}</span><select onchange="setLu('${k}',this.value)">${
     t.players.slice().sort((a,b)=>(a.pos===pos?0:1)-(b.pos===pos?0:1)||rating(b,pos)-rating(a,pos)).map(p=>`<option value="${p.id}" ${lu[k]===p.id?'selected':''}>${p.inj?'🚑 ':''}${esc(p.last)} (${POS_SHORT[p.pos]}) — ${rating(p,pos)}</option>`).join('')}</select></label>`;
@@ -74,12 +74,12 @@ function squadView(){
   ${lineupCourt(t,lu)}
   <div class="lugrid">${LINEUP_KEYS.map(sel).join('')}</div>${injWarn()}
   <div class="row small mut" style="margin-top:8px">Siła składu: <b style="color:var(--txt);margin-left:4px">${lineupStrength(t,lu)}</b><span style="margin-left:14px">${chemBadge(t,lu)}</span><span class="sp"></span>${ui.confirmReset?`<span class="bad">Zmiana klubu kasuje obecną grę (sloty zostają). Na pewno?</span> <button class="link" onclick="changeClub()">Tak, zmień</button> <button class="link" onclick="ui.confirmReset=false;render()">Nie</button>`:`<button class="link" onclick="changeClub()">Zmień klub</button>`}</div></div>
-  <div class="card"><h2>Kadra (${t.players.length})</h2><div class="tw"><table class="squad"><thead><tr class="grp"><th colspan="5"></th><th colspan="${ATTRS.length}" class="msep gt">Techniczne</th><th colspan="${PHYS.length}" class="msep gf">Fizyczne</th><th colspan="${MENTAL.length}" class="msep men">Mentalne</th><th colspan="5" class="msep">Klub</th></tr><tr>
+  <div class="card"><div class="row"><h2>Kadra (${t.players.length})</h2><span class="sp"></span><div class="lgt"><button class="${ui.sqFull?'':'on'}" onclick="ui.sqFull=0;render()">Widok prosty</button><button class="${ui.sqFull?'on':''}" onclick="ui.sqFull=1;render()">Pełne atrybuty ▸</button></div></div>${ui.sqFull?'':squadSimple(pl,inLu)}${!ui.sqFull?'':`<div class="tw"><table class="squad"><thead><tr class="grp"><th colspan="5"></th><th colspan="${ATTRS.length}" class="msep gt">Techniczne</th><th colspan="${PHYS.length}" class="msep gf">Fizyczne</th><th colspan="${MENTAL.length}" class="msep men">Mentalne</th><th colspan="5" class="msep">Klub</th></tr><tr>
   <th onclick="srt('pos')">#</th><th class="l" onclick="srt('pos')">Zawodnik</th><th onclick="srt('pos')">Poz</th><th onclick="srt('wiek')">Wiek</th><th onclick="srt('h')">Wzrost</th>
   ${[[ATTRS,'gt'],[PHYS,'gf'],[MENTAL,'men']].map(([G,c])=>G.map(([k,l,s,d],j)=>`<th class="${j?'':'msep'} ${c}" onclick="srt('${k}')" title="${l}: ${d}">${s}</th>`).join('')).join('')}<th onclick="srt('ocena')" class="msep">Ocena</th><th onclick="srt('pot')">Potencjał</th><th onclick="srt('wart')">Wartość</th><th onclick="srt('pensja')">Pensja</th><th onclick="srt('kontrakt')">Kontrakt</th></tr></thead><tbody>
-  ${pl.map(p=>`<tr class="${inLu.has(p.id)?'starter':''}"><td>${p.num}</td><td class="l"><span class="fcell">${pFace(p,28)}<button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} <b>${esc(p.last)}</b>${p.star?' ⭐':''}</button></span>${p.inj?` 🚑<small class="bad">${p.inj}</small>`:''}${inLu.has(p.id)?` <span class="tag">${inLu.get(p.id)}</span>`:''}</td><td>${POS_SHORT[p.pos]}</td><td>${p.age}</td><td>${p.h}</td>
+  ${pl.map(p=>`<tr class="${inLu.has(p.id)?'starter':''}"><td>${p.num}</td><td class="l"><span class="fcell">${pFace(p,28)}<button class="link pn" onclick="openPop('${p.id}')">${esc(p.first)} <b>${esc(p.last)}</b>${p.star?' ⭐':''}</button>${capBadge(p)}</span>${p.inj?` 🚑<small class="bad">${p.inj}</small>`:''}${inLu.has(p.id)?` <span class="tag">${inLu.get(p.id)}</span>`:''}</td><td>${POS_SHORT[p.pos]}</td><td>${p.age}</td><td>${p.h}</td>
   ${[ATTRS,PHYS,MENTAL].map(G=>G.map(([k],j)=>{const d=p.base?p[k]-p.base[k]:0;return `<td class="${j?'':'msep'}"><span class="attr ${aCls(p[k])}">${p[k]}</span>${d?`<sup class="${d>0?'good':'bad'}">${d>0?'+':''}${d}</sup>`:''}</td>`;}).join('')).join('')}<td class="msep"><b>${rating(p)}</b></td><td class="stars">${potStars(p)}</td><td>${fmt(pValue(p))}</td><td>${fmt(p.wage)}</td><td class="${p.ce<=S().n?'bad':''}">${ceDate(p.ce)}</td></tr>`).join('')}
-  </tbody></table></div><p class="mut small">Atrybuty w skali 1–20. Małe liczby to zmiana od początku sezonu. Kliknij nagłówek, żeby posortować, a nazwisko, żeby otworzyć kartę zawodnika (kontrakt, sprzedaż).</p>
+  </tbody></table></div>`}<p class="mut small">Atrybuty w skali 1–20. Małe liczby to zmiana od początku sezonu. Kliknij nagłówek, żeby posortować, a nazwisko, żeby otworzyć kartę zawodnika (kontrakt, sprzedaż).</p>
   <details class="legend"><summary>Co oznaczają atrybuty?</summary>${[['Techniczne',ATTRS],['Fizyczne',PHYS],['Mentalne',MENTAL]].map(([n,G])=>`<div class="lg"><b class="gh">${n}</b>${G.map(([k,l,s,d])=>`<div><b>${s}</b> ${l}: ${d}</div>`).join('')}</div>`).join('')}</details></div>`;
 }
 function lineupStrength(t,lu){let s=0,n=0;for(const [k,,pos] of LINEUP_KEYS){const p=t.players.find(x=>x.id===lu[k]);const w=k==='L'?0.6:1;s+=rating(p,pos)*w;n+=w;}return Math.round(s/n);}

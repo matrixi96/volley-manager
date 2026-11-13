@@ -3,7 +3,7 @@ Użycie: python src/build.py"""
 import pathlib
 src = pathlib.Path(__file__).parent
 root = src.parent
-parts = [(src / f).read_text(encoding='utf-8') for f in ['head.html', 'engine.js', 'ui.js', 'season.js', 'manage.js', 'calendar.js', 'club.js', 'faces.js', 'coach.js', 'ownclub.js', 'matchview.js', 'livepanels.js', 'fmview.js', 'shell.js', 'boot.js']]
+parts = [(src / f).read_text(encoding='utf-8') for f in ['head.html', 'engine.js', 'ui.js', 'season.js', 'manage.js', 'calendar.js', 'club.js', 'faces.js', 'coach.js', 'ownclub.js', 'matchview.js', 'livepanels.js', 'fmview.js', 'people.js', 'shell.js', 'boot.js']]
 html = ''.join(parts) + '\n</script></body></html>\n'
 html = html.replace('<title>Volley Manager — prototyp</title>', '''<title>Volley Manager</title>
 <link rel="manifest" href="manifest.webmanifest">

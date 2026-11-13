@@ -306,5 +306,31 @@ button.sm{padding:5px 10px;font-size:12px}
  .hnews{grid-template-columns:1fr}.hncard{flex-direction:row;min-height:0;text-align:left}.hncard .ico{font-size:28px}.hncard .d{align-self:center;min-width:70px}
  .hsum{grid-template-columns:repeat(3,1fr)}.hcal{grid-template-columns:repeat(5,minmax(110px,1fr));overflow-x:auto}
  .htb th:nth-child(7),.htb td:nth-child(7){display:none}}
+
+/* --- skład 7 + kapitan + charakter --- */
+.trc{display:inline-block;font-size:10.5px;font-weight:800;padding:1px 6px;border-radius:9px;margin:1px 3px 1px 0;color:var(--c);background:color-mix(in srgb,var(--c) 16%,transparent);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);white-space:nowrap}
+.capb{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:#facc15;color:#111;font-size:10.5px;font-weight:900;margin-left:4px;vertical-align:middle}
+.lcwrap{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:12px;max-width:900px;margin:6px auto 4px;align-items:start}
+.lcwrap .lcourt{max-width:none;margin:0}
+.lcf{position:relative}.lcf .capb{position:absolute;top:-2px;right:-8px}.lcf svg{display:block;border-radius:50%}
+.lcnum{position:absolute;bottom:-3px;left:-6px;background:#0b1220;border:1px solid #ffffff33;border-radius:8px;font-size:10.5px;font-weight:800;padding:0 4px}
+.lctr{min-height:18px;text-align:center}
+.lcst{gap:8px}.lcst b{font-size:13.5px}
+.lcside{display:flex;flex-direction:column;gap:8px}.lcside .lcz{background:#0b1220aa;border:1px solid #f59e0b55}
+.lcz.lib{border:1px solid #f59e0b66}
+.lccap{background:var(--panel);border:1px solid #facc1544;border-radius:10px;padding:8px}.lccap select{width:100%;margin-top:6px}
+@media (max-width:760px){.lcwrap{grid-template-columns:1fr}.lcst span:nth-child(4),.lcst span:nth-child(3){display:none}}
+.ppop{max-width:520px}
+.pkey{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;margin:12px 0}
+.pkey div{display:grid;grid-template-columns:minmax(0,1fr) 70px 22px;align-items:center;gap:6px;font-size:13px}.pkey i{height:6px;background:#ffffff14;border-radius:4px;overflow:hidden}.pkey i b{display:block;height:100%}.pkey em{font-style:normal;font-weight:800;text-align:right}
+@media (max-width:520px){.pkey{grid-template-columns:1fr}}
+.pmeta{display:flex;flex-wrap:wrap;gap:8px}.pmeta div{background:#0b1220;border-radius:8px;padding:5px 10px;display:flex;flex-direction:column}.pmeta small{font-size:10px;color:var(--mut);text-transform:uppercase;font-weight:700}
+.ptr{display:flex;flex-direction:column;gap:4px;margin-top:10px}.ptr div{display:flex;gap:8px;align-items:baseline}
+.squad.simple td,.squad.simple th{padding:5px 8px}.keyc span{margin-right:10px;white-space:nowrap}.keyc small{color:var(--mut)}
+.lgt{display:flex;gap:2px;background:#0b1220;border-radius:8px;padding:2px}.lgt button{background:none;border:0;color:var(--mut);font-size:12px;font-weight:700;padding:4px 9px;border-radius:6px;cursor:pointer}.lgt button.on{background:var(--acc);color:#111}
+.lgnext{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;color:var(--mut)}.lgnext .me,.hfx tr.me td{color:var(--acc);font-weight:700}
+.totr{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:6px}.totr>div{display:flex;flex-direction:column;align-items:center;gap:1px;background:#0b1220;border-radius:8px;padding:6px 3px;cursor:pointer;text-align:center;min-width:0}.totr>div.me{outline:1px solid var(--acc)}.totr b{font-size:12px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.totr small{font-size:10px;color:var(--mut)}.totr em{font-style:normal;font-size:11px;color:var(--acc);font-weight:800}
+.ldrs{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}.ldr{display:flex;align-items:center;gap:5px;font-size:12.5px;cursor:pointer;padding:2px 0}.ldr span{color:var(--mut);width:16px}.ldr em{margin-left:auto;font-style:normal;font-weight:800;color:var(--acc)}.ldr.me b{color:var(--acc)}
+.link.tlk{color:inherit;font-weight:inherit;text-align:left;padding:0;text-decoration:none}.link.tlk:hover{text-decoration:underline}
 </style></head><body><div id="app"></div>
 <script>

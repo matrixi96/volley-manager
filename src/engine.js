@@ -14,6 +14,23 @@ const ATTRS=[['zag','Zagrywka','Zag','Siła i precyzja zagrywki.'],['prz','Przyj
 const PHYS=[['sil','Siła','Sił','Moc ataku i zagrywki.'],['szy','Szybkość','Szy','Dobieg do piłki w obronie, szybkie ataki środkiem, przesunięcie w bloku.'],['sko','Skoczność','Sko','Wysokość ataku i bloku.'],['zwi','Zwinność','Zwi','Obrona trudnych piłek, reakcja.'],['kon','Kondycja','Kon','Wolniejsze męczenie się.']];
 const MENTAL=[['kcj','Koncentracja','Kcj','Mniej prostych błędów (zagrywka, atak, rozegranie).'],['opa','Opanowanie','Opa','Gra w końcówkach setów i w tie-breaku, odporność na presję.'],['zaa','Zaangażowanie','Zaa','Wolniej się męczy, więcej walki w obronie.'],['wal','Waleczność','Wal','Gra lepiej, gdy drużyna przegrywa.'],['kom','Komunikacja','Kom','Wołanie piłki i porozumienie na boisku: mniej nieporozumień przy niedokładnym przyjęciu.']];
 const ALL_ATTRS=ATTRS.concat(PHYS,MENTAL);
+// ---- charakter zawodnika ----
+const TRAITS={amb:['Ambitny','#f59e0b','Szybciej się rozwija i lepiej gra w końcówkach. Źle znosi długie siedzenie na ławce.','Ambit.'],
+ zde:['Zdeterminowany','#ef4444','Gra lepiej, gdy drużyna przegrywa. Wolniej traci morale po błędach.','Zdet.'],
+ lid:['Lider','#22c55e','Podnosi morale i zgranie całej drużyny. Najlepszy kandydat na kapitana.','Lider'],
+ pra:['Pracowity','#38bdf8','Wyciąga więcej z każdego treningu.','Prac.'],
+ pro:['Profesjonalista','#a78bfa','Równa forma, mniej prostych błędów, wolniej traci umiejętności z wiekiem.','Prof.'],
+ spo:['Spokojny','#2dd4bf','Lepszy pod presją, w końcówkach setów i w tie-breaku.','Spok.'],
+ ner:['Nerwowy','#f97316','Słabszy pod presją i w końcówkach setów.','Nerw.'],
+ len:['Leniwy','#94a3b8','Wolniej się rozwija, mniej wyciąga z treningu.','Leniw.'],
+ kap:['Kapryśny','#e879f9','Na ławce szybko traci humor i psuje atmosferę w szatni.','Kapr.'],
+ ind:['Indywidualista','#fb7185','Częściej bierze ciężar ataku na siebie, nawet ze złych piłek. Obniża zgranie zespołu.','Indyw.']};
+const TR_BAD={spo:['ner'],ner:['spo','lid'],pra:['len'],len:['pra','amb','pro'],amb:['len'],pro:['len','kap'],kap:['pro','lid'],lid:['kap','ner','ind'],ind:['lid']};
+function ensTraits(p){if(!p||p.tr)return p;let h=5;for(const c of String(p.id))h=(h*137+c.charCodeAt(0))>>>0;const rnd=mulberry32(h);
+  const w={amb:3,zde:2+((p.wal||10)-10)*0.4,lid:1.2+((p.kom||10)-10)*0.35+(p.age>=28?1:0),pra:3,pro:2+(p.age>=27?1.5:0),spo:1.5+((p.opa||10)-10)*0.35,ner:1.5-((p.opa||10)-10)*0.3,len:1.3,kap:1,ind:1.2+(p.pos==='A'?1.5:0)};
+  const pick=ex=>{let tot=0;const ks=Object.keys(w).filter(k=>!ex.includes(k)&&!ex.some(e=>(TR_BAD[e]||[]).includes(k)));for(const k of ks)tot+=Math.max(0.2,w[k]);let r=rnd()*tot;for(const k of ks){r-=Math.max(0.2,w[k]);if(r<=0)return k;}return ks[0];};
+  const a=pick([]);p.tr=[a];if(rnd()<0.38)p.tr.push(pick([a]));return p;}
+function hasT(p,k){if(!p)return false;if(!p.tr)ensTraits(p);return p.tr.includes(k);}
 const TEMPL={
   R:{czy:1,kiw:1,zag:0,prz:-3,ata:-4,blo:-2,obr:0,roz:4,sko:-1,kon:0,tod:0,tpa:4,sil:-2,szy:1,zwi:1},
   A:{czy:-1,kiw:1,zag:2,prz:-7,ata:4,blo:1,obr:-2,roz:-7,sko:2,kon:0,tod:-4,tpa:-5,sil:3,szy:0,zwi:-1},
@@ -76,13 +93,19 @@ function teamStrength(team){const lu=autoLineup(team);let s=0,t=0;for(const [k,,
 function cloneP(p){return Object.assign({},p,{en:100,mor:Math.round(clamp(60+nz()*12,30,90)),st:{srv:0,srvErr:0,ace:0,rec:0,recPos:0,recPerf:0,recErr:0,att:0,kill:0,attErr:0,blocked:0,blk:0,dig:0}});}
 // zgranie: mecze rozegrane razem w tym klubie (30+ = pełne zgranie)
 function togetherOf(p,ti){return p.tcTm==null?(p.tc!=null?0:15):(p.tcTm===ti?(p.tc||0):0);}
-function chemOf(ps,ti){const v=ps.filter(Boolean).map(p=>Math.min(1,togetherOf(p,ti)/30));return v.length?0.3+0.7*v.reduce((a,b)=>a+b,0)/v.length:0.6;}
+function chemOf(ps,ti,cap){ps=ps.filter(Boolean);const v=ps.map(p=>Math.min(1,togetherOf(p,ti)/30));if(!v.length)return 0.6;let c=0.3+0.7*v.reduce((a,b)=>a+b,0)/v.length;
+  for(const p of ps){if(hasT(p,'ind'))c-=0.03;if(hasT(p,'lid'))c+=0.015;}if(cap)c+=capBonus(cap)*0.6;return clamp(c,0.3,1);}
+function capBonus(c){if(!c)return 0;return clamp(((c.kom||10)-10)*0.004+((c.opa||10)-10)*0.002+(hasT(c,'lid')?0.04:0)-(hasT(c,'ner')||hasT(c,'ind')||hasT(c,'kap')?0.03:0),-0.05,0.08);}
+function autoCaptain(ps){let b=null,bs=-1e9;for(const p of ps.filter(Boolean)){const s=(hasT(p,'lid')?8:0)+(p.kom||10)+(p.opa||10)*0.6+Math.min(p.age,32)*0.25-(hasT(p,'ner')||hasT(p,'kap')||hasT(p,'ind')?5:0);if(s>bs){bs=s;b=p;}}return b;}
 function pdFrom(q){return q>=3?R()*0.8:q===2?0.9+R()*1.8:2.5+R()*3.3;}
 function makeSide(team,lu,tac,home,x){
   const ids=new Set(Object.values(lu));const pl=team.players.filter(p=>!p.inj||ids.has(p.id)).map(cloneP);const g=id=>pl.find(p=>p.id===id);
   const slots=[['R',lu.R],['P',lu.P1],['S',lu.S1],['A',lu.A],['P',lu.P2],['S',lu.S2]].map(([role,id])=>({role,p:g(id)}));
-  const chem=chemOf(slots.map(x=>x.p).concat([g(lu.L)]),team.idx);
-  return {chem,team,pl,slots,libero:g(lu.L),rot:[0,1,2,3,4,5],tactics:Object.assign({},tac),mom:0,home:!!home,fatMul:(x&&x.fat)||1,momMul:(x&&x.momMul)||1,prB:(x&&x.prB)||0,trB:(x&&x.trB)||0,form:nz()*0.09+(home?(x&&x.hb!=null?x.hb:0.015):0)+((x&&x.sb)||0),to:2,subs:6};
+  const st7=slots.map(x=>x.p).concat([g(lu.L)]);const cap=(x&&x.cap&&g(x.cap))||autoCaptain(st7);
+  const chem=chemOf(st7,team.idx,cap);
+  {let d=0;if(st7.some(p=>p&&hasT(p,'lid')))d+=3;if(cap&&hasT(cap,'lid'))d+=2;if(pl.some(p=>hasT(p,'kap')&&(p.unh||0)>=3))d-=3;
+   for(const p of pl){let e=d;if(hasT(p,'amb'))e+=2;if(hasT(p,'kap')&&(p.unh||0)>=3)e-=8;if(e)p.mor=Math.round(clamp(p.mor+e,5,100));}}
+  return {chem,cap:cap?cap.id:null,team,pl,slots,libero:g(lu.L),rot:[0,1,2,3,4,5],tactics:Object.assign({},tac),mom:0,home:!!home,fatMul:(x&&x.fat)||1,momMul:(x&&x.momMul)||1,prB:(x&&x.prB)||0,trB:(x&&x.trB)||0,form:nz()*0.09+(home?(x&&x.hb!=null?x.hb:0.015):0)+((x&&x.sb)||0),to:2,subs:6};
 }
 function newMatch(a,b){
   const m={sides:[makeSide(a.team,a.lineup,a.tactics,a.home,a.x),makeSide(b.team,b.lineup,b.tactics,b.home,b.x)],setNo:1,score:[0,0],setsWon:[0,0],sets:[],firstServe:R()<0.5?0:1,run:{t:-1,n:0},over:false,rallies:0,sideout:[0,0]};
@@ -94,8 +117,10 @@ function onCourt(side,serving){
     return {zone:z,role:s.role,p:s.p,slot:si};});
 }
 function pressure(m){const a=m.score[0],b=m.score[1],t=m.setNo===5?15:25;return Math.max(a,b)>=t-4&&Math.min(a,b)>=t-8;}
-function mb(p,m,i){let b=(p.mor==null?0:(p.mor-60)/40*0.045);const sd=m.sides[i];if(pressure(m))b+=(p.opa-11)/20*0.14+(sd.prB||0);if(m.score[1-i]-m.score[i]>=3)b+=(p.wal-11)/20*0.1+(sd.trB||0);return b;}
-function kc(p,m){let k=1.25-p.kcj/20*0.5;if(pressure(m))k*=1.15-p.opa/20*0.3;return k;}
+function mb(p,m,i){let b=(p.mor==null?0:(p.mor-60)/40*0.045);const sd=m.sides[i];const pr=pressure(m);if(pr)b+=(p.opa-11)/20*0.14+(sd.prB||0);const tr=m.score[1-i]-m.score[i]>=3||(m.setsWon&&m.setsWon[1-i]>m.setsWon[i]);if(m.score[1-i]-m.score[i]>=3)b+=(p.wal-11)/20*0.1+(sd.trB||0);
+  if(p.tr){if(pr){if(hasT(p,'spo'))b+=0.025;if(hasT(p,'ner'))b-=0.035;if(hasT(p,'amb'))b+=0.012;}if(tr&&hasT(p,'zde'))b+=0.03;}
+  if(pr&&sd.cap){const c=sd.pl.find(x=>x.id===sd.cap);if(c&&c!==p)b+=capBonus(c)*0.25;}return b;}
+function kc(p,m){let k=1.25-p.kcj/20*0.5;if(pressure(m))k*=1.15-p.opa/20*0.3;if(p.tr){if(hasT(p,'pro'))k*=0.9;if(hasT(p,'ner')&&pressure(m))k*=1.1;if(hasT(p,'ind'))k*=1.04;}return k;}
 function nerves(p,m){return pressure(m)&&p.opa<10?' Nerwy w końcówce!':'';}
 function bn(s){return s.mom*0.01*(s.momMul||1)+s.form;}
 function ensAttrs(p){if(!p||p.czy!=null&&p.kiw!=null&&p.kom!=null)return p;const t=TEMPL[p.pos]||TEMPL.P;
@@ -194,7 +219,7 @@ function attackPhase(m,A,q,by,log,act,pd){
   const ds=m.dirStats||(m.dirStats=[]);const rec=(d,r)=>ds.push({i:A,id:a.id,w:wing,d,r,set:m.setNo});
   const setTxt=real?`${nm(setter)} → atak ${nm(a)}`:`podbija ${nm(setter)} → atak ${nm(a)}`;
   // piłka sytuacyjna: przebicie zamiast ataku
-  if(!quick&&sq<0.3&&R()<0.75-eff(a,'kiw')/20*0.3)return freeBall(m,A,a,log,act,seq,setTxt);
+  if(!quick&&sq<0.3&&R()<(0.75-eff(a,'kiw')/20*0.3)*(hasT(a,'ind')?0.55:1))return freeBall(m,A,a,log,act,seq,setTxt);
   const kiwN=eff(a,'kiw')/20,czA=eff(a,'czy')/20;
   const tipP=quick?0.02:sq<0.42?0.1+kiwN*0.3:0.025+kiwN*0.05;
   let dir;
@@ -296,7 +321,7 @@ function stepRally(m){
   return ev;
 }
 function findPl(m,id){for(const sd of m.sides){const p=sd.pl.find(x=>x.id===id);if(p)return p;}return null;}
-function addMor(p,d){if(p)p.mor=Math.round(clamp((p.mor==null?60:p.mor)+d,5,100));}
+function addMor(p,d){if(p&&d<0&&p.tr&&(hasT(p,'zde')||hasT(p,'spo')))d*=0.6;if(p)p.mor=Math.round(clamp((p.mor==null?60:p.mor)+d,5,100));}
 function moraleAfter(m,r,w){const seq=r.seq||[];const last=k=>{for(let i=seq.length-1;i>=0;i--)if(seq[i].k===k){const it=seq[i];return m.sides[it.s].pl.find(x=>x.id===it.id)||null;}return null;};
   if(r.type==='kill')addMor(last('att'),5);
   if(r.type==='ace'){addMor(last('srv'),6);addMor(last('rec'),-5);}

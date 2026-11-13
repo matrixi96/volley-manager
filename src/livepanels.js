@@ -36,7 +36,7 @@ function myTimeout(){const m=ui.match;if(!m||m.over||ui.to)return;if(m.sides[0].
   if(m.animating){ui.toReq=!ui.toReq;document.querySelectorAll('.tobtn').forEach(b=>b.textContent=ui.toReq?'⏱ Czas po akcji…':`⏱ Czas (${m.sides[0].to})`);return;}
   startTimeout(0);}
 function applyTalk(k){const m=ui.match;if(!m)return;const s=m.sides[0];const oc=onCourt(s,m.serving===0).map(e=>e.p);
-  const behind=m.score[1]-m.score[0];const mot=cA('mot'),aut=cA('aut'),tak=cA('tak');const amp=0.8+aut/50;const dur=5+Math.floor(tak/4);const del={};
+  const behind=m.score[1]-m.score[0];const mot=cA('mot'),aut=cA('aut'),tak=cA('tak');const cp=myCaptain();const amp=(0.8+aut/50)*(cp&&oc.some(x=>x.id===cp.id)?1+Math.max(0,capBonus(cp))*3:1);const dur=5+Math.floor(tak/4);const del={};
   for(const p of oc){const mor=p.mor==null?60:p.mor;let d=0;
     if(k==='belief')d=2+(mot-10)*0.5+(behind>=3?3:0)+(mor<50?2:0);
     if(k==='calm')d=1+(60-mor)*0.12+(12-p.opa)*0.45;

@@ -155,7 +155,7 @@ function fmBench(m){const a=m.sides[0];const bench=benchOf(a);if(!bench.length)r
   const list=bench.slice().sort((x,y)=>(need?(x.pos===need?0:1)-(y.pos===need?0:1):0)||ord[x.pos]-ord[y.pos]||rating(y)-rating(x));
   return `<div class="card fmbench ${sel!=null?'subbing':''}"><div class="fmsi"><b>Ławka</b><div class="small mut">${sel!=null?`Wybierz, kto wchodzi za: <b style="color:var(--acc)">${esc((sel==='L'?a.libero:a.slots[sel].p).last)}</b>`:'Kliknij zawodnika, by zobaczyć kartę'}</div>${sel!=null?`<button class="ghost sm" onclick="ui.subSel=null;render()">Anuluj</button>`:''}</div>
    ${list.map(p=>{const fit=need&&p.pos===need;const inj=p.inj>0;
-     return `<div class="fmbp clk ${fit?'fit':''} ${inj?'inj':''}" onclick="${sel!=null&&!inj?`doSub('${p.id}')`:`openCard('${p.id}')`}" title="${esc(p.first+' '+p.last)} · ${POS_NAMES[p.pos]} · ${p.age} lat">
+     return `<div class="fmbp clk ${fit?'fit':''} ${inj?'inj':''}" onclick="${sel!=null&&!inj?`doSub('${p.id}')`:`openPop('${p.id}')`}" title="${esc(p.first+' '+p.last)} · ${POS_NAMES[p.pos]} · ${p.age} lat">
       <div class="fmbh"><span class="fmj" style="width:26px;height:26px;font-size:12px;background:${p.pos==='L'?libColor(kitColors(m)[0],'#000'):kitColors(m)[0]};color:${lum(p.pos==='L'?libColor(kitColors(m)[0],'#000'):kitColors(m)[0])>0.6?'#111':'#fff'}">${p.num}</span>
        <div class="fmbn"><b class="fmnm">${esc(p.last)}</b><span class="fmps2">${POS_SHORT[p.pos]} · ${p.age} l.</span></div><span class="fmov" title="Ocena ogólna">${rating(p)}</span></div>
       <div class="fmattrs">${FM_KEY[p.pos].map(k=>`<span title="${esc((ALL_ATTRS.find(x=>x[0]===k)||[])[1]||k)}"><small>${attrShort(k)}</small><b style="color:${attrCol(p[k])}">${p[k]}</b></span>`).join('')}</div>
@@ -232,23 +232,9 @@ function anaTable(m,i){const D=anaData(m,i);if(!D.pl.length)return '<div class="
 
 // ---- zgranie zespołu ----
 function chemPct(c){return Math.round(((c-0.3)/0.7)*100);}
-function chemBadge(t,lu){const ids=Object.values(lu||{});const ps=ids.map(id=>t.players.find(p=>p.id===id)).filter(Boolean);const c=chemOf(ps,t.idx);const v=chemPct(c);
+function chemBadge(t,lu){const ids=Object.values(lu||{});const ps=ids.map(id=>t.players.find(p=>p.id===id)).filter(Boolean);const c=chemOf(ps,t.idx,t.idx===SAVE.team?myCaptain():null);const v=chemPct(c);
   const low=ps.filter(p=>togetherOf(p,t.idx)<10).map(p=>p.last);
   return `Zgranie zespołu: <b style="color:${v>=75?'var(--good)':v>=45?'var(--acc)':'var(--bad)'}">${v}%</b> <span title="Rośnie z każdym meczem rozegranym razem w tym klubie (pełne po ok. 30). Nowi zawodnicy zaczynają od zera. Zgranie i komunikacja decydują o nieporozumieniach przy niedokładnym przyjęciu, o wystawach w trudnych sytuacjach i o szybkich piłkach.">ⓘ</span>${low.length?` <span class="mut">· mało gry razem: ${esc(low.slice(0,3).join(', '))}${low.length>3?'…':''}</span>`:''}`;}
-// ---- boisko w zakładce Skład ----
-function lineupCourt(t,lu){const g=k=>t.players.find(p=>p.id===lu[k]);const col=t.color||'#ffb020';
-  const Z={1:['R','Rozgrywający'],2:['P1','Przyjmujący 1'],3:['S1','Środkowy 1'],4:['A','Atakujący'],5:['P2','Przyjmujący 2'],6:['L','Libero (za środkowego)']};
-  const lc=libColor(col,'#000');
-  const card=z=>{const [k,lab]=Z[z];const p=g(k);if(!p)return `<div class="lcz empty">${z}</div>`;const r=rating(p,LINEUP_KEYS.find(x=>x[0]===k)[2]);const mor=p.mor==null?60:p.mor;const c=k==='L'?lc:col;
-    return `<div class="lcz" onclick="openCard('${p.id}')" title="${esc(p.first+' '+p.last)} · ${lab}">
-      <span class="lczn">${z}</span>${p.inj?'<span class="lcinj" title="Kontuzja">🚑</span>':''}
-      <span class="fmj" style="width:36px;height:36px;font-size:15px;background:${c};color:${lum(c)>0.6?'#111':'#fff'}">${p.num}</span>
-      <b class="fmnm" style="font-size:13px">${esc(p.last)}</b><span class="fmps2">${lab.toUpperCase()}</span>
-      <div class="lcst"><span title="Ocena ogólna na tej pozycji"><small>ocena</small><b style="color:var(--acc)">${r}</b></span><span title="Kondycja (umiejętność): jak szybko się męczy"><small>kon</small><b style="color:${attrCol(p.kon)}">${p.kon}</b></span><span title="Morale ${mor}"><small>mor.</small><b>${mor>=62?'😀':mor>=45?'😐':'😟'}</b></span></div>
-      <span class="fmen" style="width:86%"><i style="width:${p.kon*5}%;background:${attrCol(p.kon)}"></i></span></div>`;};
-  const s2=g('S2');
-  return `<div class="lcourt"><div class="fmnet">siatka</div><div class="lcgrid">${[4,3,2,5,6,1].map(card).join('')}</div>
-   <div class="small mut" style="margin-top:6px">Ustawienie startowe (ustawienie 1). ${s2?`Środkowy 2 <b style="color:var(--txt)">${esc(s2.last)}</b> wchodzi w pierwszej linii, w drugiej zastępuje go libero.`:''} Kliknij zawodnika, by zobaczyć kartę. Pasek = kondycja (im dłuższy, tym wolniej się męczy).</div></div>`;}
 // ================= CZAS: ZEJŚCIE DO ŁAWEK, 15 s, POWRÓT =================
 const TO_SEC=15;
 function benchScene(m,sc){const out=sc.map(o=>Object.assign({},o,{j:0}));const by=MV.FY1?(MV.FY1-24-MV.Y0)/MV.SC:10.4;

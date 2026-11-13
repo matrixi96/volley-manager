@@ -20,7 +20,7 @@ function teamQ(t){return teamStrength(t)/5;}
 function restoreDefs(){TEAMS.forEach((t,i)=>{const d=TEAM_DEFS[i];t.name=d.name;t.short=d.short;t.color=d.color;t.city='';});applyCustom();}
 function resetTeams(){restoreDefs();TEAMS.forEach((t,i)=>{t.players=genTeam(TEAM_DEFS[i],i).players;});rebuildIndex();}
 function hashN(id){let h=3;for(const c of String(id))h=(h*131+c.charCodeAt(0))>>>0;return h;}
-function syncTeams(){for(const p of W().players){if(p.czy==null||p.kiw==null||p.kom==null){ensAttrs(p);if(p.base){p.base.czy=p.czy;p.base.kiw=p.kiw;p.base.kom=p.kom;}}
+function syncTeams(){for(const p of W().players){ensTraits(p);if(p.czy==null||p.kiw==null||p.kom==null){ensAttrs(p);if(p.base){p.base.czy=p.czy;p.base.kiw=p.kiw;p.base.kom=p.kom;}}
     if(!W().chemInit&&p.tcTm==null&&p.tm>=0&&!p.jr){p.tcTm=p.tm;p.tc=6+hashN(p.id)%35;}}W().chemInit=1;for(const t of TEAMS)t.players=W().players.filter(p=>p.tm===t.idx&&!p.jr);rebuildIndex();}
 function initPlayerMeta(p,season,free){const r=rating(p);p.pot=Math.min(95,Math.round(r+potBonus(p.age,r)));p.inj=0;p.xp={};p.base=snap(p);
   if(free){p.wage=0;p.ce=0;}else{p.wage=round5k(wageDemand(p)*(0.85+R()*0.3));p.ce=season+(R()<0.2?0:1+Math.floor(R()*3));}}
@@ -30,7 +30,7 @@ function genPlayer(pos,q,age){const id='n'+(W().nextId++);
   const hh=HEIGHT[pos];p.h=Math.round(hh[0]+R()*(hh[1]-hh[0]));
   for(const [k] of ATTRS.concat(PHYS))p[k]=Math.round(clamp(q+TEMPL[pos][k]+nz()*2.2,1,20));
   for(const [k] of MENTAL)p[k]=Math.round(clamp(q-1+nz()*4,1,20));
-  p.tc=0;setDob(p);return p;}
+  p.tc=0;setDob(p);ensTraits(p);return p;}
 function assignNum(p,tm){const used=new Set(W().players.filter(x=>x.tm===tm&&x!==p).map(x=>x.num));if(p.num&&!used.has(p.num))return;for(let n=1;n<=40;n++)if(!used.has(n)){p.num=n;return;}}
 function initWorld(){
   resetTeams();
@@ -61,7 +61,8 @@ const GRP={};for(const [k] of ATTRS)GRP[k]='tech';for(const [k] of PHYS)GRP[k]='
 function develop(p,focus,intI,played,mods,jr){
   const r=rating(p);const gap=(p.pot||r)-r;if(gap<=0)return;
   const af=p.age<=20?1:p.age<=23?0.75:p.age<=26?0.45:p.age<=29?0.2:0.05;
-  const pts=af*TRAIN_INT[intI][1]*(played?1.25:1)*Math.min(1.5,0.5+gap/20)*0.17*(mods?(jr?mods.jr:mods.all):1);
+  const tm=(hasT(p,'amb')?1.15:1)*(hasT(p,'pra')?1.2:1)*(hasT(p,'len')?0.78:1)*(hasT(p,'pro')?1.05:1);
+  const pts=tm*af*TRAIN_INT[intI][1]*(played?1.25:1)*Math.min(1.5,0.5+gap/20)*0.17*(mods?(jr?mods.jr:mods.all):1);
   const fk=(TRAIN_FOCUS.find(f=>f[0]===focus)||TRAIN_FOCUS[0])[3];const pw=WEIGHTS[p.pos];
   const w={};let tot=0;for(const k of ALL_KEYS){let x=0.3;if(pw[k])x+=1.5;if(fk.includes(k))x+=3;w[k]=x;tot+=x;}
   p.xp=p.xp||{};
@@ -71,13 +72,16 @@ function injuryCheck(m,mult){
   for(const sd of m.sides){const mine=sd.team.idx===SAVE.team;const md=clubMods(sd.team.idx);const im=(mine?TRAIN_INT[SAVE.training.int][2]:1)*md.injChance;
     for(const cp of sd.pl){const x=cp.st;if(x.srv+x.rec+x.att+x.dig+x.blk===0)continue;ROUND_PLAYED.add(cp.id);
       const P=PLAYERS[cp.id];if(!P)continue;const p=P.p;if(p.inj)continue;
-      if(R()<0.012*im*(1.3-p.kon/20*0.6)*mult){const d=1+Math.floor(R()*R()*7);const days=Math.max(3,Math.round((d*7-3+R()*6)*md.injDur));p.inj=days;p.injUntil=addDays(today(),days);if(mine)news(`🚑 ${p.first} ${p.last} doznał kontuzji — przerwa ok. ${days} dni (powrót ok. ${fmtDMY(p.injUntil)}).`);}}}
+      if(R()<0.012*im*(1.3-p.kon/20*0.6)*mult){const d=1+Math.floor(R()*R()*7);const days=Math.max(3,Math.round((d*7-3+R()*6)*md.injDur));p.inj=days;p.injUntil=addDays(today(),days);if(!mine)aiStarInjNews(p,days);if(mine)news(`🚑 ${p.first} ${p.last} doznał kontuzji — przerwa ok. ${days} dni (powrót ok. ${fmtDMY(p.injUntil)}).`);}}}
 }
 function roundTick(kind,home,att){
   const tr=SAVE.training;
   const MODS={};const mm=ti=>MODS[ti]||(MODS[ti]=clubMods(ti));
   for(const p of W().players){
     if(p.tm<0)continue;const mine=p.tm===SAVE.team;develop(p,mine?tr.focus:'bal',mine?tr.int:1,ROUND_PLAYED.has(p.id),mm(p.tm),p.jr);}
+  if(kind==='liga'||kind==='po')for(const p of myTeam().players){if(ROUND_PLAYED.has(p.id)){p.unh=0;continue;}if(p.inj)continue;p.unh=(p.unh||0)+1;
+    if(hasT(p,'kap')&&p.unh===3)news(`😤 ${p.first} ${p.last} jest wściekły, że nie gra. Psuje atmosferę w szatni (niższe morale drużyny).`);
+    if(hasT(p,'amb')&&p.unh===4)news(`📢 ${p.first} ${p.last} (ambitny) chce więcej grać. Jeśli nadal będzie siedział na ławce, straci humor.`);}
   ROUND_PLAYED=new Set();
   const s=S();
   if(kind==='liga'){money(TV_ROUND,'Prawa TV');
@@ -167,8 +171,8 @@ function offseason(){
   // starzenie, spadek formy, emerytury
   const keep=[];
   for(const p of W().players){
-    if(p.age>=28)for(const [k] of PHYS)if(R()<(p.age-27)*0.14&&p[k]>1)p[k]--;
-    if(p.age>=31)for(const [k] of ATTRS)if(k!=='czy'&&R()<(p.age-30)*0.1&&p[k]>1)p[k]--;
+    if(p.age>=28)for(const [k] of PHYS)if(R()<(p.age-27)*0.14*(hasT(p,'pro')?0.6:1)&&p[k]>1)p[k]--;
+    if(p.age>=31)for(const [k] of ATTRS)if(k!=='czy'&&R()<(p.age-30)*0.1*(hasT(p,'pro')?0.6:1)&&p[k]>1)p[k]--;
     const r=rating(p);if(p.pot<r)p.pot=r;
     const retire=p.age>=37||(p.age>=35&&R()<0.5)||(p.tm<0&&p.age>=33&&R()<0.5);
     if(retire){if(p.tm===SAVE.team)news(`👋 ${p.first} ${p.last} (${p.age} l.) kończy karierę.`);continue;}
@@ -233,7 +237,7 @@ function cardModal(){
    <div class="cinfo"><div><span class="mut small">Pozycja</span><b>${POS_NAMES[p.pos]}</b></div><div><span class="mut small">Wiek</span><b>${p.age} <small class="mut">(ur. ${p.dob?fmtDMY(p.dob):'?'})</small></b></div><div><span class="mut small">Wzrost</span><b>${p.h} cm</b></div>
    <div><span class="mut small">Ocena</span><b>${r}${r!==br?` <small class="${r>br?'good':'bad'}">${r>br?'+':''}${r-br}</small>`:''}</b></div><div><span class="mut small">Potencjał${p.tm!==SAVE.team?' (wg skauta)':''}</span><b class="stars">${potStars(p)}</b></div><div><span class="mut small">Wartość</span><b>${fmt(pValue(p))}</b></div>
    <div><span class="mut small">Pensja</span><b>${p.tm>=0?fmt(p.wage)+'/rok':'—'}</b></div><div><span class="mut small">Kontrakt do</span><b>${p.tm>=0?ceDate(p.ce):'—'}</b></div><div><span class="mut small">Zdrowie</span><b>${p.inj?`🚑 do ${p.injUntil?fmtDMY(p.injUntil):'?'} (${p.inj} dni)`:'✅ zdrowy'}</b></div></div>
-   <div class="cgrid">${grp('Techniczne',ATTRS)}${grp('Fizyczne',PHYS)}${grp('Mentalne',MENTAL)}</div>
+   <div class="ptr" style="margin:8px 0">${(ensTraits(p),p.tr).map(k=>`<div>${trChip(k,true)}<span class="small mut">${esc(TRAITS[k][2])}</span></div>`).join('')}${mine&&!p.jr?(isCap(p)?'<div><span class="capb">C</span> <span class="small">Kapitan drużyny</span></div>':`<div><button class="link" onclick="setCaptain('${p.id}')">©️ Mianuj kapitanem</button></div>`):''}</div><div class="cgrid">${grp('Techniczne',ATTRS)}${grp('Fizyczne',PHYS)}${grp('Mentalne',MENTAL)}</div>
    <p class="mut small">Małe liczby przy atrybutach to zmiana od początku sezonu.</p>
    ${st?`<p class="small">Sezon ${sLabel(S().n)}: <b>${st.m}</b> meczów · <b>${st.pts}</b> pkt · atak ${pc(st.kill,st.att)} · bloki ${st.blk} · asy ${st.ace} · MVP ${st.mvp}</p>`:''}
    ${act}</div></div>`;
