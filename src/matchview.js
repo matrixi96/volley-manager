@@ -106,7 +106,7 @@ function hallAnim(m,pre,ev,done){
   const loc=o=>o.i===0?[o.x,o.y]:[18-o.x,9-o.y];
   const baseDef=(i,moves)=>{for(const o of side(i)){const [lx,ly]=loc(o);const fr=isFrontZ(o.zone);moves.push(mvTo(o,fr?8.2:2.9,defY(o)));}};
   const cur={};for(const o of scene)cur[o.id]=[o.x,o.y];const cx=o=>cur[o.id][0],cy=o=>cur[o.id][1];
-  const seq=ev.seq;let lastAtt=null,lastK='srv';
+  const seq=ev.seq;let lastAtt=null,lastK='srv',lastLy=4.5,lastAttD=null;
   for(let t=1;t<seq.length;t++){const s=seq[t];const o=s.id?P[s.id]:null;const moves=[];let to,peak=0,dur=700,ph='';
     if(s.k==='rec'||s.k==='ace'){const rs=s.s,ss=1-rs;baseDef(ss,moves);
       const st=side(rs).find(x=>x.role==='R');if(st&&s.k==='rec')moves.push(mvTo(st,8.2,5.8));
@@ -116,16 +116,24 @@ function hallAnim(m,pre,ev,done){
       for(const a of side(i)){if(a.id===o.id||a.role==='R')continue;const fr=isFrontZ(a.zone);if(!fr&&a.role!=='A'&&a.role!=='P'){moves.push(mvTo(a,2.6,defY(a)));continue;}moves.push(mvTo(a,fr?5.6:3.9,lane(a)));}
       const d=side(1-i);for(const b of d){const fr=isFrontZ(b.zone);if(b.role==='L'||!fr)moves.push(mvTo(b,defZone(b)===6?2.2:3.0,defY(b)));else moves.push(mvTo(b,8.4,defY(b)));}
       to={x:tx,y:ty,h:2.4};peak=lastK==='rec'||lastK==='dig'?3.0:1.2;dur=lastK==='dig'?850:900;ph=lastK==='rec'?'Przyjęcie':lastK==='dig'?'Obrona':'Piłka po bloku';}
-    else if(s.k==='att'){const i=s.s;const fr=isFrontZ(o.zone);const ly=lane(o);const hit=mvTo(o,fr?8.3:6.0,ly,1);moves.push(hit);
-      for(const a of side(i)){if(a.id===o.id||a.role==='L'||a.role==='R'||!isFrontZ(a.zone))continue;moves.push(mvTo(a,8.2,lane(a),0.5));}
-      const [hx,hy]=[hit.x,hit.y];const opp=side(1-i).filter(b=>isFrontZ(b.zone)&&b.role!=='L').sort((a,b)=>Math.abs(cy(a)-hy)-Math.abs(cy(b)-hy)).slice(0,o.role==='S'?1:2);
-      opp.forEach((b,k)=>{const [ly2]=[9-ly];moves.push(mvTo(b,8.5,ly2+(k?(ly2<4.5?0.8:-0.8):0),1));});
-      side(1-i).filter(b=>!opp.includes(b)&&!isFrontZ(b.zone)).forEach(b=>moves.push(mvTo(b,defZone(b)===6?2.0:3.4,defY(b))));
-      side(1-i).filter(b=>!opp.includes(b)&&isFrontZ(b.zone)).forEach(b=>moves.push(mvTo(b,6.3,defY(b)<3?0.9:defY(b)>6?8.1:4.5)));
-      to={x:hx,y:hy,h:3.4};peak=1.6;dur=780;ph=o.role==='R'?'Wystawa':'Rozegranie';lastAtt=o;}
+    else if(s.k==='att'||s.k==='free'){const i=s.s;const fr=isFrontZ(o.zone);const ly=lane(o);const fb=s.k==='free',tip=s.d==='tip';
+      const hit=mvTo(o,fb?7.4:fr?8.3:6.0,ly,fb?0:tip?0.6:1);moves.push(hit);lastLy=ly;
+      if(!fb)for(const a of side(i)){if(a.id===o.id||a.role==='L'||a.role==='R'||!isFrontZ(a.zone))continue;moves.push(mvTo(a,8.2,lane(a),0.5));}
+      const [hx,hy]=[hit.x,hit.y];const d=1-i;const w=s.w||'M';const bset=w==='M'?1:((m.sides[d].tactics||{})[w==='L4'?'blkR':'blkL']??1);
+      const lz=w==='L4'?1:5;const bsh=bset===0?-0.5:bset===2?0.5:0;
+      const opp=fb?[]:side(d).filter(b=>isFrontZ(b.zone)&&b.role!=='L').sort((a,b)=>Math.abs(cy(a)-hy)-Math.abs(cy(b)-hy)).slice(0,o.role==='S'?1:2);
+      opp.forEach((b,k)=>{const ly2=9-ly;const side9=ly2<4.5?-1:1;moves.push(mvTo(b,8.5,ly2+(k?-side9*0.8:0)+side9*bsh,1));});
+      // obrona wg ustawienia bloku: strefa 6 zawsze głęboko, obrońca prostej wg bloku
+      side(d).filter(b=>!opp.includes(b)&&!isFrontZ(b.zone)).forEach(b=>{const z=defZone(b);const zy=z===5?1:z===1?8:4.5;
+        if(z===6)moves.push(mvTo(b,1.3,4.5));
+        else if(w!=='M'&&z===lz&&bset===2)moves.push(mvTo(b,6.0,z===5?1.7:7.3));
+        else if(w!=='M'&&z===lz&&bset===0)moves.push(mvTo(b,2.4,z===5?0.6:8.4));
+        else moves.push(mvTo(b,3.2,zy));});
+      side(d).filter(b=>!opp.includes(b)&&isFrontZ(b.zone)).forEach(b=>moves.push(mvTo(b,6.3,defY(b)<3?0.9:defY(b)>6?8.1:4.5)));
+      to={x:hx,y:hy,h:fb?2.6:3.4};peak=fb?1.0:1.6;dur=780;ph=fb?'Piłka sytuacyjna':o.role==='R'?'Wystawa':'Rozegranie';lastAtt=o;lastAttD=fb?'free':s.d;}
     else if(s.k==='blk'){to={x:cx(o),y:cy(o),h:3.0};dur=230;ph='Blok!';}
-    else if(s.k==='dig'){const dx=(R()-0.5)*1.4,dy=(R()-0.5)*1.4;moves.push({id:o.id,x:cx(o)+dx,y:cy(o)+dy});to={x:cx(o)+dx,y:cy(o)+dy,h:0.35};dur=430;ph='Atak — obrona';}
-    else if(s.k==='floor'){const i=s.s;let lx,ly;if(s.blk){lx=7.4+R()*0.8;ly=lastAtt?lane(lastAtt)+(R()-0.5):4.5;}else{lx=0.6+R()*7.2;ly=0.6+R()*7.8;}const [X,Y]=gl(i,lx,ly);to={x:X,y:Y,h:0};dur=s.blk?520:440;ph=s.blk?'Blok punktowy':'Atak — punkt';}
+    else if(s.k==='dig'){const dx=(R()-0.5)*1.4,dy=(R()-0.5)*1.4;moves.push({id:o.id,x:cx(o)+dx,y:cy(o)+dy});to={x:cx(o)+dx,y:cy(o)+dy,h:0.35};dur=s.free?900:s.tip?620:430;peak=s.free?2.6:s.tip?1.4:0;ph=s.free?'Przebicie':s.tip?'Kiwka — obrona':'Atak — obrona';}
+    else if(s.k==='floor'){const i=s.s;let lx,ly;if(s.blk){lx=7.4+R()*0.8;ly=lastAtt?lane(lastAtt)+(R()-0.5):4.5;}else if(s.tip){lx=6.4+R()*1.2;ly=9-lastLy+(R()-0.5)*1.6;}else if(s.d==='line'){lx=0.5+R()*2.6;ly=clamp(9-lastLy+(R()-0.5)*1.2,0.3,8.7);}else if(s.d==='cross'){lx=1+R()*3.2;ly=clamp(lastLy+(R()-0.5)*1.8,0.3,8.7);}else{lx=0.6+R()*7.2;ly=0.6+R()*7.8;}const [X,Y]=gl(i,lx,ly);to={x:X,y:Y,h:0};dur=s.blk?520:s.tip?620:440;peak=s.tip?1.2:0;ph=s.blk?'Blok punktowy':s.tip?'Kiwka — punkt':s.d==='line'?'Po prostej — punkt':s.d==='cross'?'Po skosie — punkt':'Atak — punkt';}
     else if(s.k==='out'){const i=s.s;const [X,Y]=gl(i,-1.6,0.5+R()*8);to={x:X,y:Y,h:0};dur=lastK==='srv'?1050:480;peak=lastK==='srv'?4.3:0;ph='Aut';}
     else if(s.k==='net'){to={x:9+(R()<0.5?-0.25:0.25),y:1+R()*7,h:1.6};dur=lastK==='srv'?900:420;peak=lastK==='srv'?3.2:0;ph='Siatka';}
     else continue;

@@ -50,6 +50,7 @@ function fmAdvice(m){if(m.over)return null;const a=m.sides[0],b=m.sides[1];const
   if(run>=3&&a.to>0)return {k:'to'+m.setNo+'-'+h.length,t:`Rywal zdobył ${run} punkty z rzędu. Weź czas i porozmawiaj z zespołem.`,btn:'Weź czas',act:'myTimeout()'};
   const oc=onCourt(a,m.serving===0);const tired=oc.filter(e=>e.role!=='L'&&e.p.en<55).sort((x,y)=>x.p.en-y.p.en)[0];
   if(tired&&a.subs>0)return {k:'sub'+tired.p.id,t:`${tired.p.last} opada z sił (energia ${Math.round(tired.p.en)}%). Wpuść zmiennika.`,btn:'Wybierz zmianę',act:`selSub(${tired.slot})`};
+  const ana=anaAdvice(m);if(ana)return ana;
   const A=teamTotals(a),B=teamTotals(b);
   if(A.rec>=6&&A.recPos/A.rec<0.4&&a.to>0)return {k:'rec'+m.setNo,t:`Przyjęcie słabe (${pc(A.recPos,A.rec)} pozytywnego). Czas i przemowa „Skupcie się na przyjęciu” pomogą.`,btn:'Weź czas',act:'myTimeout()'};
   if(B.rec>=6&&B.recPos/B.rec<0.45&&a.tactics.serve<2)return {k:'srv'+m.setNo,t:`Rywal źle przyjmuje (${pc(B.recPos,B.rec)}). Zaryzykuj mocniejszą zagrywkę.`,btn:'Ryzykowna zagrywka',act:'setServe(2)'};
@@ -106,13 +107,15 @@ function fmPanel(m){const a=m.sides[0];
   if(ui.fmPanel==='tac')return `<div class="card fmpanel"><div class="row wrap" style="gap:12px">
     <label class="small">Zagrywka <select onchange="setServe(+this.value)">${SERVE_OPT.map((o,i)=>`<option value="${i}" ${a.tactics.serve===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>
     <label class="small">Rozegranie <select onchange="setDist(+this.value)">${DIST_OPT.map((o,i)=>`<option value="${i}" ${a.tactics.dist===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>
-    <span class="small mut">${esc(SERVE_OPT[a.tactics.serve][1])} ${esc(DIST_OPT[a.tactics.dist][1])}</span></div>${rotCard(m)}</div>`;
+    <span class="small mut">${esc(SERVE_OPT[a.tactics.serve][1])} ${esc(DIST_OPT[a.tactics.dist][1])}</span></div>
+    <div class="tacgrid">${tgtTacHtml(m)}${freeTacHtml(a.tactics)}</div><div class="tacgrid">${blockTacHtml(a.tactics)}</div>${rotCard(m)}</div>`;
   if(ui.fmPanel==='more')return `<div class="card fmpanel"><div class="row wrap" style="gap:6px">
     <button class="ghost sm" onclick="ui.fmPanel=null;simToSetEnd()">⏭ Do końca seta</button><button class="ghost sm" onclick="ui.fmPanel=null;simToEnd()">⏭⏭ Do końca meczu</button>
     <button class="ghost sm" onclick="ui.mview=ui.mview==='klasyczny'?'hala':'klasyczny';ui.fmPanel=null;render()">${ui.mview==='klasyczny'?'🏟️ Widok hali':'▦ Widok klasyczny'}</button>
     <button class="ghost sm ${ui.anim!==false?'on':''}" onclick="ui.anim=ui.anim===false;render()">🏐 Animacja: ${ui.anim!==false?'wł.':'wył.'}</button>
     <span class="small mut">Libero: <b style="color:var(--txt)">${esc(a.libero.last)}</b> <button class="link" onclick="selSub('L')">zmień</button></span></div></div>`;
   if(ui.fmPanel==='stats')return `<div class="card fmpanel">${statsBlock(m)}</div>`;
+  if(ui.fmPanel==='ana')return `<div class="card fmpanel"><h3 style="margin-top:0">Analityk: kierunki ataków zawodników</h3><div class="shares"><div><div class="mut small">${esc(m.sides[1].team.name)} (rywal)</div>${anaTable(m,1)}</div><div><div class="mut small">${esc(m.sides[0].team.name)}</div>${anaTable(m,0)}</div></div></div>`;
   return '';}
 function fmLiveView(subPanel){const m=ui.match;
   return `${fmTop(m)}${fmPanel(m)}
@@ -121,7 +124,7 @@ function fmLiveView(subPanel){const m=ui.match;
   <div class="fmwrap"><div class="fmlay">
    <div class="fml">${fmFormation(m,0)}${fmLiveTable(m)}${fmPlayerStats(m,0)}</div>
    <div class="fmc">
-    <div class="fmws">${fmAssistant(m)}${fmMomentum(m)}${fmAttack(m)}</div>
+    <div class="fmws">${fmAssistant(m)}${fmMomentum(m)}${fmAnalyst(m)}</div>
     <div class="card fmcourt">${fmTeamStats(m,0)}<div class="fmcv">
       ${ui.mview==='klasyczny'?courtHtml(m):`<div class="hallbar small mut">🏟️ ${tName(m.homeIdx!=null?m.homeIdx:m.sides[0].team.idx)} · <b style="color:var(--txt)">${(m.att||0).toLocaleString('pl-PL')}</b> / ${(m.cap||0).toLocaleString('pl-PL')} widzów · <span id="mph" class="mph">${m.over?'Koniec meczu':'Przed zagrywką'}</span></div><canvas id="mcv" class="mcv"></canvas>`}</div>${fmTeamStats(m,1)}</div>
    </div>
@@ -140,7 +143,7 @@ function fmPlayerStats(m,i){const sd=m.sides[i];const onIds=new Set(onCourt(sd,m
    ${ps.map(p=>{const x=p.st;const err=x.attErr+x.srvErr+x.recErr;return `<tr class="${onIds.has(p.id)?'':'off'}"><td class="l"><span class="mut">${p.num}</span> ${esc(p.last)}</td><td><b>${x.kill+x.blk+x.ace}</b></td><td>${x.att?`${x.kill}/${x.att}`:'–'}</td><td>${x.rec?pc(x.recPos,x.rec):'–'}</td><td>${x.blk||'–'}</td><td>${x.ace||'–'}</td><td class="${err?'bad':''}">${err||'–'}</td></tr>`;}).join('')}
    </tbody></table></div>`;}
 // ---- ławka rezerwowych z umiejętnościami ----
-const FM_KEY={R:['roz','zag','obr'],P:['prz','ata','obr'],A:['ata','blo','zag'],S:['blo','ata','szy'],L:['prz','obr','zwi']};
+const FM_KEY={R:['roz','zag','kiw'],P:['prz','ata','kiw'],A:['ata','blo','kiw'],S:['blo','czy','ata'],L:['prz','obr','czy']};
 const attrShort=k=>(ALL_ATTRS.find(a=>a[0]===k)||[k,k,k])[2];
 const attrCol=v=>v>=16?'#22c55e':v>=12?'#a3e635':v>=8?'#eab308':'#ef4444';
 function fmBench(m){const a=m.sides[0];const bench=benchOf(a);if(!bench.length)return '';
@@ -154,3 +157,63 @@ function fmBench(m){const a=m.sides[0];const bench=benchOf(a);if(!bench.length)r
        <div class="fmbn"><b class="fmnm">${esc(p.last)}</b><span class="fmps2">${POS_SHORT[p.pos]} · ${p.age} l.</span></div><span class="fmov" title="Ocena ogólna">${rating(p)}</span></div>
       <div class="fmattrs">${FM_KEY[p.pos].map(k=>`<span title="${esc((ALL_ATTRS.find(x=>x[0]===k)||[])[1]||k)}"><small>${attrShort(k)}</small><b style="color:${attrCol(p[k])}">${p[k]}</b></span>`).join('')}</div>
       ${inj?'<div class="small bad">kontuzja</div>':`<span class="fmen" style="width:100%"><i style="width:${Math.round(p.en)}%;background:${energyCol(p.en)}"></i></span>`}</div>`;}).join('')}</div>`;}
+// ================= TAKTYKA: BLOK, OBRONA, PIŁKI SYTUACYJNE, CEL ZAGRYWKI =================
+const BLK_OPT=[['Skos','Blok zamyka skos.'],['Zrównoważony','Blokujący czytają atak.'],['Prosta','Blok zamyka prostą.']];
+const FREE_OPT=[['Na środek boiska','Między zawodników: możliwe nieporozumienie rywala.'],['Na rozgrywającego','Rozgrywający musi przyjąć, wystawia ktoś inny.'],['Na środkowego','Środkowy przyjmuje, więc nie zaatakuje szybkiej piłki.']];
+function defTxt(side,v){const who=side==='L'?'Libero / środkowy (strefa 5)':'Rozgrywający / atakujący (strefa 1)';
+  return v===0?`${who} broni prostej.`:v===2?`${who} asekuruje za blokiem i środek boiska (kiwki).`:`${who} broni standardowo, blokujący czytają kierunek ataku.`;}
+function tacSet(k,v){const t=myTac();t[k]=v;save();if(ui.match&&!ui.match.over)ui.match.sides[0].tactics[k]=v;render();}
+function setBlk(side,v){if(side==='B'){tacSet('blkL',v);tacSet('blkR',v);}else tacSet(side==='L'?'blkL':'blkR',v);}
+function setTgt(id){if(!ui.match)return;ui.match.sides[0].tactics.tgt=id||null;persistLive();render();}
+function segBtns(cur,fn){return `<div class="seg">${BLK_OPT.map((o,i)=>`<button class="${(cur??1)===i?'on':''}" onclick="${fn}(${i})" title="${esc(o[1])}">${o[0]}</button>`).join('')}</div>`;}
+function blockTacHtml(t){return `
+  <div class="tacrow"><div class="tacl"><b>Blok — lewa strona siatki</b><small class="mut">przeciw atakującemu rywala (jego prawe skrzydło)</small></div>${segBtns(t.blkL,"setBlk.bind(null,'L')")}<div class="small mut tacd">${defTxt('L',t.blkL??1)}</div></div>
+  <div class="tacrow"><div class="tacl"><b>Blok — prawa strona siatki</b><small class="mut">przeciw przyjmującemu rywala (jego lewe skrzydło)</small></div>${segBtns(t.blkR,"setBlk.bind(null,'R')")}<div class="small mut tacd">${defTxt('R',t.blkR??1)}</div></div>
+  <div class="small mut">Obie strony naraz: ${BLK_OPT.map((o,i)=>`<button class="link" onclick="setBlk('B',${i})">${o[0].toLowerCase()}</button>`).join(' · ')}. Przyjmujący w strefie 6 zawsze broni szóstki i asekuruje plecy stref 1 i 5.</div>`;}
+function freeTacHtml(t){return `<div class="tacrow"><div class="tacl"><b>Piłki sytuacyjne</b><small class="mut">gdy nie da się zaatakować: przebicie</small></div>
+  <select onchange="tacSet('free',+this.value)">${FREE_OPT.map((o,i)=>`<option value="${i}" ${(t.free||0)===i?'selected':''}>${o[0]}</option>`).join('')}</select><div class="small mut tacd">${esc(FREE_OPT[t.free||0][1])} Przy złej wystawie zawodnicy z dobrą kiwką częściej kiwają zamiast przebijać.</div></div>`;}
+function tgtTacHtml(m){const t=m.sides[0].tactics;const opp=m.sides[1];const ord={L:0,P:1,A:2,R:3,S:4};
+  const ps=opp.pl.slice().sort((a,b)=>ord[a.pos]-ord[b.pos]);
+  return `<div class="tacrow"><div class="tacl"><b>Zagrywka w zawodnika</b><small class="mut">ok. 60% zagrywek, gdy jest w przyjęciu</small></div>
+  <select onchange="setTgt(this.value)"><option value="">Automatycznie</option>${ps.map(p=>`<option value="${p.id}" ${t.tgt===p.id?'selected':''}>${p.num} ${esc(p.last)} (${POS_SHORT[p.pos]}${p.pos==='P'||p.pos==='L'?`, przyj. ${p.prz}`:''})</option>`).join('')}</select>
+  <div class="small mut tacd">Celowanie zwiększa ryzyko błędu u słabiej zagrywających.</div></div>`;}
+// ================= ANALITYK =================
+function anaSkill(){const s=SAVE.staff&&SAVE.staff.sta;return s?s.skill:0;}
+function anaName(){const s=SAVE.staff&&SAVE.staff.sta;return s?`${s.first||''} ${s.last||''}`.trim():'';}
+// dane kierunków z dokładnością zależną od analityka
+function anaData(m,i){const sk=anaSkill();let ds=(m.dirStats||[]).filter(d=>d.i===i&&d.d!=='free');
+  if(sk>0&&sk<9)ds=ds.slice(0,Math.floor(ds.length/6)*6);
+  const step=sk>=15?1:sk>=9?5:10;
+  const noise=(k)=>{if(sk>=15)return 0;let h=m.setNo*7+k.length*13+i*31;return ((h%7)-3)*(sk>=9?1:3);};
+  const rnd=v=>Math.max(0,Math.min(100,Math.round(v/step)*step));
+  const agg=(xs,key)=>{const n=xs.length;if(!n)return null;const c=xs.filter(d=>d.d==='cross').length,l=xs.filter(d=>d.d==='line').length,t=xs.filter(d=>d.d==='tip').length,mi=xs.filter(d=>d.d==='mid').length,k=xs.filter(d=>d.r==='kill').length;
+    const cr=rnd(c/n*100+noise(key)),ln=rnd(l/n*100-noise(key));return {n,cross:c?cr:0,line:l?ln:0,tip:rnd(t/n*100),mid:rnd(mi/n*100),kill:rnd(k/n*100),rawC:c/(c+l||1)};};
+  const wings={L4:agg(ds.filter(d=>d.w==='L4'),'L4'),R2:agg(ds.filter(d=>d.w==='R2'),'R2'),M:agg(ds.filter(d=>d.w==='M'),'M')};
+  const sd=m.sides[i];const ids=[...new Set(ds.map(d=>d.id))];
+  const pl=ids.map(id=>{const p=sd.pl.find(x=>x.id===id);const xs=ds.filter(d=>d.id===id);return {p,w:xs[0].w,...agg(xs,id)};}).filter(x=>x.p&&x.n>=2).sort((a,b)=>b.n-a.n);
+  return {sk,wings,pl,n:ds.length};}
+function anaAdvice(m){const sk=anaSkill();if(sk<9)return null;const D=anaData(m,1);const t=m.sides[0].tactics;
+  for(const [w,key,side,who] of [['L4','blkR','R','przyjmujący'],['R2','blkL','L','atakujący']]){const x=D.wings[w];if(!x||x.n<(sk>=15?6:9))continue;
+    const best=x.rawC>=0.62?0:x.rawC<=0.38?2:null;if(best==null||(t[key]??1)===best)continue;
+    const pp=sk>=15?D.pl.filter(q=>q.w===w)[0]:null;
+    const src=pp&&pp.n>=4?pp:x;return {k:'ana'+w+best+m.setNo,t:`Analityk: ${pp&&pp.n>=4?esc(pp.p.last)+' ('+who+')':who+' rywala'} bije ${best===0?'po skosie':'po prostej'} w ${best===0?src.cross:src.line}% ataków. Ustaw blok „${BLK_OPT[best][0].toLowerCase()}” na ${side==='L'?'lewej':'prawej'} stronie siatki.`,btn:`Blok ${BLK_OPT[best][0].toLowerCase()} (${side==='L'?'lewa':'prawa'})`,act:`setBlk('${side}',${best})`};}
+  return null;}
+function anaBars(m,i,D){const kc=kitColors(m)[i];if(!D.n)return '<div class="small mut">Jeszcze bez ataków.</div>';
+  if(!D.sk){const x=[['L4','PRZ'],['R2','ATA']].map(([w,r])=>{const v=D.wings[w];if(!v||v.n<5)return '';return `${r}: ${v.rawC>0.55?'raczej skos':v.rawC<0.45?'raczej prosta':'po równo'}`;}).filter(Boolean).join(' · ');return `<div class="small mut">${x||'Za mało danych.'}</div>`;}
+  const row=(w,l)=>{const v=D.wings[w];if(!v)return '';
+    if(w==='M')return `<div class="anarow"><span class="mut">${l}</span><span class="small">${v.n} ataków · kiwka ${v.tip}% · skut. ${v.kill}%</span></div>`;
+    const tot=Math.max(1,v.cross+v.line+v.tip);
+    return `<div class="anarow"><span class="mut">${l} <small>(${v.n})</small></span><span class="anab"><i style="width:${v.cross/tot*100}%;background:${kc}" title="skos"></i><i style="width:${v.line/tot*100}%;background:${kc};opacity:.45" title="prosta"></i><i style="width:${v.tip/tot*100}%;background:#8b99b6" title="kiwka"></i></span><span class="small"><b>${v.cross}%</b> skos · <b>${v.line}%</b> prosta${v.tip?` · ${v.tip}% kiwka`:''}</span></div>`;};
+  return row('L4','PRZ (lewe skrzydło)')+row('R2','ATA (prawe skrzydło)')+row('M','Środek / pipe');}
+function fmAnalyst(m){const sk=anaSkill();const D1=anaData(m,1),D0=anaData(m,0);const adv=anaAdvice(m);
+  const lvl=!sk?'brak analityka':sk<9?`słaby · ${sk}/20`:sk<15?`dobry · ${sk}/20`:`świetny · ${sk}/20`;
+  return `<div class="card fmw"><div class="fmh"><b>Analityk</b><span class="small mut">${sk?esc(anaName())+' · ':''}${lvl}</span></div>
+   <div class="small"><b>${esc(m.sides[1].team.short)}</b> <span class="mut">rywal</span></div>${anaBars(m,1,D1)}
+   <div class="small" style="margin-top:6px"><b>${esc(m.sides[0].team.short)}</b> <span class="mut">Twoja drużyna</span></div>${anaBars(m,0,D0)}
+   ${adv?`<div class="small anaadv">💡 ${adv.t}</div>`:!sk?'<div class="small mut">Bez analityka widać tylko ogólne tendencje. Zatrudnij go w zakładce Sztab.</div>':sk<9?'<div class="small mut">Słaby analityk: dane całych drużyn, zaokrąglone, z opóźnieniem.</div>':''}
+   ${sk>=9?`<button class="link small" onclick="ui.fmPanel=ui.fmPanel==='ana'?null:'ana';render()">${ui.fmPanel==='ana'?'Zwiń':'Szczegóły zawodników'}</button>`:''}</div>`;}
+function anaTable(m,i){const D=anaData(m,i);if(!D.pl.length)return '<div class="small mut">Brak danych.</div>';
+  const sk=D.sk;const rows=sk>=15?D.pl:D.pl.slice(0,4);
+  return `<table class="fmpt-t"><thead><tr><th class="l">Zawodnik</th><th>Ataki</th><th>Skos</th><th>Prosta</th><th>Środek</th><th>Kiwka</th><th>Skut.</th></tr></thead><tbody>
+  ${rows.map(x=>`<tr><td class="l">${x.p.num} ${esc(x.p.last)} <small class="mut">${POS_SHORT[x.p.pos]}</small></td><td>${x.n}</td><td>${x.cross?x.cross+'%':'–'}</td><td>${x.line?x.line+'%':'–'}</td><td>${x.mid?x.mid+'%':'–'}</td><td>${x.tip?x.tip+'%':'–'}</td><td>${x.kill}%</td></tr>`).join('')}</tbody></table>
+  ${sk<15?'<div class="small mut">Dobry analityk (9–14) pokazuje 4 najczęściej atakujących z dokładnością do 5%. Świetny (15+) wszystkich, dokładnie.</div>':''}`;}

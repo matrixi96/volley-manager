@@ -19,7 +19,7 @@ function initRep(t){return Math.round(clamp((teamStrength(t)-65)*3.5,20,90));}
 function teamQ(t){return teamStrength(t)/5;}
 function restoreDefs(){TEAMS.forEach((t,i)=>{const d=TEAM_DEFS[i];t.name=d.name;t.short=d.short;t.color=d.color;t.city='';});applyCustom();}
 function resetTeams(){restoreDefs();TEAMS.forEach((t,i)=>{t.players=genTeam(TEAM_DEFS[i],i).players;});rebuildIndex();}
-function syncTeams(){for(const t of TEAMS)t.players=W().players.filter(p=>p.tm===t.idx&&!p.jr);rebuildIndex();}
+function syncTeams(){for(const p of W().players){if(p.czy==null||p.kiw==null){ensAttrs(p);if(p.base){p.base.czy=p.czy;p.base.kiw=p.kiw;}}}for(const t of TEAMS)t.players=W().players.filter(p=>p.tm===t.idx&&!p.jr);rebuildIndex();}
 function initPlayerMeta(p,season,free){const r=rating(p);p.pot=Math.min(95,Math.round(r+potBonus(p.age,r)));p.inj=0;p.xp={};p.base=snap(p);
   if(free){p.wage=0;p.ce=0;}else{p.wage=round5k(wageDemand(p)*(0.85+R()*0.3));p.ce=season+(R()<0.2?0:1+Math.floor(R()*3));}}
 function randPos(){const x=R()*14;return x<2?'R':x<4?'A':x<8?'P':x<12?'S':'L';}
@@ -166,7 +166,7 @@ function offseason(){
   const keep=[];
   for(const p of W().players){
     if(p.age>=28)for(const [k] of PHYS)if(R()<(p.age-27)*0.14&&p[k]>1)p[k]--;
-    if(p.age>=31)for(const [k] of ATTRS)if(R()<(p.age-30)*0.1&&p[k]>1)p[k]--;
+    if(p.age>=31)for(const [k] of ATTRS)if(k!=='czy'&&R()<(p.age-30)*0.1&&p[k]>1)p[k]--;
     const r=rating(p);if(p.pot<r)p.pot=r;
     const retire=p.age>=37||(p.age>=35&&R()<0.5)||(p.tm<0&&p.age>=33&&R()<0.5);
     if(retire){if(p.tm===SAVE.team)news(`👋 ${p.first} ${p.last} (${p.age} l.) kończy karierę.`);continue;}

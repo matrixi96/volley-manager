@@ -92,7 +92,9 @@ function optGroup(name,opts,cur,fn){return `<div class="opts">${opts.map(([l,d],
 function tacticsView(){const tc=myTac();
   return `<div class="card"><h2>Zagrywka</h2>${optGroup('serve',SERVE_OPT,tc.serve,'setServe')}</div>
   <div class="card"><h2>Rozegranie</h2>${optGroup('dist',DIST_OPT,tc.dist,'setDist')}</div>
-  <p class="mut small">Taktykę możesz zmieniać także w trakcie meczu.</p>`;}
+  <div class="card"><h2>Blok i obrona</h2>${blockTacHtml(tc)}</div>
+  <div class="card"><h2>Piłki sytuacyjne</h2>${freeTacHtml(tc)}</div>
+  <p class="mut small">Taktykę możesz zmieniać także w trakcie meczu. Zagrywkę w konkretnego zawodnika rywala wybierasz w meczu (📋 Taktyka).</p>`;}
 function setServe(i){myTac().serve=i;save();if(ui.match&&!ui.match.over)ui.match.sides[0].tactics.serve=i;render();}
 function setDist(i){myTac().dist=i;save();if(ui.match&&!ui.match.over)ui.match.sides[0].tactics.dist=i;render();}
 
