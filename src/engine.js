@@ -202,7 +202,7 @@ function attackPhase(m,A,q,by,log,act,pd){
     if(bset===0){pS-=sh;pL+=sh/2;}else if(bset===2){pL-=sh;pS+=sh/2;}else if(bset===3){pS+=sh/2;}
     const r=R();dir=r<pS?'midS':r<pS+pL?'midL':'midR';}
   else{let c=dirTend(a);const sh=clamp((eff(a,'czy')-8)/12,0,1)*0.12;if(bset===0)c-=sh;if(bset===2)c+=sh;dir=R()<c?'cross':'line';}
-  let z6c=null;if(wing!=='M'&&(dir==='line'||dir==='cross')){if(bset===0)z6c='line';else if(bset===2)z6c='cross';else{const z6=cO.find(x=>!isFront(x.zone)&&dZone(x)===6);const cz=z6?eff(z6.p,'czy'):10;const pc=clamp(0.5+(cz-10)/30,0.3,0.8);z6c=R()<pc?dir:(dir==='line'?'cross':'line');}}
+  let z6c=null;if(wing!=='M'&&(dir==='line'||dir==='cross')){if(bset===0)z6c='line';else if(bset===2)z6c='rot';else{const z6=cO.find(x=>!isFront(x.zone)&&dZone(x)===6);const cz=z6?eff(z6.p,'czy'):10;const pc=clamp(0.5+(cz-10)/30,0.3,0.8);z6c=R()<pc?dir:(dir==='line'?'cross':'line');}}
   seq.push({k:'att',id:a.id,s:A,q:quick,d:dir,w:wing,tr:triple?1:0,z6:z6c});
   a.st.att++;
   const blockers=cO.filter(x=>isFront(x.zone)&&x.role!=='L');const backO=cO.filter(x=>!isFront(x.zone));
@@ -236,13 +236,13 @@ function attackPhase(m,A,q,by,log,act,pd){
     log.push(setTxt,`wybloka ${nm(b)}`);rec(dir,'wyb');return {done:false,next:1-A,q:2,by:b};
   }
   const tz=dir==='line'?lineZ:dir==='cross'?crossZ:dir==='midL'?5:dir==='midR'?1:6;
-  const d=pickW(covO,x=>{if(x===offB)return dir==='cross'?0.5:0.2;const z=dZone(x);return (z===tz?3:z===6?(z6c?(z6c===dir?2.2:0.7):1.4):0.5)*(x.role==='L'?1.2:1)*(0.5+eff(x.p,'obr')/20);}).p;
+  const d=pickW(covO,x=>{if(x===offB)return dir==='cross'?0.5:0.2;const z=dZone(x);return (z===tz?3:z===6?(z6c&&z6c!=='rot'?(z6c===dir?2.2:0.7):1.4):0.5)*(x.role==='L'?1.2:1)*(0.5+eff(x.p,'obr')/20);}).p;
   const dn=(eff(d,'obr')*0.45+eff(d,'czy')*0.2+eff(d,'zwi')*0.15+eff(d,'szy')*0.2)/20+mb(d,m,1-A)+(d.zaa-11)/20*0.06;
   let adj=0;if(wing!=='M'&&bset!==1){if(bset===0)adj=dir==='line'?-0.07:0.03;else adj=dir==='line'?0.04:-0.04;}
   else if(wing==='M'&&bset!==1&&dir in MD)adj=MD[dir]===bset?0.012:-0.012;
   if(wing==='M'&&opp.tactics.blk3===2)adj+=0.04;
   if(triple)adj+=0.025;
-  if(z6c)adj+=z6c===dir?-0.015:0.01;
+  if(z6c&&z6c!=='rot')adj+=z6c===dir?-0.015:0.01;
   const killP=clamp(KB+(an-0.95)*0.6-(dn-0.7)*0.3-(bs-0.8)*0.2+adj,0.15,0.86);
   if(R()<killP){a.st.kill++;seq.push({k:'floor',s:1-A,d:dir});log.push(setTxt,`${quick?'krótka — ':dir==='line'?'po prostej — ':dir==='cross'?'po skosie — ':''}${triple?'(przez potrójny blok) ':''}PUNKT!`);rec(dir,'kill');return {done:true,winner:A,type:'kill'};}
   d.st.dig++;act.push(d.id);seq.push({k:'dig',id:d.id,s:1-A});

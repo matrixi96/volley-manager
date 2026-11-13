@@ -142,10 +142,12 @@ function hallAnim(m,pre,ev,done){
       side(d).filter(b=>!opp.includes(b)&&!isFrontZ(b.zone)).forEach(b=>{const z=defZone(b);const zy=z===5?1:z===1?8:4.5;
         if(w==='M'){const bm=dt.blkM??1;const pos=bm===0?{5:[3.2,1.3],6:[1.4,6.2],1:[3.2,7.7]}:bm===2?{5:[1.8,2.4],6:[2.6,4.9],1:[3.4,7.2]}:bm===3?{5:[3.4,1.8],6:[2.6,4.1],1:[1.8,6.6]}:{5:[3.2,1.6],6:[1.4,4.5],1:[3.2,7.4]};const q=pos[z]||[3.2,zy];moves.push(mvTo(b,q[0],q[1]));}
         else if(z===6){const cz=lz===5?1:5;// 6: plecy strefy obrony prostej albo skos bliżej obrońcy skosu
-          if(s.z6==='line')moves.push(mvTo(b,0.9,lz===5?2.6:6.4));else if(s.z6==='cross')moves.push(mvTo(b,2.2,cz===5?2.9:6.1));else moves.push(mvTo(b,1.3,4.5));}
+          if(s.z6==='rot')moves.push(mvTo(b,0.9,lz===5?0.9:8.1));// obrona rotacyjna: za plecy obrońcy prostej, który wyszedł pod blok
+          else if(s.z6==='line')moves.push(mvTo(b,0.9,lz===5?2.6:6.4));else if(s.z6==='cross')moves.push(mvTo(b,2.2,cz===5?2.9:6.1));else moves.push(mvTo(b,1.3,4.5));}
         else if(z===lz&&bset===2)moves.push(mvTo(b,6.0,z===5?1.7:7.3));
         else if(z===lz&&bset===0)moves.push(mvTo(b,2.4,z===5?0.6:8.4));
         else if(z===lz)moves.push(mvTo(b,2.8,z===5?0.8:8.2));
+        else if(s.z6==='rot')moves.push(mvTo(b,1.9,z===5?2.7:6.3));// obrońca skosu przesuwa się w miejsce szóstki
         else moves.push(mvTo(b,1.1,z===5?1.0:8.0));});
       side(d).filter(b=>!opp.includes(b)&&isFrontZ(b.zone)).forEach(b=>{const dy=defY(b);moves.push(w!=='M'&&!fb?mvTo(b,6.1,dy<3?3.1:dy>6?5.9:4.5):mvTo(b,6.3,dy<3?0.9:dy>6?8.1:4.5));});
       to={x:hx,y:hy,h:fb?2.6:3.4};peak=fb?1.0:1.6;dur=780;ph=fb?'Piłka sytuacyjna':o.role==='R'?'Wystawa':'Rozegranie';lastAtt=o;lastAttD=fb?'free':s.d;}
