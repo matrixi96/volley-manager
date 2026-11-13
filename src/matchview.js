@@ -110,7 +110,7 @@ function hallAnim(m,pre,ev,done){
   const P={};for(const o of pre)P[o.id]=Object.assign({},o,{j:0});const scene=Object.values(P);
   const side=i=>scene.filter(o=>o.i===i);
   const sf=ui.speed>=1600?1.25:0.95;
-  const steps=[];let ball=staticBall(m,pre)||{x:9,y:4.5,h:2};
+  const steps=[];const sv0=ev.seq[0]&&ev.seq[0].k==='srv'?P[ev.seq[0].id]:null;let ball=sv0?{x:sv0.x+(sv0.i===0?0.35:-0.35),y:sv0.y,h:2.2}:(staticBall(m,pre)||{x:9,y:4.5,h:2});
   const mvTo=(o,lx,ly,j)=>{const [X,Y]=gl(o.i,lx,ly);return {id:o.id,x:X,y:Y,j:j||0};};
   const loc=o=>o.i===0?[o.x,o.y]:[18-o.x,9-o.y];
   const dia=i=>!((m.sides[i].tactics||{}).dsys===1);const diaPos=(o,i)=>{const z=defZone(o);return z===6?[2.0,4.5]:[4.5,z===5?1.5:7.5];};
