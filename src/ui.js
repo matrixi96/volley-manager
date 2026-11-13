@@ -189,6 +189,7 @@ function liveView(){
     subPanel=`<div class="card sub"><div class="row"><b>Zmiana za: ${esc(cur.last)} (${isL?'libero':POS_NAMES[s.slots[ui.subSel].role]})</b><span class="sp"></span><button class="ghost" onclick="ui.subSel=null;render()">Anuluj</button></div>
     ${!isL&&s.subs<=0?'<p class="bad">Brak zmian w tym secie.</p>':`<div class="benchlist">${bench.map(p=>`<button class="ghost" onclick="doSub('${p.id}')">${p.num} ${esc(p.last)} <small>${POS_SHORT[p.pos]} · ${rating(p)} · ${Math.round(p.en)}%</small></button>`).join('')}</div>`}
     <p class="mut small">${isL?'Zmiana libero nie liczy się do limitu.':'Pozostało zmian w secie: '+s.subs}</p></div>`;}
+  return fmLiveView(subPanel);
   return `<div class="card score">
    <div class="tm" style="--c:${a.team.color}"><span>${esc(a.team.name)}</span><b class="sw">${m.setsWon[0]}</b></div>
    <div class="pts"><b class="${m.serving===0?'srv':''}">${m.over?'–':m.score[0]}</b><span>${m.over?'KONIEC':'SET '+m.setNo}</span><b class="${m.serving===1?'srv':''}">${m.over?'–':m.score[1]}</b></div>
