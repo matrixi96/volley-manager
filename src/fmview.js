@@ -101,7 +101,7 @@ function fmTop(m){const [a,b]=m.sides;const kc=kitColors(m);const sp=[[1600,'0,5
      <span class="fmsets small mut">${m.sets.map(s=>`${s[0]}:${s[1]}`).join(' · ')}</span></div>
    <div class="fmtr2">${m.over?'':`<button class="ghost sm" onclick="setSpeed(${nxt})" title="Prędkość">⏩ ${curSp>=0?sp[curSp][1]:'1x'}</button>
      <button class="ghost sm ${ui.fmPanel==='more'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='more'?null:'more';render()" aria-label="Więcej">⋯</button>
-     <button class="btn sm" onclick="togglePause()">${m.paused?'▶ Graj':'⏸ Pauza'}</button>`}</div></div>`;}
+     <button class="btn sm" id="fmpause" onclick="togglePause()">${m.paused?'▶ Graj':'⏸ Pauza'}</button>`}</div></div>`;}
 function fmPanel(m){const a=m.sides[0];
   if(ui.fmPanel==='tac')return `<div class="card fmpanel"><div class="row wrap" style="gap:12px">
     <label class="small">Zagrywka <select onchange="setServe(+this.value)">${SERVE_OPT.map((o,i)=>`<option value="${i}" ${a.tactics.serve===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>

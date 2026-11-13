@@ -108,7 +108,7 @@ function animOn(){return ui.anim!==false&&ui.speed>=800&&typeof requestAnimation
 function tick(){const m=ui.match;if(!m||m.over||m.paused||m.animating)return;if(ui.tab!=='mecz'){m.paused=true;persistLive();return;}
   const hall=ui.mview!=='klasyczny'&&document.getElementById('mcv');const pre=animOn()&&hall?formation(m):null;
   const ev=doRally(m);if(!m.over)persistLive();
-  if(animOn()){m.animating=true;const fin=()=>{m.animating=false;render();schedule(ui.speed>=1600?650:220);};if(hall)hallAnim(m,pre,ev,fin);else animateRally(ev,fin);}
+  if(animOn()){m.animating=true;const fin=()=>{m.animating=false;render();schedule(ui.speed>=1600?650:380);};if(hall)hallAnim(m,pre,ev,fin);else animateRally(ev,fin);}
   else{render();schedule();}}
 function animateRally(ev,done){
   const court=document.querySelector('.court'),ball=document.getElementById('vball');
@@ -150,7 +150,9 @@ function doRally(m){let ret;ui.talkRes=null;
   return ret;
 }
 function setSpeed(ms){ui.speed=ms;const m=ui.match;if(m&&!m.over){m.paused=false;ui.subSel=null;}render();schedule();}
-function togglePause(){const m=ui.match;if(!m||m.over)return;m.paused=!m.paused;persistLive();if(!m.paused)ui.subSel=null;render();schedule();}
+function togglePause(){const m=ui.match;if(!m||m.over)return;m.paused=!m.paused;persistLive();
+  if(m.animating){const b=document.getElementById('fmpause');if(b)b.textContent=m.paused?'▶ Graj':'⏸ Pauza';return;}
+  if(!m.paused)ui.subSel=null;render();schedule();}
 function simToSetEnd(){const m=ui.match;if(!m||m.over)return;const s=m.setNo;while(!m.over&&m.setNo===s)doRally(m);m.paused=true;persistLive();render();}
 function simToEnd(){const m=ui.match;if(!m)return;while(!m.over)doRally(m);render();}
 function selSub(slot){const m=ui.match;if(!m||m.over||!m.paused){if(m&&!m.over){m.paused=true;}}ui.subSel=slot;render();}

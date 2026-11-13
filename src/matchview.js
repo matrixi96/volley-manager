@@ -100,7 +100,7 @@ function hallAnim(m,pre,ev,done){
   const cv=document.getElementById('mcv');if(!cv||!ev.seq||!ev.seq.length){done();return;}
   const P={};for(const o of pre)P[o.id]=Object.assign({},o,{j:0});const scene=Object.values(P);
   const side=i=>scene.filter(o=>o.i===i);
-  const sf=ui.speed>=1600?1.25:0.72;
+  const sf=ui.speed>=1600?1.25:0.95;
   const steps=[];let ball=staticBall(m,pre)||{x:9,y:4.5,h:2};
   const mvTo=(o,lx,ly,j)=>{const [X,Y]=gl(o.i,lx,ly);return {id:o.id,x:X,y:Y,j:j||0};};
   const loc=o=>o.i===0?[o.x,o.y]:[18-o.x,9-o.y];
@@ -135,10 +135,10 @@ function hallAnim(m,pre,ev,done){
   const label={ace:'AS!',block:'BLOK!',kill:'PUNKT',serr:'BŁĄD ZAGRYWKI',attErr:'BŁĄD ATAKU',setErr:'BŁĄD'}[ev.type]||'PUNKT';
   let k=0;const phEl=()=>document.getElementById('mph');
   const run=()=>{if(!document.getElementById('mcv')){done();return;}
-    if(k>=steps.length){drawHall(m,scene,ball,{t:label,w:ev.winner});setTimeout(done,ui.speed>=1600?750:420);return;}
+    if(k>=steps.length){drawHall(m,scene,ball,{t:label,w:ev.winner});const wEnd=()=>m.paused?setTimeout(wEnd,100):done();setTimeout(wEnd,ui.speed>=1600?750:560);return;}
     const st=steps[k++];const from={...ball};const fromP={};for(const o of scene)fromP[o.id]=[o.x,o.y];const tgt={};for(const mv of st.moves)tgt[mv.id]=mv;
-    if(phEl())phEl().textContent=st.ph;const t0=performance.now();
-    const fr=now=>{const t=Math.min(1,(now-t0)/st.dur),e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+    if(phEl())phEl().textContent=st.ph;let el=0,last=null;
+    const fr=now=>{if(last!=null&&!m.paused)el+=now-last;last=now;const t=Math.min(1,el/st.dur),e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
       ball={x:from.x+(st.to.x-from.x)*t,y:from.y+(st.to.y-from.y)*t,h:from.h+(st.to.h-from.h)*t+st.peak*4*t*(1-t)};
       for(const o of scene){const mv=tgt[o.id];if(!mv){o.j=0;continue;}const f=fromP[o.id];o.x=f[0]+(mv.x-f[0])*e;o.y=f[1]+(mv.y-f[1])*e;o.j=mv.j?Math.sin(Math.PI*Math.min(1,t*1.15))*mv.j:0;}
       drawHall(m,scene,ball,null);if(t<1)requestAnimationFrame(fr);else run();};

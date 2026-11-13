@@ -603,7 +603,7 @@ function animOn(){return ui.anim!==false&&ui.speed>=800&&typeof requestAnimation
 function tick(){const m=ui.match;if(!m||m.over||m.paused||m.animating)return;if(ui.tab!=='mecz'){m.paused=true;persistLive();return;}
   const hall=ui.mview!=='klasyczny'&&document.getElementById('mcv');const pre=animOn()&&hall?formation(m):null;
   const ev=doRally(m);if(!m.over)persistLive();
-  if(animOn()){m.animating=true;const fin=()=>{m.animating=false;render();schedule(ui.speed>=1600?650:220);};if(hall)hallAnim(m,pre,ev,fin);else animateRally(ev,fin);}
+  if(animOn()){m.animating=true;const fin=()=>{m.animating=false;render();schedule(ui.speed>=1600?650:380);};if(hall)hallAnim(m,pre,ev,fin);else animateRally(ev,fin);}
   else{render();schedule();}}
 function animateRally(ev,done){
   const court=document.querySelector('.court'),ball=document.getElementById('vball');
@@ -645,7 +645,9 @@ function doRally(m){let ret;ui.talkRes=null;
   return ret;
 }
 function setSpeed(ms){ui.speed=ms;const m=ui.match;if(m&&!m.over){m.paused=false;ui.subSel=null;}render();schedule();}
-function togglePause(){const m=ui.match;if(!m||m.over)return;m.paused=!m.paused;persistLive();if(!m.paused)ui.subSel=null;render();schedule();}
+function togglePause(){const m=ui.match;if(!m||m.over)return;m.paused=!m.paused;persistLive();
+  if(m.animating){const b=document.getElementById('fmpause');if(b)b.textContent=m.paused?'▶ Graj':'⏸ Pauza';return;}
+  if(!m.paused)ui.subSel=null;render();schedule();}
 function simToSetEnd(){const m=ui.match;if(!m||m.over)return;const s=m.setNo;while(!m.over&&m.setNo===s)doRally(m);m.paused=true;persistLive();render();}
 function simToEnd(){const m=ui.match;if(!m)return;while(!m.over)doRally(m);render();}
 function selSub(slot){const m=ui.match;if(!m||m.over||!m.paused){if(m&&!m.over){m.paused=true;}}ui.subSel=slot;render();}
@@ -2021,7 +2023,7 @@ function hallAnim(m,pre,ev,done){
   const cv=document.getElementById('mcv');if(!cv||!ev.seq||!ev.seq.length){done();return;}
   const P={};for(const o of pre)P[o.id]=Object.assign({},o,{j:0});const scene=Object.values(P);
   const side=i=>scene.filter(o=>o.i===i);
-  const sf=ui.speed>=1600?1.25:0.72;
+  const sf=ui.speed>=1600?1.25:0.95;
   const steps=[];let ball=staticBall(m,pre)||{x:9,y:4.5,h:2};
   const mvTo=(o,lx,ly,j)=>{const [X,Y]=gl(o.i,lx,ly);return {id:o.id,x:X,y:Y,j:j||0};};
   const loc=o=>o.i===0?[o.x,o.y]:[18-o.x,9-o.y];
@@ -2056,10 +2058,10 @@ function hallAnim(m,pre,ev,done){
   const label={ace:'AS!',block:'BLOK!',kill:'PUNKT',serr:'BŁĄD ZAGRYWKI',attErr:'BŁĄD ATAKU',setErr:'BŁĄD'}[ev.type]||'PUNKT';
   let k=0;const phEl=()=>document.getElementById('mph');
   const run=()=>{if(!document.getElementById('mcv')){done();return;}
-    if(k>=steps.length){drawHall(m,scene,ball,{t:label,w:ev.winner});setTimeout(done,ui.speed>=1600?750:420);return;}
+    if(k>=steps.length){drawHall(m,scene,ball,{t:label,w:ev.winner});const wEnd=()=>m.paused?setTimeout(wEnd,100):done();setTimeout(wEnd,ui.speed>=1600?750:560);return;}
     const st=steps[k++];const from={...ball};const fromP={};for(const o of scene)fromP[o.id]=[o.x,o.y];const tgt={};for(const mv of st.moves)tgt[mv.id]=mv;
-    if(phEl())phEl().textContent=st.ph;const t0=performance.now();
-    const fr=now=>{const t=Math.min(1,(now-t0)/st.dur),e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+    if(phEl())phEl().textContent=st.ph;let el=0,last=null;
+    const fr=now=>{if(last!=null&&!m.paused)el+=now-last;last=now;const t=Math.min(1,el/st.dur),e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
       ball={x:from.x+(st.to.x-from.x)*t,y:from.y+(st.to.y-from.y)*t,h:from.h+(st.to.h-from.h)*t+st.peak*4*t*(1-t)};
       for(const o of scene){const mv=tgt[o.id];if(!mv){o.j=0;continue;}const f=fromP[o.id];o.x=f[0]+(mv.x-f[0])*e;o.y=f[1]+(mv.y-f[1])*e;o.j=mv.j?Math.sin(Math.PI*Math.min(1,t*1.15))*mv.j:0;}
       drawHall(m,scene,ball,null);if(t<1)requestAnimationFrame(fr);else run();};
@@ -2241,7 +2243,7 @@ function fmTop(m){const [a,b]=m.sides;const kc=kitColors(m);const sp=[[1600,'0,5
      <span class="fmsets small mut">${m.sets.map(s=>`${s[0]}:${s[1]}`).join(' · ')}</span></div>
    <div class="fmtr2">${m.over?'':`<button class="ghost sm" onclick="setSpeed(${nxt})" title="Prędkość">⏩ ${curSp>=0?sp[curSp][1]:'1x'}</button>
      <button class="ghost sm ${ui.fmPanel==='more'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='more'?null:'more';render()" aria-label="Więcej">⋯</button>
-     <button class="btn sm" onclick="togglePause()">${m.paused?'▶ Graj':'⏸ Pauza'}</button>`}</div></div>`;}
+     <button class="btn sm" id="fmpause" onclick="togglePause()">${m.paused?'▶ Graj':'⏸ Pauza'}</button>`}</div></div>`;}
 function fmPanel(m){const a=m.sides[0];
   if(ui.fmPanel==='tac')return `<div class="card fmpanel"><div class="row wrap" style="gap:12px">
     <label class="small">Zagrywka <select onchange="setServe(+this.value)">${SERVE_OPT.map((o,i)=>`<option value="${i}" ${a.tactics.serve===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>
