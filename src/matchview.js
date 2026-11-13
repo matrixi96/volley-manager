@@ -111,7 +111,7 @@ function hallAnim(m,pre,ev,done){
     if(s.k==='rec'||s.k==='ace'){const rs=s.s,ss=1-rs;baseDef(ss,moves);
       const st=side(rs).find(x=>x.role==='R');if(st&&s.k==='rec')moves.push(mvTo(st,8.2,5.8));
       to={x:cx(o)+(s.k==='ace'?(rs===0?0.6:-0.6):0),y:cy(o)+(s.k==='ace'?0.6:0),h:s.k==='ace'?0:0.9};peak=4.3;dur=1050;ph='Zagrywka';}
-    else if(s.k==='mix'){const i=s.s;const [X,Y]=gl(i,s.px??7,s.py??4.5);(s.ids||[]).forEach((id,k)=>{if(P[id])moves.push({id,x:X+(k?0.45:-0.45),y:Y+(k?0.25:-0.25)});});to={x:X,y:Y,h:0.9};peak=1.6;dur=900;ph='Nieporozumienie!';lastMix=[s.px??7,s.py??4.5];}
+    else if(s.k==='mix'){const i=s.s;const [X,Y]=gl(i,s.px??7,s.py??4.5);(s.ids||[]).forEach((id,k)=>{if(P[id])moves.push({id,x:X+(k?0.7:0),y:Y+(k?0.35:0)});});to={x:X,y:Y,h:0.9};peak=1.6;dur=900;ph='Nieporozumienie!';lastMix=[s.px??7,s.py??4.5];}
     else if(s.k==='set'){const i=s.s;const real=o.role==='R';let tx,ty;
       if(s.px!=null&&!s.mix){[tx,ty]=gl(i,s.px,s.py);moves.push({id:o.id,x:tx,y:ty});}else if(real){[tx,ty]=gl(i,8.2,5.8);moves.push({id:o.id,x:tx,y:ty});}else{tx=cx(o);ty=cy(o);}
       if(!real){const st=side(i).find(x=>x.role==='R');if(st)moves.push(mvTo(st,isFrontZ(st.zone)?7.6:2.6,isFrontZ(st.zone)?7.4:defY(st)));}
