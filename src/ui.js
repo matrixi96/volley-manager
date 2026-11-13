@@ -113,6 +113,7 @@ function tick(){const m=ui.match;if(!m||m.over||m.paused||m.animating||ui.to)ret
   // decyzje rywala (czas, zmiany) zapadają po zakończonej akcji, przed kolejną zagrywką
   const to1=m.sides[1].to;for(const s of aiTurn(m,1))m.log.push({t:esc(s),c:'sys'});
   if(m.sides[1].to<to1&&ui.speed>=800){m.comm={t:`Czas dla ${m.sides[1].team.short}. Trener rywala chce przerwać serię.`,w:1};startTimeout(1);return;}
+  if(animOn()){m.comm=null;document.querySelectorAll('.mcom').forEach(e=>{e.textContent='';e.className='mcom';});}
   const hall=ui.mview!=='klasyczny'&&document.getElementById('mcv');const pre=animOn()&&hall?formation(m):null;
   const sl=m.sets.length,sc=m.score.slice();
   const ev=doRally(m,true);if(!m.over)persistLive();const cm=rallyComment(m,ev,m.sets.length>sl,sc);
