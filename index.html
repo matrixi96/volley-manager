@@ -187,15 +187,23 @@ main.wide{max-width:1680px}
 .rtxt{flex:1;min-width:0}.rtitle{font-size:16px;font-weight:800;color:var(--acc)}
 
 /* ---- ekran meczu: układ menedżerski ---- */
+.asl{display:flex;flex-direction:column;gap:6px;margin-top:8px}.asi{display:grid;grid-template-columns:90px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;background:#ffffff08}
+.asg{font-size:11px;font-weight:800;color:var(--acc);text-transform:uppercase;letter-spacing:.04em}.ast{font-size:13px;line-height:1.45}
+@media (max-width:760px){.asi{grid-template-columns:1fr}}
+.hallbar .mcom{flex:1;text-align:center;font-weight:800;font-size:15px;color:var(--txt);letter-spacing:.01em;min-width:0}.hallbar .mcom.me{color:#ffd166}.hallbar .mcom.op{color:#fca5a5}
+.fmctl .small{white-space:nowrap}
+@media (max-width:760px){.hallbar .mcom{order:5;flex-basis:100%;font-size:14px;text-align:left}.fmctl .small{display:none}}
+.tobanner{display:flex;align-items:center;gap:10px;justify-content:center;padding:6px 10px;margin:4px 0;border-radius:8px;background:#ffb02018;border:1px solid #ffb02055}
+.tobar{display:inline-block;width:160px;height:6px;border-radius:3px;background:#ffffff18;overflow:hidden}.tobar i{display:block;height:100%;background:var(--acc);transition:width .25s linear}.tocount{font-variant-numeric:tabular-nums}
 .fmctl{display:flex;align-items:center;gap:10px;justify-content:center;margin:6px 0 2px}.fmbig{font-size:16px;padding:10px 28px;border-radius:10px;min-width:150px}.fmbig.go{background:var(--good);color:#06210f}
 .lcourt{max-width:640px;margin:6px auto 14px;padding:10px 12px;border-radius:12px;background:#c8733d22;border:1px solid #c8733d55}
 .lcgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .lcz{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px 7px;border-radius:10px;background:#0b122099;cursor:pointer;min-width:0}.lcz:hover{background:#0b1220}
 .lczn{position:absolute;top:4px;left:7px;font-size:11px;color:var(--mut);font-weight:800}.lcinj{position:absolute;top:3px;right:6px}
 .lcst{display:flex;gap:10px}.lcst span{display:flex;flex-direction:column;align-items:center}.lcst small{font-size:9px;color:var(--mut);font-weight:700;text-transform:uppercase}.lcst b{font-size:15px}
-.seg{justify-self:start;display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.seg button{background:transparent;border:0;border-right:1px solid var(--line);color:var(--txt);padding:6px 12px;font-size:12px;cursor:pointer;border-radius:0}.seg button:last-child{border-right:0}.seg button.on{background:var(--acc);color:#1a1200;font-weight:700}
-.tacrow{display:grid;grid-template-columns:minmax(180px,260px) auto;gap:4px 12px;align-items:center;padding:8px 0;border-bottom:1px solid #ffffff0d}.tacl{display:flex;flex-direction:column}.tacd{grid-column:1/-1}
-.tacgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:0 18px;margin-top:6px}.tacgrid.wide{grid-template-columns:repeat(auto-fit,minmax(min(560px,100%),1fr))}.tacgrid.wide>.small{grid-column:1/-1}.seg{flex-wrap:wrap}.seg button{white-space:nowrap}
+.seg{justify-self:start;max-width:100%;display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.seg button{background:transparent;border:0;border-right:1px solid var(--line);color:var(--txt);padding:6px 12px;font-size:12px;cursor:pointer;border-radius:0}.seg button:last-child{border-right:0}.seg button.on{background:var(--acc);color:#1a1200;font-weight:700}
+.tacrow{display:grid;grid-template-columns:minmax(180px,280px) minmax(0,1fr);gap:4px 12px;align-items:center;padding:8px 0;border-bottom:1px solid #ffffff0d}.tacl{display:flex;flex-direction:column}.tacd{grid-column:1/-1}
+.tacgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:0 18px;margin-top:6px}.tacgrid.wide{grid-template-columns:1fr;max-width:1100px}.tacgrid.wide>.small{grid-column:1/-1}.seg{flex-wrap:wrap}.seg button{white-space:nowrap}
 .anarow{display:flex;flex-direction:column;gap:2px;margin:4px 0}.anarow>span.mut{font-size:12px}.anab{display:flex;height:7px;border-radius:4px;overflow:hidden;background:#ffffff10}.anab i{display:block;height:100%}.anac{width:100%;height:auto;display:block;margin:2px 0}.anar div{line-height:1.5}.anaadv{margin-top:6px;padding:6px 8px;border-radius:6px;background:#ffb02018;border-left:3px solid var(--acc)}
 @media (max-width:760px){.tacrow{grid-template-columns:1fr}}
 .fmpt-t{width:100%;border-collapse:collapse;font-size:11.5px;font-variant-numeric:tabular-nums}.fmpt-t th{font-size:10px;color:var(--mut);font-weight:700;padding:3px 2px;text-align:center;border-bottom:1px solid var(--line)}
@@ -700,11 +708,16 @@ function matchView(){
 }
 function schedule(ms){clearTimeout(timer);const m=ui.match;if(!m||m.over||m.paused)return;timer=setTimeout(tick,ms==null?ui.speed:ms);}
 function animOn(){return ui.anim!==false&&ui.speed>=800&&typeof requestAnimationFrame!=='undefined';}
-function tick(){const m=ui.match;if(!m||m.over||m.paused||m.animating)return;if(ui.tab!=='mecz'){m.paused=true;persistLive();return;}
+function tick(){const m=ui.match;if(!m||m.over||m.paused||m.animating||ui.to)return;if(ui.tab!=='mecz'){m.paused=true;persistLive();return;}
+  // decyzje rywala (czas, zmiany) zapadają po zakończonej akcji, przed kolejną zagrywką
+  const to1=m.sides[1].to;for(const s of aiTurn(m,1))m.log.push({t:esc(s),c:'sys'});
+  if(m.sides[1].to<to1&&ui.speed>=800){m.comm={t:`Czas dla ${m.sides[1].team.short}. Trener rywala chce przerwać serię.`,w:1};startTimeout(1);return;}
   const hall=ui.mview!=='klasyczny'&&document.getElementById('mcv');const pre=animOn()&&hall?formation(m):null;
-  const ev=doRally(m);if(!m.over)persistLive();
-  if(animOn()){m.animating=true;const fin=()=>{m.animating=false;render();schedule(ui.speed>=1600?650:380);};if(hall)hallAnim(m,pre,ev,fin);else animateRally(ev,fin);}
-  else{render();schedule();}}
+  const sl=m.sets.length,sc=m.score.slice();
+  const ev=doRally(m,true);if(!m.over)persistLive();const cm=rallyComment(m,ev,m.sets.length>sl,sc);
+  const after=()=>{m.comm=cm;if(ui.toReq&&!m.over){ui.toReq=false;startTimeout(0);return true;}return false;};
+  if(animOn()){m.animating=true;const fin=()=>{m.animating=false;if(after())return;render();schedule(ui.speed>=1600?650:380);};if(hall)hallAnim(m,pre,ev,fin);else animateRally(ev,fin);}
+  else{if(after())return;render();schedule();}}
 function animateRally(ev,done){
   const court=document.querySelector('.court'),ball=document.getElementById('vball');
   if(!court||!ball||!court.getBoundingClientRect){done();return;}
@@ -735,8 +748,8 @@ function animateRally(ev,done){
   seg();
 }
 function flashLabel(t,w){const f=document.getElementById('cflash');if(!f)return;f.textContent=t;f.className='cflash show '+(w===0?'fw':'fl');}
-function doRally(m){let ret;ui.talkRes=null;
-  for(const s of aiTurn(m,1))m.log.push({t:esc(s),c:'sys'});
+function doRally(m,skipAI){let ret;ui.talkRes=null;
+  if(!skipAI)for(const s of aiTurn(m,1))m.log.push({t:esc(s),c:'sys'});
   const ev=stepRally(m);m.hl=ev.act;ret=ev;
   m.log.push({t:`<b class="sc">${ev.score[0]}:${ev.score[1]}</b> ${esc(ev.text)}`,c:ev.winner===0?'w':'l'});
   if(ev.setEnd){m.log.push({t:`Koniec ${ev.setNo}. seta — ${ev.score[0]}:${ev.score[1]} dla <b>${esc(m.sides[ev.setWinner].team.name)}</b>. Stan meczu ${m.setsWon[0]}:${m.setsWon[1]}.`,c:'set'});
@@ -745,7 +758,7 @@ function doRally(m){let ret;ui.talkRes=null;
   return ret;
 }
 function setSpeed(ms){ui.speed=ms;const m=ui.match;if(m&&!m.over){m.paused=false;ui.subSel=null;}render();schedule();}
-function togglePause(){const m=ui.match;if(!m||m.over)return;m.paused=!m.paused;persistLive();
+function togglePause(){const m=ui.match;if(!m||m.over)return;if(ui.to){endTimeout();return;}m.paused=!m.paused;persistLive();
   if(m.animating){document.querySelectorAll('.ppbtn').forEach(b=>{b.textContent=m.paused?'▶ Graj':'⏸ Pauza';b.classList.toggle('go',m.paused);});return;}
   if(!m.paused)ui.subSel=null;render();schedule();}
 function simToSetEnd(){const m=ui.match;if(!m||m.over)return;const s=m.setNo;while(!m.over&&m.setNo===s)doRally(m);m.paused=true;persistLive();render();}
@@ -2089,7 +2102,7 @@ function standsCanvas(m){
   // ławki
   g.fillStyle='#0f1520';g.fillRect(MV.X0+1*MV.SC,fy1-14,5*MV.SC,8);g.fillRect(MV.X0+12*MV.SC,fy1-14,5*MV.SC,8);
   g.font='600 10px system-ui,sans-serif';g.textAlign='center';g.fillStyle='#ffffffb0';g.fillText(m.sides[0].team.short,MV.X0+3.5*MV.SC,fy1-17);g.fillText(m.sides[1].team.short,MV.X0+14.5*MV.SC,fy1-17);
-  ui._stand={mid:m.mid,cv};return cv;}
+  MV.FY1=fy1;ui._stand={mid:m.mid,cv};return cv;}
 // ---- rysowanie ----
 function mvView(cv){const w=cv.clientWidth||MV.W;return w<600?{x:MV.X0-3.4*MV.SC,y:MV.Y0-3*MV.SC-30,w:24.8*MV.SC,h:15*MV.SC+60}:{x:0,y:0,w:MV.W,h:MV.H};}
 function drawHall(m,scene,ball,flash){
@@ -2117,6 +2130,7 @@ function drawHall(m,scene,ball,flash){
 }
 function staticBall(m,scene){const s=scene.find(o=>o.i===m.serving&&o.zone===0);return s?{x:s.x+(m.serving===0?0.35:-0.35),y:s.y,h:2.2}:null;}
 function drawHallStatic(){const m=ui.match;if(!m||ui.mview==='klasyczny'||!document.getElementById('mcv'))return;
+  if(ui.to&&ui.to.scene){drawHall(m,ui.to.scene,null,null);return;}
   const sc=formation(m);ui._scene=sc;drawHall(m,sc,m.over?null:staticBall(m,sc),null);
   const cv=document.getElementById('mcv');cv.onclick=e=>{const r=cv.getBoundingClientRect();const v=mvView(cv);const x=v.x+(e.clientX-r.left)*v.w/r.width,y=v.y+(e.clientY-r.top)*v.h/r.height;
     let best=null,bd=22;for(const o of ui._scene){if(o.i!==0)continue;const [px,py]=mvP(o.x,o.y);const d=Math.hypot(px-x,py-y);if(d<bd){bd=d;best=o;}}
@@ -2141,7 +2155,13 @@ function hallAnim(m,pre,ev,done){
     else if(s.k==='mix'){const i=s.s;const [X,Y]=gl(i,s.px??7,s.py??4.5);(s.ids||[]).forEach((id,k)=>{if(P[id])moves.push({id,x:X+(k?0.7:0),y:Y+(k?0.35:0)});});to={x:X,y:Y,h:0.9};peak=1.6;dur=900;ph='Nieporozumienie!';lastMix=[s.px??7,s.py??4.5];}
     else if(s.k==='set'){const i=s.s;const real=o.role==='R';let tx,ty;
       if(s.px!=null&&!s.mix){[tx,ty]=gl(i,s.px,s.py);moves.push({id:o.id,x:tx,y:ty});}else if(real){[tx,ty]=gl(i,8.2,5.8);moves.push({id:o.id,x:tx,y:ty});}else{tx=cx(o);ty=cy(o);}
-      if(!real){const st=side(i).find(x=>x.role==='R');if(st)moves.push(mvTo(st,isFrontZ(st.zone)?7.6:2.6,isFrontZ(st.zone)?7.4:defY(st)));}
+      if(!real){const st=side(i).find(x=>x.role==='R');if(st){
+        // rozgrywający nie zdążył: biegnie do piłki, ale zatrzymuje się ok. 1,5 m przed nią, z dala od toru ataku
+        const lc=(X,Y)=>i===0?[X,Y]:[18-X,9-Y];const [sx,sy]=lc(cx(st),cy(st));const bx=s.px!=null?s.px:lc(tx,ty)[0],by=s.px!=null?s.py:lc(tx,ty)[1];
+        const nx=seq[t+1];let hx=8.3,hy=4.5;if(nx&&(nx.k==='att'||nx.k==='free')&&P[nx.id]){const h=P[nx.id];hx=nx.k==='free'?7.4:isFrontZ(h.zone)?8.3:6.0;hy=lane(h);}
+        const segD=(x,y)=>{const ax=hx-bx,ay=hy-by,L=ax*ax+ay*ay||1;const u=clamp(((x-bx)*ax+(y-by)*ay)/L,0,1);return Math.hypot(x-(bx+ax*u),y-(by+ay*u));};
+        let best=null,bs=-1;for(let a=0;a<16;a++){const ang=a/16*Math.PI*2;const x=clamp(bx+Math.cos(ang)*1.6,0.5,7.2),y=clamp(by+Math.sin(ang)*1.6,0.5,8.5);const sc=segD(x,y)-Math.hypot(x-sx,y-sy)*0.15;if(sc>bs){bs=sc;best=[x,y];}}
+        moves.push(mvTo(st,best[0],best[1]));}}
       for(const a of side(i)){if(a.id===o.id||a.role==='R')continue;const fr=isFrontZ(a.zone);if(!fr&&a.role!=='A'&&a.role!=='P'){moves.push(mvTo(a,2.6,defY(a)));continue;}moves.push(mvTo(a,fr?5.6:3.9,lane(a)));}
       const d=side(1-i);for(const b of d){const fr=isFrontZ(b.zone);if(b.role==='L'||!fr)moves.push(mvTo(b,defZone(b)===6?2.2:3.0,defY(b)));else moves.push(mvTo(b,8.4,defY(b)));}
       to={x:tx,y:ty,h:2.4};peak=lastK==='rec'||lastK==='dig'?3.0:1.2;dur=(lastK==='dig'?850:900)+(s.run===2||s.alt?250:0);ph=s.mix?'Ratunkowa piłka':s.alt&&!real?'Rozgrywający nie zdążył — wystawia kolega':s.run===2?'Rozgrywający goni piłkę':lastK==='rec'?(s.run?'Przyjęcie niedokładne':'Przyjęcie'):lastK==='dig'?'Obrona':'Piłka po bloku';}
@@ -2218,7 +2238,9 @@ function talkList(m){const w=weakestReceiver(m);return [
   ['srv','Ryzykujcie na zagrywce!','Przez kilka akcji mocniejsza zagrywka: więcej asów, ale i więcej błędów.'],
   ['rec','Skupcie się na przyjęciu','Przez kilka akcji lepsze przyjęcie. Spokój dla przyjmujących i libero.'],
   ['target',`Zagrywka w ${w?w.last:'słabszego przyjmującego'}`,`Przez kilka akcji serwujecie w najsłabiej przyjmującego rywala${w?` (${w.last}, przyjęcie ${w.prz})`:''}.`]];}
-function myTimeout(){const m=ui.match;if(!m||m.over)return;if(callTimeout(m,0)){m.log.push({t:`Czas dla ${esc(m.sides[0].team.name)}.`,c:'sys'});m.paused=true;ui.talk=true;ui.talkRes=null;persistLive();}render();}
+function myTimeout(){const m=ui.match;if(!m||m.over||ui.to)return;if(m.sides[0].to<=0)return;
+  if(m.animating){ui.toReq=!ui.toReq;document.querySelectorAll('.tobtn').forEach(b=>b.textContent=ui.toReq?'⏱ Czas po akcji…':`⏱ Czas (${m.sides[0].to})`);return;}
+  startTimeout(0);}
 function applyTalk(k){const m=ui.match;if(!m)return;const s=m.sides[0];const oc=onCourt(s,m.serving===0).map(e=>e.p);
   const behind=m.score[1]-m.score[0];const mot=cA('mot'),aut=cA('aut'),tak=cA('tak');const amp=0.8+aut/50;const dur=5+Math.floor(tak/4);const del={};
   for(const p of oc){const mor=p.mor==null?60:p.mor;let d=0;
@@ -2233,8 +2255,8 @@ function applyTalk(k){const m=ui.match;if(!m)return;const s=m.sides[0];const oc=
   if(k==='target'){const t=weakestReceiver(m);if(t)s.tmp={k:'target',n:dur,id:t.id};}
   const t=talkList(m).find(x=>x[0]===k);const up=Object.values(del).filter(d=>d>0).length,dn=Object.values(del).filter(d=>d<0).length;
   m.log.push({t:`🗣️ ${esc(coach()?coach().last:'Trener')}: „${esc(t[1])}” — ${up} zawodników podbudowanych${dn?`, ${dn} spiętych`:''}.`,c:'sys'});
-  ui.talk=false;ui.talkRes={k,del};persistLive();render();}
-function talkCard(m){return `<div class="card talk"><div class="row"><h3 style="margin:0">⏱ Czas — co mówisz zawodnikom?</h3><span class="sp"></span><button class="ghost" onclick="ui.talk=false;render()">Bez przemowy</button></div>
+  ui.talk=false;ui.talkRes={k,del};if(ui.to)ui.to.said=t[1];persistLive();render();}
+function talkCard(m){const to=ui.to;return `<div class="card talk"><div class="row"><h3 style="margin:0">⏱ ${to&&to.side===1?`Czas dla ${esc(m.sides[1].team.short)} — możesz porozmawiać ze swoimi`:'Czas — co mówisz zawodnikom?'}</h3>${to?`<span class="tobar" style="width:140px;margin-left:10px"><i style="width:${Math.max(0,(to.end-Date.now())/150)}%"></i></span><b class="tocount" style="margin-left:6px">${Math.max(0,Math.ceil((to.end-Date.now())/1000))} s</b>`:''}<span class="sp"></span><button class="ghost" onclick="ui.talk=false;render()">Bez przemowy</button>${to?'<button class="btn" onclick="endTimeout()">↩ Wracamy na boisko</button>':''}</div>
   <p class="small mut">Każdy zawodnik reaguje inaczej (zależy od jego cech mentalnych i Twoich atrybutów trenera). Reakcje zobaczysz przy nazwiskach w panelu.</p>
   <div class="opts">${talkList(m).map(([k,n,d])=>`<button class="opt" onclick="applyTalk('${k}')"><b>${esc(n)}</b><small>${esc(d)}</small></button>`).join('')}</div></div>`;}
 // ---- karta ustawienia ----
@@ -2316,7 +2338,7 @@ function fmAdvice(m){if(m.over)return null;const a=m.sides[0],b=m.sides[1];const
   return {k:'ok',t:`Gramy swoje. Atak ${pc(A.kill,A.att)} wobec ${pc(B.kill,B.att)} rywala.`,btn:null};}
 function fmAssistant(m){const ad=fmAdvice(m);if(!ad)return `<div class="card fmw"><div class="fmh"><b>Asystent</b></div><div class="small">Mecz zakończony.</div></div>`;
   const hid=ui.asstHide===ad.k;
-  return `<div class="card fmw"><div class="fmh"><b>Asystent</b><span class="small mut">${esc(coach()?'Sztab':'')}</span></div>
+  return `<div class="card fmw"><div class="fmh"><b>Asystent</b><button class="ghost sm" onclick="ui.fmPanel=ui.fmPanel==='asst'?null:'asst';render();window.scrollTo({top:0,behavior:'smooth'})">💬 Zapytaj</button></div>
    <div class="small fmat">${hid?'<span class="mut">Brak nowych uwag.</span>':esc(ad.t)}</div>
    ${ad.btn&&!hid?`<div class="row" style="gap:6px;margin-top:6px"><button class="btn sm" onclick="${ad.act}">✓ ${esc(ad.btn)}</button><button class="ghost sm" onclick="ui.asstHide='${ad.k}';render()">✕</button></div>`:''}</div>`;}
 // ---- dynamika meczu ----
@@ -2353,8 +2375,9 @@ function fmTop(m){const [a,b]=m.sides;const kc=kitColors(m);const sp=[[1600,'0,5
   const chip=(i)=>`<span class="fmchip" style="background:${kc[i]};color:${lum(kc[i])>0.6?'#111':'#fff'}">${esc(m.sides[i].team.short)}</span>`;
   return `<div class="card fmtop">
    <div class="fmtl">${m.over?'':`<button class="ghost sm ${ui.fmPanel==='tac'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='tac'?null:'tac';render()">📋 Taktyka</button>
-     <button class="ghost sm" ${a.to<=0?'disabled':''} onclick="myTimeout()">⏱ Czas (${a.to})</button>
-     <button class="ghost sm ${ui.fmPanel==='stats'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='stats'?null:'stats';render()">📊 Statystyki</button>`}</div>
+     <button class="ghost sm tobtn ${ui.toReq?'on':''}" ${a.to<=0||ui.to?'disabled':''} onclick="myTimeout()">${ui.toReq?'⏱ Czas po akcji…':`⏱ Czas (${a.to})`}</button>
+     <button class="ghost sm ${ui.fmPanel==='stats'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='stats'?null:'stats';render()">📊 Statystyki</button>
+     <button class="ghost sm ${ui.fmPanel==='asst'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='asst'?null:'asst';render()">💬 Asystent</button>`}</div>
    <div class="fmsc"><span class="fmset">${m.over?'KONIEC':'SET '+m.setNo}</span>${chip(0)}<b class="fmsw">${m.setsWon[0]}</b>
      <b class="fmpt ${m.serving===0&&!m.over?'srv':''}">${m.over?'–':m.score[0]}</b><span class="fmcol">:</span><b class="fmpt ${m.serving===1&&!m.over?'srv':''}">${m.over?'–':m.score[1]}</b>
      <b class="fmsw">${m.setsWon[1]}</b>${chip(1)}
@@ -2372,6 +2395,7 @@ function fmPanel(m){const a=m.sides[0];
     <button class="ghost sm" onclick="ui.mview=ui.mview==='klasyczny'?'hala':'klasyczny';ui.fmPanel=null;render()">${ui.mview==='klasyczny'?'🏟️ Widok hali':'▦ Widok klasyczny'}</button>
     <button class="ghost sm ${ui.anim!==false?'on':''}" onclick="ui.anim=ui.anim===false;render()">🏐 Animacja: ${ui.anim!==false?'wł.':'wył.'}</button>
     <span class="small mut">Libero: <b style="color:var(--txt)">${esc(a.libero.last)}</b> <button class="link" onclick="selSub('L')">zmień</button></span></div></div>`;
+  if(ui.fmPanel==='asst')return asstPanel(m);
   if(ui.fmPanel==='stats')return `<div class="card fmpanel">${statsBlock(m)}</div>`;
   if(ui.fmPanel==='ana')return `<div class="card fmpanel"><h3 style="margin-top:0">Analityk: kierunki ataków zawodników</h3><div class="shares"><div><div class="mut small">${esc(m.sides[1].team.name)} (rywal)</div>${anaTable(m,1)}</div><div><div class="mut small">${esc(m.sides[0].team.name)}</div>${anaTable(m,0)}</div></div></div>`;
   return '';}
@@ -2383,8 +2407,8 @@ function fmLiveView(subPanel){const m=ui.match;
    <div class="fml">${fmFormation(m,0)}${fmLiveTable(m)}${fmPlayerStats(m,0)}</div>
    <div class="fmc">
     <div class="card fmcourt">${fmTeamStats(m,0)}<div class="fmcv">
-      ${ui.mview==='klasyczny'?courtHtml(m):`<div class="hallbar small mut">🏟️ ${tName(m.homeIdx!=null?m.homeIdx:m.sides[0].team.idx)} · <b style="color:var(--txt)">${(m.att||0).toLocaleString('pl-PL')}</b> / ${(m.cap||0).toLocaleString('pl-PL')} widzów · <span id="mph" class="mph">${m.over?'Koniec meczu':'Przed zagrywką'}</span></div><canvas id="mcv" class="mcv"></canvas>`}
-      ${m.over?'':`<div class="fmctl"><button class="btn ppbtn fmbig ${m.paused?'go':''}" onclick="togglePause()">${m.paused?'▶ Graj':'⏸ Pauza'}</button><button class="ghost sm" ${m.sides[0].to<=0?'disabled':''} onclick="myTimeout()">⏱ Czas (${m.sides[0].to})</button><span class="small mut">Spacja = pauza</span></div>`}</div>${fmTeamStats(m,1)}</div>
+      ${ui.mview==='klasyczny'?courtHtml(m):`<div class="hallbar small mut">🏟️ ${tName(m.homeIdx!=null?m.homeIdx:m.sides[0].team.idx)} · <b style="color:var(--txt)">${(m.att||0).toLocaleString('pl-PL')}</b> / ${(m.cap||0).toLocaleString('pl-PL')} widzów · <span class="mcom ${m.comm&&m.comm.w!=null?(m.comm.w===0?'me':'op'):''}">${m.comm?esc(m.comm.t):''}</span><span id="mph" class="mph">${ui.to?'Czas':m.over?'Koniec meczu':'Przed zagrywką'}</span></div>${toBanner(m)}<canvas id="mcv" class="mcv"></canvas>`}
+      ${m.over?'':`<div class="fmctl">${ui.to?`<button class="btn fmbig go" onclick="endTimeout()">↩ Wracamy na boisko</button>`:`<button class="btn ppbtn fmbig ${m.paused?'go':''}" onclick="togglePause()">${m.paused?'▶ Graj':'⏸ Pauza'}</button>`}<button class="ghost sm tobtn ${ui.toReq?'on':''}" ${m.sides[0].to<=0||ui.to?'disabled':''} onclick="myTimeout()">${ui.toReq?'⏱ Czas po akcji…':`⏱ Czas (${m.sides[0].to})`}</button><span class="small mut">Spacja = pauza</span></div>`}</div>${fmTeamStats(m,1)}</div>
     <div class="fmws">${fmAssistant(m)}${fmMomentum(m)}${fmAnalyst(m)}</div>
    </div>
    <div class="fmr">${fmFormation(m,1)}${fmRecent(m)}${fmPlayerStats(m,1)}</div>
@@ -2505,6 +2529,92 @@ function lineupCourt(t,lu){const g=k=>t.players.find(p=>p.id===lu[k]);const col=
   const s2=g('S2');
   return `<div class="lcourt"><div class="fmnet">siatka</div><div class="lcgrid">${[4,3,2,5,6,1].map(card).join('')}</div>
    <div class="small mut" style="margin-top:6px">Ustawienie startowe (ustawienie 1). ${s2?`Środkowy 2 <b style="color:var(--txt)">${esc(s2.last)}</b> wchodzi w pierwszej linii, w drugiej zastępuje go libero.`:''} Kliknij zawodnika, by zobaczyć kartę. Pasek = kondycja (im dłuższy, tym wolniej się męczy).</div></div>`;}
+// ================= CZAS: ZEJŚCIE DO ŁAWEK, 15 s, POWRÓT =================
+const TO_SEC=15;
+function benchScene(m,sc){const out=sc.map(o=>Object.assign({},o,{j:0}));const by=MV.FY1?(MV.FY1-24-MV.Y0)/MV.SC:10.4;
+  for(const i of [0,1]){const ps=out.filter(o=>o.i===i);const cx=i===0?3.6:14.4,cy=Math.min(by-0.6,10.1),r=1.45;ps.forEach((o,k)=>{const ang=-Math.PI/2+k/ps.length*Math.PI*2;o.x=cx+Math.cos(ang)*r*1.35;o.y=cy+Math.sin(ang)*r*0.62;});}
+  return out;}
+function animScene(m,from,to,dur,done){const cv=document.getElementById('mcv');if(!cv){done&&done();return;}let t0=null;
+  const sc=from.map(o=>Object.assign({},o));const tg={};for(const o of to)tg[o.id]=o;
+  const fr=now=>{if(t0==null)t0=now;const t=Math.min(1,(now-t0)/dur),e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+    for(let k=0;k<sc.length;k++){const a=from[k],b=tg[a.id]||a;sc[k].x=a.x+(b.x-a.x)*e;sc[k].y=a.y+(b.y-a.y)*e;}
+    if(ui.to)ui.to.scene=sc;drawHall(m,sc,null,null);if(t<1&&document.getElementById('mcv'))requestAnimationFrame(fr);else done&&done();};
+  requestAnimationFrame(fr);}
+function startTimeout(i){const m=ui.match;if(!m||m.over||ui.to)return;
+  if(i===0){if(!callTimeout(m,0)){render();return;}m.log.push({t:`Czas dla ${esc(m.sides[0].team.name)}.`,c:'sys'});m.comm={t:`Czas dla ${m.sides[0].team.short}. Zawodnicy schodzą do ławki.`,w:0};}
+  const wasPlaying=!m.paused;m.paused=true;clearTimeout(timer);ui.talk=true;ui.talkRes=null;ui.toReq=false;
+  const base=formation(m);ui.to={side:i,end:Date.now()+TO_SEC*1000,wasPlaying,scene:base,said:null};persistLive();render();
+  const cvOk=document.getElementById('mcv');if(cvOk)animScene(m,base,benchScene(m,base),1400,()=>{});
+  clearInterval(ui.toTimer);ui.toTimer=setInterval(()=>{if(!ui.to){clearInterval(ui.toTimer);return;}const left=Math.max(0,Math.ceil((ui.to.end-Date.now())/1000));
+    document.querySelectorAll('.tocount').forEach(e=>e.textContent=left+' s');document.querySelectorAll('.tobar i').forEach(e=>e.style.width=(left/TO_SEC*100)+'%');
+    if(left<=0)endTimeout();},250);}
+function endTimeout(){const m=ui.match;const to=ui.to;if(!to)return;clearInterval(ui.toTimer);ui.talk=false;
+  const from=to.scene||formation(m);const back=formation(m);to.end=0;
+  const finish=()=>{ui.to=null;if(m&&!m.over){m.comm={t:'Zawodnicy wracają na boisko.',w:null};if(to.wasPlaying||to.side===1){m.paused=false;}}persistLive();render();schedule(500);};
+  if(document.getElementById('mcv')){ui.to.returning=true;render();animScene(m,from,back,1200,finish);}else finish();}
+function toBanner(m){const to=ui.to;if(!to)return '';const left=Math.max(0,Math.ceil((to.end-Date.now())/1000));
+  return `<div class="tobanner"><b>⏱ Czas dla ${esc(m.sides[to.side].team.short)}</b><span class="tobar"><i style="width:${left/TO_SEC*100}%"></i></span><span class="tocount">${left} s</span>${to.said?`<span class="small mut">Powiedziałeś: „${esc(to.said)}”</span>`:''}</div>`;}
+// ================= KOMENTARZ NA ŻYWO =================
+const pickT=a=>a[Math.floor(Math.random()*a.length)];
+function rallyComment(m,ev,setEnded,pre){const seq=ev.seq||[];const N=id=>{const p=findPl(m,id);return p?p.last:'?';};
+  const last=k=>{for(let i=seq.length-1;i>=0;i--)if(seq[i].k===k)return seq[i];return null;};
+  const w=ev.winner,T=i=>m.sides[i].team.short;const att=last('att'),blk=last('blk'),srv=seq[0],rec=seq.find(x=>x.k==='rec'),setI=att?seq.slice(0,seq.indexOf(att)).reverse().find(x=>x.k==='set'):last('set');
+  const digs=seq.filter(x=>x.k==='dig'&&!x.free).length,atts=seq.filter(x=>x.k==='att').length;let t='';
+  switch(ev.type){
+    case 'ace':t=pickT([`AS! ${N(srv.id)} — ${rec?N(rec.id):'przyjmujący'} bez szans!`,`Bomba z zagrywki: ${N(srv.id)}! As serwisowy.`,`${N(srv.id)} trafia w sam róg — as!`]);break;
+    case 'serr':t=pickT([`${N(srv.id)} psuje zagrywkę.`,`Zagrywka w ${seq.some(x=>x.k==='net')?'siatkę':'aut'} — ${N(srv.id)}.`,`Błąd w polu serwisowym: ${N(srv.id)}.`]);break;
+    case 'block':t=att&&att.tr?`Potrójny blok! ${N(att.id)} zatrzymany.`:pickT([`Monster blok: ${N(blk.id)}! Atakował ${N(att.id)}.`,`Ściana! ${N(blk.id)} zatrzymuje atak (${N(att.id)}).`,`${N(blk.id)} zamyka drogę — punkt blokiem!`]);break;
+    case 'attErr':t=att?(att.d==='tip'?`${N(att.id)} kiwa prosto w siatkę.`:pickT([`${N(att.id)} psuje atak.`,`Za mocno! ${N(att.id)} w aut.`,`${N(att.id)} nie trafia w boisko.`])):'Błąd w ataku.';break;
+    case 'setErr':t=`Błąd rozegrania${setI?': '+N(setI.id):''}.`;break;
+    case 'mix':{const mx=last('mix');t=mx?`Nieporozumienie! ${N(mx.ids[0])} i ${N(mx.ids[1])} patrzą na siebie, a piłka spada.`:'Nieporozumienie w przyjęciu!';break;}
+    default:{if(!att){const fr=last('free');t=fr?`Przebicie: ${N(fr.id)} — zamieszanie u rywala i punkt!`:'Punkt!';break;}
+      const a=N(att.id),d=att.d;
+      t=d==='tip'?pickT([`Sprytna kiwka: ${a}!`,`${a} oszukuje blok kiwką.`,`Kiwka za blok — ${a}!`])
+       :d==='line'?pickT([`${a} wzdłuż linii — czysto!`,`${a} po prostej, obrona bez szans.`,`Atak po linii — ${a}!`])
+       :d==='cross'?pickT([`${a} kończy po skosie!`,`Mocny skos — ${a}!`,`${a} omija blok po przekątnej.`])
+       :att.q?pickT([`Szybka piłka — ${a}!${setI?` ${N(setI.id)} świetnie rozegrał.`:''}`,`${a} ze środka, nie do obrony.`])
+       :pickT([`${a} kończy z drugiej linii!`,`Atak przez środek — ${a}!`]);}
+  }
+  if(atts>=3)t=`Co za wymiana! `+t;else if(digs>=2&&ev.type!=='ace')t=t+` Świetna obrona w tej akcji.`;
+  let x='';const tgt=m.setNo===5?15:25;
+  if(setEnded){const s=m.sets[m.sets.length-1];x=m.over?` KONIEC MECZU! ${T(m.winner)} wygrywa ${Math.max(...m.setsWon)}:${Math.min(...m.setsWon)}!`:` ${T(w)} wygrywa seta ${s[0]}:${s[1]}!`;}
+  else{if(m.run&&m.run.t===w&&m.run.n>=3)x=` To już ${m.run.n}. punkt z rzędu ${T(w)}!`;
+    const [a,b]=m.score;for(const i of [0,1]){const me=i?b:a,op=i?a:b;if(me>=tgt-1&&me>op){const mp=m.setsWon[i]===(2);x+=mp?` Piłka meczowa dla ${T(i)}!`:` Piłka setowa dla ${T(i)}!`;}}}
+  return {t:t+x,w};}
+// ================= ASYSTENT NA ŻĄDANIE =================
+function asstAll(m){const a=m.sides[0],b=m.sides[1];const sk=staffSkill('asy');const A=teamTotals(a),B=teamTotals(b);const out=[];const h=(m.hist||[]).filter(x=>x[0]===m.setNo);
+  // forma ostatnich akcji
+  const lastN=h.slice(-8);let my=0;lastN.forEach((x,k)=>{const p=k?lastN[k-1]:(h[h.length-lastN.length-1]||[0,0,0]);if(x[1]>p[1])my++;});
+  if(lastN.length>=6)out.push({g:'Przebieg',t:my>=6?`Gramy świetnie: ${my} z ostatnich ${lastN.length} punktów dla nas. Nic nie zmieniaj.`:my<=2?`Ostatnie ${lastN.length} akcji: tylko ${my} punkty dla nas. Rywal przejął inicjatywę.`:`Wyrównana gra: ${my} z ostatnich ${lastN.length} punktów dla nas.`,btn:my<=2&&a.to>0?'Weź czas':null,act:'myTimeout()'});
+  // przyjęcie
+  if(A.rec>=4){const r=A.recPos/A.rec;const worst=a.pl.filter(p=>p.st.rec>=3).sort((x,y)=>(x.st.recPos/x.st.rec)-(y.st.recPos/y.st.rec))[0];
+    out.push({g:'Przyjęcie',t:r<0.45?`Przyjęcie słabe: ${pc(A.recPos,A.rec)} pozytywnego.${worst?` Najwięcej problemów ma ${worst.last} (${pc(worst.st.recPos,worst.st.rec)}).`:''} Przemowa „Skupcie się na przyjęciu” albo zmiana przyjmującego.`:`Przyjęcie w porządku: ${pc(A.recPos,A.rec)} pozytywnego.`,btn:r<0.45&&a.to>0?'Weź czas':null,act:'myTimeout()'});}
+  // atak
+  if(A.att>=6){const best=a.pl.filter(p=>p.st.att>=4).sort((x,y)=>y.st.kill/y.st.att-x.st.kill/x.st.att)[0];const poor=a.pl.filter(p=>p.st.att>=5).sort((x,y)=>x.st.kill/x.st.att-y.st.kill/y.st.att)[0];
+    let t=`Nasz atak: ${pc(A.kill,A.att)} skuteczności.`;if(best)t+=` Najlepiej kończy ${best.last} (${best.st.kill}/${best.st.att}).`;if(poor&&poor!==best&&poor.st.kill/poor.st.att<0.3)t+=` ${poor.last} ma tylko ${poor.st.kill}/${poor.st.att}.`;
+    const dist=best&&best.pos==='A'&&a.tactics.dist!==3?{btn:'Graj na atakującego',act:'setDist(3)'}:best&&best.pos==='S'&&a.tactics.dist!==2&&A.recPos/Math.max(1,A.rec)>0.55?{btn:'Graj środkiem',act:'setDist(2)'}:best&&best.pos==='P'&&a.tactics.dist!==1?{btn:'Graj na skrzydła',act:'setDist(1)'}:{};
+    out.push(Object.assign({g:'Atak',t},sk>=8?dist:{}));}
+  // blok i rywal (analityk)
+  const ana=anaAdvice(m);if(ana)out.push({g:'Blok',t:ana.t,btn:ana.btn,act:ana.act});
+  else if(B.att>=8)out.push({g:'Rywal',t:`Rywal kończy ${pc(B.kill,B.att)} ataków.${anaSkill()?'':' Bez analityka nie powiem, w które kierunki gra — zatrudnij go w Sztabie.'}`});
+  // zagrywka
+  if(B.rec>=5){const r=B.recPos/B.rec;const w=weakestReceiver(m);
+    if(r<0.45&&a.tactics.serve<2)out.push({g:'Zagrywka',t:`Rywal źle przyjmuje (${pc(B.recPos,B.rec)}). Możemy zaryzykować mocniejszą zagrywką.`,btn:'Ryzykowna zagrywka',act:'setServe(2)'});
+    else if(w&&!a.tactics.tgt&&sk>=6&&(()=>{const rs=onCourt(b,m.serving===1).filter(e=>(e.role==='L'||e.role==='P')&&e.p!==w).map(e=>e.p.prz);return rs.length&&w.prz<=Math.min(...rs)-2;})())out.push({g:'Zagrywka',t:`Najsłabiej przyjmuje ${w.last} (przyjęcie ${w.prz}). Celujmy w niego.`,btn:`Zagrywka w ${w.last}`,act:`setTgt('${w.id}')`});
+    else if(A.srvErr>=4&&a.tactics.serve===2)out.push({g:'Zagrywka',t:`Za dużo błędów zagrywki (${A.srvErr}). Zmniejsz ryzyko.`,btn:'Normalna zagrywka',act:'setServe(1)'});}
+  // zmęczenie i morale
+  const oc=onCourt(a,m.serving===0);const tired=oc.filter(e=>e.role!=='L'&&e.p.en<62).sort((x,y)=>x.p.en-y.p.en)[0];
+  if(tired)out.push({g:'Kondycja',t:`${tired.p.last} słabnie (energia ${Math.round(tired.p.en)}%).${a.subs>0?' Rozważ zmianę.':' Nie mamy już zmian w tym secie.'}`,btn:a.subs>0?'Wybierz zmianę':null,act:`selSub(${tired.slot})`});
+  const low=oc.filter(e=>(e.p.mor??60)<45).map(e=>e.p.last);if(low.length)out.push({g:'Morale',t:`Niskie morale: ${low.join(', ')}. Słowa otuchy w czasie pomogą.`,btn:a.to>0?'Weź czas':null,act:'myTimeout()'});
+  // zgranie
+  if((a.chem??0.6)<0.55)out.push({g:'Zgranie',t:`Zespół jest słabo zgrany (${chemPct(a.chem)}%). Uważajmy na nieporozumienia przy niedokładnym przyjęciu; piłki sytuacyjne bezpieczniej przebijać na środek.`});
+  if(!out.length)out.push({g:'Ogólnie',t:'Za wcześnie na wnioski. Zapytaj mnie po kilku akcjach.'});
+  if(sk<6)out.splice(4);
+  return out;}
+function asstPanel(m){const sk=staffSkill('asy');const s=SAVE.staff&&SAVE.staff.asy;const L=asstAll(m);
+  return `<div class="card fmpanel"><div class="row"><h3 style="margin:0">💬 Asystent: ${s?esc((s.first||'')+' '+(s.last||'')):'bez asystenta'} <small class="mut">${s?sk+'/20':''}</small></h3><span class="sp"></span><button class="ghost sm" onclick="render()">↻ Odśwież</button><button class="ghost sm" onclick="ui.fmPanel=null;render()">Zamknij</button></div>
+   <div class="asl">${L.map(x=>`<div class="asi"><span class="asg">${x.g}</span><span class="ast">${esc(x.t)}</span>${x.btn?`<button class="btn sm" onclick="${x.act};ui.fmPanel='asst';render()">✓ ${esc(x.btn)}</button>`:''}</div>`).join('')}</div>
+   <p class="small mut" style="margin:6px 0 0">${sk<6?'Słaby asystent widzi tylko najważniejsze rzeczy. Lepszy (Sztab) da więcej i trafniejszych rad, np. o rozegraniu.':sk<8?'Lepszy asystent (8+) podpowie też, na kogo rozgrywać.':'Rady odświeżają się po każdej akcji.'}</p></div>`;}
 applyCustom();
 // ================= START =================
 if(SAVE.team!=null){if(!SAVE.date&&!SAVE.world)SAVE.date=GAME_START;if(!SAVE.world)initWorld();else syncTeams();if(!SAVE.season)newSeason(1);migrateDates();initClub();}

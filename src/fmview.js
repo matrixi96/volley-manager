@@ -58,7 +58,7 @@ function fmAdvice(m){if(m.over)return null;const a=m.sides[0],b=m.sides[1];const
   return {k:'ok',t:`Gramy swoje. Atak ${pc(A.kill,A.att)} wobec ${pc(B.kill,B.att)} rywala.`,btn:null};}
 function fmAssistant(m){const ad=fmAdvice(m);if(!ad)return `<div class="card fmw"><div class="fmh"><b>Asystent</b></div><div class="small">Mecz zakończony.</div></div>`;
   const hid=ui.asstHide===ad.k;
-  return `<div class="card fmw"><div class="fmh"><b>Asystent</b><span class="small mut">${esc(coach()?'Sztab':'')}</span></div>
+  return `<div class="card fmw"><div class="fmh"><b>Asystent</b><button class="ghost sm" onclick="ui.fmPanel=ui.fmPanel==='asst'?null:'asst';render();window.scrollTo({top:0,behavior:'smooth'})">💬 Zapytaj</button></div>
    <div class="small fmat">${hid?'<span class="mut">Brak nowych uwag.</span>':esc(ad.t)}</div>
    ${ad.btn&&!hid?`<div class="row" style="gap:6px;margin-top:6px"><button class="btn sm" onclick="${ad.act}">✓ ${esc(ad.btn)}</button><button class="ghost sm" onclick="ui.asstHide='${ad.k}';render()">✕</button></div>`:''}</div>`;}
 // ---- dynamika meczu ----
@@ -95,8 +95,9 @@ function fmTop(m){const [a,b]=m.sides;const kc=kitColors(m);const sp=[[1600,'0,5
   const chip=(i)=>`<span class="fmchip" style="background:${kc[i]};color:${lum(kc[i])>0.6?'#111':'#fff'}">${esc(m.sides[i].team.short)}</span>`;
   return `<div class="card fmtop">
    <div class="fmtl">${m.over?'':`<button class="ghost sm ${ui.fmPanel==='tac'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='tac'?null:'tac';render()">📋 Taktyka</button>
-     <button class="ghost sm" ${a.to<=0?'disabled':''} onclick="myTimeout()">⏱ Czas (${a.to})</button>
-     <button class="ghost sm ${ui.fmPanel==='stats'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='stats'?null:'stats';render()">📊 Statystyki</button>`}</div>
+     <button class="ghost sm tobtn ${ui.toReq?'on':''}" ${a.to<=0||ui.to?'disabled':''} onclick="myTimeout()">${ui.toReq?'⏱ Czas po akcji…':`⏱ Czas (${a.to})`}</button>
+     <button class="ghost sm ${ui.fmPanel==='stats'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='stats'?null:'stats';render()">📊 Statystyki</button>
+     <button class="ghost sm ${ui.fmPanel==='asst'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='asst'?null:'asst';render()">💬 Asystent</button>`}</div>
    <div class="fmsc"><span class="fmset">${m.over?'KONIEC':'SET '+m.setNo}</span>${chip(0)}<b class="fmsw">${m.setsWon[0]}</b>
      <b class="fmpt ${m.serving===0&&!m.over?'srv':''}">${m.over?'–':m.score[0]}</b><span class="fmcol">:</span><b class="fmpt ${m.serving===1&&!m.over?'srv':''}">${m.over?'–':m.score[1]}</b>
      <b class="fmsw">${m.setsWon[1]}</b>${chip(1)}
@@ -114,6 +115,7 @@ function fmPanel(m){const a=m.sides[0];
     <button class="ghost sm" onclick="ui.mview=ui.mview==='klasyczny'?'hala':'klasyczny';ui.fmPanel=null;render()">${ui.mview==='klasyczny'?'🏟️ Widok hali':'▦ Widok klasyczny'}</button>
     <button class="ghost sm ${ui.anim!==false?'on':''}" onclick="ui.anim=ui.anim===false;render()">🏐 Animacja: ${ui.anim!==false?'wł.':'wył.'}</button>
     <span class="small mut">Libero: <b style="color:var(--txt)">${esc(a.libero.last)}</b> <button class="link" onclick="selSub('L')">zmień</button></span></div></div>`;
+  if(ui.fmPanel==='asst')return asstPanel(m);
   if(ui.fmPanel==='stats')return `<div class="card fmpanel">${statsBlock(m)}</div>`;
   if(ui.fmPanel==='ana')return `<div class="card fmpanel"><h3 style="margin-top:0">Analityk: kierunki ataków zawodników</h3><div class="shares"><div><div class="mut small">${esc(m.sides[1].team.name)} (rywal)</div>${anaTable(m,1)}</div><div><div class="mut small">${esc(m.sides[0].team.name)}</div>${anaTable(m,0)}</div></div></div>`;
   return '';}
@@ -125,8 +127,8 @@ function fmLiveView(subPanel){const m=ui.match;
    <div class="fml">${fmFormation(m,0)}${fmLiveTable(m)}${fmPlayerStats(m,0)}</div>
    <div class="fmc">
     <div class="card fmcourt">${fmTeamStats(m,0)}<div class="fmcv">
-      ${ui.mview==='klasyczny'?courtHtml(m):`<div class="hallbar small mut">🏟️ ${tName(m.homeIdx!=null?m.homeIdx:m.sides[0].team.idx)} · <b style="color:var(--txt)">${(m.att||0).toLocaleString('pl-PL')}</b> / ${(m.cap||0).toLocaleString('pl-PL')} widzów · <span id="mph" class="mph">${m.over?'Koniec meczu':'Przed zagrywką'}</span></div><canvas id="mcv" class="mcv"></canvas>`}
-      ${m.over?'':`<div class="fmctl"><button class="btn ppbtn fmbig ${m.paused?'go':''}" onclick="togglePause()">${m.paused?'▶ Graj':'⏸ Pauza'}</button><button class="ghost sm" ${m.sides[0].to<=0?'disabled':''} onclick="myTimeout()">⏱ Czas (${m.sides[0].to})</button><span class="small mut">Spacja = pauza</span></div>`}</div>${fmTeamStats(m,1)}</div>
+      ${ui.mview==='klasyczny'?courtHtml(m):`<div class="hallbar small mut">🏟️ ${tName(m.homeIdx!=null?m.homeIdx:m.sides[0].team.idx)} · <b style="color:var(--txt)">${(m.att||0).toLocaleString('pl-PL')}</b> / ${(m.cap||0).toLocaleString('pl-PL')} widzów · <span class="mcom ${m.comm&&m.comm.w!=null?(m.comm.w===0?'me':'op'):''}">${m.comm?esc(m.comm.t):''}</span><span id="mph" class="mph">${ui.to?'Czas':m.over?'Koniec meczu':'Przed zagrywką'}</span></div>${toBanner(m)}<canvas id="mcv" class="mcv"></canvas>`}
+      ${m.over?'':`<div class="fmctl">${ui.to?`<button class="btn fmbig go" onclick="endTimeout()">↩ Wracamy na boisko</button>`:`<button class="btn ppbtn fmbig ${m.paused?'go':''}" onclick="togglePause()">${m.paused?'▶ Graj':'⏸ Pauza'}</button>`}<button class="ghost sm tobtn ${ui.toReq?'on':''}" ${m.sides[0].to<=0||ui.to?'disabled':''} onclick="myTimeout()">${ui.toReq?'⏱ Czas po akcji…':`⏱ Czas (${m.sides[0].to})`}</button><span class="small mut">Spacja = pauza</span></div>`}</div>${fmTeamStats(m,1)}</div>
     <div class="fmws">${fmAssistant(m)}${fmMomentum(m)}${fmAnalyst(m)}</div>
    </div>
    <div class="fmr">${fmFormation(m,1)}${fmRecent(m)}${fmPlayerStats(m,1)}</div>
@@ -247,3 +249,89 @@ function lineupCourt(t,lu){const g=k=>t.players.find(p=>p.id===lu[k]);const col=
   const s2=g('S2');
   return `<div class="lcourt"><div class="fmnet">siatka</div><div class="lcgrid">${[4,3,2,5,6,1].map(card).join('')}</div>
    <div class="small mut" style="margin-top:6px">Ustawienie startowe (ustawienie 1). ${s2?`Środkowy 2 <b style="color:var(--txt)">${esc(s2.last)}</b> wchodzi w pierwszej linii, w drugiej zastępuje go libero.`:''} Kliknij zawodnika, by zobaczyć kartę. Pasek = kondycja (im dłuższy, tym wolniej się męczy).</div></div>`;}
+// ================= CZAS: ZEJŚCIE DO ŁAWEK, 15 s, POWRÓT =================
+const TO_SEC=15;
+function benchScene(m,sc){const out=sc.map(o=>Object.assign({},o,{j:0}));const by=MV.FY1?(MV.FY1-24-MV.Y0)/MV.SC:10.4;
+  for(const i of [0,1]){const ps=out.filter(o=>o.i===i);const cx=i===0?3.6:14.4,cy=Math.min(by-0.6,10.1),r=1.45;ps.forEach((o,k)=>{const ang=-Math.PI/2+k/ps.length*Math.PI*2;o.x=cx+Math.cos(ang)*r*1.35;o.y=cy+Math.sin(ang)*r*0.62;});}
+  return out;}
+function animScene(m,from,to,dur,done){const cv=document.getElementById('mcv');if(!cv){done&&done();return;}let t0=null;
+  const sc=from.map(o=>Object.assign({},o));const tg={};for(const o of to)tg[o.id]=o;
+  const fr=now=>{if(t0==null)t0=now;const t=Math.min(1,(now-t0)/dur),e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+    for(let k=0;k<sc.length;k++){const a=from[k],b=tg[a.id]||a;sc[k].x=a.x+(b.x-a.x)*e;sc[k].y=a.y+(b.y-a.y)*e;}
+    if(ui.to)ui.to.scene=sc;drawHall(m,sc,null,null);if(t<1&&document.getElementById('mcv'))requestAnimationFrame(fr);else done&&done();};
+  requestAnimationFrame(fr);}
+function startTimeout(i){const m=ui.match;if(!m||m.over||ui.to)return;
+  if(i===0){if(!callTimeout(m,0)){render();return;}m.log.push({t:`Czas dla ${esc(m.sides[0].team.name)}.`,c:'sys'});m.comm={t:`Czas dla ${m.sides[0].team.short}. Zawodnicy schodzą do ławki.`,w:0};}
+  const wasPlaying=!m.paused;m.paused=true;clearTimeout(timer);ui.talk=true;ui.talkRes=null;ui.toReq=false;
+  const base=formation(m);ui.to={side:i,end:Date.now()+TO_SEC*1000,wasPlaying,scene:base,said:null};persistLive();render();
+  const cvOk=document.getElementById('mcv');if(cvOk)animScene(m,base,benchScene(m,base),1400,()=>{});
+  clearInterval(ui.toTimer);ui.toTimer=setInterval(()=>{if(!ui.to){clearInterval(ui.toTimer);return;}const left=Math.max(0,Math.ceil((ui.to.end-Date.now())/1000));
+    document.querySelectorAll('.tocount').forEach(e=>e.textContent=left+' s');document.querySelectorAll('.tobar i').forEach(e=>e.style.width=(left/TO_SEC*100)+'%');
+    if(left<=0)endTimeout();},250);}
+function endTimeout(){const m=ui.match;const to=ui.to;if(!to)return;clearInterval(ui.toTimer);ui.talk=false;
+  const from=to.scene||formation(m);const back=formation(m);to.end=0;
+  const finish=()=>{ui.to=null;if(m&&!m.over){m.comm={t:'Zawodnicy wracają na boisko.',w:null};if(to.wasPlaying||to.side===1){m.paused=false;}}persistLive();render();schedule(500);};
+  if(document.getElementById('mcv')){ui.to.returning=true;render();animScene(m,from,back,1200,finish);}else finish();}
+function toBanner(m){const to=ui.to;if(!to)return '';const left=Math.max(0,Math.ceil((to.end-Date.now())/1000));
+  return `<div class="tobanner"><b>⏱ Czas dla ${esc(m.sides[to.side].team.short)}</b><span class="tobar"><i style="width:${left/TO_SEC*100}%"></i></span><span class="tocount">${left} s</span>${to.said?`<span class="small mut">Powiedziałeś: „${esc(to.said)}”</span>`:''}</div>`;}
+// ================= KOMENTARZ NA ŻYWO =================
+const pickT=a=>a[Math.floor(Math.random()*a.length)];
+function rallyComment(m,ev,setEnded,pre){const seq=ev.seq||[];const N=id=>{const p=findPl(m,id);return p?p.last:'?';};
+  const last=k=>{for(let i=seq.length-1;i>=0;i--)if(seq[i].k===k)return seq[i];return null;};
+  const w=ev.winner,T=i=>m.sides[i].team.short;const att=last('att'),blk=last('blk'),srv=seq[0],rec=seq.find(x=>x.k==='rec'),setI=att?seq.slice(0,seq.indexOf(att)).reverse().find(x=>x.k==='set'):last('set');
+  const digs=seq.filter(x=>x.k==='dig'&&!x.free).length,atts=seq.filter(x=>x.k==='att').length;let t='';
+  switch(ev.type){
+    case 'ace':t=pickT([`AS! ${N(srv.id)} — ${rec?N(rec.id):'przyjmujący'} bez szans!`,`Bomba z zagrywki: ${N(srv.id)}! As serwisowy.`,`${N(srv.id)} trafia w sam róg — as!`]);break;
+    case 'serr':t=pickT([`${N(srv.id)} psuje zagrywkę.`,`Zagrywka w ${seq.some(x=>x.k==='net')?'siatkę':'aut'} — ${N(srv.id)}.`,`Błąd w polu serwisowym: ${N(srv.id)}.`]);break;
+    case 'block':t=att&&att.tr?`Potrójny blok! ${N(att.id)} zatrzymany.`:pickT([`Monster blok: ${N(blk.id)}! Atakował ${N(att.id)}.`,`Ściana! ${N(blk.id)} zatrzymuje atak (${N(att.id)}).`,`${N(blk.id)} zamyka drogę — punkt blokiem!`]);break;
+    case 'attErr':t=att?(att.d==='tip'?`${N(att.id)} kiwa prosto w siatkę.`:pickT([`${N(att.id)} psuje atak.`,`Za mocno! ${N(att.id)} w aut.`,`${N(att.id)} nie trafia w boisko.`])):'Błąd w ataku.';break;
+    case 'setErr':t=`Błąd rozegrania${setI?': '+N(setI.id):''}.`;break;
+    case 'mix':{const mx=last('mix');t=mx?`Nieporozumienie! ${N(mx.ids[0])} i ${N(mx.ids[1])} patrzą na siebie, a piłka spada.`:'Nieporozumienie w przyjęciu!';break;}
+    default:{if(!att){const fr=last('free');t=fr?`Przebicie: ${N(fr.id)} — zamieszanie u rywala i punkt!`:'Punkt!';break;}
+      const a=N(att.id),d=att.d;
+      t=d==='tip'?pickT([`Sprytna kiwka: ${a}!`,`${a} oszukuje blok kiwką.`,`Kiwka za blok — ${a}!`])
+       :d==='line'?pickT([`${a} wzdłuż linii — czysto!`,`${a} po prostej, obrona bez szans.`,`Atak po linii — ${a}!`])
+       :d==='cross'?pickT([`${a} kończy po skosie!`,`Mocny skos — ${a}!`,`${a} omija blok po przekątnej.`])
+       :att.q?pickT([`Szybka piłka — ${a}!${setI?` ${N(setI.id)} świetnie rozegrał.`:''}`,`${a} ze środka, nie do obrony.`])
+       :pickT([`${a} kończy z drugiej linii!`,`Atak przez środek — ${a}!`]);}
+  }
+  if(atts>=3)t=`Co za wymiana! `+t;else if(digs>=2&&ev.type!=='ace')t=t+` Świetna obrona w tej akcji.`;
+  let x='';const tgt=m.setNo===5?15:25;
+  if(setEnded){const s=m.sets[m.sets.length-1];x=m.over?` KONIEC MECZU! ${T(m.winner)} wygrywa ${Math.max(...m.setsWon)}:${Math.min(...m.setsWon)}!`:` ${T(w)} wygrywa seta ${s[0]}:${s[1]}!`;}
+  else{if(m.run&&m.run.t===w&&m.run.n>=3)x=` To już ${m.run.n}. punkt z rzędu ${T(w)}!`;
+    const [a,b]=m.score;for(const i of [0,1]){const me=i?b:a,op=i?a:b;if(me>=tgt-1&&me>op){const mp=m.setsWon[i]===(2);x+=mp?` Piłka meczowa dla ${T(i)}!`:` Piłka setowa dla ${T(i)}!`;}}}
+  return {t:t+x,w};}
+// ================= ASYSTENT NA ŻĄDANIE =================
+function asstAll(m){const a=m.sides[0],b=m.sides[1];const sk=staffSkill('asy');const A=teamTotals(a),B=teamTotals(b);const out=[];const h=(m.hist||[]).filter(x=>x[0]===m.setNo);
+  // forma ostatnich akcji
+  const lastN=h.slice(-8);let my=0;lastN.forEach((x,k)=>{const p=k?lastN[k-1]:(h[h.length-lastN.length-1]||[0,0,0]);if(x[1]>p[1])my++;});
+  if(lastN.length>=6)out.push({g:'Przebieg',t:my>=6?`Gramy świetnie: ${my} z ostatnich ${lastN.length} punktów dla nas. Nic nie zmieniaj.`:my<=2?`Ostatnie ${lastN.length} akcji: tylko ${my} punkty dla nas. Rywal przejął inicjatywę.`:`Wyrównana gra: ${my} z ostatnich ${lastN.length} punktów dla nas.`,btn:my<=2&&a.to>0?'Weź czas':null,act:'myTimeout()'});
+  // przyjęcie
+  if(A.rec>=4){const r=A.recPos/A.rec;const worst=a.pl.filter(p=>p.st.rec>=3).sort((x,y)=>(x.st.recPos/x.st.rec)-(y.st.recPos/y.st.rec))[0];
+    out.push({g:'Przyjęcie',t:r<0.45?`Przyjęcie słabe: ${pc(A.recPos,A.rec)} pozytywnego.${worst?` Najwięcej problemów ma ${worst.last} (${pc(worst.st.recPos,worst.st.rec)}).`:''} Przemowa „Skupcie się na przyjęciu” albo zmiana przyjmującego.`:`Przyjęcie w porządku: ${pc(A.recPos,A.rec)} pozytywnego.`,btn:r<0.45&&a.to>0?'Weź czas':null,act:'myTimeout()'});}
+  // atak
+  if(A.att>=6){const best=a.pl.filter(p=>p.st.att>=4).sort((x,y)=>y.st.kill/y.st.att-x.st.kill/x.st.att)[0];const poor=a.pl.filter(p=>p.st.att>=5).sort((x,y)=>x.st.kill/x.st.att-y.st.kill/y.st.att)[0];
+    let t=`Nasz atak: ${pc(A.kill,A.att)} skuteczności.`;if(best)t+=` Najlepiej kończy ${best.last} (${best.st.kill}/${best.st.att}).`;if(poor&&poor!==best&&poor.st.kill/poor.st.att<0.3)t+=` ${poor.last} ma tylko ${poor.st.kill}/${poor.st.att}.`;
+    const dist=best&&best.pos==='A'&&a.tactics.dist!==3?{btn:'Graj na atakującego',act:'setDist(3)'}:best&&best.pos==='S'&&a.tactics.dist!==2&&A.recPos/Math.max(1,A.rec)>0.55?{btn:'Graj środkiem',act:'setDist(2)'}:best&&best.pos==='P'&&a.tactics.dist!==1?{btn:'Graj na skrzydła',act:'setDist(1)'}:{};
+    out.push(Object.assign({g:'Atak',t},sk>=8?dist:{}));}
+  // blok i rywal (analityk)
+  const ana=anaAdvice(m);if(ana)out.push({g:'Blok',t:ana.t,btn:ana.btn,act:ana.act});
+  else if(B.att>=8)out.push({g:'Rywal',t:`Rywal kończy ${pc(B.kill,B.att)} ataków.${anaSkill()?'':' Bez analityka nie powiem, w które kierunki gra — zatrudnij go w Sztabie.'}`});
+  // zagrywka
+  if(B.rec>=5){const r=B.recPos/B.rec;const w=weakestReceiver(m);
+    if(r<0.45&&a.tactics.serve<2)out.push({g:'Zagrywka',t:`Rywal źle przyjmuje (${pc(B.recPos,B.rec)}). Możemy zaryzykować mocniejszą zagrywką.`,btn:'Ryzykowna zagrywka',act:'setServe(2)'});
+    else if(w&&!a.tactics.tgt&&sk>=6&&(()=>{const rs=onCourt(b,m.serving===1).filter(e=>(e.role==='L'||e.role==='P')&&e.p!==w).map(e=>e.p.prz);return rs.length&&w.prz<=Math.min(...rs)-2;})())out.push({g:'Zagrywka',t:`Najsłabiej przyjmuje ${w.last} (przyjęcie ${w.prz}). Celujmy w niego.`,btn:`Zagrywka w ${w.last}`,act:`setTgt('${w.id}')`});
+    else if(A.srvErr>=4&&a.tactics.serve===2)out.push({g:'Zagrywka',t:`Za dużo błędów zagrywki (${A.srvErr}). Zmniejsz ryzyko.`,btn:'Normalna zagrywka',act:'setServe(1)'});}
+  // zmęczenie i morale
+  const oc=onCourt(a,m.serving===0);const tired=oc.filter(e=>e.role!=='L'&&e.p.en<62).sort((x,y)=>x.p.en-y.p.en)[0];
+  if(tired)out.push({g:'Kondycja',t:`${tired.p.last} słabnie (energia ${Math.round(tired.p.en)}%).${a.subs>0?' Rozważ zmianę.':' Nie mamy już zmian w tym secie.'}`,btn:a.subs>0?'Wybierz zmianę':null,act:`selSub(${tired.slot})`});
+  const low=oc.filter(e=>(e.p.mor??60)<45).map(e=>e.p.last);if(low.length)out.push({g:'Morale',t:`Niskie morale: ${low.join(', ')}. Słowa otuchy w czasie pomogą.`,btn:a.to>0?'Weź czas':null,act:'myTimeout()'});
+  // zgranie
+  if((a.chem??0.6)<0.55)out.push({g:'Zgranie',t:`Zespół jest słabo zgrany (${chemPct(a.chem)}%). Uważajmy na nieporozumienia przy niedokładnym przyjęciu; piłki sytuacyjne bezpieczniej przebijać na środek.`});
+  if(!out.length)out.push({g:'Ogólnie',t:'Za wcześnie na wnioski. Zapytaj mnie po kilku akcjach.'});
+  if(sk<6)out.splice(4);
+  return out;}
+function asstPanel(m){const sk=staffSkill('asy');const s=SAVE.staff&&SAVE.staff.asy;const L=asstAll(m);
+  return `<div class="card fmpanel"><div class="row"><h3 style="margin:0">💬 Asystent: ${s?esc((s.first||'')+' '+(s.last||'')):'bez asystenta'} <small class="mut">${s?sk+'/20':''}</small></h3><span class="sp"></span><button class="ghost sm" onclick="render()">↻ Odśwież</button><button class="ghost sm" onclick="ui.fmPanel=null;render()">Zamknij</button></div>
+   <div class="asl">${L.map(x=>`<div class="asi"><span class="asg">${x.g}</span><span class="ast">${esc(x.t)}</span>${x.btn?`<button class="btn sm" onclick="${x.act};ui.fmPanel='asst';render()">✓ ${esc(x.btn)}</button>`:''}</div>`).join('')}</div>
+   <p class="small mut" style="margin:6px 0 0">${sk<6?'Słaby asystent widzi tylko najważniejsze rzeczy. Lepszy (Sztab) da więcej i trafniejszych rad, np. o rozegraniu.':sk<8?'Lepszy asystent (8+) podpowie też, na kogo rozgrywać.':'Rady odświeżają się po każdej akcji.'}</p></div>`;}

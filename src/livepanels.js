@@ -32,7 +32,9 @@ function talkList(m){const w=weakestReceiver(m);return [
   ['srv','Ryzykujcie na zagrywce!','Przez kilka akcji mocniejsza zagrywka: więcej asów, ale i więcej błędów.'],
   ['rec','Skupcie się na przyjęciu','Przez kilka akcji lepsze przyjęcie. Spokój dla przyjmujących i libero.'],
   ['target',`Zagrywka w ${w?w.last:'słabszego przyjmującego'}`,`Przez kilka akcji serwujecie w najsłabiej przyjmującego rywala${w?` (${w.last}, przyjęcie ${w.prz})`:''}.`]];}
-function myTimeout(){const m=ui.match;if(!m||m.over)return;if(callTimeout(m,0)){m.log.push({t:`Czas dla ${esc(m.sides[0].team.name)}.`,c:'sys'});m.paused=true;ui.talk=true;ui.talkRes=null;persistLive();}render();}
+function myTimeout(){const m=ui.match;if(!m||m.over||ui.to)return;if(m.sides[0].to<=0)return;
+  if(m.animating){ui.toReq=!ui.toReq;document.querySelectorAll('.tobtn').forEach(b=>b.textContent=ui.toReq?'⏱ Czas po akcji…':`⏱ Czas (${m.sides[0].to})`);return;}
+  startTimeout(0);}
 function applyTalk(k){const m=ui.match;if(!m)return;const s=m.sides[0];const oc=onCourt(s,m.serving===0).map(e=>e.p);
   const behind=m.score[1]-m.score[0];const mot=cA('mot'),aut=cA('aut'),tak=cA('tak');const amp=0.8+aut/50;const dur=5+Math.floor(tak/4);const del={};
   for(const p of oc){const mor=p.mor==null?60:p.mor;let d=0;
@@ -47,8 +49,8 @@ function applyTalk(k){const m=ui.match;if(!m)return;const s=m.sides[0];const oc=
   if(k==='target'){const t=weakestReceiver(m);if(t)s.tmp={k:'target',n:dur,id:t.id};}
   const t=talkList(m).find(x=>x[0]===k);const up=Object.values(del).filter(d=>d>0).length,dn=Object.values(del).filter(d=>d<0).length;
   m.log.push({t:`🗣️ ${esc(coach()?coach().last:'Trener')}: „${esc(t[1])}” — ${up} zawodników podbudowanych${dn?`, ${dn} spiętych`:''}.`,c:'sys'});
-  ui.talk=false;ui.talkRes={k,del};persistLive();render();}
-function talkCard(m){return `<div class="card talk"><div class="row"><h3 style="margin:0">⏱ Czas — co mówisz zawodnikom?</h3><span class="sp"></span><button class="ghost" onclick="ui.talk=false;render()">Bez przemowy</button></div>
+  ui.talk=false;ui.talkRes={k,del};if(ui.to)ui.to.said=t[1];persistLive();render();}
+function talkCard(m){const to=ui.to;return `<div class="card talk"><div class="row"><h3 style="margin:0">⏱ ${to&&to.side===1?`Czas dla ${esc(m.sides[1].team.short)} — możesz porozmawiać ze swoimi`:'Czas — co mówisz zawodnikom?'}</h3>${to?`<span class="tobar" style="width:140px;margin-left:10px"><i style="width:${Math.max(0,(to.end-Date.now())/150)}%"></i></span><b class="tocount" style="margin-left:6px">${Math.max(0,Math.ceil((to.end-Date.now())/1000))} s</b>`:''}<span class="sp"></span><button class="ghost" onclick="ui.talk=false;render()">Bez przemowy</button>${to?'<button class="btn" onclick="endTimeout()">↩ Wracamy na boisko</button>':''}</div>
   <p class="small mut">Każdy zawodnik reaguje inaczej (zależy od jego cech mentalnych i Twoich atrybutów trenera). Reakcje zobaczysz przy nazwiskach w panelu.</p>
   <div class="opts">${talkList(m).map(([k,n,d])=>`<button class="opt" onclick="applyTalk('${k}')"><b>${esc(n)}</b><small>${esc(d)}</small></button>`).join('')}</div></div>`;}
 // ---- karta ustawienia ----

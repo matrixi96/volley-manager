@@ -62,7 +62,7 @@ function standsCanvas(m){
   // ławki
   g.fillStyle='#0f1520';g.fillRect(MV.X0+1*MV.SC,fy1-14,5*MV.SC,8);g.fillRect(MV.X0+12*MV.SC,fy1-14,5*MV.SC,8);
   g.font='600 10px system-ui,sans-serif';g.textAlign='center';g.fillStyle='#ffffffb0';g.fillText(m.sides[0].team.short,MV.X0+3.5*MV.SC,fy1-17);g.fillText(m.sides[1].team.short,MV.X0+14.5*MV.SC,fy1-17);
-  ui._stand={mid:m.mid,cv};return cv;}
+  MV.FY1=fy1;ui._stand={mid:m.mid,cv};return cv;}
 // ---- rysowanie ----
 function mvView(cv){const w=cv.clientWidth||MV.W;return w<600?{x:MV.X0-3.4*MV.SC,y:MV.Y0-3*MV.SC-30,w:24.8*MV.SC,h:15*MV.SC+60}:{x:0,y:0,w:MV.W,h:MV.H};}
 function drawHall(m,scene,ball,flash){
@@ -90,6 +90,7 @@ function drawHall(m,scene,ball,flash){
 }
 function staticBall(m,scene){const s=scene.find(o=>o.i===m.serving&&o.zone===0);return s?{x:s.x+(m.serving===0?0.35:-0.35),y:s.y,h:2.2}:null;}
 function drawHallStatic(){const m=ui.match;if(!m||ui.mview==='klasyczny'||!document.getElementById('mcv'))return;
+  if(ui.to&&ui.to.scene){drawHall(m,ui.to.scene,null,null);return;}
   const sc=formation(m);ui._scene=sc;drawHall(m,sc,m.over?null:staticBall(m,sc),null);
   const cv=document.getElementById('mcv');cv.onclick=e=>{const r=cv.getBoundingClientRect();const v=mvView(cv);const x=v.x+(e.clientX-r.left)*v.w/r.width,y=v.y+(e.clientY-r.top)*v.h/r.height;
     let best=null,bd=22;for(const o of ui._scene){if(o.i!==0)continue;const [px,py]=mvP(o.x,o.y);const d=Math.hypot(px-x,py-y);if(d<bd){bd=d;best=o;}}
@@ -114,7 +115,13 @@ function hallAnim(m,pre,ev,done){
     else if(s.k==='mix'){const i=s.s;const [X,Y]=gl(i,s.px??7,s.py??4.5);(s.ids||[]).forEach((id,k)=>{if(P[id])moves.push({id,x:X+(k?0.7:0),y:Y+(k?0.35:0)});});to={x:X,y:Y,h:0.9};peak=1.6;dur=900;ph='Nieporozumienie!';lastMix=[s.px??7,s.py??4.5];}
     else if(s.k==='set'){const i=s.s;const real=o.role==='R';let tx,ty;
       if(s.px!=null&&!s.mix){[tx,ty]=gl(i,s.px,s.py);moves.push({id:o.id,x:tx,y:ty});}else if(real){[tx,ty]=gl(i,8.2,5.8);moves.push({id:o.id,x:tx,y:ty});}else{tx=cx(o);ty=cy(o);}
-      if(!real){const st=side(i).find(x=>x.role==='R');if(st)moves.push(mvTo(st,isFrontZ(st.zone)?7.6:2.6,isFrontZ(st.zone)?7.4:defY(st)));}
+      if(!real){const st=side(i).find(x=>x.role==='R');if(st){
+        // rozgrywający nie zdążył: biegnie do piłki, ale zatrzymuje się ok. 1,5 m przed nią, z dala od toru ataku
+        const lc=(X,Y)=>i===0?[X,Y]:[18-X,9-Y];const [sx,sy]=lc(cx(st),cy(st));const bx=s.px!=null?s.px:lc(tx,ty)[0],by=s.px!=null?s.py:lc(tx,ty)[1];
+        const nx=seq[t+1];let hx=8.3,hy=4.5;if(nx&&(nx.k==='att'||nx.k==='free')&&P[nx.id]){const h=P[nx.id];hx=nx.k==='free'?7.4:isFrontZ(h.zone)?8.3:6.0;hy=lane(h);}
+        const segD=(x,y)=>{const ax=hx-bx,ay=hy-by,L=ax*ax+ay*ay||1;const u=clamp(((x-bx)*ax+(y-by)*ay)/L,0,1);return Math.hypot(x-(bx+ax*u),y-(by+ay*u));};
+        let best=null,bs=-1;for(let a=0;a<16;a++){const ang=a/16*Math.PI*2;const x=clamp(bx+Math.cos(ang)*1.6,0.5,7.2),y=clamp(by+Math.sin(ang)*1.6,0.5,8.5);const sc=segD(x,y)-Math.hypot(x-sx,y-sy)*0.15;if(sc>bs){bs=sc;best=[x,y];}}
+        moves.push(mvTo(st,best[0],best[1]));}}
       for(const a of side(i)){if(a.id===o.id||a.role==='R')continue;const fr=isFrontZ(a.zone);if(!fr&&a.role!=='A'&&a.role!=='P'){moves.push(mvTo(a,2.6,defY(a)));continue;}moves.push(mvTo(a,fr?5.6:3.9,lane(a)));}
       const d=side(1-i);for(const b of d){const fr=isFrontZ(b.zone);if(b.role==='L'||!fr)moves.push(mvTo(b,defZone(b)===6?2.2:3.0,defY(b)));else moves.push(mvTo(b,8.4,defY(b)));}
       to={x:tx,y:ty,h:2.4};peak=lastK==='rec'||lastK==='dig'?3.0:1.2;dur=(lastK==='dig'?850:900)+(s.run===2||s.alt?250:0);ph=s.mix?'Ratunkowa piłka':s.alt&&!real?'Rozgrywający nie zdążył — wystawia kolega':s.run===2?'Rozgrywający goni piłkę':lastK==='rec'?(s.run?'Przyjęcie niedokładne':'Przyjęcie'):lastK==='dig'?'Obrona':'Piłka po bloku';}

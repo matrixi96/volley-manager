@@ -108,11 +108,16 @@ function matchView(){
 }
 function schedule(ms){clearTimeout(timer);const m=ui.match;if(!m||m.over||m.paused)return;timer=setTimeout(tick,ms==null?ui.speed:ms);}
 function animOn(){return ui.anim!==false&&ui.speed>=800&&typeof requestAnimationFrame!=='undefined';}
-function tick(){const m=ui.match;if(!m||m.over||m.paused||m.animating)return;if(ui.tab!=='mecz'){m.paused=true;persistLive();return;}
+function tick(){const m=ui.match;if(!m||m.over||m.paused||m.animating||ui.to)return;if(ui.tab!=='mecz'){m.paused=true;persistLive();return;}
+  // decyzje rywala (czas, zmiany) zapadają po zakończonej akcji, przed kolejną zagrywką
+  const to1=m.sides[1].to;for(const s of aiTurn(m,1))m.log.push({t:esc(s),c:'sys'});
+  if(m.sides[1].to<to1&&ui.speed>=800){m.comm={t:`Czas dla ${m.sides[1].team.short}. Trener rywala chce przerwać serię.`,w:1};startTimeout(1);return;}
   const hall=ui.mview!=='klasyczny'&&document.getElementById('mcv');const pre=animOn()&&hall?formation(m):null;
-  const ev=doRally(m);if(!m.over)persistLive();
-  if(animOn()){m.animating=true;const fin=()=>{m.animating=false;render();schedule(ui.speed>=1600?650:380);};if(hall)hallAnim(m,pre,ev,fin);else animateRally(ev,fin);}
-  else{render();schedule();}}
+  const sl=m.sets.length,sc=m.score.slice();
+  const ev=doRally(m,true);if(!m.over)persistLive();const cm=rallyComment(m,ev,m.sets.length>sl,sc);
+  const after=()=>{m.comm=cm;if(ui.toReq&&!m.over){ui.toReq=false;startTimeout(0);return true;}return false;};
+  if(animOn()){m.animating=true;const fin=()=>{m.animating=false;if(after())return;render();schedule(ui.speed>=1600?650:380);};if(hall)hallAnim(m,pre,ev,fin);else animateRally(ev,fin);}
+  else{if(after())return;render();schedule();}}
 function animateRally(ev,done){
   const court=document.querySelector('.court'),ball=document.getElementById('vball');
   if(!court||!ball||!court.getBoundingClientRect){done();return;}
@@ -143,8 +148,8 @@ function animateRally(ev,done){
   seg();
 }
 function flashLabel(t,w){const f=document.getElementById('cflash');if(!f)return;f.textContent=t;f.className='cflash show '+(w===0?'fw':'fl');}
-function doRally(m){let ret;ui.talkRes=null;
-  for(const s of aiTurn(m,1))m.log.push({t:esc(s),c:'sys'});
+function doRally(m,skipAI){let ret;ui.talkRes=null;
+  if(!skipAI)for(const s of aiTurn(m,1))m.log.push({t:esc(s),c:'sys'});
   const ev=stepRally(m);m.hl=ev.act;ret=ev;
   m.log.push({t:`<b class="sc">${ev.score[0]}:${ev.score[1]}</b> ${esc(ev.text)}`,c:ev.winner===0?'w':'l'});
   if(ev.setEnd){m.log.push({t:`Koniec ${ev.setNo}. seta — ${ev.score[0]}:${ev.score[1]} dla <b>${esc(m.sides[ev.setWinner].team.name)}</b>. Stan meczu ${m.setsWon[0]}:${m.setsWon[1]}.`,c:'set'});
@@ -153,7 +158,7 @@ function doRally(m){let ret;ui.talkRes=null;
   return ret;
 }
 function setSpeed(ms){ui.speed=ms;const m=ui.match;if(m&&!m.over){m.paused=false;ui.subSel=null;}render();schedule();}
-function togglePause(){const m=ui.match;if(!m||m.over)return;m.paused=!m.paused;persistLive();
+function togglePause(){const m=ui.match;if(!m||m.over)return;if(ui.to){endTimeout();return;}m.paused=!m.paused;persistLive();
   if(m.animating){document.querySelectorAll('.ppbtn').forEach(b=>{b.textContent=m.paused?'▶ Graj':'⏸ Pauza';b.classList.toggle('go',m.paused);});return;}
   if(!m.paused)ui.subSel=null;render();schedule();}
 function simToSetEnd(){const m=ui.match;if(!m||m.over)return;const s=m.setNo;while(!m.over&&m.setNo===s)doRally(m);m.paused=true;persistLive();render();}
