@@ -29,9 +29,9 @@ function tableFrom(results){const T=TEAMS.map(t=>({i:t.idx,m:0,w:0,l:0,pts:0,sw:
 function rankOf(i){return leagueTable().findIndex(x=>x.i===i)+1;}
 
 // ---- uczestnicy / symulacja ----
-function participant(i,home){const t=TEAMS[i];const mine=i===SAVE.team;return {team:t,lineup:mine?healthyLineup(t,myLineup()).lu:autoLineup(t),tactics:mine?Object.assign({},myTac()):{serve:1,dist:0},home,x:(()=>{const md=clubMods(i);const o={hb:md.hb,fat:md.fat,sb:md.sb};if(mine){o.cap=SAVE.captain;const cx=coachMatchX();o.sb+=(cx.sb||0)+(typeof tacPrep==='function'?tacPrep()*0.004:0)+(typeof oppPrepBonus==='function'?oppPrepBonus():0);o.momMul=cx.momMul;o.prB=cx.prB;o.trB=cx.trB;}return o;})()};}
+function participant(i,home){const t=TEAMS[i];const mine=i===SAVE.team;return {team:t,lineup:mine?healthyLineup(t,myLineup()).lu:autoLineup(t),tactics:mine?Object.assign({},myTac()):{serve:1,dist:0},home,x:(()=>{const md=clubMods(i);const o={hb:md.hb,fat:md.fat,sb:md.sb};if(typeof tfMatchX==='function'){const tx=tfMatchX(i);o.sb+=tx.sb||0;o.fam=tx.fam;o.tfE=tx.tfE;}if(mine){o.cap=SAVE.captain;const cx=coachMatchX();o.sb+=(cx.sb||0)+(typeof tacPrep==='function'?tacPrep()*0.004:0)+(typeof oppPrepBonus==='function'?oppPrepBonus():0);o.momMul=cx.momMul;o.prB=cx.prB;o.trB=cx.trB;}return o;})()};}
 function resultOf(m,h,a){const flip=m.sides[0].team.idx!==h;return {h,a,sets:m.sets.map(x=>flip?[x[1],x[0]]:x.slice()),sw:flip?[m.setsWon[1],m.setsWon[0]]:m.setsWon.slice()};}
-function addTogether(m){try{formAfterMatch(m);}catch(e){console.error(e);}try{if(typeof pairsAfterMatch==='function')pairsAfterMatch(m);}catch(e){}for(const sd of m.sides)for(const p of sd.pl){const x=p.st;if(x.srv+x.rec+x.att+x.dig+x.blk===0&&!sd.slots.some(z=>z.p.id===p.id)&&sd.libero!==p)continue;
+function addTogether(m){try{formAfterMatch(m);}catch(e){console.error(e);}try{if(typeof pairsAfterMatch==='function')pairsAfterMatch(m);if(typeof famAfterMatch==='function')famAfterMatch(m);}catch(e){}for(const sd of m.sides)for(const p of sd.pl){const x=p.st;if(x.srv+x.rec+x.att+x.dig+x.blk===0&&!sd.slots.some(z=>z.p.id===p.id)&&sd.libero!==p)continue;
   const w=PLAYERS[p.id]&&PLAYERS[p.id].p;if(!w)continue;if(w.tcTm!==sd.team.idx){w.tcTm=sd.team.idx;w.tc=0;}w.tc=(w.tc||0)+1;}}
 function recordStats(m){addTogether(m);const s=S();const ps=s.ps;const ts=s.ts||(s.ts={});
   m.sides.forEach((sd,i)=>{const r=ts[sd.team.idx]||(ts[sd.team.idx]={m:0,sets:0,kill:0,att:0,attErr:0,blk:0,ace:0,srvErr:0,srv:0,rec:0,recPos:0,dig:0,pw:0,pl:0});
@@ -200,13 +200,13 @@ function statsView(){
 }
 
 // ---- zapis gry ----
-function serMatch(m){return {sides:m.sides.map(s=>({ti:s.team.idx,pl:s.pl.map(p=>({id:p.id,en:p.en,st:p.st,mor:p.mor})),tmp:s.tmp,slots:s.slots.map(x=>({role:x.role,id:x.p.id})),lib:s.libero.id,rot:s.rot,tactics:s.tactics,mom:s.mom,home:s.home,fatMul:s.fatMul,momMul:s.momMul,prB:s.prB,trB:s.trB,form:s.form,to:s.to,subs:s.subs,chem:s.chem})),
-  setNo:m.setNo,score:m.score,setsWon:m.setsWon,sets:m.sets,firstServe:m.firstServe,serving:m.serving,run:m.run,rallies:m.rallies,sideout:m.sideout,log:m.log.slice(-150),ctx:m.ctx,hist:m.hist||[],att:m.att,cap:m.cap,hallLv:m.hallLv,homeIdx:m.homeIdx,mid:m.mid,dirStats:m.dirStats||[],mixN:m.mixN||[0,0],rs:m.rs,pt:m.pt};}
+function serMatch(m){return {sides:m.sides.map(s=>({ti:s.team.idx,pl:s.pl.map(p=>({id:p.id,en:p.en,st:p.st,mor:p.mor})),tmp:s.tmp,slots:s.slots.map(x=>({role:x.role,id:x.p.id})),lib:s.libero.id,rot:s.rot,tactics:s.tactics,mom:s.mom,home:s.home,fatMul:s.fatMul,momMul:s.momMul,prB:s.prB,trB:s.trB,form:s.form,to:s.to,subs:s.subs,chem:s.chem,fam:s.fam,tfE:s.tfE})),
+  setNo:m.setNo,score:m.score,setsWon:m.setsWon,sets:m.sets,firstServe:m.firstServe,serving:m.serving,run:m.run,rallies:m.rallies,sideout:m.sideout,log:m.log.slice(-150),ctx:m.ctx,hist:m.hist||[],att:m.att,cap:m.cap,hallLv:m.hallLv,homeIdx:m.homeIdx,mid:m.mid,dirStats:m.dirStats||[],mixN:m.mixN||[0,0],rs:m.rs,pt:m.pt,tu:m.tu};}
 function deserMatch(o){const m=Object.assign({},o,{over:false,paused:true,hl:[]});
   m.sides=o.sides.map(x=>{const t=TEAMS[x.ti];const pl=t.players.map(cloneP);const g=id=>pl.find(p=>p.id===id);
     if(typeof pairBonusSide==='function'){try{pairBonusSide(t,{R:x.slots[0].id,P1:x.slots[1].id,S1:x.slots[2].id,A:x.slots[3].id,P2:x.slots[4].id,S2:x.slots[5].id,L:x.lib},pl);}catch(e){}}
     for(const q of x.pl){const p=g(q.id);if(!p)continue;p.en=q.en;p.st=q.st;if(q.mor!=null)p.mor=q.mor;}
-    return {team:t,pl,slots:x.slots.map(s=>({role:s.role,p:g(s.id)})),libero:g(x.lib),tmp:x.tmp,rot:x.rot,tactics:x.tactics,mom:x.mom,home:x.home,fatMul:x.fatMul||1,momMul:x.momMul||1,prB:x.prB||0,trB:x.trB||0,form:x.form,to:x.to,subs:x.subs,chem:x.chem!=null?x.chem:chemOf(x.slots.map(s=>g(s.id)).concat([g(x.lib)]),t.idx)};});
+    return {team:t,pl,slots:x.slots.map(s=>({role:s.role,p:g(s.id)})),libero:g(x.lib),tmp:x.tmp,rot:x.rot,tactics:x.tactics,mom:x.mom,home:x.home,fatMul:x.fatMul||1,momMul:x.momMul||1,prB:x.prB||0,trB:x.trB||0,form:x.form,to:x.to,subs:x.subs,fam:x.fam||null,tfE:x.tfE||1,chem:x.chem!=null?x.chem:chemOf(x.slots.map(s=>g(s.id)).concat([g(x.lib)]),t.idx)};});
   if(m.att==null&&m.ctx)matchCrowd(m);
   return m;}
 function persistLive(){const m=ui.match;SAVE.live=m&&!m.over&&m.ctx?serMatch(m):null;save();}

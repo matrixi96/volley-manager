@@ -89,6 +89,7 @@ function trainDay(d,md){const t=myTeam();if(!t)return;const trn=ensTrn();const i
     const g={},up=[];for(const k of ALL_KEYS){const dv=(p[k]-a0[k])+(((p.xp&&p.xp[k])||0)-x0[k]);if(dv>0.0005)g[k]=Math.round(dv*1000)/1000;if(p[k]>a0[k])up.push(k);}
     const r={fr:p.fr,f:[Math.round(fm0),Math.round(fmOf(p))],n};if(scs.length)r.s=Math.round(clamp((scs.reduce((a,b)=>a+b,0)/scs.length+7)/10,1,10)*10)/10;
     if(Object.keys(g).length)r.g=g;if(up.length)r.up=up;if(inj)r.inj=inj;rp[p.id]=r;}
+  if(typeof famTrainDay==='function')famTrainDay(units);
   if(units.includes('tak')){trn.tak.push(d);trn.tak=trn.tak.slice(-8);}
   trn.log.unshift({d,u:units,m:isM?1:0});trn.log=trn.log.slice(0,14);
   trn.rep=trn.rep||[];trn.rep.unshift({d,u:units,m:isM?1:0,p:rp});trn.rep=trn.rep.slice(0,31);
@@ -128,6 +129,7 @@ function trainingView(){
   const inj=t.players.filter(p=>p.inj);const avg=Math.round(teamFr());const avF=Math.round(t.players.reduce((s,p)=>s+fmOf(p),0)/t.players.length);
   return `<div class="card"><div class="row wrap"><h2 style="margin:0">Plan treningowy</h2><span class="sp"></span>
     <div class="seg"><button class="${trn.mode==='own'?'on':''}" onclick="setTrMode('own')">✍️ Sam układam</button><button class="${trn.mode==='asy'?'on':''}" onclick="setTrMode('asy')">🧑‍🏫 Asystent układa${asy?` (${sk}/20)`:''}</button></div></div>
+   <p class="small mut">Jednostki „Taktyka” ćwiczą: <select onchange="setTakF(this.value)">${TF_GRP.map(([g,l])=>`<option value="${g}" ${(trn.takF||'')===g?'selected':''}>${l}</option>`).join('')}</select> <button class="link" onclick="ui.tacT='eff';go('taktyka')">Efektywność taktyczna →</button></p>
    <p class="small mut">Codziennie 3 jednostki: rano, po południu i wieczorem. ${act?'':'<b>Teraz trwa urlop — treningi ruszają 1 sierpnia.</b>'}</p>
    ${grid}
    <div class="row wrap" style="gap:6px;margin-top:6px">${trn.mode==='own'?`<button class="ghost sm" onclick="copyAsstPlan()">🧑‍🏫 Wczytaj propozycję asystenta</button><button class="ghost sm" onclick="resetWeek()">↺ Plan domyślny</button>`:`<button class="ghost sm" onclick="copyAsstPlan()">✍️ Przejmij ten plan i edytuj sam</button>`}</div>
