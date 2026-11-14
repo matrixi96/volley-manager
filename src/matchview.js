@@ -17,13 +17,7 @@ function matchCrowd(m){const c=m.ctx;if(!c)return;const home=c.h;const L=infraOf
 // ---- formacja przed zagrywką ----
 // przyjęcie w systemie 5-1 — zgodne z przepisami o ustawieniu (bez błędu ustawienia), klucz: strefa rozgrywającego → {strefa:[x,y]}
 // x: 0 = linia końcowa, 9 = siatka; y: 0 = lewa strona (strefy 4/5), 9 = prawa (strefy 2/1)
-const RECV={
- 1:{1:[1.2,8.3],2:[3.9,7.1],3:[8.1,4.5],4:[8.1,1.6],5:[3.6,1.8],6:[3.6,4.5]},
- 6:{1:[3.6,7.3],2:[8.1,7.7],3:[8.1,4.9],4:[4.2,1.8],5:[3.4,4.3],6:[5.4,5.8]},
- 5:{1:[3.4,7.1],2:[8.1,7.6],3:[4.6,2.5],4:[8.1,1.4],5:[6.4,0.9],6:[3.4,4.6]},
- 4:{1:[1.9,7.4],2:[5.1,7.1],3:[8.1,4.5],4:[8.1,1.6],5:[3.6,1.8],6:[3.6,4.5]},
- 3:{1:[3.6,7.1],2:[8.1,7.5],3:[8.1,4.5],4:[4.2,1.8],5:[3.4,4.3],6:[1.6,5.8]},
- 2:{1:[3.6,7.1],2:[8.1,7.4],3:[5.1,1.9],4:[8.1,1.0],5:[1.9,1.4],6:[3.6,4.5]}};
+// RECV (ustawienie przyjęcia 5-1) jest w engine.js — silnik wybiera przyjmującego według tych samych pozycji
 function formation(m){
   const out=[];
   for(let i=0;i<2;i++){const sv=m.serving===i;const oc=onCourt(m.sides[i],sv);const loc=[];
@@ -122,11 +116,13 @@ function hallAnim(m,pre,ev,done){
   for(let t=1;t<seq.length;t++){const s=seq[t];const o=s.id?P[s.id]:null;const moves=[];let to,peak=0,dur=700,ph='';
     if(s.k==='rec'||s.k==='ace'){const rs=s.s,ss=1-rs;baseDef(ss,moves);
       const st=side(rs).find(x=>x.role==='R');if(st&&s.k==='rec')moves.push(mvTo(st,8.2,5.8));
+      // skrót: przyjmujący wychodzi do przodu (ok. 2,5 m od siatki)
+      let ox=cx(o),oy=cy(o);if(s.z==='short'){[ox,oy]=gl(o.i,6.5,o.i===0?cy(o):9-cy(o));moves.push({id:o.id,x:ox,y:oy});}
       if(s.k==='ace'&&!s.sh){// piłka spada obok przyjmującego – nikt jej nie dotyka
-        const lx=(rs===0?cx(o)+0.9:cx(o)-0.9),ly=cy(o)+(cy(o)<4.5?1.0:-1.0);moves.push({id:o.id,x:(cx(o)+lx)/2,y:(cy(o)+ly)/2});to={x:lx,y:ly,h:0};ph='As — piłka nie do przyjęcia';}
-      else{to={x:cx(o),y:cy(o),h:0.9};ph=s.k==='ace'?'Zagrywka — przyjęcie nieudane':'Zagrywka';}
+        const lx=(rs===0?ox+0.9:ox-0.9),ly=oy+(oy<4.5?1.0:-1.0);moves.push({id:o.id,x:(ox+lx)/2,y:(oy+ly)/2});to={x:lx,y:ly,h:0};ph=s.z==='short'?'As — skrót za siatkę':'As — piłka nie do przyjęcia';}
+      else{to={x:ox,y:oy,h:0.9};ph=s.k==='ace'?'Zagrywka — przyjęcie nieudane':s.z==='short'?'Zagrywka — skrót':'Zagrywka';}
       peak=4.3;dur=1050;}
-    else if(s.k==='mix'){const i=s.s;const [X,Y]=gl(i,s.px??7,s.py??4.5);(s.ids||[]).forEach((id,k)=>{if(P[id])moves.push({id,x:X+(k?0.7:0),y:Y+(k?0.35:0)});});to={x:X,y:Y,h:0.9};peak=1.6;dur=900;ph='Nieporozumienie!';lastMix=[s.px??7,s.py??4.5];}
+    else if(s.k==='mix'){const i=s.s;const [X,Y]=gl(i,s.px??7,s.py??4.5);(s.ids||[]).forEach((id,k)=>{if(P[id])moves.push({id,x:X+(k?0.7:0),y:Y+(k?0.35:0)});});to={x:X,y:Y,h:s.srv?0:0.9};peak=s.srv?4.3:1.6;dur=s.srv?1050:900;ph=s.srv?'As — zagrywka między dwóch przyjmujących':'Nieporozumienie!';if(s.srv)baseDef(1-s.s,moves);lastMix=[s.px??7,s.py??4.5];}
     else if(s.k==='set'){const i=s.s;const real=o.role==='R';let tx,ty;p1k=s.p1k?1:0;lateId=s.late||null;
       if(s.px!=null&&!s.mix){[tx,ty]=gl(i,s.px,s.py);moves.push({id:o.id,x:tx,y:ty});}else if(real){[tx,ty]=gl(i,8.2,5.8);moves.push({id:o.id,x:tx,y:ty});}else{tx=cx(o);ty=cy(o);}
       if(!real){const st=side(i).find(x=>x.role==='R');if(st){
