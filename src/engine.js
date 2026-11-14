@@ -172,6 +172,7 @@ function rally(m,ex){
   if(q>=2)rec.st.recPos++;if(q===3)rec.st.recPerf++;
   log.push(`zagrywa ${nm(server)}`,`przyjmuje ${nm(rec)} (${['','słabo','dobrze','idealnie'][q]})`);
   let A=D,qq=q,by=rec;
+  m._fb={s:D,pow};// pierwszy atak po przyjęciu: specyfika ustawienia (P1, P2, P3/P6)
   for(let k=0;k<40;k++){
     ex.n=k;
     const r=attackPhase(m,A,qq,by,log,act);
@@ -180,13 +181,22 @@ function rally(m,ex){
   }
   seq.push({k:'floor',s:D});return {winner:S,type:'kill',act,seq,text:log.join(' → ')};
 }
-var KB=0.56;
+var KB=0.56;var AW=[0.9,0.6],SWP=0.08,SW=0.85,LTB=1.25;// waga atakującego u rozgrywającego: pierwsza linia, druga linia
 function attackPhase(m,A,q,by,log,act,pd){
   const side=m.sides[A],opp=m.sides[1-A];
   const cA=onCourt(side,m.serving===A),cO=onCourt(opp,m.serving!==A);
   const sE=cA.find(x=>x.role==='R');const seq=m._seq||[];
   if(pd==null)pd=pdFrom(q);
   const ch=side.chem??0.6;const kom=cA.reduce((s,x)=>s+eff(x.p,'kom'),0)/cA.length;
+  // ---- specyfika ustawień przy pierwszym ataku po przyjęciu (numer ustawienia = strefa rozgrywającego) ----
+  const fb=m._fb&&m._fb.s===A?m._fb:null;m._fb=null;
+  const rot=fb&&sE?sE.zone+1:0;const eA=cA.find(x=>x.role==='A');
+  // P1 bez zamiany: atakujący atakuje z lewego skrzydła, przyjmujący z pierwszej linii z prawego (obaj poza swoją pozycją)
+  const p1keep=rot===1&&!side.tactics.p1sw;let late=null;
+  // spóźnienie atakującego: P1 z zamianą (bieg 9 m wzdłuż siatki) i P2 (najdłuższy nabieg z lewego narożnika)
+  if(eA&&(rot===2||(rot===1&&side.tactics.p1sw))){const sz=(eff(eA.p,'szy')-12)/20;
+    const pl=rot===1?clamp(0.13+(fb.pow-0.6)*0.45-sz*0.12,0.04,0.4):clamp(0.08+(fb.pow-0.6)*0.3+(q===1?0.06:0)-sz*0.08,0.03,0.28);
+    if(R()<pl)late=eA.p;}
   // miejsce, gdzie spada piłka po przyjęciu/obronie (lokalnie: x=0 linia końcowa, 9 siatka)
   const dx=pd*(0.45+R()*0.55),px=clamp(8.2-dx,1,8.7),py=clamp(5.8+(R()<0.5?-1:1)*Math.sqrt(Math.max(0,pd*pd-dx*dx)),0.4,8.6);
   let setter=null,run=0,alt=0,mix=0;
@@ -206,28 +216,33 @@ function attackPhase(m,A,q,by,log,act,pd){
   const rz=(real?eff(setter,'roz')*0.75+eff(setter,'tpa')*0.25:eff(setter,'roz')*0.4+eff(setter,'tpa')*0.6)/20;
   let sq=[0,0.38,0.68,0.86][q]+(rz-0.55)*0.45*(real?1:0.6)+nz()*0.12-(real?0:0.12)-(run===1?0.02:run===2?0.08:0)-(alt?Math.max(0,pd-3)*0.015:0)+(ch-0.5)*0.08-(mix?0.25:0)+(alt?0.06:0);
   sq=clamp(sq,0.05,1);
-  seq.push({k:'set',id:setter.id,s:A,px:+px.toFixed(2),py:+py.toFixed(2),run,alt,mix});
+  seq.push(Object.assign({k:'set',id:setter.id,s:A,px:+px.toFixed(2),py:+py.toFixed(2),run,alt,mix},p1keep?{p1k:1}:{},late?{late:late.id}:{}));
   if(run===2)log.push(`${nm(setter)} goni piłkę`);else if(alt&&!mix&&sE&&sE.p!==by)log.push(`rozgrywający nie zdążył`);
   if(R()<(0.006+(1-rz)*0.01)*kc(setter,m)){log.push(`błąd rozegrania (${nm(setter)})`);seq.push({k:'out',s:1-A});return {done:true,winner:1-A,type:'setErr'};}
   const tac=side.tactics.dist;
   const cands=cA.filter(x=>x.p!==setter&&x.role!=='L');
   const att=pickW(cands,x=>{
     const fr=isFront(x.zone);let w=0;
-    if(x.role==='A')w=fr?1.35:0.9;
+    if(x.p===late)return 0;
+    if(x.role==='A')w=(fr?AW[0]:AW[1])*(p1keep?0.7:1);
     else if(x.role==='P')w=fr?1.0:0.3;
-    else if(x.role==='S')w=fr?(q>=3?0.95:q===2?0.6:0.12):0;
+    else if(x.role==='S')w=(fr?(q>=3?0.95:q===2?0.6:0.12):0)*SW;
     else if(x.role==='R')w=fr?0.05:0;
     if(!fr&&sq<0.45)w*=0.3;
     if(tac===1&&(x.role==='A'||x.role==='P'))w*=1.3;
     if(tac===2&&x.role==='S')w*=1.7;
     if(tac===3&&x.role==='A')w*=1.6;
     if(m._noQuick&&x.p.id===m._noQuick)w*=0.15;
+    if((rot===3||rot===6)&&x.role==='S'&&fr&&q>=2)w*=1.2;// krótka z tyłu: środkowy wbiega zza pleców rozgrywającego
     if(opp.tactics.blk3===2&&x.role==='S'&&isFront(x.zone))w*=1+clamp((rz-0.45)*2,0,0.9);
     return w*(0.5+eff(x.p,'ata')/20);
   });
   const a=att.p,fr=isFront(att.zone),quick=att.role==='S'&&fr;m._noQuick=null;
   act.push(a.id);
-  const wing=quick||(att.role==='P'&&!fr)||att.role==='S'?'M':att.role==='P'?'L4':'R2';
+  const swp=p1keep&&fr&&(att.role==='A'||att.role==='P');// P1: skrzydłowi zamienieni stronami
+  const wing=quick||(att.role==='P'&&!fr)||att.role==='S'?'M':(att.role==='P')!==swp?'L4':'R2';
+  const behind=quick&&(rot===3||rot===6);
+  if(late)log.push(`${nm(late)} nie zdążył do ataku`);
   const bset=wing==='M'?(opp.tactics.blkM??1):(opp.tactics[wing==='L4'?'blkR':'blkL']??1);
   const triple=wing!=='M'&&!quick&&((opp.tactics.blk3===2)||(opp.tactics.blk3===1&&sq<0.55));
   const ds=m.dirStats||(m.dirStats=[]);const rec=(d,r)=>ds.push({i:A,id:a.id,w:wing,d,r,set:m.setNo});
@@ -250,7 +265,7 @@ function attackPhase(m,A,q,by,log,act,pd){
   const tool=AD===4&&dir!=='tip';
   let z6c=null;if(wing!=='M'&&(dir==='line'||dir==='cross')){if(bset===0)z6c='line';else if(bset===2)z6c=opp.tactics.dsys===1?'rot':'cross';else{const z6=cO.find(x=>!isFront(x.zone)&&dZone(x)===6);const cz=z6?eff(z6.p,'czy'):10;const pc=clamp(0.5+(cz-10)/30,0.3,0.8);z6c=R()<pc?dir:(dir==='line'?'cross':'line');}}
   const blockers=blockGroup(cO,wing,quick,triple);
-  seq.push({k:'att',id:a.id,s:A,q:quick,d:dir,w:wing,tr:triple?1:0,z6:z6c,bl:blockers.map(x=>x.p.id)});
+  seq.push(Object.assign({k:'att',id:a.id,s:A,q:quick,d:dir,w:wing,tr:triple?1:0,z6:z6c,bl:blockers.map(x=>x.p.id)},swp?{sw:1}:{},behind?{bh:1}:{}));
   a.st.att++;
   const backO=cO.filter(x=>!isFront(x.zone));
   const lineZ=wing==='L4'?1:5,crossZ=wing==='L4'?5:1;
@@ -268,7 +283,7 @@ function attackPhase(m,A,q,by,log,act,pd){
     d.st.dig++;act.push(d.id);seq.push({k:'dig',id:d.id,s:1-A,tip:1});log.push(setTxt,`kiwka, podbija ${nm(d)}${cover?' (asekuracja za blokiem)':''}`);rec('tip','dig');
     return {done:false,next:1-A,q:R()<0.45+dc*0.35?2:1,by:d};
   }
-  const an=0.1+eff(a,'ata')/20*0.4+eff(a,'sil')/20*0.08+eff(a,'sko')/20*0.22+(a.h-197)/100+sq*0.42+bn(side)-(fr?0:0.06)+(quick&&sq>0.7?(0.05+(a.szy-12)/20*0.08)*(0.4+ch):0)+mb(a,m,A)+(AT===1?0.035:AT===2?-0.015:0);
+  const an=0.1+eff(a,'ata')/20*0.4+eff(a,'sil')/20*0.08+eff(a,'sko')/20*0.22+(a.h-197)/100+sq*0.42+bn(side)-(fr?0:0.06)+(quick&&sq>0.7?(0.05+(a.szy-12)/20*0.08)*(0.4+ch):0)+mb(a,m,A)+(AT===1?0.035:AT===2?-0.015:0)-(swp?SWP:0)+(behind?((typeof pairChem==='function'&&real?pairChem(setter,a):ch)-0.6)*0.18:0);
   const nb=quick?1.4:triple?3.0:sq<0.4?2.8:2.2;
   const bs=blockers.reduce((s,x)=>s+(eff(x.p,'blo')*0.55+eff(x.p,'czy')*0.2+eff(x.p,'sko')*0.15+eff(x.p,'szy')*0.1)/20+(x.p.h-197)/120,0)/blockers.length*(0.75+nb*0.12)+bn(opp);
   const errP=(0.075+(1-sq)*0.08+(0.75-eff(a,'ata')/20)*0.08)*kc(a,m)*(AT===1?1.15:AT===2?0.92:1)*(tool?1.1:1);
@@ -287,6 +302,7 @@ function attackPhase(m,A,q,by,log,act,pd){
   else if(dir in MD){if(bset===1){const cz=blockers.reduce((s,x)=>s+eff(x.p,'czy'),0)/blockers.length;mult=1+(cz-10)/10*0.1;}else mult=MD[dir]===bset?1.8:0.55;if(opp.tactics.blk3===2)mult*=0.6;}
   {const bk=wing==='M'?'blkM':(wing==='L4'?'blkR':'blkL');mult=1+(mult-1)*famF(opp,bk);}
   if(triple)mult*=1.28;
+  if(late||swp)mult*=LTB;// mniej opcji ataku albo atak poza pozycją: blok rywala ma łatwiej
   if(AT===1)mult*=1.05;if(tool)mult*=0.8;
   const blockP=clamp((0.17+(bs-an+0.17)*0.3)*mult,0.02,0.45);
   if(R()<blockP){
@@ -307,7 +323,7 @@ function attackPhase(m,A,q,by,log,act,pd){
   const killP=clamp(KB+(an-0.95)*0.6-(dn-0.7)*0.3-(bs-0.8)*0.2+adj,0.15,0.86);
   // część skończonych ataków to piłki po bloku (ręce blokującego → aut)
   const kr=R();if(kr<killP&&blockers.length&&!quick&&R()<clamp(0.05+toolSk*0.05,0.04,0.13)*bf)return blockOut(m,A,a,blockers,log,seq,setTxt,rec,dir);
-  if(kr<killP){a.st.kill++;seq.push({k:'floor',s:1-A,d:dir});log.push(setTxt,`${quick?'krótka — ':dir==='line'?'po prostej — ':dir==='cross'?'po skosie — ':''}${triple?'(przez potrójny blok) ':''}PUNKT!`);rec(dir,'kill');return {done:true,winner:A,type:'kill'};}
+  if(kr<killP){a.st.kill++;seq.push({k:'floor',s:1-A,d:dir});log.push(setTxt,`${quick?(behind?'krótka z tyłu — ':'krótka — '):dir==='line'?'po prostej — ':dir==='cross'?'po skosie — ':''}${triple?'(przez potrójny blok) ':''}PUNKT!`);rec(dir,'kill');return {done:true,winner:A,type:'kill'};}
   d.st.dig++;act.push(d.id);seq.push({k:'dig',id:d.id,s:1-A});
   const dq=R()<0.25+dn*0.3+eff(d,'tod')/20*0.15?2:1;
   log.push(setTxt,`broni ${nm(d)}`);rec(dir,'dig');

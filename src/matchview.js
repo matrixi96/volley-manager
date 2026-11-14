@@ -104,6 +104,8 @@ function ebDef(bset,trip,tip,z6){
   if(bset===0)return {cross:[4.4,1.6],z6:[7.6,5.9],line:[6.8,8.3],off:[1.8,5.4]};
   return {cross:[4.5,1.8],z6:z6==='line'?[7.4,6.0]:[8.3,2.6],line:[6.7,8.2],off:tip?[2.0,6.0]:[2.2,5.0]};}
 // ---- animacja akcji ----
+// R1 bez zamiany: atakujący nabiega lewym torem, przyjmujący z pierwszej linii prawym
+function laneS(o,sw){return sw&&isFrontZ(o.zone)&&(o.role==='A'||o.role==='P')?(o.role==='A'?1.3:7.8):lane(o);}
 function lane(o){if(o.role==='A')return 7.8;if(o.role==='S')return 4.1;if(o.role==='P')return isFrontZ(o.zone)?1.3:4.6;return 4.5;}
 function hallAnim(m,pre,ev,done){
   const cv=document.getElementById('mcv');if(!cv||!ev.seq||!ev.seq.length){done();return;}
@@ -116,7 +118,7 @@ function hallAnim(m,pre,ev,done){
   const dia=i=>!((m.sides[i].tactics||{}).dsys===1);const diaPos=(o,i)=>{const z=defZone(o);return z===6?[2.0,4.5]:[4.5,z===5?1.5:7.5];};
   const baseDef=(i,moves)=>{for(const o of side(i)){const fr=isFrontZ(o.zone);if(!fr&&dia(i)){const q=diaPos(o,i);moves.push(mvTo(o,q[0],q[1]));continue;}moves.push(mvTo(o,fr?8.2:2.9,defY(o)));}};
   const cur={};for(const o of scene)cur[o.id]=[o.x,o.y];const cx=o=>cur[o.id][0],cy=o=>cur[o.id][1];
-  const seq=ev.seq;let lastAtt=null,lastK='srv',lastLy=4.5,lastAttD=null,lastMix=null,lastSq=0.7,tSide=null,tCnt=0;
+  const seq=ev.seq;let p1k=0,lateId=null,lastAtt=null,lastK='srv',lastLy=4.5,lastAttD=null,lastMix=null,lastSq=0.7,tSide=null,tCnt=0;
   for(let t=1;t<seq.length;t++){const s=seq[t];const o=s.id?P[s.id]:null;const moves=[];let to,peak=0,dur=700,ph='';
     if(s.k==='rec'||s.k==='ace'){const rs=s.s,ss=1-rs;baseDef(ss,moves);
       const st=side(rs).find(x=>x.role==='R');if(st&&s.k==='rec')moves.push(mvTo(st,8.2,5.8));
@@ -125,21 +127,21 @@ function hallAnim(m,pre,ev,done){
       else{to={x:cx(o),y:cy(o),h:0.9};ph=s.k==='ace'?'Zagrywka — przyjęcie nieudane':'Zagrywka';}
       peak=4.3;dur=1050;}
     else if(s.k==='mix'){const i=s.s;const [X,Y]=gl(i,s.px??7,s.py??4.5);(s.ids||[]).forEach((id,k)=>{if(P[id])moves.push({id,x:X+(k?0.7:0),y:Y+(k?0.35:0)});});to={x:X,y:Y,h:0.9};peak=1.6;dur=900;ph='Nieporozumienie!';lastMix=[s.px??7,s.py??4.5];}
-    else if(s.k==='set'){const i=s.s;const real=o.role==='R';let tx,ty;
+    else if(s.k==='set'){const i=s.s;const real=o.role==='R';let tx,ty;p1k=s.p1k?1:0;lateId=s.late||null;
       if(s.px!=null&&!s.mix){[tx,ty]=gl(i,s.px,s.py);moves.push({id:o.id,x:tx,y:ty});}else if(real){[tx,ty]=gl(i,8.2,5.8);moves.push({id:o.id,x:tx,y:ty});}else{tx=cx(o);ty=cy(o);}
       if(!real){const st=side(i).find(x=>x.role==='R');if(st){
         // rozgrywający nie zdążył: biegnie do piłki, ale zatrzymuje się ok. 1,5 m przed nią, z dala od toru ataku
         const lc=(X,Y)=>i===0?[X,Y]:[18-X,9-Y];const [sx,sy]=lc(cx(st),cy(st));const bx=s.px!=null?s.px:lc(tx,ty)[0],by=s.px!=null?s.py:lc(tx,ty)[1];
-        const nx=seq[t+1];let hx=8.3,hy=4.5;if(nx&&(nx.k==='att'||nx.k==='free')&&P[nx.id]){const h=P[nx.id];hx=nx.k==='free'?7.4:isFrontZ(h.zone)?8.3:6.0;hy=lane(h);}
+        const nx=seq[t+1];let hx=8.3,hy=4.5;if(nx&&(nx.k==='att'||nx.k==='free')&&P[nx.id]){const h=P[nx.id];hx=nx.k==='free'?7.4:isFrontZ(h.zone)?8.3:6.0;hy=laneS(h,p1k);}
         const segD=(x,y)=>{const ax=hx-bx,ay=hy-by,L=ax*ax+ay*ay||1;const u=clamp(((x-bx)*ax+(y-by)*ay)/L,0,1);return Math.hypot(x-(bx+ax*u),y-(by+ay*u));};
         let best=null,bs=-1;for(let a=0;a<16;a++){const ang=a/16*Math.PI*2;const x=clamp(bx+Math.cos(ang)*2.5,0.5,7.2),y=clamp(by+Math.sin(ang)*2.5,0.5,8.5);const sc=segD(x,y)-Math.hypot(x-sx,y-sy)*0.15;if(sc>bs){bs=sc;best=[x,y];}}
         moves.push(mvTo(st,best[0],best[1]));}}
-      for(const a of side(i)){if(a.id===o.id||a.role==='R')continue;const fr=isFrontZ(a.zone);if(!fr&&a.role!=='A'&&a.role!=='P'){moves.push(mvTo(a,2.6,defY(a)));continue;}moves.push(mvTo(a,fr?5.6:3.9,lane(a)));}
+      for(const a of side(i)){if(a.id===o.id||a.role==='R')continue;const fr=isFrontZ(a.zone);if(!fr&&a.role!=='A'&&a.role!=='P'){moves.push(mvTo(a,2.6,defY(a)));continue;}moves.push(mvTo(a,a.id===lateId?(fr?3.6:2.4):(fr?5.6:3.9),laneS(a,p1k)));}
       const d=side(1-i);for(const b of d){const fr=isFrontZ(b.zone);if((b.role==='L'||!fr)&&dia(1-i)){const q=diaPos(b,1-i);moves.push(mvTo(b,q[0],q[1]));}else if(b.role==='L'||!fr)moves.push(mvTo(b,defZone(b)===6?2.2:3.0,defY(b)));else moves.push(mvTo(b,8.4,defY(b)));}
-      to={x:tx,y:ty,h:2.4};peak=lastK==='rec'||lastK==='dig'?3.0:1.2;dur=(lastK==='dig'?850:900)+(s.run===2||s.alt?250:0);ph=s.mix?'Ratunkowa piłka':s.alt&&!real?'Rozgrywający nie zdążył — wystawia kolega':s.run===2?'Rozgrywający goni piłkę':lastK==='rec'?(s.run?'Przyjęcie niedokładne':'Przyjęcie'):lastK==='dig'?'Obrona':'Piłka po bloku';}
-    else if(s.k==='att'||s.k==='free'){const i=s.s;const fr=isFrontZ(o.zone);const ly=lane(o);const fb=s.k==='free',tip=s.d==='tip';
+      to={x:tx,y:ty,h:2.4};peak=lastK==='rec'||lastK==='dig'?3.0:1.2;dur=(lastK==='dig'?850:900)+(s.run===2||s.alt?250:0);ph=s.late&&P[s.late]?`${P[s.late].p.last} nie zdążył do ataku`:s.mix?'Ratunkowa piłka':s.alt&&!real?'Rozgrywający nie zdążył — wystawia kolega':s.run===2?'Rozgrywający goni piłkę':lastK==='rec'?(s.run?'Przyjęcie niedokładne':'Przyjęcie'):lastK==='dig'?'Obrona':'Piłka po bloku';}
+    else if(s.k==='att'||s.k==='free'){const i=s.s;const fr=isFrontZ(o.zone);const ly=laneS(o,p1k);const fb=s.k==='free',tip=s.d==='tip';
       const hit=mvTo(o,fb?7.4:fr?8.3:6.0,ly,fb?0:tip?0.6:1);moves.push(hit);lastLy=ly;
-      if(!fb)for(const a of side(i)){if(a.id===o.id||a.role==='L'||a.role==='R'||!isFrontZ(a.zone))continue;moves.push(mvTo(a,8.2,lane(a),0.5));}
+      if(!fb)for(const a of side(i)){if(a.id===o.id||a.id===lateId||a.role==='L'||a.role==='R'||!isFrontZ(a.zone))continue;moves.push(mvTo(a,8.2,laneS(a,p1k),0.5));}if(lateId&&P[lateId]){const lt=P[lateId];moves.push(mvTo(lt,6.4,clamp(ly+(ly<4.5?1.1:-1.1),0.6,8.4)));}p1k=0;lateId=null;
       const [hx,hy]=[hit.x,hit.y];const d=1-i;const w=s.w||'M';const bset=w==='M'?1:((m.sides[d].tactics||{})[w==='L4'?'blkR':'blkL']??1);
       const lz=w==='L4'?1:5;const bsh=bset===0?-0.5:bset===2?0.5:0;
       const dt=m.sides[d].tactics||{};const trip=!!s.tr;
@@ -167,7 +169,7 @@ function hallAnim(m,pre,ev,done){
     else if(s.k==='blk'){to={x:cx(o),y:cy(o),h:3.0};dur=230;ph=s.tool?'Obicie bloku!':'Blok!';}
     else if(s.k==='whistle'){const i=s.s;const [X,Y]=s.why==='net'?gl(i,7.6+R()*0.8,1+R()*7):gl(i,2+R()*4,1+R()*7);to={x:X,y:Y,h:0};dur=s.why==='net'?420:520;peak=s.why==='net'?0.3:0.5;ph=s.why==='net'?'Gwizdek! Blokujący dotknął siatki':'Gwizdek! Atak z drugiej linii sprzed linii 3 m';}
     else if(s.k==='dig'){const dx=(R()-0.5)*1.4,dy=(R()-0.5)*1.4;moves.push({id:o.id,x:cx(o)+dx,y:cy(o)+dy});to={x:cx(o)+dx,y:cy(o)+dy,h:0.35};dur=s.free?900:s.tip?620:430;peak=s.free?2.6:s.tip?1.4:0;ph=s.free?'Przebicie':s.tip?'Kiwka — obrona':'Atak — obrona';}
-    else if(s.k==='floor'){const i=s.s;let lx,ly;if(s.mix&&lastMix){lx=lastMix[0]+(R()-0.5)*0.6;ly=lastMix[1]+(R()-0.5)*0.6;}else if(s.blk){lx=7.4+R()*0.8;ly=lastAtt?lane(lastAtt)+(R()-0.5):4.5;}else if(s.tip){lx=6.4+R()*1.2;ly=9-lastLy+(R()-0.5)*1.6;}else if(s.d==='line'){lx=0.5+R()*2.6;ly=clamp(9-lastLy+(R()-0.5)*1.2,0.3,8.7);}else if(s.d==='cross'){lx=1+R()*3.2;ly=clamp(lastLy+(R()-0.5)*1.8,0.3,8.7);}else if(s.d==='midS'){lx=0.8+R()*3;ly=3.6+R()*1.8;}else if(s.d==='midL'){lx=1+R()*3;ly=0.6+R()*2;}else if(s.d==='midR'){lx=1+R()*3;ly=6.4+R()*2;}else{lx=0.6+R()*7.2;ly=0.6+R()*7.8;}const [X,Y]=gl(i,lx,ly);to={x:X,y:Y,h:0};
+    else if(s.k==='floor'){const i=s.s;let lx,ly;if(s.mix&&lastMix){lx=lastMix[0]+(R()-0.5)*0.6;ly=lastMix[1]+(R()-0.5)*0.6;}else if(s.blk){lx=7.4+R()*0.8;ly=lastAtt?lastLy+(R()-0.5):4.5;}else if(s.tip){lx=6.4+R()*1.2;ly=9-lastLy+(R()-0.5)*1.6;}else if(s.d==='line'){lx=0.5+R()*2.6;ly=clamp(9-lastLy+(R()-0.5)*1.2,0.3,8.7);}else if(s.d==='cross'){lx=1+R()*3.2;ly=clamp(lastLy+(R()-0.5)*1.8,0.3,8.7);}else if(s.d==='midS'){lx=0.8+R()*3;ly=3.6+R()*1.8;}else if(s.d==='midL'){lx=1+R()*3;ly=0.6+R()*2;}else if(s.d==='midR'){lx=1+R()*3;ly=6.4+R()*2;}else{lx=0.6+R()*7.2;ly=0.6+R()*7.8;}const [X,Y]=gl(i,lx,ly);to={x:X,y:Y,h:0};
       if(!s.blk&&!s.mix){// najbliższy obrońca rzuca się do piłki, ale nie sięga
         let nb=null,nd=1e9;for(const b of side(i)){const dd=Math.hypot(cx(b)-X,cy(b)-Y);if(dd<nd){nd=dd;nb=b;}}
         if(nb&&nd>0.6){const f=Math.max(0,(nd-0.7)/nd);moves.push({id:nb.id,x:cx(nb)+(X-cx(nb))*f,y:cy(nb)+(Y-cy(nb))*f});}}

@@ -106,6 +106,7 @@ function tacticsView(){const tc=myTac();const tt=ui.tacT||'set';const tabs=`<div
   if(tt==='eff')return tabs+tacEffView();
   return tabs+`<div class="card"><h2>Zagrywka</h2>${optGroup('serve',SERVE_OPT,tc.serve,'setServe')}</div>
   <div class="card"><h2>Rozegranie</h2>${optGroup('dist',DIST_OPT,tc.dist,'setDist')}</div>
+  <div class="card"><h2>Ustawienia</h2>${p1TacHtml(tc)}</div>
   <div class="card"><h2>Atak</h2>${atkTacHtml(tc)}</div>
   <div class="card"><h2>Blok i obrona</h2>${blockTacHtml(tc)}</div>
   <div class="card"><h2>Piłki sytuacyjne</h2>${freeTacHtml(tc)}</div>
