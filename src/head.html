@@ -568,5 +568,8 @@ small .pt,.mut .pt{font-size:9px;padding:2px 5px;min-width:26px}
 @media(max-width:1100px){.hv3{grid-template-columns:1fr 1fr}.hv3>.hvcol:last-child{grid-column:1/-1}}
 @media(max-width:760px){.hvhero{grid-template-columns:1fr}.hvnotes{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:10px}.hv3,.hv2{grid-template-columns:1fr}.hvtn{font-size:16px}.hvvs{gap:6px}.hvteam{gap:6px}.hvteam svg{width:40px;height:40px}}
 .hvtn,.hvpn,.hvfit .link,.hvhero .link,.hvc .link{text-decoration:none}.hv2{align-items:start}
+.hv3{align-items:stretch}.hvgrow{flex:1 1 auto;display:flex;flex-direction:column;min-height:96px}.hvgl{flex:1 1 0;min-height:0;overflow:hidden;contain:size}
+.hvnw{display:grid;grid-template-columns:20px 36px minmax(0,1fr);gap:6px;align-items:start;padding:6px 0;border-top:1px solid var(--line);font-size:12.5px;line-height:1.35}.hvnw:first-child{border-top:0}.hvnw .mut{font-size:11px;padding-top:1px}
+@media(max-width:1100px){.hvgl{contain:none;flex:none}.hvgl>*:nth-child(n+11){display:none}}
 </style></head><body><div id="app"></div>
 <script>
