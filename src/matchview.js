@@ -13,7 +13,7 @@ function defY(o){return {1:7.4,2:7.4,3:4.5,4:1.6,5:1.6,6:4.5}[defZone(o)];}
 // ---- frekwencja meczu ----
 function matchCrowd(m){const c=m.ctx;if(!c)return;const home=c.h;const L=infraOf(home).hala;const rep=SAVE.ai[home].rep;
   const k=c.kind==='spar'?0.35:c.kind==='po'?1.5:1;
-  m.hallLv=L;m.cap=HALA_CAP[L-1];m.homeIdx=home;m.att=Math.min(m.cap,Math.round((1400+rep*25)*(1+0.05*(L-1))*(0.85+R()*0.3)*k));m.mid=m.mid||('m'+Math.floor(R()*1e9));}
+  m.hallLv=L;m.cap=HALA_CAP[L-1];m.homeIdx=home;m.att=typeof crowdFor==='function'?crowdFor(home,k).att:Math.min(m.cap,Math.round((1400+rep*25)*(1+0.05*(L-1))*(0.85+R()*0.3)*k));m.mid=m.mid||('m'+Math.floor(R()*1e9));}
 // ---- formacja przed zagrywką ----
 // przyjęcie w systemie 5-1 — zgodne z przepisami o ustawieniu (bez błędu ustawienia), klucz: strefa rozgrywającego → {strefa:[x,y]}
 // x: 0 = linia końcowa, 9 = siatka; y: 0 = lewa strona (strefy 4/5), 9 = prawa (strefy 2/1)

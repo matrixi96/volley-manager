@@ -21,7 +21,7 @@ function staffCheck(add){if(SAVE.fin.bal<-300000)return 'Klub jest zadłużony �
 function myInfra(){return infraOf(SAVE.team);}
 function upgradeCost(f,L){return Math.round(f.cost*Math.pow(L,1.4)/10000)*10000;}
 function upgradeDays(f,L){return Math.round(f.days*(0.7+0.3*L));}
-function shopIncome(L){const rep=SAVE.ai?SAVE.ai[SAVE.team].rep:50;return Math.round(L*10000*(0.5+rep/100)/1000)*1000;}
+function shopIncome(L){const rep=SAVE.ai?SAVE.ai[SAVE.team].rep:50;const m=SAVE.eco&&typeof SHOP_LV!=='undefined'?SHOP_LV[SAVE.eco.shop][2]:1;return Math.round(L*10000*(0.5+rep/100)*m/1000)*1000;}
 function maintenance(){const inf=myInfra();return INFRA.reduce((s,f)=>s+inf[f.k]*MAINT_PER_LEVEL,0);}
 function startBuild(k){const f=INFRA.find(x=>x.k===k);const L=myInfra()[k];
   if(SAVE.build)return tradeMsg(false,'Trwa już inna budowa. Klub prowadzi jedną inwestycję naraz.');
@@ -45,7 +45,7 @@ const STAFF_ROLES=[
   ['sta','Statystyk / analityk','Przygotowanie do rywala: mały bonus w każdym meczu.']
 ];
 const ROLE_N=Object.fromEntries(STAFF_ROLES.map(r=>[r[0],r[1]]));
-function staffWage(sk){return round5k(50000+sk*sk*800);}
+function staffWage(sk){return round5k(30000+sk*sk*350);}
 function genStaff(role,sk){const id='st'+(W().nextId++);return {id,first:FIRST[Math.floor(R()*FIRST.length)],last:LAST[Math.floor(R()*LAST.length)],role,skill:Math.round(clamp(sk,1,20)),age:30+Math.floor(R()*30),wage:0};}
 function refreshStaffPool(){SAVE.staffPool=[];for(const [r] of STAFF_ROLES)for(let i=0;i<3;i++){const s=genStaff(r,5+R()*14);s.wage=staffWage(s.skill);SAVE.staffPool.push(s);}}
 function staffSkill(r){if(r==='sk'){const a=allScouts();return a.length?Math.max(...a.map(x=>x.skill)):3;}const s=SAVE.staff&&SAVE.staff[r];return s?s.skill:3;}

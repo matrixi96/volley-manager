@@ -21,19 +21,24 @@ function toggleShort(id){const s=SC();const i=s.short.indexOf(id);if(i>=0)s.shor
 // ---- skauci i zadania ----
 function scoutSlots(sc){return 1+(sc.skill>=11?1:0)+(sc.skill>=16?1:0);}
 function oppScout(){const s=SC();if(!s.opp.on)return null;const a=allScouts().slice().sort((x,y)=>y.skill-x.skill);return a[0]||null;}
-function scoutLoad(sc){return SC().tasks.filter(t=>t.sid===sc.id).length+(oppScout()&&oppScout().id===sc.id?1:0);}
+function scoutLoad(sc){return SC().tasks.filter(t=>t.sid===sc.id&&t.start).length;}
+function scoutQueue(sc){return SC().tasks.filter(t=>t.sid===sc.id&&!t.start).length;}
+function taskDays(type,sc){return type==='obs'?Math.round(clamp(8-sc.skill/3,2,7)):Math.round(clamp(14-sc.skill/2.5,5,12));}
 function freeScout(pref){const a=allScouts();if(pref){const x=a.find(s=>s.id===pref);if(x&&scoutLoad(x)<scoutSlots(x))return x;}return a.filter(s=>scoutLoad(s)<scoutSlots(s)).sort((x,y)=>y.skill-x.skill)[0]||null;}
 function scoutFired(id){const s=SC();s.tasks=s.tasks.filter(t=>t.sid!==id);}
 function scoutName(id){const x=allScouts().find(s=>s.id===id);return x?`${x.first[0]}. ${x.last}`:'Skaut';}
-function newTask(o){const s=SC();const sc=freeScout(o.sid);if(!sc){ui.scMsg='Wszyscy skauci są zajęci. Poczekaj na koniec zadania, zatrudnij kolejnego skauta albo wyłącz stałe zadanie „Następny rywal”.';render();return;}
-  const days=o.type==='obs'?Math.round(clamp(8-sc.skill/3,2,7)):Math.round(clamp(14-sc.skill/2.5,5,12));
-  s.tasks.push(Object.assign({id:'tk'+(s.nid++),sid:sc.id,start:today(),until:addDays(today(),days)},o));ui.scMsg=`Zadanie zlecone: ${scoutName(sc.id)}. Raport trafi do poczty za ok. ${days} dni.`;save();render();}
+function newTask(o){const s=SC();const all=allScouts();if(!all.length){ui.scMsg='Nie masz skauta. Zatrudnij go w zakładce Sztab.';render();return;}
+  const pref=o.sid||ui.scAs||'';let sc=pref?all.find(x=>x.id===pref):null;if(!sc)sc=freeScout()||all.slice().sort((a,b)=>(scoutLoad(a)+scoutQueue(a))-(scoutLoad(b)+scoutQueue(b)))[0];
+  const free=scoutLoad(sc)<scoutSlots(sc);const days=taskDays(o.type,sc);
+  s.tasks.push(Object.assign({},o,{id:'tk'+(s.nid++),sid:sc.id,start:free?today():null,until:free?addDays(today(),days):null}));
+  ui.scMsg=free?`Zadanie przypisane: ${scoutName(sc.id)}. Raport trafi do poczty za ok. ${days} dni.`:`${scoutName(sc.id)} jest zajęty — zadanie czeka w kolejce i ruszy, gdy zwolni się miejsce.`;save();render();}
 function observe(pid){if(SC().tasks.some(t=>t.type==='obs'&&t.pid===pid)){ui.scMsg='Ten zawodnik jest już obserwowany.';render();return;}if(!isShort(pid))SC().short.push(pid);newTask({type:'obs',pid});}
 function cancelTask(id){const s=SC();s.tasks=s.tasks.filter(t=>t.id!==id);save();render();}
 function marketTask(){const v=k=>{const e=document.getElementById(k);return e?e.value:'';};newTask({type:'mkt',crit:{pos:v('scpos'),age:+v('scage')||40,val:+v('scval')||0,minR:+v('scmin')||0}});}
 // codzienny przebieg (z advanceTo)
 function scoutDay(d){if(SAVE.team==null||!SAVE.world)return;const s=SC();
   for(const t of s.tasks.slice()){const sc=allScouts().find(x=>x.id===t.sid);if(!sc){s.tasks=s.tasks.filter(x=>x!==t);continue;}
+    if(!t.start){if(scoutLoad(sc)<scoutSlots(sc)){t.start=d;t.until=addDays(d,taskDays(t.type,sc));}continue;}
     if(t.type==='obs'){addKnow(t.pid,(40+sc.skill*2.5)/Math.max(1,daysBetween(t.start,t.until)));}
     if(t.until<=d){s.tasks=s.tasks.filter(x=>x!==t);if(t.type==='obs')obsReport(t,sc);else mktReport(t,sc);}}
   if(s.opp.on){const e=nextEvent();const c=myNext();if(e&&c&&e.d>=d&&daysBetween(d,e.d)<=2){const op=c.h===SAVE.team?c.a:c.h;const key=e.d+':'+op;if(!s.opp.done[key]){s.opp.done[key]=1;oppReport(op,e);}}}}
@@ -96,22 +101,24 @@ function scoutMailHtml(m){const b=m.b;
   return '';}
 // ---- widok: Skauting ----
 function scoutView(){const s=SC();const sc=allScouts();const os=oppScout();const e=nextEvent();const c=myNext();const op=c?(c.h===SAVE.team?c.a:c.h):null;
-  const cap=sc.reduce((a,x)=>a+scoutSlots(x),0);const used=s.tasks.length+(os?1:0);
+  const cap=sc.reduce((a,x)=>a+scoutSlots(x),0);const used=s.tasks.filter(t=>t.start).length;
   const lg=W().players.filter(p=>p.tm>=0&&p.tm!==SAVE.team&&!p.jr);const avgK=lg.length?Math.round(lg.reduce((a,p)=>a+knowOf(p),0)/lg.length):0;
   const reps=mailBox().filter(m=>m.cat==='skaut').slice(0,8);
   const kpi=`<div class="kstrip"><div><span>Skauci</span><b>${sc.length}/${scoutCap()}</b><small>limit z siedziby klubu (poz. ${myInfra().sied})</small></div><div><span>Zadania</span><b>${used}/${cap}</b><small>zajęte / wszystkie miejsca</small></div><div><span>Wiedza o lidze</span><b>${avgK}%</b><small>średnio o zawodnikach rywali</small></div><div><span>Analityk</span><b>${SAVE.staff&&SAVE.staff.sta?SAVE.staff.sta.skill+'/20':'brak'}</b><small>pomaga w raportach o rywalach</small></div></div>`;
   const scouts=sc.length?sc.map(x=>{const ts=s.tasks.filter(t=>t.sid===x.id);return `<div class="scard"><div class="row">${sFace(x,40)}<div><b>${esc(x.first)} ${esc(x.last)}</b><div class="small mut">jakość <span class="sk ${aCls(x.skill)}">${x.skill}</span> · miejsca na zadania: ${scoutLoad(x)}/${scoutSlots(x)}</div></div></div>
      ${os&&os.id===x.id?`<div class="stask"><span>📋 Stałe zadanie: następny rywal</span></div>`:''}
-     ${ts.map(t=>{const tot=Math.max(1,daysBetween(t.start,t.until)),dn=clamp(daysBetween(t.start,today()),0,tot);const P=t.pid&&PLAYERS[t.pid];return `<div class="stask"><span>${t.type==='obs'?'👁 Obserwacja: '+(P?esc(P.p.first+' '+P.p.last):'?'):'🔎 Przegląd rynku: '+esc(t.crit&&t.crit.pos?POS_NAMES[t.crit.pos]:'każda pozycja')}</span><span class="kbar wide"><i style="width:${Math.round(dn/tot*100)}%;background:var(--acc)"></i></span><small class="mut">${daysBetween(today(),t.until)} dni</small><button class="link small" onclick="cancelTask('${t.id}')">anuluj</button></div>`;}).join('')}
+     ${ts.filter(t=>!t.start).map(t=>{const P=t.pid&&PLAYERS[t.pid];return `<div class="stask"><span class="mut">⏳ W kolejce: ${t.type==='obs'?(P?esc(P.p.first+' '+P.p.last):'?'):'przegląd rynku'}</span><button class="link small" onclick="cancelTask('${t.id}')">anuluj</button></div>`;}).join('')}
+     ${ts.filter(t=>t.start).map(t=>{const tot=Math.max(1,daysBetween(t.start,t.until)),dn=clamp(daysBetween(t.start,today()),0,tot);const P=t.pid&&PLAYERS[t.pid];return `<div class="stask"><span>${t.type==='obs'?'👁 Obserwacja: '+(P?esc(P.p.first+' '+P.p.last):'?'):'🔎 Przegląd rynku: '+esc(t.crit&&t.crit.pos?POS_NAMES[t.crit.pos]:'każda pozycja')}</span><span class="kbar wide"><i style="width:${Math.round(dn/tot*100)}%;background:var(--acc)"></i></span><small class="mut">${daysBetween(today(),t.until)} dni</small><button class="link small" onclick="cancelTask('${t.id}')">anuluj</button></div>`;}).join('')}
      ${scoutLoad(x)<scoutSlots(x)?'<div class="small mut">Wolne miejsce na zadanie.</div>':''}</div>`;}).join(''):'<p class="bad">Nie masz skauta. Zatrudnij go w zakładce Sztab — bez niego nie zlecisz obserwacji ani przeglądu rynku.</p>';
   const shortPs=s.short.map(id=>PLAYERS[id]).filter(Boolean).map(x=>x.p).filter(p=>p.tm!==SAVE.team);
   return `${kpi}${ui.scMsg?`<div class="card tmsg ok">${esc(ui.scMsg)}</div>`:''}
   <div class="card"><div class="row wrap"><h2 style="margin:0">Następny rywal</h2><span class="sp"></span><div class="seg"><button class="${s.opp.on?'on':''}" onclick="SC().opp.on=1;save();render()">Włączone</button><button class="${s.opp.on?'':'on'}" onclick="SC().opp.on=0;save();render()">Wyłączone</button></div></div>
-   <p class="small mut">Stałe zadanie dla najlepszego skauta (zajmuje mu jedno miejsce) razem z analitykiem. Raport o każdym rywalu trafia do poczty 2 dni przed meczem: przewidywany skład, kierunki ataku, słabe przyjęcie, siła bloku i zalecenia, które zastosujesz jednym przyciskiem.</p>
+   <p class="small mut">Stałe zadanie dla najlepszego skauta razem z analitykiem (nie zajmuje miejsca na inne zadania). Raport o każdym rywalu trafia do poczty 2 dni przed meczem: przewidywany skład, kierunki ataku, słabe przyjęcie, siła bloku i zalecenia, które zastosujesz jednym przyciskiem.</p>
    ${op!=null&&e?`<div class="row" style="gap:10px">${teamCrest(op,32)}<b>${esc(TEAMS[op].name)}</b><span class="mut">${fmtLong(e.d)}</span><span class="sp"></span>${(()=>{const r=mailBox().find(m=>m.b&&m.b.type==='opp'&&m.b.op===op&&m.b.md===e.d);return r?`<button class="btn" onclick="ui.mailSel='${r.id}';mailOpen('${r.id}');go('poczta')">Otwórz raport</button>`:`<span class="small mut">${s.opp.on?'Raport przyjdzie '+fmtShort(addDays(e.d,-2)):'Zadanie wyłączone'}</span>`;})()}</div>`:'<p class="mut small">Brak zaplanowanego meczu.</p>'}</div>
   <div class="card"><h2>Skauci</h2><div class="sgrid">${scouts}</div></div>
-  <div class="card"><h2>Nowe zadanie</h2><div class="sgrid2">
-   <div><h3>👁 Obserwacja zawodnika</h3><p class="small mut">Skaut ogląda zawodnika kilka dni i przysyła dokładny raport: atrybuty, potencjał, charakter i opinię.</p>
+  ${scoutDb()}
+  <div class="card"><h2>Przegląd rynku przez skauta</h2><div class="sgrid2">
+   <div style="display:none"><h3>👁 Obserwacja zawodnika</h3><p class="small mut">Skaut ogląda zawodnika kilka dni i przysyła dokładny raport: atrybuty, potencjał, charakter i opinię.</p>
     ${shortPs.length?`<div class="row wrap" style="gap:6px"><select id="scobs">${shortPs.map(p=>`<option value="${p.id}">${esc(p.last)} (${POS_SHORT[p.pos]}, ${p.tm>=0?esc(TEAMS[p.tm].short):'wolny'}) · wiedza ${knowOf(p)}%</option>`).join('')}</select><button class="btn" onclick="observe(document.getElementById('scobs').value)">Zleć obserwację</button></div>`:'<p class="small">Dodaj zawodników do obserwowanych (⭐ w Transferach) albo kliknij „Obserwuj” przy zawodniku na rynku.</p>'}</div>
    <div><h3>🔎 Przegląd rynku</h3><p class="small mut">Skaut szuka zawodników według kryteriów i przysyła listę najciekawszych (więcej i trafniej, gdy jest lepszy).</p>
     <div class="row wrap" style="gap:6px"><select id="scpos"><option value="">Każda pozycja</option>${['R','A','P','S','L'].map(k=>`<option value="${k}">${POS_NAMES[k]}</option>`).join('')}</select>
@@ -144,3 +151,40 @@ function transferView(){const o=windowOpen();const f=ui.mf||(ui.mf={pos:'',src:'
     ${sel('sort','Sortuj',[['ocena','Ocena'],['pot','Potencjał'],['wiedza','Wiedza'],['wiek','Wiek'],['cena','Cena rosnąco']])}<button class="link" onclick="ui.mf={pos:'',src:'all',sort:'ocena',maxAge:40,maxVal:0,q:'',pg:0};render()">Wyczyść</button></div>`:''}
    ${marketTable(shown)}
    <div class="row small mut" style="margin-top:8px;flex-wrap:wrap;gap:12px"><span>Pokazano ${list.length?f.pg*per+1:0}–${f.pg*per+shown.length} z ${list.length}</span><span><b class="stars">★</b> pewne · <span class="pstp">★</span> możliwe · im większa wiedza (skauting), tym węższy zakres oceny i potencjału</span><span class="sp"></span>${pages>1?`<span>Strona ${f.pg+1} z ${pages}</span><button class="link" ${f.pg?'':'disabled'} onclick="ui.mf.pg--;render()">← Poprzednia</button><button class="link" ${f.pg<pages-1?'':'disabled'} onclick="ui.mf.pg++;render()">Następna →</button>`:''}</div></div>`}`;}
+
+// ---- baza zawodników w skautingu: filtry jak w menedżerach + przypisanie skauta ----
+function SF(){return ui.sf||(ui.sf={q:'',pos:'',src:'all',tm:'',minR:0,minP:0,maxAge:40,maxVal:0,maxW:0,ce:0,kn:'',notObs:0,sort:'ocena',pg:0});}
+function sfSet(k,v){const f=SF();f[k]=v;f.pg=0;render();}
+function scoutDb(){const f=SF();const all=allScouts();const s=SC();
+  let xs=W().players.filter(p=>p.tm!==SAVE.team);
+  if(f.src==='club')xs=xs.filter(p=>p.tm>=0&&!p.jr);else if(f.src==='fa')xs=xs.filter(p=>p.tm<0);else if(f.src==='jr')xs=xs.filter(p=>p.jr);else xs=xs.filter(p=>!p.jr);
+  if(f.q)xs=xs.filter(p=>(p.first+' '+p.last).toLowerCase().includes(f.q.toLowerCase()));if(f.pos)xs=xs.filter(p=>p.pos===f.pos);if(f.tm!=='')xs=xs.filter(p=>p.tm===+f.tm);
+  if(f.minR)xs=xs.filter(p=>rEst(p)[1]>=f.minR);if(f.minP)xs=xs.filter(p=>potRange(p)[1]>=f.minP);xs=xs.filter(p=>p.age<=f.maxAge);
+  if(f.maxVal)xs=xs.filter(p=>(p.tm<0?0:pValue(p))<=f.maxVal);if(f.maxW)xs=xs.filter(p=>(p.tm<0?wageNeeded(p):p.wage)<=f.maxW);
+  if(f.ce)xs=xs.filter(p=>p.tm<0||p.ce<=S().n+(+f.ce)-1);if(f.kn==='low')xs=xs.filter(p=>knowOf(p)<50);else if(f.kn==='high')xs=xs.filter(p=>knowOf(p)>=80);
+  if(f.notObs)xs=xs.filter(p=>!s.tasks.some(t=>t.pid===p.id));
+  const so={ocena:(a,b)=>rMid(b)-rMid(a),pot:(a,b)=>potSeen(b)-potSeen(a),wiek:(a,b)=>a.age-b.age,cena:(a,b)=>pValue(a)-pValue(b),wiedza:(a,b)=>knowOf(a)-knowOf(b)};xs.sort(so[f.sort]||so.ocena);
+  const per=30,pages=Math.max(1,Math.ceil(xs.length/per));f.pg=Math.min(f.pg,pages-1);const shown=xs.slice(f.pg*per,f.pg*per+per);
+  const sel=(k,lab,opts,num)=>`<label class="flt"><span>${lab}</span><select onchange="sfSet('${k}',${num?'+this.value':'this.value'})">${opts.map(([v,l])=>`<option value="${v}" ${String(f[k])===String(v)?'selected':''}>${l}</option>`).join('')}</select></label>`;
+  const task=p=>s.tasks.find(t=>t.pid===p.id);
+  return `<div class="card"><div class="row wrap"><h2 style="margin:0">Baza zawodników</h2><span class="sp"></span>
+    <label class="flt"><span>Przypisuj do</span><select onchange="ui.scAs=this.value;render()"><option value="">Automatycznie (najmniej zajęty)</option>${all.map(x=>`<option value="${x.id}" ${ui.scAs===x.id?'selected':''}>${esc(x.first[0]+'. '+x.last)} · ${x.skill}/20 · zadania ${scoutLoad(x)}/${scoutSlots(x)}${scoutQueue(x)?' +'+scoutQueue(x)+' w kolejce':''}</option>`).join('')}</select></label></div>
+   <p class="small mut">Wybierz kryteria i przypisz skauta do analizy zawodnika. Gdy skaut jest zajęty, zadanie czeka w kolejce. Ocena i potencjał to szacunki — im większa wiedza, tym dokładniejsze.</p>
+   <div class="filters2"><label class="flt"><span>Szukaj</span><input placeholder="Nazwisko…" value="${esc(f.q)}" onchange="sfSet('q',this.value)"></label>
+    ${sel('pos','Pozycja',[['','Każda'],['R','Rozgrywający'],['A','Atakujący'],['P','Przyjmujący'],['S','Środkowy'],['L','Libero']])}
+    ${sel('src','Kadra',[['all','Seniorzy (kluby i wolni)'],['club','Tylko z klubów'],['fa','Wolni zawodnicy'],['jr','Juniorzy rywali']])}
+    ${sel('tm','Drużyna',[['','Każda']].concat(TEAMS.filter(t=>t.idx!==SAVE.team).map(t=>[t.idx,t.name])))}
+    ${sel('minR','Min. ocena',[[0,'Każda'],[65,'65+'],[70,'70+'],[75,'75+'],[80,'80+'],[85,'85+']],1)}
+    ${sel('minP','Min. potencjał',[[0,'Każdy'],[69,'★★+'],[76,'★★★+'],[83,'★★★★+'],[90,'★★★★★']],1)}
+    ${sel('maxAge','Maks. wiek',[[40,'Każdy'],[19,'19'],[21,'21'],[23,'23'],[25,'25'],[28,'28'],[31,'31']],1)}
+    ${sel('maxVal','Maks. wartość',[[0,'Bez limitu'],[200000,'200 tys.'],[500000,'500 tys.'],[1000000,'1 mln'],[2000000,'2 mln']],1)}
+    ${sel('maxW','Maks. pensja',[[0,'Bez limitu'],[150000,'150 tys./rok'],[300000,'300 tys./rok'],[500000,'500 tys./rok'],[800000,'800 tys./rok']],1)}
+    ${sel('ce','Kontrakt kończy się',[[0,'Kiedykolwiek'],[1,'W tym sezonie'],[2,'Do końca przyszłego']],1)}
+    ${sel('kn','Wiedza',[['','Każda'],['low','Mało znani (< 50%)'],['high','Dobrze znani (80%+)']])}
+    ${sel('sort','Sortuj',[['ocena','Ocena'],['pot','Potencjał'],['wiedza','Najmniej znani'],['wiek','Wiek'],['cena','Cena rosnąco']])}
+    <label class="mopt" style="padding:0 0 6px"><input type="checkbox" ${f.notObs?'checked':''} onchange="sfSet('notObs',this.checked?1:0)"> bez zadań</label>
+    <button class="link" onclick="ui.sf=null;render()">Wyczyść</button></div>
+   <div class="tw"><table class="mkt"><thead><tr><th></th><th class="l">Zawodnik</th><th>Poz</th><th>Wiek</th><th class="l">Klub</th><th>Ocena</th><th>Potencjał</th><th>Wiedza</th><th>Wartość</th><th>Pensja</th><th>Kontrakt</th><th class="l">Skaut</th></tr></thead><tbody>
+   ${shown.map(p=>{const t=task(p);return `<tr><td><button class="star ${isShort(p.id)?'on':''}" onclick="toggleShort('${p.id}')">${isShort(p.id)?'★':'☆'}</button></td><td class="l"><span class="fcell">${pFace(p,26)}<button class="link pn" onclick="openPop('${p.id}')">${esc(p.first)} <b>${esc(p.last)}</b></button></span></td><td><b>${POS_SHORT[p.pos]}</b></td><td>${p.age}</td><td class="l">${p.tm>=0?tDot(p.tm)+esc(TEAMS[p.tm].short)+(p.jr?' U20':''):'<span class="good">wolny</span>'}</td><td><b>${rTxt(p)}</b></td><td class="stars">${potStars(p)}</td><td>${knowBar(p)} <small class="mut">${knowOf(p)}%</small></td><td>${p.tm>=0?fmt(pValue(p)):'—'}</td><td>${p.tm>=0?fmt(p.wage):'<small class="mut">chce '+fmt(wageNeeded(p))+'</small>'}</td><td>${p.tm>=0&&!p.jr?ceDate(p.ce):'—'}</td>
+    <td class="l nw">${t?`<small>${t.start?'👁 '+esc(scoutName(t.sid))+' · '+daysBetween(today(),t.until)+' dni':'⏳ w kolejce: '+esc(scoutName(t.sid))}</small>`:all.length?`<button class="ghost sm" onclick="observe('${p.id}')">Przypisz skauta</button>`:'<small class="mut">brak skauta</small>'}</td></tr>`;}).join('')||'<tr><td colspan="12" class="mut">Nikt nie spełnia kryteriów.</td></tr>'}</tbody></table></div>
+   <div class="row small mut" style="margin-top:8px;gap:12px"><span>Pokazano ${xs.length?f.pg*per+1:0}–${f.pg*per+shown.length} z ${xs.length} zawodników</span><span class="sp"></span>${pages>1?`<span>Strona ${f.pg+1} z ${pages}</span><button class="link" ${f.pg?'':'disabled'} onclick="SF().pg--;render()">← Poprzednia</button><button class="link" ${f.pg<pages-1?'':'disabled'} onclick="SF().pg++;render()">Następna →</button>`:''}</div></div>`;}

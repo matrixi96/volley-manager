@@ -49,8 +49,7 @@ function news(t){SAVE.news=SAVE.news||[];SAVE.news.unshift({d:SAVE._now||today()
 function money(amt,cat){const f=SAVE.fin;f.bal+=amt;f.sea[cat]=(f.sea[cat]||0)+amt;}
 function finLog(t,a){const f=SAVE.fin;f.log.unshift({d:today(),t,a});f.log=f.log.slice(0,80);}
 function payroll(){return myTeam().players.reduce((s,p)=>s+(p.wage||0),0);}
-const TV_ROUND=30000,TICKET=35;
-function ticketIncome(mult,est){const rep=SAVE.ai[SAVE.team].rep;const L=myInfra().hala;const att=Math.min(HALA_CAP[L-1],Math.round((1400+rep*25)*(1+0.05*(L-1))*(est?1:0.85+R()*0.3)*mult));return {att,inc:att*TICKET};}
+const TV_ROUND=45000;
 
 // ---- trening / rozwój / kontuzje ----
 const TRAIN_FOCUS=[['bal','Zrównoważony','Rozwój wszystkich cech, z naciskiem na te ważne dla pozycji.',[]],['atk','Atak','Atak, siła, skoczność.',['ata','sil','sko']],['def','Przyjęcie i obrona','Przyjęcie, obrona, odbicie dołem, zwinność.',['prz','obr','tod','zwi']],['blk','Blok','Blok, skoczność, szybkość.',['blo','sko','szy']],['srv','Zagrywka','Zagrywka i siła.',['zag','sil']],['set','Rozegranie','Rozegranie i odbicie palcami.',['roz','tpa']],['phy','Przygotowanie fizyczne','Siła, szybkość, skoczność, zwinność, kondycja.',['sil','szy','sko','zwi','kon']],['men','Mentalny','Koncentracja, opanowanie, zaangażowanie, waleczność.',['kcj','opa','zaa','wal']]];
@@ -85,9 +84,9 @@ function roundTick(kind,home,att){
   ROUND_PLAYED=new Set();
   const s=S();
   if(kind==='liga'){money(TV_ROUND,'Prawa TV');
-    let t=null;if(home){t=att!=null?{att,inc:att*TICKET}:ticketIncome(1);money(t.inc,'Bilety');}
+    let t=null;if(home){t=att!=null?{att,inc:att*tixPrice()}:ticketIncome(1);money(t.inc,'Bilety');}
     finLog(`Kolejka ${s.round}: prawa TV${t?`, bilety (${t.att} widzów)`:''}`,TV_ROUND+(t?t.inc:0));}
-  if(kind==='po'&&home){const t=att!=null?{att,inc:att*TICKET}:ticketIncome(1.5);money(t.inc,'Bilety');finLog(`Play-off: bilety (${t.att} widzów)`,t.inc);}
+  if(kind==='po'&&home){const t=att!=null?{att,inc:att*tixPrice()}:ticketIncome(1.5);money(t.inc,'Bilety');finLog(`Play-off: bilety (${t.att} widzów)`,t.inc);}
 }
 
 // ---- transfery ----
@@ -249,17 +248,18 @@ function financeView(){
   const proj=sp+TV_ROUND*22+ticketIncome(1,true).inc*11+shp-pay-stp-mnt;
   const cats=['Sponsor','Prawa TV','Bilety','Sklep','Nagrody','Transfery','Pensje','Sztab','Utrzymanie','Infrastruktura','Odprawy'];
   const row=(o)=>cats.map(c=>`<tr><td class="l">${c}</td><td class="${(o[c]||0)<0?'bad':(o[c]||0)>0?'good':''}">${o[c]?fmt(o[c]):'—'}</td></tr>`).join('')+`<tr><td class="l"><b>Razem</b></td><td><b>${fmt(cats.reduce((s,c)=>s+(o[c]||0),0))}</b></td></tr>`;
+  const spFree=typeof spSlots==='function'?Object.entries(spSlots()).reduce((a,[k,n])=>a+Math.max(0,n-spUsed(k)),0):0;
   return `<div class="card fin"><div class="big ${f.bal<0?'bad':''}">${fmtFull(f.bal)}</div><div class="mut">Saldo klubu${f.bal<0?' — jesteś na minusie! Dopuszczalny debet to 500 tys. zł, poniżej nie kupisz zawodników.':''}</div></div>
   <div class="card"><h2>Budżet roczny</h2><table class="cmp"><tbody>
    <tr><td class="l">Pensje zawodników (rocznie)</td><td class="bad">−${fmt(pay)}</td></tr>
    <tr><td class="l">Pensje sztabu szkoleniowego</td><td class="bad">−${fmt(stp)}</td></tr>
    <tr><td class="l">Utrzymanie obiektów</td><td class="bad">−${fmt(mnt)}</td></tr>
    <tr><td class="l">Sklep kibica</td><td class="good">+${fmt(shp)}</td></tr>
-   <tr><td class="l">Sponsor (zależy od renomy: ${rep}/100)</td><td class="good">+${fmt(sp)}</td></tr>
+   <tr><td class="l">Sponsorzy (podpisane umowy, renoma ${rep}/100)</td><td class="good">+${fmt(sp)}</td></tr>
    <tr><td class="l">Prawa TV (${fmt(TV_ROUND)} za kolejkę)</td><td class="good">+${fmt(TV_ROUND*22)}</td></tr>
-   <tr><td class="l">Bilety (ok. ${fmt(ticketIncome(1,true).inc)} za mecz u siebie)</td><td class="good">~ +${fmt(ticketIncome(1,true).inc*11)}</td></tr>
+   <tr><td class="l">Bilety (ok. ${fmt(ticketIncome(1,true).inc)} za mecz u siebie, cena ${tixPrice()} zł)</td><td class="good">~ +${fmt(ticketIncome(1,true).inc*11)}</td></tr>
    <tr><td class="l"><b>Prognoza bilansu (bez transferów i nagród)</b></td><td class="${proj<0?'bad':'good'}"><b>${proj>=0?'+':''}${fmt(proj)}</b></td></tr></tbody></table>
-   <p class="mut small">Pensje i sponsor rozliczają się co miesiąc (1. dnia), prawa TV co kolejkę ligową, bilety po każdym meczu u siebie. Nagrody za miejsce w sezonie: od 50 tys. do 1 mln zł. Lepsze wyniki podnoszą renomę, a ta podnosi sponsora i frekwencję.</p></div>
+   ${spFree?`<p class="small" style="color:var(--acc)">Masz ${spFree} wolnych miejsc dla sponsorów — podpisz umowy w zakładce <button class="link" onclick="go('sponsorzy')">Sponsorzy</button>, żeby poprawić bilans.</p>`:''}<p class="mut small">Pensje i sponsorzy rozliczają się co miesiąc (1. dnia), prawa TV co kolejkę ligową, bilety po każdym meczu u siebie. Nagrody za miejsce w sezonie: od 50 tys. do 1 mln zł. Lepsze wyniki podnoszą renomę, a ta podnosi sponsorów i frekwencję.</p></div>${pricesCard()}
   <div class="card"><h2>Sezon ${sLabel(S().n)}</h2><table class="cmp"><tbody>${row(f.sea)}</tbody></table>${f.prev?`<h3>Poprzedni sezon</h3><table class="cmp"><tbody>${row(f.prev)}</tbody></table>`:''}</div>
   <div class="card"><h2>Historia operacji</h2>${f.log.length?f.log.slice(0,30).map(x=>`<div class="res row"><span class="mut small">${x.d?fmtDMY(x.d):''}</span> ${esc(x.t)}<span class="sp"></span><b class="${x.a<0?'bad':'good'}">${x.a>=0?'+':''}${fmt(x.a)}</b></div>`).join(''):'<p class="mut">Brak operacji.</p>'}</div>`;
 }

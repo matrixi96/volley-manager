@@ -38,7 +38,7 @@ function sponsorsMonth(d){const s=SPN();let inc=0;const ended=[],ending=[];
   return {inc};}
 function initSponsors(){const s=SPN();if(s.init)return;s.init=1;genSpOffers();
   // na start klub ma tytularnego i głównego sponsora na kilka miesięcy
-  for(const k of ['tit','main']){const o=s.off[k][0];if(!o)continue;s.act.push({id:o.id,cat:k,n:o.n,col:o.col,m:o.m,left:3,months:4,start:today()});s.off[k].shift();}
+  for(const k of ['tit','main','tech']){const o=s.off[k][0];if(!o)continue;s.act.push({id:o.id,cat:k,n:o.n,col:o.col,m:o.m,left:3,months:4,start:today()});s.off[k].shift();}
   sendMail({cat:'spon',from:'Dział marketingu',t:'Sponsorzy klubu: wybierz partnerów',s:'Mamy tytularnego i głównego sponsora na najbliższe miesiące. Wolne miejsca czekają na umowy.',b:{type:'spons'},act:1,lab:'Oferty'});}
 function sponsMailHtml(m){const b=m.b;if(b.type==='spexp')return `<p class="mtext">${b.soon?`To ostatni miesiąc umowy ze sponsorem <b>${esc(b.c.n)}</b> (${fmt(b.c.m)}/mies.). Od przyszłego miesiąca miejsce się zwolni — rozejrzyj się za nowymi ofertami.`:`Umowa ze sponsorem <b>${esc(b.c.n)}</b> wygasła. Miejsce jest wolne.`}</p><div class="mact"><button class="btn" onclick="mailDone('${m.id}');go('sponsorzy')">Sponsorzy</button></div>`;
   const s=SPN();return `<p class="mtext">Oferty sponsorskie odświeżają się 1. dnia każdego miesiąca. Ich liczba i wysokość zależą od renomy klubu, wyników, siedziby klubu i gwiazd w kadrze.</p>

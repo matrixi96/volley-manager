@@ -18,7 +18,7 @@ function render(){
   if(!t){app.innerHTML=hdr(false)+`<main>${coachCreateView()}</main>`;return;}
   if(!SAVE.coach){app.innerHTML=hdr(false)+`<main>${coachCreateView()}</main>`;return;}
   if(!SAVE.season)newSeason(1);
-  if(SAVE.world&&SAVE.ai&&typeof initSponsors==='function'){try{initSponsors();}catch(e){console.error(e);}}
+  if(SAVE.world&&SAVE.ai&&typeof initSponsors==='function'){try{ECO();initSponsors();}catch(e){console.error(e);}}
   let body='';
   if(ui.tab==='home')body=homeView();
   else if(ui.tab==='sklad')body=squadView();

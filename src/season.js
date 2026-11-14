@@ -55,7 +55,7 @@ function myNext(){
 function buildMatch(ctx){
   const meHome=ctx.h===SAVE.team;const op=meHome?ctx.a:ctx.h;
   const m=newMatch(participant(SAVE.team,meHome),participant(op,!meHome));
-  m.log=[];m.paused=false;m.hl=[];m.ctx=ctx;matchCrowd(m);
+  m.log=[];m.paused=false;m.hl=[];m.ctx=ctx;matchCrowd(m);if(meHome&&m.cap){m.sides[0].form+=(m.att/m.cap-0.75)*0.02;}
   m.log.push({t:`${ctx.kind==='spar'?'Sparing':ctx.kind==='po'?'Play-off':'Liga'} · ${meHome?'mecz u siebie':'mecz wyjazdowy'}. Losowanie: seta zaczyna zagrywką <b>${esc(m.sides[m.serving].team.name)}</b>.`,c:'sys'});
   return m;
 }
