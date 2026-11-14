@@ -68,7 +68,7 @@ function oppReport(op,e){const t=TEAMS[op];const acc=clamp(oppAcc(),3,20);const 
   // styl trenera rywala i rozegranie wg ustawienia (skaut ogląda kilka meczów rywala)
   const sty=aiStyle(t,lu);const known=k=>acc>=({start:6,serve:5,dist:7,srvZ:10,mCom:12}[k]||8)||rnd()<0.3;
   const dd={f:{A:0,P:0,S:0,n:0},b:{A:0,P:0,S:0,n:0}};
-  {const mid=TEAMS.filter((x,k)=>k!==op).sort((x,y)=>teamStrength(x)-teamStrength(y));const oT=mid[Math.floor(mid.length/2)];
+  {const mid=lgTeams(lgOf(op)).filter(x=>x.idx!==op).sort((x,y)=>teamStrength(x)-teamStrength(y));const oT=mid[Math.floor(mid.length/2)];
    for(let k=0;k<3;k++){const mm=newMatch({team:t,lineup:lu,tactics:sty},{team:oT,lineup:autoLineup(oT),tactics:{serve:1,dist:0}});while(!mm.over)stepRally(mm);
      for(const d of mm.dirStats||[]){if(d.i!==0||d.d==='free'||!d.rz)continue;const g=isFront(d.rz-1)?dd.f:dd.b;const pp=P(d.id);const ps=pp?pp.pos:'P';if(g[ps]!=null){g[ps]++;g.n++;}}}}
   const dsh=g=>g.n?['A','P','S'].map(k=>Math.round(clamp(g[k]/g.n+(rnd()-0.5)*nz2*0.12,0,1)*100)):null;
