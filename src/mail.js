@@ -66,7 +66,7 @@ function mailView(){const box=mailBox();const xs=mailList();const c=ui.mailC||''
     <div class="ngh">Raporty treningowe</div>${[['trD','Dzienne'],['trW','Tygodniowe'],['trM','Miesięczne']].map(([k,l])=>`<label class="mopt"><input type="checkbox" ${mailOpts()[k]?'checked':''} onchange="mailOpts().${k}=this.checked?1:0;save()"> ${l}</label>`).join('')}</div>`;
   let list='',last=null;for(const m of xs.slice(0,120)){if(m.d!==last){list+=`<div class="mday"><span>${dayHdr(m.d)}</span>${daysBetween(m.d,today())<=1?`<span>${fmtLong(m.d)}</span>`:''}</div>`;last=m.d;}list+=mailItem(m);}
   const sel=box.find(m=>m.id===ui.mailSel);
-  return `<div class="mail ${sel?'hasSel':''}">${cats}
+  return `<div class="mail ${sel?'hasSel':''}">
    <div class="mlist"><div class="mlh"><h2 style="margin:0">Poczta</h2><span class="small mut" style="text-align:right">${box.filter(m=>!m.ar).length} wiadomości<br>${unreadN()} nieprzeczytanych</span></div>
     <div class="mfil">${[['all','Wszystkie'],['unread','Nieprzeczytane'],['act','Wymaga działania']].map(([k,l])=>`<button class="${f===k?'on':''}" onclick="ui.mailF='${k}';render()">${l}</button>`).join('')}<span class="sp"></span>${unreadN()?'<button class="link small" onclick="mailAllRead()">Oznacz wszystkie</button>':''}</div>
     <select class="mcatsel" onchange="ui.mailC=this.value;ui.mailSel=null;render()"><option value="">Wszystkie kategorie</option><option value="star" ${c==='star'?'selected':''}>Oznaczone</option>${Object.entries(MAIL_CAT).map(([k,[n]])=>`<option value="${k}" ${c===k?'selected':''}>${n}</option>`).join('')}<option value="arch" ${c==='arch'?'selected':''}>Archiwum</option></select>

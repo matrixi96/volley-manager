@@ -445,7 +445,7 @@ tr.starter td{background:#e8b73a0d}
 @media (max-width:520px){.topbar .tdate{display:none}.tclub .tcr svg{width:30px;height:30px}}
 
 /* ================= POCZTA ================= */
-.mail{display:grid;grid-template-columns:200px minmax(300px,400px) minmax(0,1fr);height:calc(100vh - 150px);min-height:520px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel)}
+.mail{display:grid;grid-template-columns:minmax(300px,420px) minmax(0,1fr);height:calc(100vh - 150px);min-height:520px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel)}
 .mcats{background:#111316;border-right:1px solid var(--line);padding:12px 8px;overflow-y:auto}
 .mcat{display:flex;align-items:center;gap:10px;width:100%;background:transparent;border:0;color:#c7cad0;padding:8px 10px;border-radius:6px;font-size:14.5px;text-align:left}
 .mcat i{width:8px;height:8px;border-radius:2px;flex:none}.mcat b{margin-left:auto;font-weight:600;color:var(--acc)}
@@ -453,9 +453,9 @@ tr.starter td{background:#e8b73a0d}
 .mcsep{height:1px;background:var(--line);margin:10px 4px}.mopt{display:flex;align-items:center;gap:8px;font-size:13px;color:#c7cad0;padding:3px 10px}
 .mlist{display:flex;flex-direction:column;border-right:1px solid var(--line);min-height:0}
 .mlh{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 14px 8px}
-.mfil{display:flex;align-items:center;gap:4px;padding:0 12px 10px;border-bottom:1px solid var(--line)}
-.mfil button:not(.link){background:transparent;border:0;color:#c7cad0;padding:5px 9px;border-radius:5px;font-size:13px}.mfil button.on{background:#ffffff12;color:var(--acc);font-weight:600}
-.mcatsel{display:none;margin:8px 12px}
+.mfil{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:0 12px 10px;border-bottom:1px solid var(--line)}
+.mfil button{white-space:nowrap}.mfil button:not(.link){background:transparent;border:0;color:#c7cad0;padding:5px 9px;border-radius:5px;font-size:13px}.mfil button.on{background:#ffffff12;color:var(--acc);font-weight:600}
+.mcatsel{display:block;margin:8px 12px}
 .mitems{overflow-y:auto;flex:1}
 .mday{display:flex;justify-content:space-between;padding:9px 14px 7px;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);font-weight:600;background:#121418;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:1}
 .mitem{display:flex;gap:10px;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid #ffffff0a;border-left:3px solid transparent;padding:10px 12px;color:var(--txt);border-radius:0}
@@ -490,7 +490,7 @@ tr.starter td{background:#e8b73a0d}
 .mkpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:8px 0}
 .mkpi>div{background:#1c1f24;padding:12px;text-align:center}.mkpi span{display:block;color:var(--mut);font-size:13px}.mkpi b{font-family:var(--fc);font-size:24px}
 .mact{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
-@media (max-width:1100px){.mail{grid-template-columns:minmax(280px,360px) minmax(0,1fr)}.mcats{display:none}.mcatsel{display:block}}
+@media (max-width:1100px){.mail{grid-template-columns:minmax(280px,360px) minmax(0,1fr)}}
 @media (max-width:760px){.mail{grid-template-columns:minmax(0,1fr);height:auto;min-height:0}.mpane{display:none}.mail.hasSel .mlist{display:none}.mail.hasSel .mpane{display:block}.mback{display:inline-block}.mitems{max-height:none}.mbody{padding:16px}.mtitle{font-size:25px}.mscore b{font-size:34px}.mscore .mtn{font-size:13px}}
 
 /* ================= SKAUTING, RYNEK, SPONSORZY ================= */
@@ -3377,7 +3377,7 @@ function mailView(){const box=mailBox();const xs=mailList();const c=ui.mailC||''
     <div class="ngh">Raporty treningowe</div>${[['trD','Dzienne'],['trW','Tygodniowe'],['trM','Miesięczne']].map(([k,l])=>`<label class="mopt"><input type="checkbox" ${mailOpts()[k]?'checked':''} onchange="mailOpts().${k}=this.checked?1:0;save()"> ${l}</label>`).join('')}</div>`;
   let list='',last=null;for(const m of xs.slice(0,120)){if(m.d!==last){list+=`<div class="mday"><span>${dayHdr(m.d)}</span>${daysBetween(m.d,today())<=1?`<span>${fmtLong(m.d)}</span>`:''}</div>`;last=m.d;}list+=mailItem(m);}
   const sel=box.find(m=>m.id===ui.mailSel);
-  return `<div class="mail ${sel?'hasSel':''}">${cats}
+  return `<div class="mail ${sel?'hasSel':''}">
    <div class="mlist"><div class="mlh"><h2 style="margin:0">Poczta</h2><span class="small mut" style="text-align:right">${box.filter(m=>!m.ar).length} wiadomości<br>${unreadN()} nieprzeczytanych</span></div>
     <div class="mfil">${[['all','Wszystkie'],['unread','Nieprzeczytane'],['act','Wymaga działania']].map(([k,l])=>`<button class="${f===k?'on':''}" onclick="ui.mailF='${k}';render()">${l}</button>`).join('')}<span class="sp"></span>${unreadN()?'<button class="link small" onclick="mailAllRead()">Oznacz wszystkie</button>':''}</div>
     <select class="mcatsel" onchange="ui.mailC=this.value;ui.mailSel=null;render()"><option value="">Wszystkie kategorie</option><option value="star" ${c==='star'?'selected':''}>Oznaczone</option>${Object.entries(MAIL_CAT).map(([k,[n]])=>`<option value="${k}" ${c===k?'selected':''}>${n}</option>`).join('')}<option value="arch" ${c==='arch'?'selected':''}>Archiwum</option></select>
