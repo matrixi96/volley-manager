@@ -108,6 +108,18 @@ function tfV(t,k){if(k==='tip')return (t.tipL?1:0)+(t.tipR?2:0)+(t.tipM?4:0);ret
 // 0,55–1: jak dobrze drużyna zna obecnie ustawioną opcję (1 = bez danych, np. w testach)
 function famF(side,k){const f=side.fam;if(!f)return 1;const v=f[k+':'+tfV(side.tactics,k)];return 0.55+0.45*(v==null?0.3:v);}
 // ustawienie startowe: ile rotacji od ustawienia 1 (rozgrywający w strefie 1)
+// styl trenera drużyny AI (stały dla klubu): ryzyko zagrywki, strefa, rozegranie, blok środka, zamiana w R1 i wybór ustawienia startowego
+var AI_START=['najlepszy zagrywający zaczyna','zawsze R1','najsilniejsza pierwsza linia na start'];
+function aiStyle(t,lu){let h=(t.idx+1)*2654435761>>>0;const rn=()=>{h^=h<<13;h>>>=0;h^=h>>>17;h^=h<<5;h>>>=0;return (h%1000)/1000;};
+  const P=id=>t.players.find(p=>p.id===id);const g=k=>P(lu[k]);const av=(ks,a)=>{const xs=ks.map(g).filter(Boolean);return xs.length?xs.reduce((x,p)=>x+p[a],0)/xs.length:10;};
+  const zag=av(['R','P1','P2','S1','S2','A'],'zag'),mid=av(['S1','S2'],'ata'),opp=av(['A'],'ata'),out=av(['P1','P2'],'ata');
+  const r0=rn();const serve=zag>=13&&r0<0.45?2:zag<11||r0>0.85?0:1;
+  const dist=mid>=Math.max(opp,out)-1&&rn()<0.6?2:opp>=out+3&&rn()<0.6?3:rn()<0.3?1:0;
+  const srvZ=[0,0,0,1,3,4,5][Math.floor(rn()*7)];const mCom=rn()<0.25?1:0;const a=g('A');const p1sw=a&&a.szy>=13&&rn()<0.4?1:0;
+  const sm=Math.floor(rn()*3);const slots=['R','P1','S1','A','P2','S2'];let startRot=0;
+  if(sm===0){let b=-1;slots.forEach((k,n)=>{const p=g(k);if(p&&p.zag>b){b=p.zag;startRot=n;}});}
+  else if(sm===2){let b=-1;for(let n=0;n<6;n++){const fr=[1,2,3].map(z=>g(slots[(n+z)%6])).filter(Boolean);const v=fr.reduce((x,p)=>x+(p.pos==='R'?0:p.ata),0);if(v>b){b=v;startRot=n;}}}
+  return {serve,dist,srvZ,mCom,p1sw,startRot,sm};}
 function baseRot(tac){const n=((tac&&tac.startRot)||0)%6;const r=[0,1,2,3,4,5];for(let i=0;i<n;i++)r.push(r.shift());return r;}
 function makeSide(team,lu,tac,home,x){
   const ids=new Set(Object.values(lu));const pl=team.players.filter(p=>!p.inj||ids.has(p.id)).map(cloneP);const g=id=>pl.find(p=>p.id===id);
@@ -292,7 +304,7 @@ function attackPhase(m,A,q,by,log,act,pd){
   if(late)log.push(`${nm(late)} nie zdążył do ataku`);
   const bset=wing==='M'?(opp.tactics.blkM??1):(opp.tactics[wing==='L4'?'blkR':'blkL']??1);
   const triple=wing!=='M'&&!quick&&((opp.tactics.blk3===2)||(opp.tactics.blk3===1&&sq<0.55));
-  const ds=m.dirStats||(m.dirStats=[]);const rec=(d,r)=>ds.push({i:A,id:a.id,w:wing,d,r,set:m.setNo});
+  const ds=m.dirStats||(m.dirStats=[]);const rec=(d,r)=>ds.push({i:A,id:a.id,w:wing,d,r,set:m.setNo,rz:sE?sE.zone+1:0});
   const setTxt=real?`${nm(setter)} → atak ${nm(a)}`:`podbija ${nm(setter)} → atak ${nm(a)}`;
   // piłka sytuacyjna: przebicie zamiast ataku
   if(!quick&&sq<0.3&&R()<(0.75-eff(a,'kiw')/20*0.3)*(hasT(a,'ind')?0.55:1))return freeBall(m,A,a,log,act,seq,setTxt);
@@ -425,6 +437,7 @@ function fatigue(m,n){
 }
 function startSet(m){
   m.setNo++;m.score=[0,0];m.run={t:-1,n:0};
+  for(const i of [0,1])undoSpecialSubs(m,i,true);
   for(const s of m.sides){s.rot=baseRot(s.tactics);s.to=2;s.subs=6;s.mom=0;s.form=s.form*0.5+nz()*0.06+(s.home?0.0075:0);for(const p of s.pl)p.en=Math.min(100,p.en+12);}
   m.serving=m.setNo===5?(R()<0.5?0:1):(m.firstServe+m.setNo-1)%2;
 }
@@ -441,9 +454,10 @@ function stepRally(m){
   if(m.run.t===w)m.run.n++;else m.run={t:w,n:1};
   const ws=m.sides[w],ls=m.sides[1-w];ws.mom=Math.min(3,Math.max(0,ws.mom)+1);ls.mom=0;
   if(w!==m.serving){m.serving=w;ws.rot.push(ws.rot.shift());}
+  const subNotes=specialSubsAfter(m,w);
   moraleAfter(m,r,w);
   for(const sd of m.sides)if(sd.tmp&&sd.tmp.n>0)sd.tmp.n--;
-  const ev=Object.assign({},r,{score:m.score.slice(),setNo:m.setNo});
+  const ev=Object.assign({},r,{score:m.score.slice(),setNo:m.setNo},subNotes.length?{notes:subNotes}:{});
   const tgt=m.setNo===5?15:25;
   if(m.score[w]>=tgt&&m.score[w]-m.score[1-w]>=2){
     m.sets.push(m.score.slice());m.setsWon[w]++;ev.setEnd=true;ev.setWinner=w;
@@ -496,6 +510,27 @@ function applyShout(m,i,k,pw,o){o=o||{};const s=m.sides[i];s.shN=s.shN||{};if(!o
   if(base==='go'&&Math.abs(behind)<=3)s.mom=Math.min(3,Math.max(0,s.mom)+1);
   return {up,dn,f,del};}
 function benchOf(side){const on=new Set(side.slots.map(s=>s.p.id));if(side.libero)on.add(side.libero.id);return side.pl.filter(p=>!on.has(p.id));}
+// ---- zmiana na zagrywkę i podwójna zmiana ----
+// kto zagrywa jako następny: przy własnej zagrywce zawodnik ze strefy 1, przy przyjęciu — ze strefy 2 (przejdzie na zagrywkę po wygranej akcji)
+function nextServerSlot(m,i){const s=m.sides[i];return s.rot[m.serving===i?0:1];}
+function canServeSub(m,i){const s=m.sides[i];if(s.srvSub||s.dbl)return 'Trwa już specjalna zmiana.';if(s.subs<2)return 'Za mało zmian (potrzebne 2: wejście i powrót).';const sl=s.slots[nextServerSlot(m,i)];if(sl.role==='R')return 'Na zagrywkę wychodzi rozgrywający — nie zmieniamy go.';return '';}
+function serveSub(m,i,pid){if(canServeSub(m,i))return false;const s=m.sides[i];const si=nextServerSlot(m,i);const p=benchOf(s).find(x=>x.id===pid);if(!p||p.pos==='L'||p.pos==='R'||p.inj>0)return false;
+  s.srvSub={si,out:s.slots[si].p.id,on:m.serving===i?1:0};s.slots[si].p=p;s.subs--;return true;}
+function dblCands(s){const b=benchOf(s).filter(p=>!(p.inj>0));const r=b.filter(p=>p.pos==='R').sort((x,y)=>rating(y)-rating(x))[0],a=b.filter(p=>p.pos==='A').sort((x,y)=>rating(y)-rating(x))[0];return r&&a?[r,a]:null;}
+function canDblSub(m,i){const s=m.sides[i];if(s.srvSub||s.dbl)return 'Trwa już specjalna zmiana.';if(s.subs<4)return 'Za mało zmian (potrzebne 4: dwie przy wejściu i dwie przy powrocie).';
+  const rI=s.slots.findIndex(x=>x.role==='R');if(rI<0||!isFront(s.rot.indexOf(rI)))return 'Rozgrywający musi być w pierwszej linii (ustawienia R4, R3, R2).';if(!dblCands(s))return 'Na ławce brakuje rozgrywającego i atakującego.';return '';}
+// rozgrywający z ławki wchodzi za atakującego (druga linia), atakujący z ławki za rozgrywającego (pierwsza linia): trzech atakujących pod siatką
+function dblSub(m,i){if(canDblSub(m,i))return false;const s=m.sides[i];const [r,a]=dblCands(s);const rI=s.slots.findIndex(x=>x.role==='R'),aI=s.slots.findIndex(x=>x.role==='A');
+  s.dbl={rI,aI,R:s.slots[rI].p.id,A:s.slots[aI].p.id};s.slots[rI]={role:'A',p:a};s.slots[aI]={role:'R',p:r};s.subs-=2;return true;}
+function undoSpecialSubs(m,i,free){const s=m.sides[i],msgs=[];const g=id=>s.pl.find(p=>p.id===id);
+  if(s.srvSub){const o=s.srvSub;if(free||s.subs>0){const back=g(o.out);msgs.push(`${s.team.short}: ${nm(back)} wraca za ${nm(s.slots[o.si].p)} (koniec zmiany na zagrywkę).`);s.slots[o.si].p=back;if(!free)s.subs--;}s.srvSub=null;}
+  if(s.dbl){const d=s.dbl;if(free||s.subs>=2){s.slots[d.rI]={role:'R',p:g(d.R)};s.slots[d.aI]={role:'A',p:g(d.A)};if(!free)s.subs-=2;msgs.push(`${s.team.short}: powrót po podwójnej zmianie — ${nm(g(d.R))} i ${nm(g(d.A))} wracają.`);}s.dbl=null;}
+  return msgs;}
+// po akcji: zagrywający specjalista schodzi po stracie punktu, podwójna zmiana wraca, gdy rozgrywający z ławki przejdzie do pierwszej linii
+function specialSubsAfter(m,w){const out=[];for(const i of [0,1]){const s=m.sides[i];
+  if(s.srvSub){if(w!==i&&s.srvSub.on)out.push(...undoSpecialSubs(m,i));else if(m.serving===i&&s.rot[0]===s.srvSub.si)s.srvSub.on=1;}
+  if(s.dbl&&isFront(s.rot.indexOf(s.dbl.aI)))out.push(...undoSpecialSubs(m,i));}
+  return out;}
 function substitute(m,i,slot,pid){const s=m.sides[i];const p=s.pl.find(x=>x.id===pid);if(!p)return false;
   if(slot==='L'){s.libero=p;return true;}
   if(s.subs<=0)return false;s.slots[slot].p=p;s.subs--;return true;}
@@ -509,7 +544,13 @@ function aiTurn(m,i){
   if(m.run.t===1-i&&m.run.n>=3&&s.to>0&&(m.score[1-i]>=8||m.run.n>=4)){callTimeout(m,i);msgs.push(`Czas dla ${s.team.name}.`);}
   else if(!isUser&&R()<0.035){const behind=m.score[1-i]-m.score[i];const k=pressure(m)?'calm':behind>=3?(R()<0.5?'fight':'wake'):m.run.t===i&&m.run.n>=2?'bravo':R()<0.5?'go':'focus';
     if(applyShout(m,i,k,0.9)){const t=SHOUTS.find(x=>x[0]===k);msgs.push(`🗣️ Trener ${s.team.short}: „${t[1]}”`);}}
+  if(!isUser){const mx=Math.max(...m.score),df=m.score[i]-m.score[1-i],lim=m.setNo===5?10:18;
+    if(mx>=lim&&!canServeSub(m,i)&&s.subs>=3){const sv=s.slots[nextServerSlot(m,i)].p;const sp=benchOf(s).filter(p=>p.pos!=='L'&&p.pos!=='R'&&!(p.inj>0)&&p.zag>=sv.zag+2&&p.zag>=11).sort((a,b)=>b.zag-a.zag)[0];
+      if(sp&&R()<0.5&&serveSub(m,i,sp.id))msgs.push(`Zmiana na zagrywkę w ${s.team.name}: ${nm(sp)} za ${nm(sv)}.`);}
+    if(mx>=lim-2&&Math.abs(df)<=3&&!canDblSub(m,i)&&s.subs>=5){const [r,a]=dblCands(s);const oR=s.slots.find(x=>x.role==='R').p,oA=s.slots.find(x=>x.role==='A').p;
+      if(rating(a)>=rating(oA)-10&&rating(r)>=rating(oR)-14&&R()<0.25&&dblSub(m,i))msgs.push(`Podwójna zmiana w ${s.team.name}: ${nm(a)} i ${nm(r)} wchodzą.`);}}
   if(s.subs>0)for(let k=0;k<6;k++){const sl=s.slots[k];
+    if((s.srvSub&&s.srvSub.si===k)||(s.dbl&&(k===s.dbl.rI||k===s.dbl.aI)))continue;
     if(sl.p.en<58){const c=benchOf(s).filter(p=>p.pos===sl.role&&p.en>80).sort((a,b)=>rating(b)-rating(a))[0];
       if(c&&rating(c)>=rating(sl.p)-12&&s.subs>0){const old=sl.p;substitute(m,i,k,c.id);msgs.push(`Zmiana w ${s.team.name}: ${nm(c)} za ${nm(old)}.`);}}}
   return msgs;

@@ -169,6 +169,7 @@ function doRally(m,skipAI){let ret;ui.talkRes=null;
   if(!skipAI)for(const s of aiTurn(m,1))m.log.push({t:esc(s),c:'sys'});
   const ev=stepRally(m);m.hl=ev.act;ret=ev;
   m.log.push({t:`<b class="sc">${ev.score[0]}:${ev.score[1]}</b> ${esc(ev.text)}`,c:ev.winner===0?'w':'l'});
+  for(const n of ev.notes||[])m.log.push({t:esc(n),c:'sys'});
   if(ev.setEnd){m.log.push({t:`Koniec ${ev.setNo}. seta — ${ev.score[0]}:${ev.score[1]} dla <b>${esc(m.sides[ev.setWinner].team.name)}</b>. Stan meczu ${m.setsWon[0]}:${m.setsWon[1]}.`,c:'set'});
     if(!ev.matchEnd)m.log.push({t:`Set ${m.setNo}${m.setNo===5?' (tie-break do 15)':''}: zagrywa ${esc(m.sides[m.serving].team.name)}.`,c:'sys'});}
   if(ev.matchEnd){finishMatch(m);m.log.push({t:`KONIEC MECZU! <b>${esc(m.sides[m.winner].team.name)}</b> wygrywa ${Math.max(...m.setsWon)}:${Math.min(...m.setsWon)}.`,c:'set'});}
@@ -181,7 +182,11 @@ function togglePause(){const m=ui.match;if(!m||m.over)return;if(ui.to){endTimeou
 function simToSetEnd(){const m=ui.match;if(!m||m.over)return;const s=m.setNo;while(!m.over&&m.setNo===s)doRally(m);m.paused=true;persistLive();render();}
 function simToEnd(){const m=ui.match;if(!m)return;while(!m.over)doRally(m);render();}
 function selSub(slot){const m=ui.match;if(!m||m.over||!m.paused){if(m&&!m.over){m.paused=true;}}ui.subSel=slot;render();}
-function doSub(pid){const m=ui.match;const s=m.sides[0];const slot=ui.subSel;const old=slot==='L'?s.libero:s.slots[slot].p;
+function doDblSub(){const m=ui.match;if(!m||m.over)return;const s=m.sides[0];const [r,a]=dblCands(s)||[];const oR=s.slots.find(x=>x.role==='R').p,oA=s.slots.find(x=>x.role==='A').p;
+  if(dblSub(m,0)){m.log.push({t:`Podwójna zmiana: <b>${esc(a.last)}</b> za ${esc(oR.last)} i <b>${esc(r.last)}</b> za ${esc(oA.last)} — trzech atakujących pod siatką.`,c:'sys'});}
+  ui.subSel=null;persistLive();render();}
+function doSub(pid){const m=ui.match;const s=m.sides[0];const slot=ui.subSel;
+  if(slot==='srv'){const old=s.slots[nextServerSlot(m,0)].p;if(serveSub(m,0,pid)){const np=s.pl.find(p=>p.id===pid);m.log.push({t:`Zmiana na zagrywkę: <b>${esc(np.last)}</b> za ${esc(old.last)}.`,c:'sys'});}ui.subSel=null;persistLive();render();return;}const old=slot==='L'?s.libero:s.slots[slot].p;
   if(substitute(m,0,slot,pid)){const np=s.pl.find(p=>p.id===pid);m.log.push({t:`Zmiana: <b>${esc(np.last)}</b> za ${esc(old.last)}.`,c:'sys'});}
   ui.subSel=null;persistLive();render();}
 function lum(h){const n=parseInt(h.slice(1),16);return (0.299*(n>>16)+0.587*(n>>8&255)+0.114*(n&255))/255;}
@@ -211,7 +216,7 @@ function liveView(){
   const setsTxt=m.sets.map(s=>`${s[0]}:${s[1]}`).join(' · ');
   const sp=[[1600,'Wolno'],[800,'Normalnie'],[250,'Szybko'],[50,'Turbo']];
   let subPanel='';
-  if(ui.subSel!==null&&!m.over){const s=a;const isL=ui.subSel==='L';const cur=isL?s.libero:s.slots[ui.subSel].p;
+  if(ui.subSel!==null&&ui.subSel!=='srv'&&!m.over){const s=a;const isL=ui.subSel==='L';const cur=isL?s.libero:s.slots[ui.subSel].p;
     const bench=benchOf(s).sort((x,y)=>(x.pos===(isL?'L':s.slots[ui.subSel].role)?0:1)-(y.pos===(isL?'L':s.slots[ui.subSel].role)?0:1)||rating(y)-rating(x));
     subPanel=`<div class="card sub"><div class="row"><b>Zmiana za: ${esc(cur.last)} (${isL?'libero':POS_NAMES[s.slots[ui.subSel].role]})</b><span class="sp"></span><button class="ghost" onclick="ui.subSel=null;render()">Anuluj</button></div>
     ${!isL&&s.subs<=0?'<p class="bad">Brak zmian w tym secie.</p>':`<div class="benchlist">${bench.map(p=>`<button class="ghost" onclick="doSub('${p.id}')">${p.num} ${esc(p.last)} <small>${pTag(p.pos)} · ${rating(p)} · ${Math.round(p.en)}%</small></button>`).join('')}</div>`}
