@@ -65,17 +65,31 @@ function oppReport(op,e){const t=TEAMS[op];const acc=clamp(oppAcc(),3,20);const 
   const srv=line.map(x=>P(x[0])).filter(p=>p&&p.pos!=='L').sort((a,b)=>b.zag-a.zag)[0];
   const blk=['S1','S2','A'].map(k=>P(lu[k])).filter(Boolean);const blkAvg=blk.reduce((s,p)=>s+p.blo,0)/Math.max(1,blk.length);
   const aA=att.find(x=>x[2]==='A'),aP=att.filter(x=>x[2]==='P');const pC=aP.length?aP.reduce((s,x)=>s+x[3],0)/aP.length:50;
-  const rec={blkL:aA?(aA[3]>=60?0:aA[3]<=42?2:1):1,blkR:pC>=60?0:pC<=42?2:1,tgt:weak?weak.id:null,adir:blkAvg+(rnd()-0.5)*nz2*4>=14.5?4:0,serve:weak&&weak.prz<12?2:1};
+  // styl trenera rywala i rozegranie wg ustawienia (skaut ogląda kilka meczów rywala)
+  const sty=aiStyle(t,lu);const known=k=>acc>=({start:6,serve:5,dist:7,srvZ:10,mCom:12}[k]||8)||rnd()<0.3;
+  const dd={f:{A:0,P:0,S:0,n:0},b:{A:0,P:0,S:0,n:0}};
+  {const mid=TEAMS.filter((x,k)=>k!==op).sort((x,y)=>teamStrength(x)-teamStrength(y));const oT=mid[Math.floor(mid.length/2)];
+   for(let k=0;k<3;k++){const mm=newMatch({team:t,lineup:lu,tactics:sty},{team:oT,lineup:autoLineup(oT),tactics:{serve:1,dist:0}});while(!mm.over)stepRally(mm);
+     for(const d of mm.dirStats||[]){if(d.i!==0||d.d==='free'||!d.rz)continue;const g=isFront(d.rz-1)?dd.f:dd.b;const pp=P(d.id);const ps=pp?pp.pos:'P';if(g[ps]!=null){g[ps]++;g.n++;}}}}
+  const dsh=g=>g.n?['A','P','S'].map(k=>Math.round(clamp(g[k]/g.n+(rnd()-0.5)*nz2*0.12,0,1)*100)):null;
+  const styB={start:known('start')?sty.startRot+1:0,sm:sty.sm,serve:known('serve')?sty.serve:-1,srvZ:known('srvZ')?sty.srvZ:-1,dist:known('dist')?sty.dist:-1,mCom:known('mCom')?sty.mCom:-1,dF:dsh(dd.f),dB:dsh(dd.b)};
+  const midSh=styB.dF&&styB.dB?(styB.dF[2]+styB.dB[2])/2:0;
+  const rec={mCom:midSh>=26||sty.dist===2&&styB.dist===2?1:0,blkL:aA?(aA[3]>=60?0:aA[3]<=42?2:1):1,blkR:pC>=60?0:pC<=42?2:1,tgt:weak?weak.id:null,adir:blkAvg+(rnd()-0.5)*nz2*4>=14.5?4:0,serve:weak&&weak.prz<12?2:1};
   const form=teamForm(op);const tb=leagueTable?(()=>{try{return leagueTable().findIndex(x=>x.i===op)+1;}catch(e){return 0;}})():0;
   const names=[allScouts().length?scoutName(oppScout()?oppScout().id:allScouts()[0].id)+' (skaut)':null,SAVE.staff&&SAVE.staff.sta?`${SAVE.staff.sta.first[0]}. ${SAVE.staff.sta.last} (analityk)`:null].filter(Boolean);
   sendMail({cat:'skaut',from:names.join(' i ')||'Sztab szkoleniowy',t:`Raport o rywalu: ${t.name} (${fmtShort(e.d)})`,s:`Najgroźniejszy: ${key?key[1]:'—'}. Słabe przyjęcie: ${weak?weak.last:'—'}. ${rec.adir===4?'Wysoki blok — gramy po bloku.':''}`,
-    b:{type:'opp',op,md:e.d,acc:Math.round(acc),line,att,key:key?key[0]:null,weak:weak?[weak.id,weak.last,Math.round((weak.prz+(rnd()-0.5)*nz2*4))]:null,srv:srv?[srv.id,srv.last]:null,blk:Math.round(blkAvg*10)/10,form,pos:tb,str:teamStrength(t),rec},act:1,lab:'Następny rywal'});}
-function applyOppRec(mid){const m=mailBox().find(x=>x.id===mid);if(!m)return;const r=m.b.rec;const t=myTac();t.blkL=r.blkL;t.blkR=r.blkR;t.adir=r.adir;t.serve=r.serve;if(r.tgt)t.tgt=r.tgt;
+    b:{type:'opp',op,md:e.d,acc:Math.round(acc),line,att,key:key?key[0]:null,weak:weak?[weak.id,weak.last,Math.round((weak.prz+(rnd()-0.5)*nz2*4))]:null,srv:srv?[srv.id,srv.last]:null,blk:Math.round(blkAvg*10)/10,form,pos:tb,str:teamStrength(t),rec,sty:styB},act:1,lab:'Następny rywal'});}
+function applyOppRec(mid){const m=mailBox().find(x=>x.id===mid);if(!m)return;const r=m.b.rec;const t=myTac();if(r.mCom!=null)t.mCom=r.mCom;t.blkL=r.blkL;t.blkR=r.blkR;t.adir=r.adir;t.serve=r.serve;if(r.tgt)t.tgt=r.tgt;
   SC().prep={op:m.b.op,d:m.b.md,ap:1};m.act=0;m.applied=1;save();render();}
 function oppPrepBonus(){const s=SAVE.sc;if(!s||!s.prep)return 0;const c=myNext();if(!c)return 0;const op=c.h===SAVE.team?c.a:c.h;if(s.prep.op!==op||s.prep.d!==today())return 0;return 0.003+(s.prep.ap?0.002:0);}
 function mailReadHook(m){if(m&&m.b&&m.b.type==='opp'){const s=SC();if(!s.prep||s.prep.op!==m.b.op||s.prep.d!==m.b.md)s.prep={op:m.b.op,d:m.b.md,ap:0};}}
 // ---- treść raportów w poczcie ----
 const BLK_N=['skos','zrównoważony','prosta'],ADIR_N=['wg zawodnika','po skosie','po prostej','za blok','atak po bloku'],SERVE_N=['bezpieczna','normalna','ryzykowna'];
+const SZ_N=['bez stałej strefy','strefa 1','strefa 6','strefa 5','skrót','między dwóch'],DIST_N=['zrównoważone','skrzydła','środek','na atakującego'];
+function oppStyleHtml(y,T){const u='<span class="mut">nie wiadomo</span>';const row=(l,d)=>d?`<tr><td class="l">${l}</td><td>${d[0]}%</td><td>${d[1]}%</td><td>${d[2]}%</td></tr>`:'';
+  return `<h3>Styl trenera rywala</h3><div class="mkpi"><div><span>Zaczyna seta</span><b>${y.start?'w ustawieniu R'+y.start:u}</b></div><div><span>Zagrywka</span><b>${y.serve>=0?SERVE_N[y.serve]:u}${y.srvZ>0?', '+SZ_N[y.srvZ]:''}</b></div><div><span>Rozegranie</span><b>${y.dist>=0?DIST_N[y.dist]:u}</b></div><div><span>Środkowy w bloku</span><b>${y.mCom>=0?(y.mCom?'w ciemno':'czyta grę'):u}</b></div></div>
+   ${y.start&&y.sm!=null?`<p class="small mut">Ustawienie startowe: ${esc(AI_START[y.sm])}. Możesz ustawić swoją drużynę tak, by w pierwszych akcjach najlepsi zagrywający trafili na ich słabsze ustawienia.</p>`:''}
+   ${y.dF||y.dB?`<div class="tw"><table><thead><tr><th class="l">Do kogo gra rozgrywający ${esc(T.short)}</th><th>Atakujący</th><th>Przyjmujący</th><th>Środkowi</th></tr></thead><tbody>${row('Rozgrywający w 1. linii (R4, R3, R2)',y.dF)}${row('Rozgrywający w 2. linii (R1, R6, R5)',y.dB)}</tbody></table></div>`:''}`;}
 function pLink(id,txt){return PLAYERS[id]?`<button class="link pn" onclick="openPop('${id}')">${esc(txt)}</button>`:esc(txt);}
 function scoutMailHtml(m){const b=m.b;
   if(b.type==='scout'){const P=PLAYERS[b.pid];if(!P)return '<p class="mut">Zawodnik nie jest już dostępny.</p>';const p=P.p;const [rc,cls,why]=b.rc;
@@ -94,8 +108,9 @@ function scoutMailHtml(m){const b=m.b;
      <h3>Przewidywany skład</h3><div class="oplu">${b.line.map(x=>`<div><span>${pTag(x[2])}</span>${pLink(x[0],x[1])}<b>${x[3]}</b></div>`).join('')}</div>
      <h3>Atak rywala</h3><div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th>Poz</th><th>Skos</th><th>Prosta</th><th class="l"></th></tr></thead><tbody>${b.att.map(x=>`<tr><td class="l">${pLink(x[0],x[1])}${x[0]===b.key?' <span class="screc bad sm">najgroźniejszy</span>':''}</td><td>${pTag(x[2])}</td><td>${x[3]}%</td><td>${100-x[3]}%</td><td class="l"><span class="dirb"><i style="width:${x[3]}%"></i></span></td></tr>`).join('')}</tbody></table></div>
      <div class="mkpi"><div><span>Najsłabiej przyjmuje</span><b>${b.weak?esc(b.weak[1]):'—'}</b></div><div><span>Najlepiej zagrywa</span><b>${b.srv?esc(b.srv[1]):'—'}</b></div><div><span>Siła bloku</span><b>${b.blk}</b></div></div>
+     ${b.sty?oppStyleHtml(b.sty,T):''}
      <h3>Zalecenia sztabu</h3><ul class="mrec"><li>Blok na lewej stronie (przeciw ich atakującemu): <b>${BLK_N[r.blkL]}</b>${keyA&&keyA[2]==='A'?` — ${esc(keyA[1])} atakuje skosem w ${keyA[3]}%`:''}</li><li>Blok na prawej stronie (przeciw przyjmującym): <b>${BLK_N[r.blkR]}</b></li>
-      <li>Zagrywka: <b>${SERVE_N[r.serve]}</b>${b.weak?`, w zawodnika <b>${esc(b.weak[1])}</b>`:''}</li><li>Kierunek ataku: <b>${ADIR_N[r.adir]}</b>${r.adir===4?' — ich blok jest wysoki i silny':''}</li></ul>
+      <li>Zagrywka: <b>${SERVE_N[r.serve]}</b>${b.weak?`, w zawodnika <b>${esc(b.weak[1])}</b>`:''}</li><li>Kierunek ataku: <b>${ADIR_N[r.adir]}</b>${r.adir===4?' — ich blok jest wysoki i silny':''}</li>${r.mCom!=null?`<li>Środkowy w bloku: <b>${r.mCom?'w ciemno na krótką':'czyta grę'}</b>${r.mCom?' — rywal gra dużo środkiem':''}</li>`:''}</ul>
      <p class="small mut">Przeczytany raport daje drużynie mały bonus przygotowania w meczu, a zastosowane zalecenia — trochę większy.</p>
      <div class="mact">${m.applied?'<span class="good">✓ Zalecenia zastosowane w taktyce</span>':`<button class="btn" onclick="applyOppRec('${m.id}')">Zastosuj zalecenia</button>`}<button class="ghost" onclick="go('taktyka')">Taktyka</button><button class="ghost" onclick="openTeam(${b.op})">Profil drużyny</button></div>`;}
   return '';}

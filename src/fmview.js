@@ -155,13 +155,21 @@ function fmPlayerStats(m,i){const sd=m.sides[i];const onIds=new Set(onCourt(sd,m
 const FM_KEY={R:['roz','zag','kiw'],P:['prz','ata','kiw'],A:['ata','blo','kiw'],S:['blo','czy','ata'],L:['prz','obr','czy']};
 const attrShort=k=>(ALL_ATTRS.find(a=>a[0]===k)||[k,k,k])[2];
 const attrCol=v=>v>=16?'#22c55e':v>=12?'#a3e635':v>=8?'#eab308':'#ef4444';
+// specjalne zmiany: na zagrywkę i podwójna (rozgrywający + atakujący)
+function fmSpecialSubs(m){const a=m.sides[0];if(m.over)return '';const sv=a.slots[nextServerSlot(m,0)].p;const cs=canServeSub(m,0),cd=canDblSub(m,0);const dc=dblCands(a);
+  let st='';if(a.srvSub)st=`Na zagrywce: <b>${esc(a.slots[a.srvSub.si].p.last)}</b> — ${esc((a.pl.find(p=>p.id===a.srvSub.out)||{}).last||'')} wróci, gdy stracimy punkt${a.srvSub.on?'':' (po jego zagrywce)'}.`;
+  else if(a.dbl)st=`Podwójna zmiana: trzech atakujących pod siatką. Rozgrywający i atakujący z wyjściowego składu wrócą, gdy rozgrywający z ławki przejdzie do pierwszej linii.`;
+  if(st)return `<div class="fmspec"><div class="small" style="margin-top:4px">${st}</div></div>`;
+  return `<div class="fmspec"><div class="row wrap" style="gap:6px"><button class="ghost sm" onclick="${cs?'':`ui.subSel='srv';render()`}" title="${esc(cs||'')}">🏐 Na zagrywkę za ${esc(sv.last)}</button><button class="ghost sm" onclick="${cd?'':'doDblSub()'}" title="${esc(cd||'')}">⇄ Podwójna zmiana${dc?` (${esc(dc[0].last)} + ${esc(dc[1].last)})`:''}</button></div>
+   <div class="small mut" style="margin-top:4px">${st||((cs&&cd)?`Na zagrywkę: ${esc(cs)} Podwójna: ${esc(cd)}`:'Specjalista od zagrywki wraca na ławkę po stracie punktu. Podwójna zmiana działa, gdy rozgrywający jest w pierwszej linii.')}</div></div>`;}
 function fmBench(m){const a=m.sides[0];const bench=benchOf(a);if(!bench.length)return '';
-  const sel=ui.subSel;const need=sel==null?null:sel==='L'?'L':a.slots[sel].role;
+  const sel=ui.subSel;const srvM=sel==='srv';const need=sel==null||srvM?null:sel==='L'?'L':a.slots[sel].role;
   const ord={R:0,A:1,P:2,S:3,L:4};
   const list=bench.slice().sort((x,y)=>(need?(x.pos===need?0:1)-(y.pos===need?0:1):0)||ord[x.pos]-ord[y.pos]||rating(y)-rating(x));
-  return `<div class="card fmbench ${sel!=null?'subbing':''}"><div class="fmsi"><b>Ławka</b><div class="small mut">${sel!=null?`Wybierz, kto wchodzi za: <b style="color:var(--acc)">${esc((sel==='L'?a.libero:a.slots[sel].p).last)}</b>`:'Kliknij zawodnika, by zobaczyć kartę'}</div>${sel!=null?`<button class="ghost sm" onclick="ui.subSel=null;render()">Anuluj</button>`:''}</div>
+  return `<div class="card fmbench ${sel!=null?'subbing':''}"><div class="fmsi"><b>Ławka</b><div class="small mut">${srvM?`Wybierz, kto wejdzie <b>na zagrywkę</b> za: <b style="color:var(--acc)">${esc(a.slots[nextServerSlot(m,0)].p.last)}</b>`:sel!=null?`Wybierz, kto wchodzi za: <b style="color:var(--acc)">${esc((sel==='L'?a.libero:a.slots[sel].p).last)}</b>`:'Kliknij zawodnika, by zobaczyć kartę'}</div>${sel!=null?`<button class="ghost sm" onclick="ui.subSel=null;render()">Anuluj</button>`:''}</div>${fmSpecialSubs(m)}
    ${list.map(p=>{const fit=need&&p.pos===need;const inj=p.inj>0;
-     return `<div class="fmbp clk ${fit?'fit':''} ${inj?'inj':''}" onclick="${sel!=null&&!inj?`doSub('${p.id}')`:`openPop('${p.id}')`}" title="${esc(p.first+' '+p.last)} · ${POS_NAMES[p.pos]} · ${p.age} lat">
+     const fitS=srvM&&p.pos!=='L'&&p.pos!=='R';
+     return `<div class="fmbp clk ${fit||fitS?'fit':''} ${inj?'inj':''}" onclick="${sel!=null&&!inj&&(!srvM||fitS)?`doSub('${p.id}')`:`openPop('${p.id}')`}" title="${esc(p.first+' '+p.last)} · ${POS_NAMES[p.pos]} · ${p.age} lat">
       <div class="fmbh"><span class="fmj" style="width:26px;height:26px;font-size:12px;background:${p.pos==='L'?libColor(kitColors(m)[0],'#000'):kitColors(m)[0]};color:${lum(p.pos==='L'?libColor(kitColors(m)[0],'#000'):kitColors(m)[0])>0.6?'#111':'#fff'}">${p.num}</span>
        <div class="fmbn"><b class="fmnm">${esc(shortN(p))}</b><span class="fmps2">${pTag(p.pos)} · ${p.age} l.</span></div><span class="fmov" title="Ocena ogólna">${rating(p)}</span></div>
       <div class="fmattrs">${FM_KEY[p.pos].map(k=>`<span title="${esc((ALL_ATTRS.find(x=>x[0]===k)||[])[1]||k)}"><small>${attrShort(k)}</small><b style="color:${attrCol(p[k])}">${p[k]}</b></span>`).join('')}</div>
