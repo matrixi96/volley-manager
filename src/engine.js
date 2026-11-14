@@ -122,9 +122,9 @@ function pressure(m){const a=m.score[0],b=m.score[1],t=m.setNo===5?15:25;return 
 function mb(p,m,i){let b=(p.mor==null?0:(p.mor-60)/40*0.045)+formB(p);const sd=m.sides[i];const pr=pressure(m);if(pr)b+=(p.opa-11)/20*0.14+(sd.prB||0);const tr=m.score[1-i]-m.score[i]>=3||(m.setsWon&&m.setsWon[1-i]>m.setsWon[i]);if(m.score[1-i]-m.score[i]>=3)b+=(p.wal-11)/20*0.1+(sd.trB||0);
   if(p.tr){if(pr){if(hasT(p,'spo'))b+=0.025;if(hasT(p,'ner'))b-=0.035;if(hasT(p,'amb'))b+=0.012;}if(tr&&hasT(p,'zde'))b+=0.03;}
   if(pr&&sd.cap){const c=sd.pl.find(x=>x.id===sd.cap);if(c&&c!==p)b+=capBonus(c)*0.25;}
-  const sh=p._sh;if(sh&&sh.u>m.rallies){const f=sh.f||1;if(sh.k==='go')b+=0.012*f;else if(sh.k==='calm'&&pr)b+=0.022*f;else if(sh.k==='fight'&&tr)b+=0.024*f;else if(sh.k==='wake')b+=0.01*f*(sh.d||0);}
+  const sh=sd.sh;if(sh&&sh.u>m.rallies){b+=sh.p||0;if(pr)b+=sh.pr||0;if(tr)b+=sh.b||0;}
   return b;}
-function kc(p,m){let k=1.25-p.kcj/20*0.5;if(p._sh&&p._sh.k==='focus'&&p._sh.u>m.rallies)k*=1-0.14*(p._sh.f||1);if(pressure(m))k*=1.15-p.opa/20*0.3;if(p.tr){if(hasT(p,'pro'))k*=0.9;if(hasT(p,'ner')&&pressure(m))k*=1.1;if(hasT(p,'ind'))k*=1.04;}return k;}
+function kc(p,m){let k=1.25-p.kcj/20*0.5;{const sd=m.sides&&m.sides.find(x=>x.pl.includes(p));if(sd&&sd.sh&&sd.sh.u>m.rallies&&sd.sh.e)k*=1-sd.sh.e;}if(pressure(m))k*=1.15-p.opa/20*0.3;if(p.tr){if(hasT(p,'pro'))k*=0.9;if(hasT(p,'ner')&&pressure(m))k*=1.1;if(hasT(p,'ind'))k*=1.04;}return k;}
 function nerves(p,m){return pressure(m)&&p.opa<10?' Nerwy w końcówce!':'';}
 function bn(s){return s.mom*0.01*(s.momMul||1)+s.form;}
 function ensAttrs(p){if(!p||p.czy!=null&&p.kiw!=null&&p.kom!=null)return p;const t=TEMPL[p.pos]||TEMPL.P;
@@ -170,7 +170,7 @@ function rally(m,ex){
   }
   seq.push({k:'floor',s:D});return {winner:S,type:'kill',act,seq,text:log.join(' → ')};
 }
-var KB=0.55;
+var KB=0.56;
 function attackPhase(m,A,q,by,log,act,pd){
   const side=m.sides[A],opp=m.sides[1-A];
   const cA=onCourt(side,m.serving===A),cO=onCourt(opp,m.serving!==A);
@@ -239,9 +239,10 @@ function attackPhase(m,A,q,by,log,act,pd){
     if(AD===1)c=c*(1-comply)+0.92*comply;else if(AD===2)c=c*(1-comply)+0.08*comply;dir=R()<c?'cross':'line';}
   const tool=AD===4&&dir!=='tip';
   let z6c=null;if(wing!=='M'&&(dir==='line'||dir==='cross')){if(bset===0)z6c='line';else if(bset===2)z6c=opp.tactics.dsys===1?'rot':'cross';else{const z6=cO.find(x=>!isFront(x.zone)&&dZone(x)===6);const cz=z6?eff(z6.p,'czy'):10;const pc=clamp(0.5+(cz-10)/30,0.3,0.8);z6c=R()<pc?dir:(dir==='line'?'cross':'line');}}
-  seq.push({k:'att',id:a.id,s:A,q:quick,d:dir,w:wing,tr:triple?1:0,z6:z6c});
+  const blockers=blockGroup(cO,wing,quick,triple);
+  seq.push({k:'att',id:a.id,s:A,q:quick,d:dir,w:wing,tr:triple?1:0,z6:z6c,bl:blockers.map(x=>x.p.id)});
   a.st.att++;
-  const blockers=cO.filter(x=>isFront(x.zone)&&x.role!=='L');const backO=cO.filter(x=>!isFront(x.zone));
+  const backO=cO.filter(x=>!isFront(x.zone));
   const lineZ=wing==='L4'?1:5,crossZ=wing==='L4'?5:1;
   // zawodnik pierwszej linii poza blokiem schodzi do asekuracji za blok / środek boiska (blok na prawej → strefa 4, na lewej → strefa 2)
   const offB=wing==='M'||triple?null:cO.find(x=>isFront(x.zone)&&x.role!=='L'&&dZone(x)===(wing==='L4'?4:2));
@@ -301,6 +302,12 @@ function attackPhase(m,A,q,by,log,act,pd){
   log.push(setTxt,`broni ${nm(d)}`);rec(dir,'dig');
   return {done:false,next:1-A,q:dq,by:d};
 }
+// kto blokuje: atak ze skrzydła → skrzydłowy z tej strony + środkowy (przy potrójnym także drugi skrzydłowy); szybka piłka → środkowy; pipe → środkowy + jeden skrzydłowy
+function blockGroup(cO,wing,quick,triple){const fr=cO.filter(x=>isFront(x.zone)&&x.role!=='L');if(fr.length<2)return fr;const by=z=>fr.find(x=>dZone(x)===z);
+  const mid=by(3)||fr.slice().sort((a,b)=>a.zone-b.zone)[1];let g;
+  if(wing==='M')g=quick?[mid]:[mid,R()<0.5?by(4):by(2)];
+  else{g=[wing==='L4'?by(2):by(4),mid];if(triple)g.push(wing==='L4'?by(4):by(2));}
+  g=[...new Set(g.filter(Boolean))];return g.length?g:fr;}
 // atak po bloku: piłka dotyka rąk blokującego i ląduje poza boiskiem — punkt dla atakujących
 function blockOut(m,A,a,blockers,log,seq,setTxt,rec,dir){
   const b=pickW(blockers,x=>1+Math.max(0,14-eff(x.p,'blo'))*0.15+(x.role==='S'?0.5:0)).p;
@@ -374,22 +381,28 @@ const SHOUTS=[['go','Dawać, gramy!','🔥','Nakręca zespół: impet i lepsza g
  ['fight','Walczymy do końca!','💪','Gdy przegrywacie: więcej walki, mocniej działa na walecznych.'],
  ['bravo','Brawo, tak dalej!','👏','Pochwała po dobrej akcji: podnosi morale.'],
  ['wake','Obudźcie się!','📢','Ostro: waleczni się nakręcą, nerwowi mogą się spiąć.']];
-// i = drużyna, k = okrzyk, pw = siła trenera (0,6–1,4). Zwraca {up,dn,f} albo null, gdy za szybko po poprzednim.
-function applyShout(m,i,k,pw){const s=m.sides[i];s.shN=s.shN||{};if(s.shCd!=null&&m.rallies<s.shCd)return null;
+// efekt okrzyku na całą drużynę: p = lepsza gra we wszystkich elementach, pr = w końcówkach, b = gdy przegrywa, e = mniej prostych błędów (ułamek)
+const SH_FX={go:{p:0.014},calm:{pr:0.025,e:0.07},focus:{e:0.15},fight:{b:0.026,p:0.006},bravo:{p:0.009},wake:{p:0.012},
+  tfight:{b:0.03,p:0.01},tfocus:{pr:0.02,e:0.16},tgo:{p:0.016}};
+const SH_TXT={p:'lepsza gra całej drużyny',pr:'pewniej w końcówce seta',b:'więcej walki przy stracie punktów',e:'mniej prostych błędów'};
+function fxText(fx){return Object.keys(SH_TXT).filter(k=>fx[k]).map(k=>SH_TXT[k]).join(', ');}
+// i = drużyna, k = okrzyk, pw = siła trenera (0,6–1,4), o = {dur, noCd, mult, ic, n}. Zwraca {up,dn,f,del} albo null, gdy za szybko po poprzednim.
+function applyShout(m,i,k,pw,o){o=o||{};const s=m.sides[i];s.shN=s.shN||{};if(!o.noCd&&s.shCd!=null&&m.rallies<s.shCd)return null;
   const key=m.setNo+k;const used=s.shN[key]||0;const tot=Object.keys(s.shN).filter(x=>x.startsWith(String(m.setNo))).reduce((a,x)=>a+s.shN[x],0);
-  const f=clamp(pw*(1/(1+0.6*used))*(tot>=6?0.6:1),0.15,1.5);s.shN[key]=used+1;s.shCd=m.rallies+3;
-  const behind=m.score[1-i]-m.score[i];let up=0,dn=0;
-  for(const e of onCourt(s,m.serving===i)){const p=e.p;const mor=p.mor==null?60:p.mor;let d=0,dd=0;
-    if(k==='go'){d=1.5+(Math.abs(behind)<=2?1.5:0);}
-    else if(k==='calm'){d=0.5+(60-mor)*0.06+(12-p.opa)*0.3;}
-    else if(k==='focus'){d=0.5;}
-    else if(k==='fight'){d=(behind>=2?2:0)+((p.wal+p.zaa)/2-10)*0.35;}
-    else if(k==='bravo'){d=m.run&&m.run.t===i?2.5:0.8;}
-    else if(k==='wake'){dd=((p.wal+p.zaa)/2-10.5)*0.6-(p.opa<9?2:0);d=dd;}
-    d=Math.round(d*f+(R()-0.5));addMor(p,d);if(d>0)up++;else if(d<0)dn++;
-    p._sh={k,u:m.rallies+4,f,d:Math.sign(dd)};}
-  if(k==='go'&&Math.abs(behind)<=3)s.mom=Math.min(3,Math.max(0,s.mom)+1);
-  return {up,dn,f};}
+  const f=clamp(pw*(o.mult||1)*(1/(1+0.6*used))*(tot>=6?0.6:1),0.15,1.8);s.shN[key]=used+1;if(!o.noCd)s.shCd=m.rallies+3;
+  const behind=m.score[1-i]-m.score[i];let up=0,dn=0;const del={};const base=k.replace(/^t/,'');
+  for(const e of onCourt(s,m.serving===i)){const p=e.p;const mor=p.mor==null?60:p.mor;let d=0;
+    if(base==='go'){d=1.5+(Math.abs(behind)<=2?1.5:0);}
+    else if(base==='calm'){d=0.5+(60-mor)*0.06+(12-p.opa)*0.3;}
+    else if(base==='focus'){d=0.5+(k==='tfocus'?(12-p.opa)*0.25:0);}
+    else if(base==='fight'){d=(behind>=2?2:0)+((p.wal+p.zaa)/2-10)*0.35;}
+    else if(base==='bravo'){d=m.run&&m.run.t===i?2.5:0.8;}
+    else if(base==='wake'){d=((p.wal+p.zaa)/2-10.5)*0.6-(p.opa<9?2:0);}
+    d=Math.round(d*f+(R()-0.5));addMor(p,d);del[p.id]=d;if(d>0)up++;else if(d<0)dn++;}
+  const fx={};const F=SH_FX[k]||{};for(const x in F)fx[x]=F[x]*(x==='e'?Math.min(1.3,f):f);
+  s.sh=Object.assign({k,u:m.rallies+(o.dur||4),n:o.n||k,ic:o.ic||''},fx);
+  if(base==='go'&&Math.abs(behind)<=3)s.mom=Math.min(3,Math.max(0,s.mom)+1);
+  return {up,dn,f,del};}
 function benchOf(side){const on=new Set(side.slots.map(s=>s.p.id));if(side.libero)on.add(side.libero.id);return side.pl.filter(p=>!on.has(p.id));}
 function substitute(m,i,slot,pid){const s=m.sides[i];const p=s.pl.find(x=>x.id===pid);if(!p)return false;
   if(slot==='L'){s.libero=p;return true;}

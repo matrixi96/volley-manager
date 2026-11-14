@@ -73,19 +73,25 @@ function devSession(p,U,intI,mods){const r=rating(p);const gap=(p.pot||r)-r;if(g
     if(v>=1){p[k]++;p.xp[k]=Math.round((v-1)*100)/100;}else p.xp[k]=Math.round(v*1000)/1000;});}
 function trainDay(d,md){const t=myTeam();if(!t)return;const trn=ensTrn();const isM=md.has(d);
   const plan=dayPlan(d,md);const units=plan.filter(Boolean);const intI=SAVE.training.int;const lm=[0.75,1,1.3][intI];const mods=clubMods(SAVE.team);
-  for(const p of t.players){let fr=frOf(p)+6;
-    if(p.inj&&(!p.injUntil||p.injUntil>d)){p.fr=Math.round(clamp(fr+6,0,100));continue;}
+  const rp={};// raport dnia dla każdego zawodnika
+  for(const p of t.players){let fr=frOf(p)+6;const fm0=fmOf(p);
+    if(p.inj&&(!p.injUntil||p.injUntil>d)){p.fr=Math.round(clamp(fr+6,0,100));rp[p.id]={i:1,fr:p.fr,f:[Math.round(fm0),Math.round(fm0)]};continue;}
+    const a0={},x0={};for(const k of ALL_KEYS){a0[k]=p[k];x0[k]=(p.xp&&p.xp[k])||0;}const scs=[];let inj=0,n=0;
     for(const u of units){const U=TR_UNITS[u];
       if(U.load>0)fr-=U.load*lm*(1.25-p.kon/20*0.5);else fr-=U.load;
       if(U.k.length)devSession(p,U,intI,mods);
-      if(U.load>0){const sc=58+nz()*(hasT(p,'pro')?10:18)+(hasT(p,'pra')?7:0)-(hasT(p,'len')?8:0)+(hasT(p,'amb')?3:0)+(fr<45?-12:0);formAdd(p,(sc-fmOf(p))*0.035);}
+      if(U.load>0){n++;const sc=58+nz()*(hasT(p,'pro')?10:18)+(hasT(p,'pra')?7:0)-(hasT(p,'len')?8:0)+(hasT(p,'amb')?3:0)+(fr<45?-12:0);scs.push(sc);formAdd(p,(sc-fmOf(p))*0.035);}
       if(u==='int'){if(p.tcTm!==SAVE.team){p.tcTm=SAVE.team;p.tc=0;}p.tc=Math.min(60,(p.tc||0)+0.3);formAdd(p,hasT(p,'kap')||hasT(p,'ind')?1.5:0.5);if(p.unh>0&&R()<0.3)p.unh--;}
       if(u==='off')formAdd(p,(60-fmOf(p))*0.02);
       if(U.load>3&&R()<0.0004*U.load/6*TRAIN_INT[intI][2]*mods.injChance*(fr<40?2.2:fr<60?1.4:1)*(1.3-p.kon/20*0.6)){
-        const days=Math.max(2,Math.round((3+R()*R()*18)*mods.injDur));p.inj=days;p.injUntil=addDays(d,days);news(`🚑 ${p.first} ${p.last} doznał urazu na treningu (${U.n.toLowerCase()}) — przerwa ok. ${days} dni.`);break;}}
-    p.fr=Math.round(clamp(fr,0,100));}
+        const days=Math.max(2,Math.round((3+R()*R()*18)*mods.injDur));p.inj=days;p.injUntil=addDays(d,days);inj=days;news(`🚑 ${p.first} ${p.last} doznał urazu na treningu (${U.n.toLowerCase()}) — przerwa ok. ${days} dni.`);break;}}
+    p.fr=Math.round(clamp(fr,0,100));
+    const g={},up=[];for(const k of ALL_KEYS){const dv=(p[k]-a0[k])+(((p.xp&&p.xp[k])||0)-x0[k]);if(dv>0.0005)g[k]=Math.round(dv*1000)/1000;if(p[k]>a0[k])up.push(k);}
+    const r={fr:p.fr,f:[Math.round(fm0),Math.round(fmOf(p))],n};if(scs.length)r.s=Math.round(clamp((scs.reduce((a,b)=>a+b,0)/scs.length+7)/10,1,10)*10)/10;
+    if(Object.keys(g).length)r.g=g;if(up.length)r.up=up;if(inj)r.inj=inj;rp[p.id]=r;}
   if(units.includes('tak')){trn.tak.push(d);trn.tak=trn.tak.slice(-8);}
-  trn.log.unshift({d,u:units,m:isM?1:0});trn.log=trn.log.slice(0,14);}
+  trn.log.unshift({d,u:units,m:isM?1:0});trn.log=trn.log.slice(0,14);
+  trn.rep=trn.rep||[];trn.rep.unshift({d,u:units,m:isM?1:0,p:rp});trn.rep=trn.rep.slice(0,31);}
 // wywoływane przy upływie czasu (każdy dzień)
 function trainDays(days){if(!days.length)return;const md=matchDays();for(const d of days)if(trainingActive(d))trainDay(d,md);}
 // bonus z odprawy taktycznej (jednostki „Taktyka” w dniu meczu i 2 dni przed nim)
@@ -132,7 +138,45 @@ function trainingView(){
   <div class="card"><div class="row wrap"><h2 style="margin:0">Zespół</h2><span class="sp"></span><span class="small mut">Średnia świeżość <b style="color:${frCol(avg)}">${avg}%</b> · średnia forma <b style="color:${formLv(avF)[2]}">${formLv(avF)[1]}</b></span></div>
    <div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th>Wiek</th><th>Forma</th><th class="l">Ostatnie mecze</th><th class="l">Świeżość</th><th>Ocena</th><th>Zmiana</th><th>Potencjał</th></tr></thead><tbody>
    ${ps.map(p=>{const d=rating(p)-baseRating(p);return `<tr><td class="l"><button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} <b>${esc(p.last)}</b></button> <small class="mut">${POS_SHORT[p.pos]}</small>${p.inj?' 🚑':''}</td><td>${p.age}</td><td>${formChip(p,true)}</td><td class="l">${fmHist(p)}</td><td class="l frc">${frBar(p)}</td><td><b>${rating(p)}</b></td><td class="${d>0?'good':d<0?'bad':''}">${d>0?'+':''}${d||'–'}</td><td class="stars">${potStars(p)}</td></tr>`;}).join('')}</tbody></table></div></div>
+  ${trainReport()}
   ${trn.log.length?`<div class="card"><h2>Ostatnie treningi</h2>${trn.log.slice(0,7).map(x=>`<div class="res row wrap"><span class="mut small" style="min-width:70px">${fmtShort(x.d)}</span>${x.u.map(unitTag).join('')}${x.m?unitTag(null):''}</div>`).join('')}</div>`:''}
   <div class="card"><h2>Gabinet medyczny</h2>${inj.length?inj.map(p=>`<div class="res">🚑 <button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} ${esc(p.last)}</button> — powrót ok. ${p.injUntil?fmtDMY(p.injUntil):'?'} (jeszcze ${p.inj} dni)</div>`).join(''):'<p class="mut">Brak kontuzji.</p>'}</div>`;
 }
 function todayPlanTxt(d){if(!trainingActive(d))return null;const md=matchDays();return dayPlan(d,md).filter(Boolean).map(u=>TR_UNITS[u].n.toLowerCase()).join(', ');}
+// ================= RAPORTY Z TRENINGÓW (dzień / tydzień / miesiąc) =================
+const REP_P=[['day','Dzień'],['week','Tydzień'],['month','Miesiąc']];
+function repDays(){const r=(SAVE.trn&&SAVE.trn.rep)||[];const P=ui.trRepP||'week';if(P==='day')return r.slice(0,1);const lim=addDays(today(),P==='week'?-7:-30);return r.filter(x=>x.d>lim);}
+function repAgg(days,pid){let n=0,s=0,sn=0,inj=0,miss=0,f0=null,f1=null,fr=null,frS=0,frN=0;const g={},up={};
+  for(const day of days.slice().reverse()){const r=day.p&&day.p[pid];if(!r)continue;if(f0==null)f0=r.f[0];f1=r.f[1];fr=r.fr;frS+=r.fr;frN++;
+    if(r.i){miss++;continue;}n+=r.n||0;if(r.s!=null){s+=r.s;sn++;}for(const k in r.g||{})g[k]=(g[k]||0)+r.g[k];for(const k of r.up||[])up[k]=(up[k]||0)+1;if(r.inj)inj=r.inj;}
+  return {n,avg:sn?s/sn:null,g,up,f0,f1,fr,frAvg:frN?frS/frN:null,inj,miss,tot:Object.values(g).reduce((a,b)=>a+b,0),seen:frN};}
+const fx1=v=>v==null?'–':v.toFixed(1).replace('.',',');
+function scCls(v){return v==null?'':v>=7?'good':v<=5.5?'bad':'';}
+function fmDelta(a){if(a.f0==null)return '–';const d=a.f1-a.f0;return `<span class="${d>1?'good':d<-1?'bad':'mut'}">${d>1?'▲':d<-1?'▼':'►'} ${d>0?'+':''}${d}</span> <small class="mut">(${formLv(a.f1)[1]})</small>`;}
+function upChips(up){const ks=Object.keys(up);return ks.length?ks.map(k=>`<span class="trt tu-up" title="${esc(attrName(k))}">${attrSh(k)} +${up[k]}</span>`).join(''):'<span class="mut">—</span>';}
+function trainReport(){const days=repDays();const t=myTeam();const P=ui.trRepP||'week';const sel=ui.trRepPl||'';
+  const head=`<div class="row wrap" style="gap:8px"><h2 style="margin:0">Raport z treningów</h2><span class="sp"></span><div class="seg">${REP_P.map(([k,l])=>`<button class="${P===k?'on':''}" onclick="ui.trRepP='${k}';render()">${l}</button>`).join('')}</div>
+    <select onchange="ui.trRepPl=this.value;render()"><option value="">Cała drużyna</option>${t.players.map(p=>`<option value="${p.id}" ${sel===p.id?'selected':''}>${esc(p.last)} (${POS_SHORT[p.pos]})</option>`).join('')}</select></div>`;
+  if(!days.length)return `<div class="card">${head}<p class="mut">Brak treningów w tym okresie. Raporty pojawią się po pierwszych dniach treningowych (od 1 sierpnia).</p></div>`;
+  const range=days.length===1?fmtLong(days[0].d):`${fmtShort(days[days.length-1].d)} – ${fmtShort(days[0].d)} (${days.length} dni)`;
+  const cnt={};for(const d of days)for(const u of d.u)cnt[u]=(cnt[u]||0)+1;
+  const units=`<div class="trsum small">${TR_ORDER.filter(u=>cnt[u]).map(u=>`<span class="trt tu-${u}">${TR_UNITS[u].ic} ${TR_UNITS[u].n} × ${cnt[u]}</span>`).join('')}${days.some(d=>d.m)?`<span class="trt trm">🏐 Mecze × ${days.filter(d=>d.m).length}</span>`:''}</div>`;
+  if(sel&&PLAYERS[sel]){const p=PLAYERS[sel].p;const a=repAgg(days,sel);const ks=Object.keys(a.g).sort((x,y)=>a.g[y]-a.g[x]);
+    const rows=days.map(d=>{const r=d.p[sel];if(!r)return '';return `<tr><td class="l">${fmtShort(d.d)}</td><td class="l">${r.i?'<span class="bad">🚑 kontuzja — bez treningu</span>':d.u.map(u=>unitTag(u)).join('')+(d.m?unitTag(null,1):'')}</td><td class="${scCls(r.s)}"><b>${fx1(r.s)}</b></td><td>${r.f[1]-r.f[0]>0?'+':''}${r.f[1]-r.f[0]}</td><td><span style="color:${frCol(r.fr)}">${r.fr}%</span></td><td class="l">${r.up?r.up.map(k=>`<span class="trt tu-up">${attrSh(k)} +1</span>`).join(''):''}${r.inj?` <span class="bad">uraz (${r.inj} dni)</span>`:''}</td></tr>`;}).join('');
+    return `<div class="card">${head}<p class="small mut">${esc(p.first)} <b style="color:var(--txt)">${esc(p.last)}</b> · ${POS_NAMES[p.pos]} · ${p.age} l. · ${range}</p>
+     <div class="repk"><div><small>Jednostki</small><b>${a.n}</b></div><div><small>Średnia ocena</small><b class="${scCls(a.avg)}">${fx1(a.avg)}</b></div><div><small>Postęp</small><b>+${a.tot.toFixed(2).replace('.',',')}</b><small class="mut">pkt atrybutów</small></div><div><small>Forma</small><b>${fmDelta(a)}</b></div><div><small>Świeżość</small><b style="color:${frCol(a.fr??100)}">${a.fr??'–'}%</b><small class="mut">śr. ${a.frAvg!=null?Math.round(a.frAvg):'–'}%</small></div>${a.miss?`<div><small>Opuszczone dni</small><b class="bad">${a.miss}</b></div>`:''}</div>
+     <h3>Nad czym pracował</h3>${ks.length?`<div class="repbars">${ks.map(k=>{const cur=(p.xp&&p.xp[k])||0;return `<div class="repbar"><span>${esc(attrName(k))} <b style="color:${attrCol(p[k])}">${p[k]}</b></span><i><b style="width:${Math.min(100,a.g[k]/Math.max(...ks.map(x=>a.g[x]))*100)}%"></b></i><em>+${a.g[k].toFixed(2).replace('.',',')}</em><small class="mut" title="Postęp do następnego punktu">${p[k]>=20?'max':Math.round(cur*100)+'% do '+(p[k]+1)}</small></div>`;}).join('')}</div>`:'<p class="mut small">Brak postępu w tym okresie (zawodnik osiągnął potencjał, był kontuzjowany albo miał same dni wolne/regenerację).</p>'}
+     ${Object.keys(a.up).length?`<p class="small">Podniesione atrybuty: ${upChips(a.up)}</p>`:''}
+     <h3>Dzień po dniu</h3><div class="tw"><table><thead><tr><th class="l">Dzień</th><th class="l">Jednostki</th><th title="Ocena za trening (1–10)">Ocena</th><th title="Zmiana formy">Forma</th><th>Świeżość</th><th class="l">Uwagi</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;}
+  const ag=t.players.map(p=>({p,a:repAgg(days,p.id)})).filter(x=>x.a.seen);
+  const rated=ag.filter(x=>x.a.avg!=null).sort((x,y)=>y.a.avg-x.a.avg);const prog=ag.slice().sort((x,y)=>y.a.tot-x.a.tot);
+  const tired=ag.filter(x=>x.a.fr!=null&&x.a.fr<55&&!x.a.miss);const asy=SAVE.staff&&SAVE.staff.asy;
+  const notes=[];if(rated.length){notes.push(`Najlepiej trenował <b>${esc(rated[0].p.last)}</b> (śr. ${fx1(rated[0].a.avg)})${rated.length>1?`, najsłabiej <b>${esc(rated[rated.length-1].p.last)}</b> (${fx1(rated[rated.length-1].a.avg)})`:''}.`);}
+  if(prog.length&&prog[0].a.tot>0)notes.push(`Największy postęp: <b>${esc(prog[0].p.last)}</b> (+${fx1(prog[0].a.tot)} pkt atrybutów).`);
+  if(tired.length)notes.push(`Zmęczeni: ${tired.map(x=>esc(x.p.last)).join(', ')} — przydałaby się regeneracja.`);
+  const injd=ag.filter(x=>x.a.inj);if(injd.length)notes.push(`Urazy na treningu: ${injd.map(x=>esc(x.p.last)).join(', ')}.`);
+  return `<div class="card">${head}<p class="small mut">${range}</p>${units}
+   <div class="repnote small">${asy?`🧑‍🏫 <b>${esc(asy.last)}</b> (asystent): `:'📋 '}${notes.join(' ')||'Spokojny okres bez uwag.'}</div>
+   <div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th title="Liczba jednostek treningowych">Jedn.</th><th title="Średnia ocena za trening (1–10)">Ocena</th><th title="Suma postępu w atrybutach (1 = jeden punkt atrybutu)">Postęp</th><th class="l">Podniesione</th><th class="l">Forma</th><th>Świeżość</th><th class="l">Uwagi</th></tr></thead><tbody>
+   ${ag.map(({p,a})=>`<tr class="clickrow" onclick="ui.trRepPl='${p.id}';render()"><td class="l">${esc(p.first[0])}. <b>${esc(p.last)}</b> <small class="mut">${POS_SHORT[p.pos]}</small></td><td>${a.n}</td><td class="${scCls(a.avg)}"><b>${fx1(a.avg)}</b></td><td>+${a.tot.toFixed(2).replace('.',',')}</td><td class="l">${upChips(a.up)}</td><td class="l">${fmDelta(a)}</td><td><span style="color:${frCol(a.fr??100)}">${a.fr??'–'}%</span></td><td class="l small">${a.inj?`<span class="bad">🚑 uraz (${a.inj} dni)</span>`:a.miss?`<span class="mut">kontuzja: ${a.miss} dni bez treningu</span>`:''}</td></tr>`).join('')}</tbody></table></div>
+   <p class="small mut">Kliknij zawodnika, żeby zobaczyć szczegółowy raport. Ocena za trening zależy od charakteru (pracowity, leniwy, ambitny, profesjonalista) i zmęczenia.</p></div>`;}

@@ -26,6 +26,9 @@ function playersPanel(m,i){
 const TALK_TMP={srv:'Ryzykowna zagrywka',rec:'Skupienie na przyjęciu',target:'Zagrywka w słabszego przyjmującego'};
 function weakestReceiver(m){const oc=onCourt(m.sides[1],m.serving===1).filter(e=>e.role==='L'||e.role==='P');return oc.map(e=>e.p).sort((a,b)=>(a.prz+a.tod)-(b.prz+b.tod))[0];}
 function talkList(m){const w=weakestReceiver(m);return [
+  ['tfight','Więcej walki!','Cała drużyna przez 7 akcji walczy mocniej, zwłaszcza gdy tracicie punkty. Najbardziej nakręca walecznych i zaangażowanych.'],
+  ['tfocus','Spokojnie, więcej koncentracji','Cała drużyna przez 7 akcji popełnia mniej prostych błędów i pewniej gra w końcówce. Pomaga nerwowym.'],
+  ['tgo','Gramy swoje, dawać!','Cała drużyna przez 7 akcji gra odrobinę lepiej we wszystkich elementach i łapie impet.'],
   ['belief','Wierzę w was!','Słowa otuchy. Siła zależy od Twojej motywacji. Najbardziej pomaga, gdy przegrywacie i gdy morale jest niskie.'],
   ['calm','Spokojnie, gramy swoje','Uspokaja zespół. Najbardziej pomaga nerwowym zawodnikom (niskie opanowanie) i tym z niskim morale.'],
   ['rage','Obudźcie się! Tak się nie gra!','Ostra reprymenda. Waleczni i zaangażowani się nakręcą, nerwowi mogą się spiąć. Lepiej działa przy dużym autorytecie trenera.'],
@@ -36,6 +39,9 @@ function myTimeout(){const m=ui.match;if(!m||m.over||ui.to)return;if(m.sides[0].
   if(m.animating){ui.toReq=!ui.toReq;document.querySelectorAll('.tobtn').forEach(b=>b.textContent=ui.toReq?'⏱ Czas po akcji…':`⏱ Czas (${m.sides[0].to})`);return;}
   startTimeout(0);}
 function applyTalk(k){const m=ui.match;if(!m)return;const s=m.sides[0];const oc=onCourt(s,m.serving===0).map(e=>e.p);
+  if(SH_FX[k]&&k[0]==='t'){const t0=talkList(m).find(x=>x[0]===k);const r=applyShout(m,0,k,shoutPow(),{dur:7,noCd:true,mult:1.3,n:t0[1],ic:'⏱'});const del=r.del;
+    m.log.push({t:`🗣️ ${esc(coach()?coach().last:'Trener')}: „${esc(t0[1])}” — ${r.up} zawodników podbudowanych${r.dn?`, ${r.dn} spiętych`:''}. Efekt na drużynę: ${esc(fxText(m.sides[0].sh))} (7 akcji).`,c:'sys'});
+    ui.talk=false;ui.talkRes={k,del};if(ui.to)ui.to.said=t0[1];persistLive();render();return;}
   const behind=m.score[1]-m.score[0];const mot=cA('mot'),aut=cA('aut'),tak=cA('tak');const cp=myCaptain();const amp=(0.8+aut/50)*(cp&&oc.some(x=>x.id===cp.id)?1+Math.max(0,capBonus(cp))*3:1);const dur=5+Math.floor(tak/4);const del={};
   for(const p of oc){const mor=p.mor==null?60:p.mor;let d=0;
     if(k==='belief')d=2+(mot-10)*0.5+(behind>=3?3:0)+(mor<50?2:0);

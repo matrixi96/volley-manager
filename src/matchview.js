@@ -143,8 +143,11 @@ function hallAnim(m,pre,ev,done){
       const [hx,hy]=[hit.x,hit.y];const d=1-i;const w=s.w||'M';const bset=w==='M'?1:((m.sides[d].tactics||{})[w==='L4'?'blkR':'blkL']??1);
       const lz=w==='L4'?1:5;const bsh=bset===0?-0.5:bset===2?0.5:0;
       const dt=m.sides[d].tactics||{};const trip=!!s.tr;
-      const opp=fb?[]:side(d).filter(b=>isFrontZ(b.zone)&&b.role!=='L').sort((a,b)=>Math.abs(cy(a)-hy)-Math.abs(cy(b)-hy)).slice(0,o.role==='S'?1:trip?3:2);
-      opp.forEach((b,k)=>{const ly2=9-ly;const side9=ly2<4.5?-1:1;moves.push(mvTo(b,8.5,ly2+(k?-side9*0.8*k:0)+side9*bsh,1));});
+      const opp=fb?[]:s.bl?s.bl.map(id=>P[id]).filter(Boolean):side(d).filter(b=>isFrontZ(b.zone)&&b.role!=='L').sort((a,b)=>Math.abs(cy(a)-hy)-Math.abs(cy(b)-hy)).slice(0,o.role==='S'?1:trip?3:2);
+      // blokujący ustawiają się obok siebie wokół linii ataku, bez zamiany miejscami (kolejność jak w pierwszej linii)
+      if(opp.length){const ly2=9-ly;const n=opp.length;const out=ly2<4.5?-1:1;const c=clamp(ly2+out*bsh+(n>1&&w!=='M'?-out*0.42*(n-1):0),0.6+0.42*(n-1),8.4-0.42*(n-1));
+        const ys=[];for(let k=0;k<n;k++)ys.push(c+(k-(n-1)/2)*0.85);const loc=b=>d===0?cy(b):9-cy(b);
+        opp.slice().sort((a,b)=>loc(a)-loc(b)).forEach((b,k)=>moves.push(mvTo(b,8.5,ys[k],1)));}
       // obrona wg ustawienia bloku: strefa 6 zawsze głęboko, obrońca prostej wg bloku
       const dsys=dt.dsys||0;const tipOn=!!dt[w==='M'?'tipM':w==='L4'?'tipR':'tipL'];
       const EB=w!=='M'&&dsys===0&&!fb?ebDef(bset,trip,tipOn,s.z6):null;const ebM=(o,q)=>mvTo(o,9-q[0],w==='L4'?q[1]:9-q[1]);
