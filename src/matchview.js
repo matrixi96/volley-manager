@@ -161,7 +161,8 @@ function hallAnim(m,pre,ev,done){
         else moves.push(mvTo(b,2.3,z===5?1.5:7.5));});
       side(d).filter(b=>!opp.includes(b)&&isFrontZ(b.zone)).forEach(b=>{const dy=defY(b);moves.push(EB&&EB.off?ebM(b,EB.off):w!=='M'&&!fb?mvTo(b,6.1,dy<3?3.1:dy>6?5.9:4.5):w==='M'&&!fb?mvTo(b,tipOn?7.0:6.8,dy<3?(tipOn?3.0:2.0):dy>6?(tipOn?6.0:7.0):4.5):mvTo(b,6.3,dy<3?0.9:dy>6?8.1:4.5));});
       to={x:hx,y:hy,h:fb?2.6:3.4};peak=fb?1.0:1.6;dur=780;ph=fb?'Piłka sytuacyjna':o.role==='R'?'Wystawa':'Rozegranie';lastAtt=o;lastAttD=fb?'free':s.d;}
-    else if(s.k==='blk'){to={x:cx(o),y:cy(o),h:3.0};dur=230;ph='Blok!';}
+    else if(s.k==='blk'){to={x:cx(o),y:cy(o),h:3.0};dur=230;ph=s.tool?'Obicie bloku!':'Blok!';}
+    else if(s.k==='whistle'){const i=s.s;const [X,Y]=s.why==='net'?gl(i,7.6+R()*0.8,1+R()*7):gl(i,2+R()*4,1+R()*7);to={x:X,y:Y,h:0};dur=s.why==='net'?420:520;peak=s.why==='net'?0.3:0.5;ph=s.why==='net'?'Gwizdek! Blokujący dotknął siatki':'Gwizdek! Atak z drugiej linii sprzed linii 3 m';}
     else if(s.k==='dig'){const dx=(R()-0.5)*1.4,dy=(R()-0.5)*1.4;moves.push({id:o.id,x:cx(o)+dx,y:cy(o)+dy});to={x:cx(o)+dx,y:cy(o)+dy,h:0.35};dur=s.free?900:s.tip?620:430;peak=s.free?2.6:s.tip?1.4:0;ph=s.free?'Przebicie':s.tip?'Kiwka — obrona':'Atak — obrona';}
     else if(s.k==='floor'){const i=s.s;let lx,ly;if(s.mix&&lastMix){lx=lastMix[0]+(R()-0.5)*0.6;ly=lastMix[1]+(R()-0.5)*0.6;}else if(s.blk){lx=7.4+R()*0.8;ly=lastAtt?lane(lastAtt)+(R()-0.5):4.5;}else if(s.tip){lx=6.4+R()*1.2;ly=9-lastLy+(R()-0.5)*1.6;}else if(s.d==='line'){lx=0.5+R()*2.6;ly=clamp(9-lastLy+(R()-0.5)*1.2,0.3,8.7);}else if(s.d==='cross'){lx=1+R()*3.2;ly=clamp(lastLy+(R()-0.5)*1.8,0.3,8.7);}else if(s.d==='midS'){lx=0.8+R()*3;ly=3.6+R()*1.8;}else if(s.d==='midL'){lx=1+R()*3;ly=0.6+R()*2;}else if(s.d==='midR'){lx=1+R()*3;ly=6.4+R()*2;}else{lx=0.6+R()*7.2;ly=0.6+R()*7.8;}const [X,Y]=gl(i,lx,ly);to={x:X,y:Y,h:0};
       if(!s.blk&&!s.mix){// najbliższy obrońca rzuca się do piłki, ale nie sięga
@@ -169,7 +170,7 @@ function hallAnim(m,pre,ev,done){
         if(nb&&nd>0.6){const f=Math.max(0,(nd-0.7)/nd);moves.push({id:nb.id,x:cx(nb)+(X-cx(nb))*f,y:cy(nb)+(Y-cy(nb))*f});}}
       dur=s.blk?520:s.tip?620:440;peak=s.tip?1.2:0;ph=s.mix?'Piłka spada między zawodnikami':s.blk?'Blok punktowy':s.tip?'Kiwka — punkt':s.d==='line'?'Po prostej — punkt':s.d==='cross'?'Po skosie — punkt':s.d==='midS'?'Prosto przez środek — punkt':s.d==='midL'||s.d==='midR'?'Ze środka po skosie — punkt':'Atak — punkt';}
     else if(s.k==='out'){const i=s.s;const how=s.how||(R()<0.6?'long':'wide');const lx=how==='long'?-1.3:1+R()*6,ly=how==='long'?1+R()*7:(R()<0.5?-0.8:9.8);const [X,Y]=gl(i,lx,ly);to={x:X,y:Y,h:0};
-      const srv=lastK==='srv';dur=srv?1100:480;peak=srv?4.3:0.4;ph=(srv?'Zagrywka w aut':'Atak w aut')+(how==='long'?' (za linią końcową)':' (obok boiska)');}
+      const srv=lastK==='srv';dur=srv?1100:s.tool?620:480;peak=srv?4.3:s.tool?1.6:0.4;ph=s.tool?'Piłka po bloku w aucie — punkt!':(srv?'Zagrywka w aut':'Atak w aut')+(how==='long'?' (za linią końcową)':' (obok boiska)');}
     else if(s.k==='net'){const srv=lastK==='srv';const fromLeft=srv?(1-s.s)===0:(1-s.s)===0;to={x:9+(fromLeft?-0.25:0.25),y:1+R()*7,h:1.7};dur=srv?950:420;peak=srv?3.0:0;ph=srv?'Zagrywka w siatkę — piłka nie przeszła na drugą stronę':'Atak w siatkę';}
     else continue;
     for(const mv of moves)cur[mv.id]=[mv.x,mv.y];
@@ -177,7 +178,7 @@ function hallAnim(m,pre,ev,done){
     steps.push({to,peak,dur:dur*sf,moves,ph,touch});lastK=s.k;
     if(s.k==='net')steps.push({to:{x:to.x+(to.x<9?-0.5:0.5),y:to.y,h:0},peak:0,dur:320*sf,moves:[],ph});
     if(s.k==='ace'&&s.sh){const rs=s.s;const lx=R()<0.5?-1.2:2+R()*5,ly=lx<0?2+R()*5:(cy(o)<4.5?-1:10);const [X,Y]=gl(rs,lx,ly);steps.push({to:{x:X,y:Y,h:0},peak:2.2,dur:700*sf,moves:[],ph:'Przyjęcie poza boisko — as!'});}}
-  const sErr=(ev.seq||[]).find(x=>x.srv);const label={ace:'AS!',block:'BLOK!',kill:'PUNKT',serr:sErr?(sErr.how==='net'?'ZAGRYWKA W SIATKĘ':'ZAGRYWKA W AUT'):'BŁĄD ZAGRYWKI',attErr:'BŁĄD ATAKU',setErr:'BŁĄD',mix:'NIEPOROZUMIENIE'}[ev.type]||'PUNKT';
+  const sErr=(ev.seq||[]).find(x=>x.srv);const label={ace:'AS!',block:'BLOK!',kill:'PUNKT',serr:sErr?(sErr.how==='net'?'ZAGRYWKA W SIATKĘ':'ZAGRYWKA W AUT'):'BŁĄD ZAGRYWKI',attErr:'BŁĄD ATAKU',setErr:'BŁĄD',mix:'NIEPOROZUMIENIE',blockout:'PO BLOKU!',netTouch:'SIATKA W BLOKU!',f3m:'BŁĄD 3 M'}[ev.type]||'PUNKT';
   let k=0;const phEl=()=>document.getElementById('mph');
   const run=()=>{if(!document.getElementById('mcv')){done();return;}
     if(k>=steps.length){drawHall(m,scene,ball,{t:label,w:ev.winner});const wEnd=()=>m.paused?setTimeout(wEnd,100):done();setTimeout(wEnd,ui.speed>=1600?750:560);return;}

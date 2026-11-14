@@ -92,7 +92,7 @@ function hCalendar(){const ev=myEvents();const s=S();const tr=SAVE.training?(TRA
   for(let k=0;k<5;k++){const d=addDays(today(),k);const list=[];
     for(const e of ev[d]||[]){const lab=e.kind==='spar'?'Sparing':e.kind==='liga'?'Liga':'Play-off';list.push(`<div class="hev m">${lab}: ${esc(TEAMS[e.home?SAVE.team:e.op].short)} – ${esc(TEAMS[e.home?e.op:SAVE.team].short)}${e.r?` (${e.r.sw[0]}:${e.r.sw[1]})`:''}</div>`);if(e.kind==='liga')list.push('<div class="hev">Liga juniorów</div>');}
     if(s.offDate===d)list.push('<div class="hev">Otwarcie okna transferowego</div>');
-    if(!list.length)list.push(s.phase==='off'?'<div class="hev">Urlop / przygotowania</div>':`<div class="hev">Trening${tr?': '+esc(tr.toLowerCase()):''}</div>`);
+    if(!list.length)list.push(s.phase==='off'?'<div class="hev">Urlop / przygotowania</div>':(()=>{const tp=typeof todayPlanTxt==='function'?todayPlanTxt(d):null;return `<div class="hev">${tp?'Trening: '+esc(tp):'Wolne'}</div>`;})());
     out.push(`<div class="hdaycol ${k===0?'today':''}"><div class="hdh">${k===0?'Dziś':fmtShort(d)}</div>${list.join('')}</div>`);}
   return `<div class="hcal">${out.join('')}</div>`;}
 function homeView(){const s=S();if(!s)return '';

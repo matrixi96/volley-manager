@@ -65,7 +65,7 @@ function squadView(){
   else if(ui.sort==='ocena')pl.sort((a,b)=>rating(b)-rating(a));
   else if(ui.sort==='wiek')pl.sort((a,b)=>a.age-b.age);
   else if(ui.sort==='h')pl.sort((a,b)=>b.h-a.h);
-  else if(ui.sort==='pot')pl.sort((a,b)=>b.pot-a.pot);else if(ui.sort==='wart')pl.sort((a,b)=>pValue(b)-pValue(a));else if(ui.sort==='kon')pl.sort((a,b)=>b.kon-a.kon);else if(ui.sort==='pensja')pl.sort((a,b)=>b.wage-a.wage);else if(ui.sort==='kontrakt')pl.sort((a,b)=>a.ce-b.ce);
+  else if(ui.sort==='pot')pl.sort((a,b)=>b.pot-a.pot);else if(ui.sort==='wart')pl.sort((a,b)=>pValue(b)-pValue(a));else if(ui.sort==='kon')pl.sort((a,b)=>b.kon-a.kon);else if(ui.sort==='fm')pl.sort((a,b)=>fmOf(b)-fmOf(a));else if(ui.sort==='fr')pl.sort((a,b)=>frOf(a)-frOf(b));else if(ui.sort==='pensja')pl.sort((a,b)=>b.wage-a.wage);else if(ui.sort==='kontrakt')pl.sort((a,b)=>a.ce-b.ce);
   else pl.sort((a,b)=>b[ui.sort]-a[ui.sort]);
   const sel=([k,l,pos])=>`<label class="lu"><span>${l}</span><select onchange="setLu('${k}',this.value)">${
     t.players.slice().sort((a,b)=>(a.pos===pos?0:1)-(b.pos===pos?0:1)||rating(b,pos)-rating(a,pos)).map(p=>`<option value="${p.id}" ${lu[k]===p.id?'selected':''}>${p.inj?'🚑 ':''}${esc(p.last)} (${POS_SHORT[p.pos]}) — ${rating(p,pos)}</option>`).join('')}</select></label>`;
@@ -90,10 +90,15 @@ function setLu(k,id){const lu=myLineup();const other=Object.keys(lu).find(x=>x!=
 // ---------- taktyka ----------
 const SERVE_OPT=[['Bezpieczna','Mniej błędów, ale łatwiejsze przyjęcie dla rywala.'],['Normalna','Rozsądny balans ryzyka.'],['Ryzykowna','Więcej asów i słabych przyjęć rywala, ale dużo błędów.']];
 const DIST_OPT=[['Zrównoważone','Rozgrywający gra do wszystkich.'],['Skrzydła','Więcej piłek do przyjmujących i atakującego.'],['Środek','Więcej szybkich piłek do środkowych (wymaga dobrego przyjęcia).'],['Na atakującego','Główna opcja: atakujący.']];
+const ATK_OPT=[['Mieszany','Zawodnicy sami wybierają między mocnym atakiem a kiwką.'],['Mocny atak','Prawie bez kiwek: mocniejsze uderzenia, ale więcej błędów i trochę więcej bloków.'],['Więcej kiwek','Częste kiwki i plasy: mniej błędów, ale rywal z asekuracją kiwki łatwo je broni.']];
+const ADIR_OPT=[['Wg zawodnika','Każdy atakuje w swoim ulubionym kierunku.'],['Po skosie','Atak po przekątnej boiska. Groźny, gdy blok rywala zamyka prostą.'],['Po prostej','Atak wzdłuż linii. Groźny, gdy blok zamyka skos.'],['Za blok','Plasy i kiwki tuż za blok. Dobre na wysoki blok bez asekuracji.'],['Obijanie bloku','Uderzenie w ręce blokujących, żeby piłka wyszła w aut. Najlepsze na wysoki, silny blok.']];
+function atkTacHtml(t){return `<div class="tacrow"><div class="tacl"><b>Rodzaj ataku</b><small class="mut">siła czy technika</small></div><div class="seg">${ATK_OPT.map((o,i)=>`<button class="${(t.atk||0)===i?'on':''}" onclick="tacSet('atk',${i})" title="${esc(o[1])}">${o[0]}</button>`).join('')}</div><div class="small mut tacd">${esc(ATK_OPT[t.atk||0][1])}</div></div>
+  <div class="tacrow"><div class="tacl"><b>Kierunek ataku</b><small class="mut">polecenie dla atakujących</small></div><div class="seg">${ADIR_OPT.map((o,i)=>`<button class="${(t.adir||0)===i?'on':''}" onclick="tacSet('adir',${i})" title="${esc(o[1])}">${o[0]}</button>`).join('')}</div><div class="small mut tacd">${esc(ADIR_OPT[t.adir||0][1])} Im lepsze czytanie gry zawodnika, tym dokładniej wykonuje polecenie.</div></div>`;}
 function optGroup(name,opts,cur,fn){return `<div class="opts">${opts.map(([l,d],i)=>`<button class="opt ${cur===i?'on':''}" onclick="${fn}(${i})"><b>${l}</b><small>${d}</small></button>`).join('')}</div>`;}
 function tacticsView(){const tc=myTac();
   return `<div class="card"><h2>Zagrywka</h2>${optGroup('serve',SERVE_OPT,tc.serve,'setServe')}</div>
   <div class="card"><h2>Rozegranie</h2>${optGroup('dist',DIST_OPT,tc.dist,'setDist')}</div>
+  <div class="card"><h2>Atak</h2>${atkTacHtml(tc)}</div>
   <div class="card"><h2>Blok i obrona</h2>${blockTacHtml(tc)}</div>
   <div class="card"><h2>Piłki sytuacyjne</h2>${freeTacHtml(tc)}</div>
   <p class="mut small">Taktykę możesz zmieniać także w trakcie meczu. Zagrywkę w konkretnego zawodnika rywala wybierasz w meczu (📋 Taktyka).</p>`;}
@@ -133,12 +138,13 @@ function animateRally(ev,done){
     else if(t.k==='ace'){const c=chip(t.id);p=c?{x:c.x+(R()-0.5)*30,y:c.y+28,el:null}:{x:half(t.s,0.1,0.4),y:H/2};}
     else if(t.k==='out')p={x:t.s===0?W*0.01:W*0.99,y:R()<0.5?-12:H+12};
     else if(t.k==='net')p={x:W/2,y:(0.3+R()*0.4)*H};
+    else if(t.k==='whistle')p=null;
     else p=chip(t.id);
     if(!p){prev=t.k;continue;}
     p.high=prev==='set'||prev==='srv'||prev==='rec'||prev==='dig';p.fast=prev==='att';p.kind=t.k;pts.push(p);prev=t.k;}
   if(pts.length<2){done();return;}
   const base=ui.speed>=1600?470:300;
-  const label={ace:'AS!',block:'BLOK!',kill:'PUNKT',serr:'BŁĄD ZAGRYWKI',attErr:'BŁĄD ATAKU',setErr:'BŁĄD',mix:'NIEPOROZUMIENIE'}[ev.type]||'PUNKT';
+  const label={ace:'AS!',block:'BLOK!',kill:'PUNKT',serr:'BŁĄD ZAGRYWKI',attErr:'BŁĄD ATAKU',setErr:'BŁĄD',mix:'NIEPOROZUMIENIE',blockout:'PO BLOKU!',netTouch:'SIATKA!',f3m:'BŁĄD 3 M'}[ev.type]||'PUNKT';
   ball.style.display='block';ball.style.transform=`translate(${pts[0].x}px,${pts[0].y}px)`;
   let i=0;
   const seg=()=>{if(i>=pts.length-1){flashLabel(label,ev.winner);setTimeout(()=>{ball.style.display='none';done();},ui.speed>=1600?650:380);return;}
@@ -227,7 +233,7 @@ function liveView(){
   <div class="card"><div class="row"><button class="tabb ${ui.view==='log'?'on':''}" onclick="ui.view='log';render()">Komentarz</button><button class="tabb ${ui.view==='stats'?'on':''}" onclick="ui.view='stats';render()">Statystyki</button></div>
   ${ui.view==='stats'?statsBlock(m):`<div id="log" class="log">${m.log.slice(-150).reverse().map(e=>`<div class="le ${e.c}">${e.t}</div>`).join('')}</div>`}</div>`;
 }
-function teamTotals(s){const t={pts:0,kill:0,att:0,attErr:0,blk:0,ace:0,srvErr:0,rec:0,recPos:0,recErr:0,blocked:0};for(const p of s.pl){const x=p.st;t.kill+=x.kill;t.att+=x.att;t.attErr+=x.attErr;t.blk+=x.blk;t.ace+=x.ace;t.srvErr+=x.srvErr;t.rec+=x.rec;t.recPos+=x.recPos;t.recErr+=x.recErr;t.blocked+=x.blocked;}t.pts=t.kill+t.blk+t.ace;return t;}
+function teamTotals(s){const t={pts:0,kill:0,att:0,attErr:0,blk:0,ace:0,srvErr:0,rec:0,recPos:0,recErr:0,blocked:0,bout:0,ne:0,e3:0};for(const p of s.pl){const x=p.st;t.bout+=x.bout||0;t.ne+=x.ne||0;t.e3+=x.e3||0;t.kill+=x.kill;t.att+=x.att;t.attErr+=x.attErr;t.blk+=x.blk;t.ace+=x.ace;t.srvErr+=x.srvErr;t.rec+=x.rec;t.recPos+=x.recPos;t.recErr+=x.recErr;t.blocked+=x.blocked;}t.pts=t.kill+t.blk+t.ace;return t;}
 const pc=(a,b)=>b?Math.round(a/b*100)+'%':'–';
 function histChart(m){
   const h=m.hist||[];if(!h.length)return '';
@@ -244,7 +250,7 @@ function attackShare(sd){const tot=sd.pl.reduce((s,p)=>s+p.st.att,0);if(!tot)ret
   return `<div class="share">${arr.map(p=>`<div class="shr"><span>${esc(p.last)} <small class="mut">${POS_SHORT[p.pos]}</small></span><span class="shb"><i style="width:${p.st.att/tot*100}%;background:${sd.team.color}"></i></span><b>${Math.round(p.st.att/tot*100)}%</b></div>`).join('')}</div>`;}
 function statsBlock(m){
   const [A,B]=m.sides.map(teamTotals);
-  const rows=[['Punkty (atak+blok+as)',A.pts,B.pts],['Skończone ataki',`${A.kill}/${A.att} (${pc(A.kill,A.att)})`,`${B.kill}/${B.att} (${pc(B.kill,B.att)})`],['Błędy w ataku',A.attErr,B.attErr],['Bloki punktowe',A.blk,B.blk],['Asy',A.ace,B.ace],['Błędy zagrywki',A.srvErr,B.srvErr],['Przyjęcie pozytywne',pc(A.recPos,A.rec),pc(B.recPos,B.rec)]];
+  const rows=[['Punkty (atak+blok+as)',A.pts,B.pts],['Skończone ataki',`${A.kill}/${A.att} (${pc(A.kill,A.att)})`,`${B.kill}/${B.att} (${pc(B.kill,B.att)})`],['Błędy w ataku',A.attErr,B.attErr],['…w tym atak sprzed linii 3 m',A.e3,B.e3],['Punkty po obiciu bloku',A.bout,B.bout],['Dotknięcia siatki w bloku',A.ne,B.ne],['Bloki punktowe',A.blk,B.blk],['Asy',A.ace,B.ace],['Błędy zagrywki',A.srvErr,B.srvErr],['Przyjęcie pozytywne',pc(A.recPos,A.rec),pc(B.recPos,B.rec)]];
   return `<div class="tw"><table class="cmp"><thead><tr><th class="l"></th><th>${esc(m.sides[0].team.short)}</th><th>${esc(m.sides[1].team.short)}</th></tr></thead><tbody>${rows.map(r=>`<tr><td class="l">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</tbody></table></div>
   <h3>Przebieg meczu</h3>${histChart(m)}
   <h3>Rozkład ataków</h3><div class="shares"><div><div class="mut small">${esc(m.sides[0].team.name)}</div>${attackShare(m.sides[0])}</div><div><div class="mut small">${esc(m.sides[1].team.name)}</div>${attackShare(m.sides[1])}</div></div>

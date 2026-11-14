@@ -14,7 +14,9 @@ Manager siatkówki na PC i telefon, działający offline.
 - Fikcyjna polska liga, 12 drużyn: 7 sparingów, 22 kolejki (mecz i rewanż), play-off dla czołowej ósemki.
 - Mecz liczony akcja po akcji (zagrywka, przyjęcie, rozegranie, atak, blok, obrona) w widoku hali (trybuny wg poziomu hali i frekwencji, ruch zawodników, piłka z cieniem), z komentarzem, czasami (przemowy do zespołu) i zmianami; panele zawodników obu drużyn z kondycją, morale i statystykami na żywo.
 - 17 atrybutów zawodnika: techniczne, fizyczne i mentalne.
-- Trening, rozwój i starzenie się zawodników, kontuzje.
+- Trening: plan tygodnia z 3 jednostkami dziennie (zagrywka, przyjęcie, atak, blok, obrona, rozegranie, taktyka, siłownia, integracja, regeneracja, wolne) układany samodzielnie albo przez asystenta (im lepszy, tym lepszy plan); świeżość zawodników, urazy na treningu.
+- Forma zawodników liczona z meczów, treningów i charakteru; rozwój i starzenie się zawodników, kontuzje.
+- Taktyka ataku (mocny atak / kiwki, kierunek: skos, prosta, za blok, obijanie bloku), punkty po bloku, błąd ataku sprzed linii 3 m, dotknięcie siatki w bloku, okrzyki trenera w trakcie gry.
 - Sztab szkoleniowy (7 ról), drużyna juniorów U20 z własną ligą, infrastruktura klubu (6 obiektów, poziomy 1–5, budowa w czasie).
 - Transfery, kontrakty, wolni zawodnicy, finanse klubu.
 - Statystyki meczów i sezonu, liderzy, ranking drużyn.
@@ -29,4 +31,4 @@ Po pierwszym otwarciu gra działa bez internetu.
 
 ## Dla twórcy
 Źródła są w katalogu `src/`. Po zmianach zbuduj grę: `python src/build.py` (tworzy `index.html`).
-Przy większych aktualizacjach podbij nazwę cache w `sw.js` (`volley-manager-v13` → `v14`), żeby telefony szybciej pobrały nową wersję.
+Przy większych aktualizacjach podbij nazwę cache w `sw.js` (np. `volley-manager-v34` → `v35`), żeby telefony szybciej pobrały nową wersję.
