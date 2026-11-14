@@ -258,7 +258,7 @@ function animScene(m,from,to,dur,done){const cv=document.getElementById('mcv');i
   requestAnimationFrame(fr);}
 function startTimeout(i){const m=ui.match;if(!m||m.over||ui.to)return;
   if(i===0){if(!callTimeout(m,0)){render();return;}m.log.push({t:`Czas dla ${esc(m.sides[0].team.name)}.`,c:'sys'});m.comm={t:`Czas dla ${m.sides[0].team.short}. Zawodnicy schodzą do ławki.`,w:0};}
-  const wasPlaying=!m.paused;m.paused=true;clearTimeout(timer);ui.talk=true;ui.talkRes=null;ui.toReq=false;
+  const wasPlaying=!m.paused;m.paused=true;clearTimeout(timer);ui.talk=true;ui.talkRes=null;ui.talkSt=null;ui.toReq=false;
   const base=formation(m);ui.to={side:i,end:Date.now()+TO_SEC*1000,wasPlaying,scene:base,said:null};persistLive();render();
   const cvOk=document.getElementById('mcv');if(cvOk)animScene(m,base,benchScene(m,base),1400,()=>{});
   clearInterval(ui.toTimer);ui.toTimer=setInterval(()=>{if(!ui.to){clearInterval(ui.toTimer);return;}const left=Math.max(0,Math.ceil((ui.to.end-Date.now())/1000));

@@ -383,7 +383,7 @@ const SHOUTS=[['go','Dawać, gramy!','🔥','Nakręca zespół: impet i lepsza g
  ['wake','Obudźcie się!','📢','Ostro: waleczni się nakręcą, nerwowi mogą się spiąć.']];
 // efekt okrzyku na całą drużynę: p = lepsza gra we wszystkich elementach, pr = w końcówkach, b = gdy przegrywa, e = mniej prostych błędów (ułamek)
 const SH_FX={go:{p:0.014},calm:{pr:0.025,e:0.07},focus:{e:0.15},fight:{b:0.026,p:0.006},bravo:{p:0.009},wake:{p:0.012},
-  tfight:{b:0.03,p:0.01},tfocus:{pr:0.02,e:0.16},tgo:{p:0.016}};
+  tfight:{b:0.03,p:0.01},tfocus:{pr:0.02,e:0.16},tgo:{p:0.016},twake:{p:0.02}};
 const SH_TXT={p:'lepsza gra całej drużyny',pr:'pewniej w końcówce seta',b:'więcej walki przy stracie punktów',e:'mniej prostych błędów'};
 function fxText(fx){return Object.keys(SH_TXT).filter(k=>fx[k]).map(k=>SH_TXT[k]).join(', ');}
 // i = drużyna, k = okrzyk, pw = siła trenera (0,6–1,4), o = {dur, noCd, mult, ic, n}. Zwraca {up,dn,f,del} albo null, gdy za szybko po poprzednim.

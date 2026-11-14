@@ -517,6 +517,9 @@ td.nw{white-space:nowrap}
 .prow{display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:space-between}.prow>div:first-child{flex:1;min-width:260px}
 .pctl{display:flex;align-items:center;gap:8px}.pctl input[type=range]{width:220px;accent-color:var(--acc)}.pval{font-family:var(--fc);font-size:24px;min-width:70px;text-align:right;color:var(--acc)}
 .kstrip.in{margin:12px 0 6px;background:var(--panel2)}
+.tsec{font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:700;color:var(--acc);margin:12px 0 6px}.tsub{font-size:12.5px;color:var(--mut);margin:8px 0 5px}
+.opts.tone4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}.opt:disabled{opacity:.45}.opt.on:disabled{opacity:1}
+.tgtl{display:flex;flex-wrap:wrap;gap:6px}.tgtl button.on{border-color:var(--acc);color:var(--acc)}
 </style></head><body><div id="app"></div>
 <script>
 'use strict';
@@ -904,7 +907,7 @@ const SHOUTS=[['go','Dawać, gramy!','🔥','Nakręca zespół: impet i lepsza g
  ['wake','Obudźcie się!','📢','Ostro: waleczni się nakręcą, nerwowi mogą się spiąć.']];
 // efekt okrzyku na całą drużynę: p = lepsza gra we wszystkich elementach, pr = w końcówkach, b = gdy przegrywa, e = mniej prostych błędów (ułamek)
 const SH_FX={go:{p:0.014},calm:{pr:0.025,e:0.07},focus:{e:0.15},fight:{b:0.026,p:0.006},bravo:{p:0.009},wake:{p:0.012},
-  tfight:{b:0.03,p:0.01},tfocus:{pr:0.02,e:0.16},tgo:{p:0.016}};
+  tfight:{b:0.03,p:0.01},tfocus:{pr:0.02,e:0.16},tgo:{p:0.016},twake:{p:0.02}};
 const SH_TXT={p:'lepsza gra całej drużyny',pr:'pewniej w końcówce seta',b:'więcej walki przy stracie punktów',e:'mniej prostych błędów'};
 function fxText(fx){return Object.keys(SH_TXT).filter(k=>fx[k]).map(k=>SH_TXT[k]).join(', ');}
 // i = drużyna, k = okrzyk, pw = siła trenera (0,6–1,4), o = {dur, noCd, mult, ic, n}. Zwraca {up,dn,f,del} albo null, gdy za szybko po poprzednim.
@@ -2622,42 +2625,50 @@ function playersPanel(m,i){
    ${mine&&sd.tmp&&sd.tmp.n>0?`<div class="small tmpb">📋 ${esc(TALK_TMP[sd.tmp.k]||'')} — jeszcze ${sd.tmp.n} akcji</div>`:''}
    ${oc.map(e=>row(e.p,e)).join('')}<div class="small mut benchh">Ławka</div>${bench.map(p=>row(p,null)).join('')||'<div class="small mut">brak</div>'}</div>`;}
 // ---- przemowy ----
-const TALK_TMP={srv:'Ryzykowna zagrywka',rec:'Skupienie na przyjęciu',target:'Zagrywka w słabszego przyjmującego'};
+const TALK_TMP={srv:'Ryzykowna zagrywka',rec:'Skupienie na przyjęciu',target:'Zagrywka w wybranego zawodnika'};
 function weakestReceiver(m){const oc=onCourt(m.sides[1],m.serving===1).filter(e=>e.role==='L'||e.role==='P');return oc.map(e=>e.p).sort((a,b)=>(a.prz+a.tod)-(b.prz+b.tod))[0];}
-function talkList(m){const w=weakestReceiver(m);return [
-  ['tfight','Więcej walki!','Cała drużyna przez 7 akcji walczy mocniej, zwłaszcza gdy tracicie punkty. Najbardziej nakręca walecznych i zaangażowanych.'],
-  ['tfocus','Spokojnie, więcej koncentracji','Cała drużyna przez 7 akcji popełnia mniej prostych błędów i pewniej gra w końcówce. Pomaga nerwowym.'],
-  ['tgo','Gramy swoje, dawać!','Cała drużyna przez 7 akcji gra odrobinę lepiej we wszystkich elementach i łapie impet.'],
-  ['belief','Wierzę w was!','Słowa otuchy. Siła zależy od Twojej motywacji. Najbardziej pomaga, gdy przegrywacie i gdy morale jest niskie.'],
-  ['calm','Spokojnie, gramy swoje','Uspokaja zespół. Najbardziej pomaga nerwowym zawodnikom (niskie opanowanie) i tym z niskim morale.'],
-  ['rage','Obudźcie się! Tak się nie gra!','Ostra reprymenda. Waleczni i zaangażowani się nakręcą, nerwowi mogą się spiąć. Lepiej działa przy dużym autorytecie trenera.'],
-  ['srv','Ryzykujcie na zagrywce!','Przez kilka akcji mocniejsza zagrywka: więcej asów, ale i więcej błędów.'],
-  ['rec','Skupcie się na przyjęciu','Przez kilka akcji lepsze przyjęcie. Spokój dla przyjmujących i libero.'],
-  ['target',`Zagrywka w ${w?w.last:'słabszego przyjmującego'}`,`Przez kilka akcji serwujecie w najsłabiej przyjmującego rywala${w?` (${w.last}, przyjęcie ${w.prz})`:''}.`]];}
+// ton przemowy (jeden na czas) + wskazówka do gry (jedna na czas)
+const TALK_TONE=[['enc','Zachęć','„Wierzę w was, dacie radę!”','Podnosi morale, najbardziej gdy przegrywacie i gdy morale jest niskie. Przez 7 akcji cała drużyna gra trochę pewniej.','tgo'],
+  ['dem','Zażądaj więcej','„Stać was na dużo więcej!”','Ambitni i waleczni się nakręcą, wrażliwi mogą się spiąć. Przez 7 akcji drużyna mocniej walczy, zwłaszcza przy stracie punktów.','tfight'],
+  ['calm','Uspokój','„Spokojnie, więcej koncentracji”','Pomaga nerwowym i zawodnikom z niskim morale. Przez 7 akcji mniej prostych błędów i pewniejsza końcówka.','tfocus'],
+  ['wake','Obudź','„Obudźcie się! Tak się nie gra!”','Ostra reprymenda: działa przy dużym autorytecie. Waleczni się nakręcą, nerwowi mogą się spiąć. Przez 7 akcji wyraźny impuls dla całej drużyny.','twake']];
+function talkList(m){return TALK_TONE.map(x=>[x[0],x[1]+': '+x[2],x[3]]).concat([['srv','Ryzykujcie na zagrywce!',''],['rec','Skupcie się na przyjęciu',''],['target','Zagrywka w wybranego zawodnika','']]);}
 function myTimeout(){const m=ui.match;if(!m||m.over||ui.to)return;if(m.sides[0].to<=0)return;
   if(m.animating){ui.toReq=!ui.toReq;document.querySelectorAll('.tobtn').forEach(b=>b.textContent=ui.toReq?'⏱ Czas po akcji…':`⏱ Czas (${m.sides[0].to})`);return;}
   startTimeout(0);}
-function applyTalk(k){const m=ui.match;if(!m)return;const s=m.sides[0];const oc=onCourt(s,m.serving===0).map(e=>e.p);
-  if(SH_FX[k]&&k[0]==='t'){const t0=talkList(m).find(x=>x[0]===k);const r=applyShout(m,0,k,shoutPow(),{dur:7,noCd:true,mult:1.3,n:t0[1],ic:'⏱'});const del=r.del;
-    m.log.push({t:`🗣️ ${esc(coach()?coach().last:'Trener')}: „${esc(t0[1])}” — ${r.up} zawodników podbudowanych${r.dn?`, ${r.dn} spiętych`:''}. Efekt na drużynę: ${esc(fxText(m.sides[0].sh))} (7 akcji).`,c:'sys'});
-    ui.talk=false;ui.talkRes={k,del};if(ui.to)ui.to.said=t0[1];persistLive();render();return;}
-  const behind=m.score[1]-m.score[0];const mot=cA('mot'),aut=cA('aut'),tak=cA('tak');const cp=myCaptain();const amp=(0.8+aut/50)*(cp&&oc.some(x=>x.id===cp.id)?1+Math.max(0,capBonus(cp))*3:1);const dur=5+Math.floor(tak/4);const del={};
+function talkState(){return ui.talkSt||(ui.talkSt={tone:null,hint:null});}
+function talkPlayers(m){const s=m.sides[0];return onCourt(s,m.serving===0).map(e=>e.p);}
+function applyTone(k){const m=ui.match;if(!m)return;const st=talkState();if(st.tone)return;const T=TALK_TONE.find(x=>x[0]===k);const s=m.sides[0];const oc=talkPlayers(m);
+  const behind=m.score[1]-m.score[0];const mot=cA('mot'),aut=cA('aut');const cp=myCaptain();const amp=(0.8+aut/50)*(cp&&oc.some(x=>x.id===cp.id)?1+Math.max(0,capBonus(cp))*3:1);const del={};
   for(const p of oc){const mor=p.mor==null?60:p.mor;let d=0;
-    if(k==='belief')d=2+(mot-10)*0.5+(behind>=3?3:0)+(mor<50?2:0);
-    if(k==='calm')d=1+(60-mor)*0.12+(12-p.opa)*0.45;
-    if(k==='rage')d=((p.wal+p.zaa)/2-10.5)*1.1+(aut-10)*0.5-(p.opa<9?3:0);
-    if(k==='srv')d=p.zag>=13?2:0;
-    if(k==='rec')d=(p.pos==='L'||p.pos==='P')?2:0;
-    if(k==='target')d=1;
+    if(k==='enc')d=2+(mot-10)*0.5+(behind>=3?3:0)+(mor<50?2:0);
+    else if(k==='dem')d=((p.zaa+(hasT(p,'amb')?16:p.wal))/2-10)*0.8+(mot-10)*0.3-(p.opa<9?2:0)-(mor<45?2:0);
+    else if(k==='calm')d=1+(60-mor)*0.12+(12-p.opa)*0.45;
+    else if(k==='wake')d=((p.wal+p.zaa)/2-10.5)*1.1+(aut-10)*0.5-(p.opa<9?3:0);
     d=Math.round(d*amp+(R()-0.5)*2);addMor(p,d);del[p.id]=d;}
-  if(k==='srv'||k==='rec')s.tmp={k,n:dur};
-  if(k==='target'){const t=weakestReceiver(m);if(t)s.tmp={k:'target',n:dur,id:t.id};}
-  const t=talkList(m).find(x=>x[0]===k);const up=Object.values(del).filter(d=>d>0).length,dn=Object.values(del).filter(d=>d<0).length;
-  m.log.push({t:`🗣️ ${esc(coach()?coach().last:'Trener')}: „${esc(t[1])}” — ${up} zawodników podbudowanych${dn?`, ${dn} spiętych`:''}.`,c:'sys'});
-  ui.talk=false;ui.talkRes={k,del};if(ui.to)ui.to.said=t[1];persistLive();render();}
-function talkCard(m){const to=ui.to;return `<div class="card talk"><div class="row"><h3 style="margin:0">⏱ ${to&&to.side===1?`Czas dla ${esc(m.sides[1].team.short)} — możesz porozmawiać ze swoimi`:'Czas — co mówisz zawodnikom?'}</h3>${to?`<span class="tobar" style="width:140px;margin-left:10px"><i style="width:${Math.max(0,(to.end-Date.now())/150)}%"></i></span><b class="tocount" style="margin-left:6px">${Math.max(0,Math.ceil((to.end-Date.now())/1000))} s</b>`:''}<span class="sp"></span><button class="ghost" onclick="ui.talk=false;render()">Bez przemowy</button>${to?'<button class="btn" onclick="endTimeout()">↩ Wracamy na boisko</button>':''}</div>
-  <p class="small mut">Każdy zawodnik reaguje inaczej (zależy od jego cech mentalnych i Twoich atrybutów trenera). Reakcje zobaczysz przy nazwiskach w panelu.</p>
-  <div class="opts">${talkList(m).map(([k,n,d])=>`<button class="opt" onclick="applyTalk('${k}')"><b>${esc(n)}</b><small>${esc(d)}</small></button>`).join('')}</div></div>`;}
+  // efekt na całą drużynę: siła zależy od motywacji/autorytetu trenera i średniej reakcji zawodników
+  const avg=Object.values(del).reduce((a,b)=>a+b,0)/Math.max(1,oc.length);const f=clamp(shoutPow()*1.25*(0.75+avg/12),0.3,1.8);
+  const F=SH_FX[T[4]]||{};const fx={};for(const x in F)fx[x]=F[x]*(x==='e'?Math.min(1.3,f):f);s.sh=Object.assign({k:T[4],u:m.rallies+7,n:T[2].replace(/[„”]/g,''),ic:'⏱'},fx);
+  if(k==='enc'&&Math.abs(behind)<=3)s.mom=Math.min(3,Math.max(0,s.mom)+1);
+  const up=Object.values(del).filter(d=>d>0).length,dn=Object.values(del).filter(d=>d<0).length;
+  m.log.push({t:`🗣️ ${esc(coach()?coach().last:'Trener')} (${T[1].toLowerCase()}): ${esc(T[2])} — ${up} zawodników podbudowanych${dn?`, ${dn} spiętych`:''}. Drużyna: ${esc(fxText(s.sh))} (7 akcji).`,c:'sys'});
+  st.tone=k;ui.talkRes={k,del};if(ui.to)ui.to.said=T[1];if(st.hint)ui.talk=false;persistLive();render();}
+function applyHint(k,id){const m=ui.match;if(!m)return;const st=talkState();if(st.hint)return;const s=m.sides[0];const dur=5+Math.floor(cA('tak')/4);let txt='';
+  if(k==='srv'){s.tmp={k,n:dur};txt='Ryzykujcie na zagrywce!';for(const p of talkPlayers(m))if(p.zag>=13)addMor(p,1);}
+  else if(k==='rec'){s.tmp={k,n:dur};txt='Skupcie się na przyjęciu';for(const p of talkPlayers(m))if(p.pos==='L'||p.pos==='P')addMor(p,1);}
+  else if(k==='target'){const t=findPl(m,id);if(!t)return;s.tmp={k:"target",n:dur,id};txt=`Zagrywka na ${t.last}`;}
+  m.log.push({t:`📋 Wskazówka trenera: „${esc(txt)}” (${dur} akcji).`,c:'sys'});st.hint=k;if(st.tone)ui.talk=false;persistLive();render();}
+function applyTalk(k){if(TALK_TONE.some(x=>x[0]===k))return applyTone(k);if(k==='target'){const w=weakestReceiver(ui.match);return applyHint('target',w&&w.id);}return applyHint(k);}
+function talkCard(m){const to=ui.to;const st=talkState();const opp=onCourt(m.sides[1],m.serving===1).map(e=>({p:e.p,role:e.role})).sort((a,b)=>(a.p.prz+a.p.tod)-(b.p.prz+b.p.tod));
+  const tone=TALK_TONE.map(([k,n,q,d])=>`<button class="opt ${st.tone===k?'on':''}" ${st.tone?'disabled':''} onclick="applyTone('${k}')"><b>${n}</b><small><i>${esc(q)}</i><br>${esc(d)}</small></button>`).join('');
+  const dur=5+Math.floor(cA('tak')/4);
+  return `<div class="card talk"><div class="row"><h3 style="margin:0">⏱ ${to&&to.side===1?`Czas dla ${esc(m.sides[1].team.short)} — możesz porozmawiać ze swoimi`:'Czas — co mówisz zawodnikom?'}</h3>${to?`<span class="tobar" style="width:140px;margin-left:10px"><i style="width:${Math.max(0,(to.end-Date.now())/150)}%"></i></span><b class="tocount" style="margin-left:6px">${Math.max(0,Math.ceil((to.end-Date.now())/1000))} s</b>`:''}<span class="sp"></span><button class="ghost" onclick="ui.talk=false;render()">${st.tone||st.hint?'Zamknij':'Bez przemowy'}</button>${to?'<button class="btn" onclick="endTimeout()">↩ Wracamy na boisko</button>':''}</div>
+  <p class="small mut">Wybierz <b>ton przemowy</b> i <b>wskazówkę do gry</b> (po jednej na przerwę). Każdy zawodnik reaguje inaczej — zależy od jego charakteru i Twoich atrybutów trenera. Reakcje zobaczysz przy nazwiskach w panelu.</p>
+  <div class="tsec">1. Ton przemowy${st.tone?` <span class="good">✓ ${TALK_TONE.find(x=>x[0]===st.tone)[1]}</span>`:''}</div><div class="opts tone4">${tone}</div>
+  <div class="tsec">2. Wskazówka do gry <small class="mut">(działa ${dur} akcji)</small>${st.hint?' <span class="good">✓ wydana</span>':''}</div>
+  <div class="opts tone4"><button class="opt ${st.hint==='srv'?'on':''}" ${st.hint?'disabled':''} onclick="applyHint('srv')"><b>Ryzykujcie na zagrywce</b><small>Mocniejsza zagrywka: więcej asów, ale i więcej błędów.</small></button>
+   <button class="opt ${st.hint==='rec'?'on':''}" ${st.hint?'disabled':''} onclick="applyHint('rec')"><b>Skupcie się na przyjęciu</b><small>Lepsze przyjęcie, spokój dla przyjmujących i libero.</small></button></div>
+  <div class="tsub">Zagrywka w zawodnika:</div><div class="tgtl">${opp.map(({p,role})=>`<button class="ghost sm ${st.hint==='target'&&ui.match.sides[0].tmp&&ui.match.sides[0].tmp.id===p.id?'on':''}" ${st.hint?'disabled':''} onclick="applyHint('target','${p.id}')"><b>${esc(p.last)}</b> <small class="mut">${POS_SHORT[p.pos]} · przyjęcie ${p.prz}</small></button>`).join('')}</div></div>`;}
 // ---- karta ustawienia ----
 const ROT_TIP={1:'Rozgrywający z tyłu na prawej: trzech atakujących w pierwszej linii.',6:'Rozgrywający z tyłu w środku: trzech atakujących z przodu.',5:'Rozgrywający z tyłu na lewej: trzech atakujących z przodu, najdłuższy dobieg do siatki.',4:'Rozgrywający z przodu na lewej: tylko dwóch atakujących w pierwszej linii.',3:'Rozgrywający z przodu w środku: dwóch atakujących z przodu, możliwa kiwka.',2:'Rozgrywający z przodu na prawej: dwóch atakujących z przodu, klasyczna wystawa.'};
 function rotBox(m,i){const sd=m.sides[i];const sv=m.serving===i;const oc=onCourt(sd,sv);const kc=kitColors(m)[i];
@@ -2937,7 +2948,7 @@ function animScene(m,from,to,dur,done){const cv=document.getElementById('mcv');i
   requestAnimationFrame(fr);}
 function startTimeout(i){const m=ui.match;if(!m||m.over||ui.to)return;
   if(i===0){if(!callTimeout(m,0)){render();return;}m.log.push({t:`Czas dla ${esc(m.sides[0].team.name)}.`,c:'sys'});m.comm={t:`Czas dla ${m.sides[0].team.short}. Zawodnicy schodzą do ławki.`,w:0};}
-  const wasPlaying=!m.paused;m.paused=true;clearTimeout(timer);ui.talk=true;ui.talkRes=null;ui.toReq=false;
+  const wasPlaying=!m.paused;m.paused=true;clearTimeout(timer);ui.talk=true;ui.talkRes=null;ui.talkSt=null;ui.toReq=false;
   const base=formation(m);ui.to={side:i,end:Date.now()+TO_SEC*1000,wasPlaying,scene:base,said:null};persistLive();render();
   const cvOk=document.getElementById('mcv');if(cvOk)animScene(m,base,benchScene(m,base),1400,()=>{});
   clearInterval(ui.toTimer);ui.toTimer=setInterval(()=>{if(!ui.to){clearInterval(ui.toTimer);return;}const left=Math.max(0,Math.ceil((ui.to.end-Date.now())/1000));
