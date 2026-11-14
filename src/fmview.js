@@ -16,7 +16,7 @@ function fmFormation(m,i){const sd=m.sides[i],mine=i===0,sv=m.serving===i;const 
     const d=ui.talkRes&&mine&&ui.talkRes.del?ui.talkRes.del[p.id]:null;
     return `<div class="fmz ${click?'clk':''} ${ui.subSel!=null&&mine&&(ui.subSel===e.slot)?'sel':''}" ${click} title="Strefa ${z}: ${esc(p.first+' '+p.last)} · ${POS_NAMES[e.role]} · energia ${Math.round(p.en)}%">
       ${fmJersey(m,i,e)}<span class="fmrt ${rCls(r)}">${fmtR(r)}</span><span class="fmps">${pTag(e.role)}</span>
-      <b class="fmnm">${esc(p.last)}</b>${d?`<span class="dlt ${d>0?'good':'bad'}">${d>0?'+':''}${d}</span>`:''}
+      <b class="fmnm">${esc(shortN(p))}</b>${d?`<span class="dlt ${d>0?'good':'bad'}">${d>0?'+':''}${d}</span>`:''}
       <span class="fmen"><i style="width:${Math.round(p.en)}%;background:${energyCol(p.en)}"></i></span></div>`;};
   const back=oc.filter(e=>!isFrontZ(e.zone));
   return `<div class="card fmcard" style="border-top:3px solid ${kc}">
@@ -90,7 +90,7 @@ function fmStrip(m){const a=m.sides[0];const oc=onCourt(a,m.serving===0);const o
   const on=oc.slice().sort((x,y)=>ord[x.role]-ord[y.role]||x.zone-y.zone);
   const mine=e=>{const p=e.p,r=liveRating(p),mor=p.mor==null?60:p.mor;const click=!m.over?`onclick="selSub(${e.slot==='L'?"'L'":e.slot})"`:'';
     return `<div class="fmsp ${click?'clk':''} ${ui.subSel===e.slot?'sel':''}" ${click} title="${esc(p.first+' '+p.last)} · energia ${Math.round(p.en)}% · morale ${mor}">
-      <span class="fmps2">${pTag(e.role)}</span>${fmJersey(m,0,e,28)}<b class="fmnm">${esc(p.last)}</b><span class="fmps2">ogólna <b style="color:var(--acc)">${rating(p)}</b></span>
+      <span class="fmps2">${pTag(e.role)}</span>${fmJersey(m,0,e,28)}<b class="fmnm">${esc(shortN(p))}</b><span class="fmps2">ogólna <b style="color:var(--acc)">${rating(p)}</b></span>
       <span class="fmrow"><span class="fmrt ${rCls(r)}">${fmtR(r)}</span><span>${mor>=62?'😀':mor>=45?'😐':'😟'}</span>${formChip(p)}</span>
       <span class="fmen"><i style="width:${Math.round(p.en)}%;background:${energyCol(p.en)}"></i></span></div>`;};
   return `<div class="card fmstrip"><div class="fmsi"><b>Skład</b><div class="small mut">Zmian zostało <b style="color:var(--txt)">${a.subs}</b></div><div class="small mut">Czasów zostało <b style="color:var(--txt)">${a.to}</b></div><div class="small mut">Kliknij, by zmienić</div></div>${on.map(mine).join('')}</div>`;}
@@ -163,7 +163,7 @@ function fmBench(m){const a=m.sides[0];const bench=benchOf(a);if(!bench.length)r
    ${list.map(p=>{const fit=need&&p.pos===need;const inj=p.inj>0;
      return `<div class="fmbp clk ${fit?'fit':''} ${inj?'inj':''}" onclick="${sel!=null&&!inj?`doSub('${p.id}')`:`openPop('${p.id}')`}" title="${esc(p.first+' '+p.last)} · ${POS_NAMES[p.pos]} · ${p.age} lat">
       <div class="fmbh"><span class="fmj" style="width:26px;height:26px;font-size:12px;background:${p.pos==='L'?libColor(kitColors(m)[0],'#000'):kitColors(m)[0]};color:${lum(p.pos==='L'?libColor(kitColors(m)[0],'#000'):kitColors(m)[0])>0.6?'#111':'#fff'}">${p.num}</span>
-       <div class="fmbn"><b class="fmnm">${esc(p.last)}</b><span class="fmps2">${pTag(p.pos)} · ${p.age} l.</span></div><span class="fmov" title="Ocena ogólna">${rating(p)}</span></div>
+       <div class="fmbn"><b class="fmnm">${esc(shortN(p))}</b><span class="fmps2">${pTag(p.pos)} · ${p.age} l.</span></div><span class="fmov" title="Ocena ogólna">${rating(p)}</span></div>
       <div class="fmattrs">${FM_KEY[p.pos].map(k=>`<span title="${esc((ALL_ATTRS.find(x=>x[0]===k)||[])[1]||k)}"><small>${attrShort(k)}</small><b style="color:${attrCol(p[k])}">${p[k]}</b></span>`).join('')}</div>
       ${inj?'<div class="small bad">kontuzja</div>':`<span class="fmen" style="width:100%"><i style="width:${Math.round(p.en)}%;background:${energyCol(p.en)}"></i></span>`}</div>`;}).join('')}</div>`;}
 // ================= TAKTYKA: BLOK, OBRONA, PIŁKI SYTUACYJNE, CEL ZAGRYWKI =================
