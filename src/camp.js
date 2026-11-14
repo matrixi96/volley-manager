@@ -37,14 +37,18 @@ function campDay(d){const c=campOf();if(!c||c.done||!c.until||d<c.until)return;c
   news(`🏕️ Koniec obozu w ${C[1]}. Drużyna wraca do klubu.`);}
 function campMailHtml(b){const C=CAMPS.find(x=>x[0]===b.k);const fx=C[6];
   return `<p class="mtext">Wróciliśmy z obozu w ${esc(C[1])} (${C[3]} ${esc(C[2])}, ${C[4]} dni, koszt ${fmt(b.cost)}). Podsumowanie:</p>
-   <div class="campfx">${CAMP_FX.map(([k,n])=>`<span class="tkp ${k==='inj'?(fx[k]>1?'r':'g'):fx[k]>0?'g':fx[k]<0?'r':'y'}">${n}: ${campLvl(fx[k],k)}</span>`).join('')}</div>
+   <div class="mxbox" style="max-width:420px">${campFx(fx)}</div>
    <div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th class="l">Podniesione cechy</th><th>Uraz</th></tr></thead><tbody>${b.rows.map(r=>`<tr><td class="l"><button class="link pn" onclick="openPop('${r[0]}')">${esc(r[1])}</button></td><td class="l">${r[2].map(a=>`<span class="trt tu-up">${attrSh(a)} +1</span>`).join('')||'<span class="mut">—</span>'}</td><td>${r[3]?`<span class="bad">🚑 ${r[3]} dni</span>`:'<span class="mut">—</span>'}</td></tr>`).join('')}</tbody></table></div>
    <p class="small mut">Zgranie par i znajomość taktyki wzrosły — sprawdzisz to w Centrum danych i w zakładce Taktyka → Skuteczność.</p>`;}
-function campLvl(v,k){if(k==='inj')return v>=1.3?'wysokie':v>=1?'normalne':'niskie';if(v<0)return 'spadek';const n=Math.round(v);return n<=0?'—':'●'.repeat(Math.min(4,n))+'○'.repeat(Math.max(0,4-Math.min(4,n)));}
+function campLvl(v,k){if(k==='inj')return v>=1.2?'wysokie':v>=1?'normalne':'niskie';if(v<0)return 'spadek';return v<=0?'brak':v<=1?'mały':v<=2?'średni':v<=3?'duży':'bardzo duży';}
+function campRow(k,n,v){if(k==='inj'){const c=v>=1.2?'bad':v>=1?'mid':'good';return `<div class="cfx"><span class="cfn">${n}</span><span class="cfpill ${c}">${campLvl(v,k)}</span></div>`;}
+  const seg=v<0?1:Math.max(0,Math.min(5,Math.round(v/3.5*5)));const c=v<0?'bad':'good';
+  return `<div class="cfx"><span class="cfn">${n}</span><span class="cfbar ${c}">${Array.from({length:5},(_,i)=>`<i class="${i<seg?'on':''}"></i>`).join('')}</span><span class="cfv ${v<0?'bad':v<=0?'mut':''}">${campLvl(v,k)}</span></div>`;}
+function campFx(fx){return `<div class="cfxl">${CAMP_FX.map(([k,n])=>campRow(k,n,fx[k])).join('')}</div>`;}
 function campCard(){const c=campOf();const s=S();
   if(c){const C=CAMPS.find(x=>x[0]===c.k);return `<div class="card"><h2>Obóz przygotowawczy</h2><div class="campsel"><span class="campflag">${C[3]}</span><div><b>${esc(C[1])}</b> <span class="mut small">${esc(C[2])} · ${C[4]} dni · ${fmt(c.cost)}</span><div class="small">${c.done?'<span class="good">Obóz zakończony — raport w poczcie.</span>':c.start?`Trwa: ${fmtShort(c.start)} – ${fmtShort(c.until)}`:'Wyjazd razem ze startem przygotowań do sezonu.'}</div></div></div></div>`;}
   if(!campCanBook())return '';
   return `<div class="card"><h2>Obóz przygotowawczy</h2><p class="small mut">Wybierz miejsce obozu przed sezonem. Każde daje inne korzyści i kosztuje inaczej. Efekt wzmacnia trener przygotowania fizycznego. Jeden obóz na sezon${s.phase==='off'?'; wyjazd nastąpi razem ze startem przygotowań':'; wyjazd jutro'}.</p>
-   <div class="campgrid">${CAMPS.map(C=>{const cost=campCost(C);const fx=C[6];return `<div class="campc ${ui.confirm==='camp'+C[0]?'on':''}"><div class="row" style="gap:8px"><span class="campflag">${C[3]}</span><div><b>${esc(C[1])}</b><div class="small mut">${esc(C[2])} · ${C[4]} dni</div></div><span class="sp"></span><b class="acc">${fmt(cost)}</b></div>
-     <p class="small mut" style="margin:6px 0">${esc(C[7])}</p><div class="campfx">${CAMP_FX.map(([k,n])=>`<div><span>${n}</span><b class="${k==='inj'?(fx[k]>1?'bad':fx[k]<1?'good':''):fx[k]<0?'bad':''}">${campLvl(fx[k],k)}</b></div>`).join('')}</div>
-     <button class="${ui.confirm==='camp'+C[0]?'btn':'ghost'} sm" style="margin-top:8px;width:100%" onclick="campBook('${C[0]}')">${ui.confirm==='camp'+C[0]?`Potwierdź: zapłacisz ${fmt(cost)}`:'Wybierz'}</button></div>`;}).join('')}</div></div>`;}
+   <div class="campgrid">${CAMPS.map(C=>{const cost=campCost(C);const fx=C[6];return `<div class="campc ${ui.confirm==='camp'+C[0]?'on':''}"><div class="camph"><span class="campflag">${C[3]}</span><div class="campt"><b>${esc(C[1])}</b><span>${esc(C[2])} · ${C[4]} dni</span></div><div class="campp"><b>${fmt(cost)}</b><span>${fmt(Math.round(cost/C[4]))}/dzień</span></div></div>
+     <p class="campd">${esc(C[7])}</p>${campFx(fx)}
+     <button class="${ui.confirm==='camp'+C[0]?'btn':'ghost'} sm" style="margin-top:12px;width:100%" onclick="campBook('${C[0]}')">${ui.confirm==='camp'+C[0]?`Potwierdź: zapłacisz ${fmt(cost)}`:'Wybierz'}</button></div>`;}).join('')}</div></div>`;}
