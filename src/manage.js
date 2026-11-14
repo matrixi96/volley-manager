@@ -215,21 +215,8 @@ function cardModal(){
   const st=S().ps[p.id];
   let act='';const o=windowOpen();
   if(mine&&p.jr){act+=`<div class="act"><h4>Junior (U20)</h4><p class="small">Gra w lidze juniorów. Awans do pierwszej drużyny daje kontrakt na 3 sezony z pensją ok. ${fmt(Math.max(40000,wageDemand(p)))}/rok.</p><div class="row wrap"><button class="btn" onclick="promote('${p.id}')">⬆️ Awansuj do pierwszej drużyny</button><button class="link" onclick="releaseJunior('${p.id}')">${ui.confirm==='rj'+p.id?'Na pewno?':'Zwolnij z akademii'}</button></div></div>`;}
-  else if(mine){
-    const need=wageNeeded(p);
-    act+=`<div class="act"><h4>Kontrakt</h4><p class="small">Do <b>${ceDate(p.ce)}</b> · pensja ${fmt(p.wage)}/rok. Zawodnik chce: <b>${fmt(need)}</b>/rok.</p>
-    <div class="row wrap"><label class="small">Pensja <input id="rw" type="number" step="5000" value="${need}"></label><label class="small">Lata <select id="ry">${[1,2,3].map(y=>`<option ${y===2?'selected':''}>${y}</option>`).join('')}</select></label><button class="ghost" onclick="renew('${p.id}',+$('#rw').value,+$('#ry').value)">Przedłuż</button></div></div>
-    <div class="act"><h4>Sprzedaż</h4>${o?`<button class="ghost" onclick="seekBuyers('${p.id}')">Szukaj kupca</button>`:'<p class="mut small">Okno transferowe zamknięte.</p>'}
-    ${ui.offers&&ui.offers.pid===p.id?(ui.offers.list.length?ui.offers.list.map(x=>`<div class="row offer">${tDot(x.tm)}${tName(x.tm)} oferuje <b>${fmt(x.fee)}</b><span class="sp"></span><button class="btn" onclick="acceptBuy('${p.id}',${x.tm},${x.fee})">Sprzedaj</button></div>`).join(''):'<p class="mut small">Żaden klub nie jest teraz zainteresowany.</p>'):''}
-    <div style="margin-top:8px"><button class="link" onclick="releasePlayer('${p.id}')">${ui.confirm==='rel'+p.id?`Na pewno? Odprawa ${fmt(releaseCost(p))}`:'Rozwiąż kontrakt'}</button>${p.age<=19?` · <button class="link" onclick="demote('${p.id}')">Przesuń do juniorów</button>`:''}</div></div>`;
-  }else{
-    const need=wageNeeded(p);
-    act+=`<div class="act"><h4>${p.tm>=0?'Złóż ofertę':'Zaproponuj kontrakt'}</h4>${o?`
-    ${p.tm>=0?`<p class="small">Wartość: <b>${fmt(pValue(p))}</b>. ${isStarter(p)?'Podstawowy zawodnik — klub zażąda więcej.':''}</p>`:'<p class="small">Wolny zawodnik — bez kwoty odstępnego.</p>'}
-    <div class="row wrap">${p.tm>=0?`<label class="small">Kwota <input id="of" type="number" step="10000" value="${pValue(p)}"></label>`:''}<label class="small">Pensja/rok <input id="ow" type="number" step="5000" value="${need}"></label><label class="small">Lata <select id="oy">${[1,2,3].map(y=>`<option ${y===2?'selected':''}>${y}</option>`).join('')}</select></label>
-    <button class="btn" onclick="makeOffer('${p.id}',${p.tm>=0?"+$('#of').value":'0'},+$('#ow').value,+$('#oy').value)">Wyślij</button></div>
-    <p class="mut small">Saldo klubu: ${fmt(SAVE.fin.bal)} · kadra: ${myTeam().players.length}/${SQUAD_MAX}</p>`:'<p class="mut small">Okno transferowe jest zamknięte. Otwiera się przed sezonem i trwa do końca sparingów.</p>'}</div>`;
-  }
+  else if(mine){act+=myContractAct(p);}
+  else{act+=buyAct(p);}
   return `<div class="modal" onclick="if(event.target===this){ui.card=null;ui.offers=null;render()}"><div class="mcard">
    <div class="row"><span class="cface">${pFace(p,84)}</span><div><div class="mut small">${p.tm>=0?tDot(p.tm)+esc(TEAMS[p.tm].name)+(p.jr?' · juniorzy U20':''):'Wolny zawodnik'}</div><h2>${p.num&&p.tm>=0?p.num+'. ':''}${esc(p.first)} ${esc(p.last)}${p.star?' <span title="Gwiazda zespołu">⭐</span>':''}</h2></div><span class="sp"></span><button class="ghost" onclick="ui.card=null;ui.offers=null;render()">✕</button></div>
    ${ui.tmsg?`<div class="tmsg ${ui.tmsg.ok?'ok':'no'}">${esc(ui.tmsg.t)}</div>`:''}
