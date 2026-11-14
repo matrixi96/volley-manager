@@ -45,12 +45,33 @@ function matchday(k,att,opp,est,ov){const e=ECO(),inf=myInfra(),rep=SAVE.ai[SAVE
   const orep=opp!=null&&SAVE.ai[opp]?SAVE.ai[opp].rep:50;const gs=guestSeats(inf.gosc);
   const gAtt=gs?Math.round(Math.min(gs,(60+orep*4)*clamp(Math.pow(refPrice(SAVE.team)/Math.max(5,tix),1.2),0.2,1.6)*k*(est?1:0.8+R()*0.4))):0;const guests=gAtt*tix;
   const T=att+vAtt+gAtt;const pp=ov.park!=null?ov.park:e.park;
-  const cars=Math.round(Math.min(parkSpots(inf.park),T*0.3*clamp(1.25-0.05*pp,0.1,1.2)));const parking=cars*pp;
+  const cars=Math.round(Math.min(parkSpots(inf.park),T*0.3*clamp(1.25-0.05*pp,0.1,1.2)*(est?1:0.9+R()*0.2)));const parking=cars*pp;
   const gl=[];let gas=0;const sm=0.7+0.1*inf.gastro;
-  for(const [key,n,lv,ref,cost,rate] of GAS_PR){if(inf.gastro<lv)continue;const pr=ov.gas&&ov.gas[key]!=null?ov.gas[key]:e.gas[key];const q=Math.round(T*rate*sm*clamp(Math.pow(ref/Math.max(1,pr),1.6),0.05,2.5));const pf=q*(pr-cost);gl.push({key,n,q,pr,pf});gas+=pf;}
+  for(const [key,n,lv,ref,cost,rate] of GAS_PR){if(inf.gastro<lv)continue;const pr=ov.gas&&ov.gas[key]!=null?ov.gas[key]:e.gas[key];const q=Math.round(T*rate*sm*clamp(Math.pow(ref/Math.max(1,pr),1.6),0.05,2.5)*(est?1:0.88+R()*0.24));const pf=q*(pr-cost);gl.push({key,n,q,pr,pf});gas+=pf;}
   return {att,vAtt,gAtt,cars,T,tickets,vip,guests,parking,gas,gl,tot:tickets+vip+guests+parking+gas};}
 function payMatchday(k,att,opp){const r=matchday(k,att,opp,false);money(r.tickets+r.vip+r.guests,'Bilety');money(r.gas,'Gastronomia');money(r.parking,'Parking');
-  SAVE.eco.last={...r,gl:r.gl.map(x=>({n:x.n,q:x.q,pf:x.pf})),d:today(),opp};return r;}
+  const e=ECO();const inf=myInfra();const rec={d:today(),opp,kind:k===1?'Liga':k>1?'Play-off':'Sparing',att:r.att,cap:HALA_CAP[inf.hala-1],h:k===1?karHolders().tot:0,vAtt:r.vAtt,gAtt:r.gAtt,cars:r.cars,
+    tickets:r.tickets,vip:r.vip,guests:r.guests,gas:r.gas,parking:r.parking,tot:r.tot,tix:e.tix,park:e.park,gl:r.gl.map(x=>({n:x.n,q:x.q,pr:x.pr,pf:x.pf}))};
+  e.last=rec;e.mdLog=e.mdLog||[];const prev=e.mdLog[0]||null;e.mdLog.unshift(rec);e.mdLog=e.mdLog.slice(0,60);
+  if(typeof sendMail==='function'){const dlt=prev?rec.tot-prev.tot:null;sendMail({cat:'fin',from:'Księgowość klubu',t:`Dzień meczowy: ${TEAMS[opp]?TEAMS[opp].name:'mecz u siebie'}`,s:`${rec.att.toLocaleString('pl-PL')} widzów · przychód ${fmt(rec.tot)}${dlt!=null?` (${dlt>=0?'+':''}${fmt(dlt)} wobec poprzedniego meczu)`:''}`,b:{type:'md',rec,prev},lab:'Podsumowanie dnia meczowego'});}
+  return r;}
+function mdDelta(a,b,money){if(b==null)return '<span class="mut">–</span>';const d=a-b;if(!d)return '<span class="mut">bez zmian</span>';const p=b?Math.round(d/b*100):null;return `<span class="${d>0?'good':'bad'}">${d>0?'▲ +':'▼ '}${money?fmtFull(d):d.toLocaleString('pl-PL')}${p!=null&&isFinite(p)?` (${d>0?'+':''}${p}%)`:''}</span>`;}
+function mdMailHtml(b){const r=b.rec,p=b.prev;const v=(x,m)=>m?fmtFull(x):(x||0).toLocaleString('pl-PL');
+  const row=(l,k,m)=>`<tr><td class="l">${l}</td><td><b>${v(r[k],m)}</b></td><td class="mut">${p?v(p[k],m):'–'}</td><td>${mdDelta(r[k],p?p[k]:null,m)}</td></tr>`;
+  const notes=[];if(p){if(r.tix!==p.tix)notes.push(`cena biletu ${p.tix} → ${r.tix} zł`);if(r.park!==p.park)notes.push(`parking ${p.park} → ${r.park} zł`);if(p.opp!=null&&TEAMS[p.opp])notes.push(`poprzedni mecz u siebie: ${TEAMS[p.opp].name} (${fmtDMY(p.d)})`);}
+  return `<div class="kstrip in"><div><span>Widzowie</span><b>${r.att.toLocaleString('pl-PL')}</b><small>na ${r.cap.toLocaleString('pl-PL')} miejsc · ${Math.round(r.att/r.cap*100)}%${r.h?` · ${r.h} z karnetem`:''}</small></div><div><span>Przychód z meczu</span><b class="good">${fmt(r.tot)}</b><small>${p?mdDelta(r.tot,p.tot,true):'pierwszy mecz u siebie'}</small></div><div><span>Rozgrywki</span><b>${esc(r.kind)}</b><small>${fmtDMY(r.d)}</small></div></div>
+   <div class="tw"><table><thead><tr><th class="l">Pozycja</th><th>Ten mecz</th><th>Poprzedni</th><th>Zmiana</th></tr></thead><tbody>
+   ${row('Widzowie na trybunach','att')}${r.vAtt||(p&&p.vAtt)?row('Goście w loży VIP','vAtt'):''}${r.gAtt||(p&&p.gAtt)?row('Kibice w sektorze gości','gAtt'):''}${row('Auta na parkingu','cars')}
+   ${row('Bilety','tickets',1)}${r.vip||(p&&p.vip)?row('Loża VIP','vip',1):''}${r.guests||(p&&p.guests)?row('Sektor gości','guests',1):''}${row('Gastronomia (zysk)','gas',1)}${row('Parking','parking',1)}
+   <tr><td class="l"><b>Razem</b></td><td><b class="good">${fmtFull(r.tot)}</b></td><td class="mut">${p?fmtFull(p.tot):'–'}</td><td>${mdDelta(r.tot,p?p.tot:null,true)}</td></tr></tbody></table></div>
+   ${r.gl&&r.gl.length?`<h3>Gastronomia</h3><div class="tw"><table><thead><tr><th class="l">Produkt</th><th>Sprzedane</th><th>Cena</th><th>Zysk</th><th>Zmiana sprzedaży</th></tr></thead><tbody>${r.gl.map(x=>{const q=p&&p.gl?p.gl.find(y=>y.n===x.n):null;return `<tr><td class="l">${x.n}</td><td>${x.q}</td><td>${x.pr} zł</td><td class="good">${fmtFull(x.pf)}</td><td>${q?mdDelta(x.q,q.q):'<span class="mut">nowość</span>'}</td></tr>`;}).join('')}</tbody></table></div>`:''}
+   ${notes.length?`<p class="small mut">${notes.join(' · ')}</p>`:''}`;}
+function mdTableCard(){const L=(ECO().mdLog||[]);if(!L.length)return `<div class="card"><h2>Podsumowanie dnia meczowego</h2><p class="small mut">Tabela wypełni się po pierwszym meczu u siebie.</p></div>`;
+  const sum=L.reduce((a,r)=>a+r.tot,0);
+  return `<div class="card"><h2>Podsumowanie dnia meczowego</h2><p class="small mut">Każdy mecz u siebie: widzowie i przychody. Ostatnia kolumna porównuje z poprzednim meczem u siebie. Szczegóły każdego meczu są w Poczcie.</p>
+   <div class="tw"><table class="mdt"><thead><tr><th class="l">Data</th><th class="l">Rywal</th><th>Widzowie</th><th>Bilety</th><th>Loża VIP</th><th>Goście</th><th>Gastronomia</th><th>Parking</th><th>Razem</th><th>vs poprzedni</th></tr></thead><tbody>
+   ${L.map((r,i)=>{const p=L[i+1];return `<tr><td class="l">${fmtDMY(r.d)}</td><td class="l">${r.opp!=null&&TEAMS[r.opp]?tDot(r.opp)+esc(TEAMS[r.opp].name):'—'} <small class="mut">${esc(r.kind)}</small></td><td>${r.att.toLocaleString('pl-PL')} <small class="mut">${Math.round(r.att/r.cap*100)}%</small></td><td>${fmtFull(r.tickets)}</td><td>${r.vip?fmtFull(r.vip):'–'}</td><td>${r.guests?fmtFull(r.guests):'–'}</td><td>${fmtFull(r.gas)}</td><td>${fmtFull(r.parking)}</td><td><b class="good">${fmtFull(r.tot)}</b></td><td class="small">${mdDelta(r.tot,p?p.tot:null,true)}</td></tr>`;}).join('')}
+   <tr><td class="l" colspan="8"><b>Razem (${L.length} ${L.length===1?'mecz':L.length<5?'mecze':'meczów'})</b></td><td><b class="good">${fmtFull(sum)}</b></td><td class="small mut">średnio ${fmtFull(Math.round(sum/L.length))}</td></tr></tbody></table></div></div>`;}
 // ---- najlepsze ceny (podpowiedzi) ----
 function bestOf(lo,hi,step,f){let b=lo,bv=-1e18;for(let p=lo;p<=hi;p+=step){const v=f(p);if(v>bv){bv=v;b=p;}}return b;}
 function bestVip(){return bestOf(40,600,5,p=>matchday(1,null,null,true,{vipP:p}).vip);}

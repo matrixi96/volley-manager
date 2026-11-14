@@ -186,7 +186,7 @@ function clubView(){
   const info=`<div class="card ipanel" style="border-color:${f.col}"><div class="row"><h2 style="margin:0">${f.n}</h2><span class="sp"></span><span class="stars">${'★'.repeat(L)}<span class="mut">${'★'.repeat(5-L)}</span></span></div>
    ${ui.tmsg?`<div class="tmsg ${ui.tmsg.ok?'ok':'no'}">${esc(ui.tmsg.t)}</div>`:''}<p class="small mut">${f.d}</p>${k==='hala'?hallStats():`<p class="small">Teraz: <b>${f.eff(L)}</b></p>`}</div>`;
   const pj=`<div class="card"><h2>Projekty budowlane</h2>${projs.map(projRow).join('')}</div>`;
-  const extra=k==='hala'?matchdayCard():k==='sklep'?shopCard():'';
+  const extra=k==='hala'?matchdayCard()+mdTableCard():k==='sklep'?shopCard():'';
   return `${head}${prog}<div class="igrid">${info}${pj}</div>${extra}
   <div class="card"><h2>Wszystkie obiekty</h2><div class="tw"><table><thead><tr><th class="l">Obiekt</th><th>Poziom</th><th class="l">Efekt</th><th>Rozbudowa</th></tr></thead><tbody>${INFRA.map(x=>`<tr class="clickrow" onclick="ui.infraSel='${x.sub||x.k}';ui.v3prev=null;v3Focus('${x.sub||x.k}');render()"><td class="l"><span class="dot" style="background:${x.col}"></span>${x.sub?'↳ ':''}${x.n}</td><td class="stars">${'★'.repeat(inf[x.k])}<span class="mut">${'★'.repeat(fMax(x)-inf[x.k])}</span></td><td class="l small">${x.eff(inf[x.k])}</td><td>${inf[x.k]<fMax(x)?fmt(upgradeCost(x,inf[x.k])):'—'}</td></tr>`).join('')}</tbody></table></div></div>`;
 }
