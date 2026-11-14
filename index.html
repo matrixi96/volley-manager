@@ -3421,7 +3421,7 @@ const NEWS_MAP=[[/^🚑/,'med','Lekarz klubowy','Kontuzja'],[/^🤝/,'spon','Dzi
   [/^(🏗️|🎉)/,'klub','Zarządca obiektów','Infrastruktura'],[/^(🌱|⬆️|⬇️|📄 J)/,'druz','Akademia','Juniorzy'],[/^(🏆|⭐|📣|📈|😮)/,'liga','Biuro ligi','Liga'],
   [/^(😤|📢|©️|🎂)/,'druz','Kapitan drużyny','Szatnia']];
 function mailFromNews(t){if(/^(✅ Wygrana|❌ Porażka)/.test(t))return;const r=NEWS_MAP.find(x=>x[0].test(t));if(!r)return;const tx=stripEmoji(t);
-  sendMail({cat:r[1],from:r[2],t:tx.length>70?tx.slice(0,68)+'…':tx,s:r[3],b:{type:'text',x:tx},ic:(t.match(/^\p{Extended_Pictographic}/u)||[''])[0]});}
+  sendMail({cat:r[1],from:r[2],t:tx,s:r[3],b:{type:'text',x:tx},ic:(t.match(/^\p{Extended_Pictographic}/u)||[''])[0]});}
 // ---- generatory ----
 function mailMatch(m,c){try{const me=m.sides[0],op=m.sides[1];const won=m.winner===0;const T=teamTotals(me),O=teamTotals(op);
   const rate=sd=>sd.pl.filter(p=>p.st.srv+p.st.rec+p.st.att+p.st.dig+p.st.blk>0).map(p=>[p.id,p.last,p.pos,Math.round((liveRating(p)||6)*10)/10,p.st.kill+p.st.blk+p.st.ace,p.st.att?Math.round(p.st.kill/p.st.att*100):null,p.st.rec?Math.round(p.st.recPos/p.st.rec*100):null]).sort((a,b)=>b[3]-a[3]);
@@ -3493,7 +3493,7 @@ function mailRel(m){const b=m.b||{};const out=[];const c=myNext();const s=S();
   return out.length?`<div class="mxrel"><div class="mxrt">Powiązane informacje</div><div class="mxrg">${out.slice(0,3).map(([l,t,a,col])=>`<button class="mxrc" style="--rc:${col}" onclick="${a}"><small>${l}</small><b>${t}</b></button>`).join('')}</div></div>`:'';}
 function mailPane(m){const C=MAIL_CAT[m.cat]||MAIL_CAT.klub;const from=String(m.from).replace(/\s*\(([^)]*)\)\s*$/,' · $1');
   return `<div class="mxph" style="--mc:${C[1]}"><button class="ghost sm mback" onclick="ui.mailSel=null;render()">←</button><span class="mxav">${m.ic||mailInitials(m.from)}</span>
-    <div class="mxpt"><small>${esc(from)}</small><h1>${esc(m.t)}</h1></div><span class="sp"></span>
+    <div class="mxpt"><small>${esc(from)}</small><h1>${esc(m.b&&m.b.x&&/…$/.test(m.t)?m.b.x:m.t)}</h1></div><span class="sp"></span>
     <div class="mxpa"><button class="mxdots" onclick="ui.mailMenu=!ui.mailMenu;render()">⋯</button><span class="mxtm">${m.tm||mailTime(m)}</span>
      ${ui.mailMenu?`<div class="mxmenu"><button onclick="ui.mailMenu=0;mailStar('${m.id}')">${m.st?'★ Usuń gwiazdkę':'☆ Oznacz gwiazdką'}</button><button onclick="ui.mailMenu=0;mailUnread('${m.id}')">● Oznacz jako nieprzeczytaną</button><button onclick="ui.mailMenu=0;mailArch('${m.id}')">${m.ar?'↺ Przywróć z archiwum':'🗄 Archiwizuj'}</button><div class="mxmd">${C[0]}${m.lab?' · '+esc(m.lab):''} · ${fmtLong(m.d)}</div></div>`:''}</div></div>
    <div class="mbody mxb">${mailBodyHtml(m)}${mailRel(m)}</div>`;}
