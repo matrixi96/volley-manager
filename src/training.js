@@ -18,10 +18,13 @@ function formAfterMatch(m){if(typeof PLAYERS==='undefined')return;
       if(hasT(p,'pro'))d*=0.7;if(hasT(p,'kap'))d*=1.3;if(d<0){if(hasT(p,'ner'))d*=1.3;if(hasT(p,'zde'))d*=0.7;}else if(hasT(p,'amb'))d*=1.15;
       formAdd(p,d*0.6+(60-fmOf(p))*(hasT(p,'pro')?0.18:0.12));
       (p.fmh=p.fmh||[]).push(Math.round(r*10)/10);if(p.fmh.length>5)p.fmh.shift();}});}
+// regeneracja: fizjoterapeuta (umiejętność 1–20) i odnowa biologiczna
+function regenK(){const sk=staffSkill('med');return (0.8+sk/20*0.5)*(1+0.05*((myInfra().odn||1)-1));}
+function matchDrainK(){return 1.15-staffSkill('med')/20*0.3;}
 // zmęczenie po meczu: tylko Twoi zawodnicy (świeżość odbudowuje się na treningach)
-function fatigueAfterMatch(m){const sd=m.sides[0];if(!sd||sd.team.idx!==SAVE.team)return;
+function fatigueAfterMatch(m){const sd=m.sides[0];if(!sd||sd.team.idx!==SAVE.team)return;const dk=matchDrainK();
   for(const cp of sd.pl){const x=cp.st;if(x.srv+x.rec+x.att+x.dig+x.blk===0)continue;const P=PLAYERS[cp.id];if(!P)continue;const p=P.p;
-    p.fr=Math.round(clamp(frOf(p)-14-(100-cp.en)*0.4,0,100));}}
+    p.fr=Math.round(clamp(frOf(p)-(14+(100-cp.en)*0.4)*dk,0,100));}}
 
 // ================= TRENING: PLAN TYGODNIA, 3 JEDNOSTKI DZIENNIE =================
 const TR_UNITS={
@@ -73,12 +76,12 @@ function devSession(p,U,intI,mods){const r=rating(p);const gap=(p.pot||r)-r;if(g
     if(v>=1){p[k]++;p.xp[k]=Math.round((v-1)*100)/100;}else p.xp[k]=Math.round(v*1000)/1000;});}
 function trainDay(d,md){const t=myTeam();if(!t)return;const trn=ensTrn();const isM=md.has(d);
   const plan=dayPlan(d,md);const units=plan.filter(Boolean);const intI=SAVE.training.int;const lm=[0.75,1,1.3][intI];const mods=clubMods(SAVE.team);
-  const rp={};// raport dnia dla każdego zawodnika
-  for(const p of t.players){let fr=frOf(p)+6;const fm0=fmOf(p);
-    if(p.inj&&(!p.injUntil||p.injUntil>d)){p.fr=Math.round(clamp(fr+6,0,100));rp[p.id]={i:1,fr:p.fr,f:[Math.round(fm0),Math.round(fm0)]};continue;}
+  const rp={};const rk=regenK();// raport dnia dla każdego zawodnika
+  for(const p of t.players){let fr=frOf(p)+6*rk;const fm0=fmOf(p);
+    if(p.inj&&(!p.injUntil||p.injUntil>d)){p.fr=Math.round(clamp(fr+6*rk,0,100));rp[p.id]={i:1,fr:p.fr,f:[Math.round(fm0),Math.round(fm0)]};continue;}
     const a0={},x0={};for(const k of ALL_KEYS){a0[k]=p[k];x0[k]=(p.xp&&p.xp[k])||0;}const scs=[];let inj=0,n=0;
     for(const u of units){const U=TR_UNITS[u];
-      if(U.load>0)fr-=U.load*lm*(1.25-p.kon/20*0.5);else fr-=U.load;
+      if(U.load>0)fr-=U.load*lm*(1.25-p.kon/20*0.5);else fr-=U.load*rk;
       if(U.k.length)devSession(p,U,intI,mods);
       if(U.load>0){n++;const sc=58+nz()*(hasT(p,'pro')?10:18)+(hasT(p,'pra')?7:0)-(hasT(p,'len')?8:0)+(hasT(p,'amb')?3:0)+(fr<45?-12:0);scs.push(sc);formAdd(p,(sc-fmOf(p))*0.035);}
       if(u==='int'){if(p.tcTm!==SAVE.team){p.tcTm=SAVE.team;p.tc=0;}p.tc=Math.min(60,(p.tc||0)+0.3);formAdd(p,hasT(p,'kap')||hasT(p,'ind')?1.5:0.5);if(p.unh>0&&R()<0.3)p.unh--;}

@@ -47,7 +47,7 @@ const STAFF_ROLES=[
   ['asy','Asystent trenera','Szybszy rozwój umiejętności technicznych (zagrywka, atak, przyjęcie, blok…).'],
   ['fiz','Trener przygotowania fizycznego','Szybszy rozwój cech fizycznych i mniej kontuzji.'],
   ['psy','Psycholog sportowy','Szybszy rozwój cech mentalnych (koncentracja, opanowanie…).'],
-  ['med','Fizjoterapeuta','Krótsze przerwy po kontuzjach.'],
+  ['med','Fizjoterapeuta','Krótsze przerwy po kontuzjach, szybsza regeneracja po treningach i mniejsze zmęczenie po meczach.'],
   ['sk','Skaut','Dokładniejsza ocena potencjału zawodników z innych klubów.'],
   ['jr','Trener juniorów','Szybszy rozwój juniorów i lepsze roczniki z naboru.'],
   ['sta','Statystyk / analityk','Przygotowanie do rywala: mały bonus w każdym meczu.']
@@ -131,7 +131,7 @@ function agedOut(){return juniorsOf(SAVE.team).filter(p=>p.age>=20);}
 function staffView(){
   const pool=SAVE.staffPool||[];
   const card=([r,n,d])=>{const s=SAVE.staff[r];const cands=pool.filter(x=>x.role===r).sort((a,b)=>b.skill-a.skill);
-    return `<div class="card staff"><div class="row"><h3 style="margin:0">${n}</h3><span class="sp"></span>${s?`<span class="sk ${aCls(s.skill)}">${s.skill}/20</span>`:'<span class="bad small">wakat</span>'}</div><p class="small mut">${d}</p>
+    return `<div class="card staff"><div class="row"><h3 style="margin:0">${n}</h3><span class="sp"></span>${s?`<span class="sk ${aCls(s.skill)}">${s.skill}/20</span>`:'<span class="bad small">wakat</span>'}</div><p class="small mut">${d}</p>${r==='med'?`<p class="small">Teraz: regeneracja świeżości <b>${Math.round(regenK()*100)}%</b> normy (z odnową biologiczną) · zmęczenie po meczu <b>${Math.round(matchDrainK()*100)}%</b> normy · przerwy po kontuzjach <b>${Math.round(clubMods(SAVE.team).injDur*100)}%</b> normy.</p>`:''}
     ${s?`<div class="row small">${sFace(s,40)}<span><b>${esc(s.first)} ${esc(s.last)}</b>, ${s.age} l. · ${fmt(s.wage)}/rok</span><span class="sp"></span><button class="link" onclick="fireStaff('${r}')">${ui.confirm==='f'+r?`Na pewno? Odprawa ${fmt(round5k(s.wage/4))}`:'Zwolnij'}</button></div>`:'<p class="small bad">Brak osoby na tym stanowisku — efekt jak przy bardzo słabym specjaliście.</p>'}
     ${r==='sk'?`${(SAVE.scouts||[]).map(x=>`<div class="row small">${sFace(x,40)}<span><b>${esc(x.first)} ${esc(x.last)}</b> <span class="sk ${aCls(x.skill)}">${x.skill}</span> · dodatkowy skaut · ${fmt(x.wage)}/rok</span><span class="sp"></span><button class="link" onclick="fireScout('${x.id}')">${ui.confirm==='fs'+x.id?`Na pewno? Odprawa ${fmt(round5k(x.wage/4))}`:'Zwolnij'}</button></div>`).join('')}<p class="small mut">Skautów: ${allScouts().length}/${scoutCap()} (limit z siedziby klubu). Każdy skaut prowadzi własne zadania (zakładka Skauting).</p>`:''}
     <details ${s?'':'open'}><summary class="link">Kandydaci (${cands.length})</summary>${cands.map(c=>`<div class="row small cand"><span class="sk ${aCls(c.skill)}">${c.skill}</span>${sFace(c,30)}<span>${esc(c.first)} ${esc(c.last)}, ${c.age} l. · ${fmt(c.wage)}/rok</span><span class="sp"></span>${r==='sk'&&s?`<button class="ghost" onclick="hireScoutExtra('${c.id}')">+ Dodatkowy skaut</button>`:''}<button class="ghost" onclick="hireStaff('${c.id}')">${ui.confirm==='h'+c.id?'Na pewno? (zastąpi obecnego)':s?'Zastąp':'Zatrudnij'}</button></div>`).join('')||'<p class="mut small">Brak kandydatów — nowi pojawią się w oknie transferowym.</p>'}</details></div>`;};
