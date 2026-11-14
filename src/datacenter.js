@@ -1,3 +1,4 @@
+function shortN(p){const t=TEAMS[p.tm];const dup=t&&t.players.some(x=>x.id!==p.id&&x.last===p.last);return dup?p.first[0]+'. '+p.last:p.last;}
 // ================= ZGRANIE PAR, SKŁAD WYJŚCIOWY (KAFELKI), CENTRUM DANYCH =================
 function pairKey(a,b){return a<b?a+'|'+b:b+'|'+a;}
 function pairN(a,b){if(!a||!b)return 0;const P=SAVE.pairs||{};const k=pairKey(a.id,b.id);if(P[k]!=null)return P[k];const ti=a.tm;return Math.round(Math.min(togetherOf(a,ti),togetherOf(b,ti))*0.85);}
@@ -28,14 +29,14 @@ function luTile(t,lu,k,z,n){const p=t.players.find(x=>x.id===lu[k]);if(!p)return
   return `<div class="lcz dz ${k==='L'?'lib':''} ${ui.luSel===k?'sel':''} ${off?'off':''}" draggable="true" ondragstart="luDrag(event,'${k}')" ondragover="event.preventDefault();this.classList.add('ov')" ondragleave="this.classList.remove('ov')" ondrop="luDrop(event,'${k}')" onclick="luTap('${k}')" title="Przeciągnij na innego zawodnika, żeby zamienić (albo kliknij dwa kafelki)">
     ${z?`<span class="lczn">${z}</span>`:''}${p.inj?'<span class="lcinj" title="Kontuzja">🚑</span>':''}<button class="lcinfo" onclick="event.stopPropagation();openPop('${p.id}')" title="Profil">i</button>
     <div class="lcf">${pFace(p,46)}${capBadge(p)}<span class="lcnum">${p.num}</span></div>
-    <b class="fmnm" style="font-size:13px">${esc(p.last)}</b><span class="fmps2">${pTag(pos)} ${SLOT_LAB[k].toUpperCase()}${off?` <span class="bad">(gra poza pozycją)</span>`:''}${libIn?' · ZA NIEGO LIBERO':''}</span>
+    <b class="fmnm" style="font-size:13px">${esc(shortN(p))}</b><span class="fmps2">${pTag(pos)} ${SLOT_LAB[k].toUpperCase()}${off?` <span class="bad">(gra poza pozycją)</span>`:''}${libIn?' · ZA NIEGO LIBERO':''}</span>
     <div class="lcst"><span title="Ocena na tej pozycji"><small>ocena</small><b style="color:${off?'var(--bad)':'var(--acc)'}">${r}</b></span>${ks.map(a=>`<span title="${attrName(a)}"><small>${attrSh(a)}</small><b style="color:${attrCol(p[a])}">${p[a]}</b></span>`).join('')}<span title="Forma"><small>forma</small><b>${formChip(p)}</b></span></div>
     <span class="fmen" style="width:86%" title="Świeżość ${Math.round(frOf(p))}%"><i style="width:${frOf(p)}%;background:${frCol(frOf(p))}"></i></span></div>`;}
 function benchTile(p){const k='b:'+p.id;const ks=(KEY_ATTR[p.pos]||[]).slice(0,3);
   return `<div class="lcz dz bench ${ui.luSel===k?'sel':''}" draggable="true" ondragstart="luDrag(event,'${k}')" ondragover="event.preventDefault();this.classList.add('ov')" ondragleave="this.classList.remove('ov')" ondrop="luDrop(event,'${k}')" onclick="luTap('${k}')" title="Przeciągnij na zawodnika na boisku, żeby go zastąpić (albo kliknij oba kafelki)">
     ${p.inj?'<span class="lcinj" title="Kontuzja">🚑</span>':''}<button class="lcinfo" onclick="event.stopPropagation();openPop('${p.id}')" title="Profil">i</button>
     <div class="lcf">${pFace(p,46)}${capBadge(p)}<span class="lcnum">${p.num}</span></div>
-    <b class="fmnm" style="font-size:13px">${esc(p.last)}</b><span class="fmps2">${pTag(p.pos)}</span>
+    <b class="fmnm" style="font-size:13px">${esc(shortN(p))}</b><span class="fmps2">${pTag(p.pos)}</span>
     <div class="lcst"><span title="Ocena"><small>ocena</small><b style="color:var(--acc)">${rating(p)}</b></span>${ks.map(a=>`<span title="${attrName(a)}"><small>${attrSh(a)}</small><b style="color:${attrCol(p[a])}">${p[a]}</b></span>`).join('')}<span title="Forma"><small>forma</small><b>${formChip(p)}</b></span></div>
     <span class="fmen" style="width:86%" title="Świeżość ${Math.round(frOf(p))}%"><i style="width:${frOf(p)}%;background:${frCol(frOf(p))}"></i></span></div>`;}
 function chemRow(a,b,la,lb){const c=pairChem(a,b);const pct=chemPct(c);return `<div class="pchem"><span>${a?esc(a.last):'?'} <small class="mut">${la}</small> – ${b?esc(b.last):'?'} <small class="mut">${lb}</small></span><span class="kbar wide"><i style="width:${pct}%;background:${pct>=70?'var(--good)':pct>=40?'var(--acc)':'var(--bad)'}"></i></span><b style="color:${pct>=70?'var(--good)':pct>=40?'var(--acc)':'var(--bad)'}">${pct}%</b><small class="mut">${pairN(a,b)} m.</small></div>`;}
