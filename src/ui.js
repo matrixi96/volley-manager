@@ -7,6 +7,8 @@ let timer=null;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function myTeam(){return SAVE.team!=null?TEAMS[SAVE.team]:null;}
+function myLg(){return SAVE.team!=null?lgOf(SAVE.team):0;}
+function lgTeams(l){return lgIds(l).map(i=>TEAMS[i]);}
 function myLineup(){const t=myTeam();if(!validLineup(t,SAVE.lineup)){SAVE.lineup=autoLineup(t);save();}return SAVE.lineup;}
 function myTac(){if(!SAVE.tactics){SAVE.tactics={serve:1,dist:0};}return SAVE.tactics;}
 function aCls(v){return v>=16?'a4':v>=13?'a3':v>=9?'a2':'a1';}

@@ -20,7 +20,7 @@ const C_BASE=6,C_MAX=18;
 function coach(){return SAVE.coach;}
 function cA(k){return SAVE.coach?SAVE.coach.attrs[k]:10;}
 function clubReq(t){return initRepStatic(t);}
-function initRepStatic(t){return Math.round(clamp((teamStrength(t)-65)*3.5,20,90));}
+function initRepStatic(t){return initRep(t);}
 function canTake(ti,rep){return rep>=clubReq(TEAMS[ti])-25;}
 // ---- kreator ----
 function ccDraft(){if(!ui.cc){ui.cc={first:'',last:'',age:38,exp:'zaw',attrs:Object.fromEntries(C_ATTR.map(a=>[a[0],C_BASE])),face:'c'+Math.floor(R()*1e9),step:1};}return ui.cc;}
@@ -59,7 +59,7 @@ function clubPickView(){const c=ui.pendingCoach;
   <div class="grid">${foundCard()}${TEAMS.map(t=>{const ok=canTake(t.idx,c.rep);const g=goalFor(t.idx);return `<button class="teamcard ${ok?'':'locked'}" style="--c:${t.color}" ${ok?`onclick="pickTeam(${t.idx})"`:'disabled'}><b>${ok?'':'🔒 '}${esc(t.name)}</b><span class="stars">${stars(teamStrength(t))}</span><small class="mut">Siła: ${teamStrength(t)} · cel: ${GOAL_TXT[g]}</small>${ok?'':`<small class="bad">Wymagana reputacja: ${clubReq(t)-25}</small>`}</button>`;}).join('')}</div></div>`;}
 // ---- zarząd ----
 const GOAL_TXT={2:'finał (top 2)',4:'półfinał (top 4)',8:'play-off (top 8)',10:'miejsce w pierwszej dziesiątce',12:'budowa zespołu (bez presji wyniku)'};
-function goalFor(ti){const rk=TEAMS.map(t=>({i:t.idx,s:teamStrength(t)})).sort((a,b)=>b.s-a.s).findIndex(x=>x.i===ti)+1;return rk<=2?2:rk<=4?4:rk<=8?8:rk<=10?10:12;}
+function goalFor(ti){const rk=lgIds(lgOf(ti)).map(i=>({i,s:teamStrength(TEAMS[i])})).sort((a,b)=>b.s-a.s).findIndex(x=>x.i===ti)+1;return rk<=2?2:rk<=4?4:rk<=8?8:rk<=10?10:12;}
 function initBoard(fresh){SAVE.board=SAVE.board||{conf:60};if(fresh)SAVE.board.conf=60;const s=S();if(s&&s.goal==null)s.goal=goalFor(SAVE.team);}
 function boardAfterMatch(res){const b=SAVE.board;if(!b||!coach())return;
   const me=res.h===SAVE.team,my=me?res.sw[0]:res.sw[1],op=me?res.sw[1]:res.sw[0],oi=me?res.a:res.h;

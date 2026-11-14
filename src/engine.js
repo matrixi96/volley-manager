@@ -64,8 +64,38 @@ const TEAM_DEFS=[
   {name:'Huragan Wrocław',short:'HUR',q:13.4,color:'#0ea5e9'},
   {name:'Kormorany Olsztyn',short:'KOR',q:12.3,color:'#64748b'},
   {name:'Rakieta Bydgoszcz',short:'RAK',q:11.9,color:'#dc2626'},
-  {name:'Jantar Elbląg',short:'JAN',q:11.4,color:'#d97706'}
+  {name:'Jantar Elbląg',short:'JAN',q:11.4,color:'#d97706'},
+  // ---- 1. Liga ----
+  {name:'Iskra Toruń',short:'ISK',q:11.1,color:'#f43f5e',lg:1},
+  {name:'Grom Kielce',short:'GRO',q:10.9,color:'#6366f1',lg:1},
+  {name:'Fala Gdynia',short:'FAL',q:10.7,color:'#06b6d4',lg:1},
+  {name:'Znicz Radom',short:'ZNI',q:10.5,color:'#f59e0b',lg:1},
+  {name:'Orzeł Białystok',short:'ORZ',q:10.4,color:'#b91c1c',lg:1},
+  {name:'Warta Gorzów',short:'WAR',q:10.2,color:'#2563eb',lg:1},
+  {name:'Kometa Płock',short:'KOM',q:10.1,color:'#7c3aed',lg:1},
+  {name:'Lechita Gniezno',short:'LEC',q:9.9,color:'#16a34a',lg:1},
+  {name:'Zorza Opole',short:'ZOR',q:9.8,color:'#e11d48',lg:1},
+  {name:'Halny Nowy Sącz',short:'HAL',q:9.6,color:'#0d9488',lg:1},
+  {name:'Bursztyn Koszalin',short:'BRS',q:9.5,color:'#ca8a04',lg:1},
+  {name:'Dąb Siedlce',short:'DAB',q:9.3,color:'#65a30d',lg:1},
+  // ---- 2. Liga ----
+  {name:'Sparta Tarnów',short:'SPA',q:9.1,color:'#dc2626',lg:2},
+  {name:'Płomień Legnica',short:'PLO',q:8.9,color:'#ea580c',lg:2},
+  {name:'Wicher Słupsk',short:'WIC',q:8.8,color:'#0284c7',lg:2},
+  {name:'Strzała Zamość',short:'STR',q:8.6,color:'#9333ea',lg:2},
+  {name:'Jastrząb Piła',short:'JAS',q:8.5,color:'#475569',lg:2},
+  {name:'Mewa Świnoujście',short:'MEW',q:8.3,color:'#0891b2',lg:2},
+  {name:'Tęcza Leszno',short:'TEC',q:8.2,color:'#db2777',lg:2},
+  {name:'Granit Kalisz',short:'GRA',q:8.0,color:'#57534e',lg:2},
+  {name:'Rysie Suwałki',short:'RYS',q:7.9,color:'#a16207',lg:2},
+  {name:'Czarni Łomża',short:'CZA',q:7.7,color:'#1f2937',lg:2},
+  {name:'Bóbr Ostrołęka',short:'BOB',q:7.6,color:'#92400e',lg:2},
+  {name:'Sowa Przemyśl',short:'SOW',q:7.4,color:'#4f46e5',lg:2}
 ];
+// ---- ligi: 0 = Ekstra Liga, 1 = 1. Liga, 2 = 2. Liga (przynależność zmienia się po sezonie: SAVE.lg) ----
+var LG_N=['Ekstra Liga','1. Liga','2. Liga'],LG_SHORT=['EL','1L','2L'];
+function lgOf(i){return (typeof SAVE!=='undefined'&&SAVE&&SAVE.lg&&SAVE.lg[i]!=null)?SAVE.lg[i]:(TEAM_DEFS[i].lg||0);}
+function lgIds(l){const out=[];for(let i=0;i<TEAM_DEFS.length;i++)if(lgOf(i)===l)out.push(i);return out;}
 function genTeam(def,idx){
   const rnd=mulberry32(1000+idx*7919);
   const g=()=>(rnd()+rnd()+rnd()-1.5)/1.5;

@@ -14,7 +14,7 @@ function wageDemand(p){const r=rating(p);return round5k(Math.max(40000,Math.pow(
 function snap(p){const o={};for(const k of ALL_KEYS)o[k]=p[k];return o;}
 function baseRating(p){return p.base?rating(Object.assign({},p,p.base)):rating(p);}
 function potBonus(age,r){const k=r>=85?0.5:r>=80?0.75:1;return k*(age<=21?3+R()*12:age<=24?2+R()*7:age<=27?R()*3:0);}
-function initRep(t){return Math.round(clamp((teamStrength(t)-65)*3.5,20,90));}
+function initRep(t){const s=teamStrength(t),l=lgOf(t.idx);return Math.round(l===0?clamp((s-65)*3.5,45,90):l===1?clamp(25+(s-65)*3,22,50):clamp(10+(s-54)*2,8,30));}
 function teamQ(t){return teamStrength(t)/5;}
 function restoreDefs(){TEAMS.forEach((t,i)=>{const d=TEAM_DEFS[i];t.name=d.name;t.short=d.short;t.color=d.color;t.city='';});applyCustom();}
 function resetTeams(){restoreDefs();TEAMS.forEach((t,i)=>{t.players=genTeam(TEAM_DEFS[i],i).players;});rebuildIndex();}
@@ -31,7 +31,18 @@ function genPlayer(pos,q,age){const id='n'+(W().nextId++);
   for(const [k] of MENTAL)p[k]=Math.round(clamp(q-1+nz()*4,1,20));
   p.tc=0;setDob(p);ensTraits(p);return p;}
 function assignNum(p,tm){const used=new Set(W().players.filter(x=>x.tm===tm&&x!==p).map(x=>x.num));if(p.num&&!used.has(p.num))return;for(let n=1;n<=40;n++)if(!used.has(n)){p.num=n;return;}}
+// stare zapisy (jedna liga, 12 klubów): dogeneruj kluby 1. i 2. Ligi — kadry, renomę, budżety i juniorów
+function ensureLeagues(){if(!SAVE.world)return false;const have=new Set(W().players.filter(p=>p.tm>=0).map(p=>p.tm));const sn=SAVE.season?SAVE.season.n:1;let added=0;
+  if(!SAVE.lg)SAVE.lg=TEAM_DEFS.map(d=>d.lg||0);while(SAVE.lg.length<TEAM_DEFS.length)SAVE.lg.push(TEAM_DEFS[SAVE.lg.length].lg||0);
+  SAVE.ai=SAVE.ai||[];
+  for(const t of TEAMS){if(have.has(t.idx))continue;const g=genTeam(TEAM_DEFS[t.idx],t.idx);
+    for(const p0 of g.players){const p=Object.assign({},p0,{tm:t.idx});initPlayerMeta(p,sn,false);setDob(p);W().players.push(p);}added++;}
+  if(added){syncTeams();for(const t of TEAMS)if(!SAVE.ai[t.idx]){const rep=initRep(t);SAVE.ai[t.idx]={rep,bud:round5k(200000+rep*15000+R()*300000)};}
+    if(SAVE.jrInit&&typeof genJunior==='function')for(const t of TEAMS)if(!W().players.some(p=>p.tm===t.idx&&p.jr))JR_PLAN.forEach((pos,i)=>{W().players.push(genJunior(t.idx,16+(i%4),pos));});
+    syncTeams();}
+  return added>0;}
 function initWorld(){
+  SAVE.lg=TEAM_DEFS.map(d=>d.lg||0);
   resetTeams();
   SAVE.world={players:[],nextId:1};
   const sn=SAVE.season?SAVE.season.n:1;
