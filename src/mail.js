@@ -6,7 +6,7 @@ const MAIL_MAX=300;
 function mailBox(){return SAVE.mail||(SAVE.mail=[]);}
 function mailOpts(){return SAVE.mailOpt||(SAVE.mailOpt={trD:1,trW:1,trM:1});}
 function sendMail(o){if(SAVE.team==null)return null;const box=mailBox();SAVE.mailN=(SAVE.mailN||0)+1;
-  const m=Object.assign({id:'m'+SAVE.mailN,d:SAVE._now||today(),cat:'klub',from:'Klub',t:'',s:'',b:{type:'text'},r:0,st:0,ar:0,act:0},o);box.unshift(m);
+  const m=Object.assign({id:'m'+SAVE.mailN,d:SAVE._now||today(),cat:'klub',from:'Klub',t:'',s:'',b:{type:'text'},r:0,st:0,ar:0,act:0},o);if(!m.tm)m.tm=mailTime(m);box.unshift(m);
   if(box.length>MAIL_MAX){// najpierw wyrzucamy najstarsze przeczytane, potem najstarsze w ogóle
     let i=box.length-1;while(box.length>MAIL_MAX&&i>=0){if(box[i].r&&!box[i].st)box.splice(i,1);i--;}while(box.length>MAIL_MAX)box.pop();}
   return m;}
@@ -37,7 +37,7 @@ function mailTraining(kind,days){if(!days.length)return;const o=mailOpts();if(ki
   const sn=best?`Najlepiej: ${best[1]} (${fx1(best[3])})${worst&&worst!==best?`, najsłabiej: ${worst[1]} (${fx1(worst[3])})`:''}.${ups.length?` Podniesione atrybuty: ${ups.length} zawodn.`:''}${tired.length?` Zmęczeni: ${tired.length}.`:''}`:'Dzień bez jednostek treningowych.';
   sendMail({cat:'trening',from:asyName(),t:ttl,s:sn,b:{type:'train',k:kind,sm},lab:kind==='D'?'Raport dzienny':kind==='W'?'Raport tygodniowy':'Raport miesięczny'});}
 // codziennie: raporty tygodniowe (poniedziałek) i miesięczne (1. dnia)
-function mailDaily(d){const rep=(SAVE.trn&&SAVE.trn.rep)||[];
+function mailDaily(d){const rep=(SAVE.trn&&SAVE.trn.rep)||[];try{fitMail(d);}catch(e){console.error(e);}
   if(dow(d)===1){const lim=addDays(d,-7);mailTraining('W',rep.filter(x=>x.d>=lim&&x.d<d));}
   if(d.endsWith('-01')){const lim=addDays(d,-31);const pm=addDays(d,-1).slice(0,7);mailTraining('M',rep.filter(x=>x.d>lim&&x.d.slice(0,7)===pm));}}
 // ---- akcje ----
@@ -50,34 +50,65 @@ function mailDone(id){const m=mailBox().find(x=>x.id===id);if(m)m.act=0;}
 function goTrainRep(k){ui.trRepP=k==='D'?'day':k==='W'?'week':'month';ui.trRepPl='';go('trening');setTimeout(()=>{const el=[...document.querySelectorAll('.card h2')].find(h=>/Raport z treningów/i.test(h.textContent));if(el)el.scrollIntoView({behavior:'smooth'});},50);}
 // ---- widok ----
 function mailInitials(f){const w=String(f).replace(/\(.*\)/,'').trim().split(/\s+/);return (w[0][0]+(w[1]?w[1][0]:'')).toUpperCase().replace(/[^A-ZĄĆĘŁŃÓŚŹŻ]/g,'');}
+function mailTime(m){const n=parseInt(String(m.id).replace(/\D/g,''))||0;const h=(n*2654435761>>>0)%100;
+  const base=m.cat==='mecz'?[21,2]:m.cat==='trening'?[17,3]:m.cat==='fin'&&m.b&&m.b.type==='md'?[22,1]:m.cat==='med'?[9,6]:[8,10];const H=base[0]+h%base[1],M=(h*7)%60;return String(H).padStart(2,'0')+':'+String(M).padStart(2,'0');}
 function mailList(){const f=ui.mailF||'all',c=ui.mailC||'';let xs=mailBox();
   if(c==='star')xs=xs.filter(m=>m.st);else if(c==='arch')xs=xs.filter(m=>m.ar);else{xs=xs.filter(m=>!m.ar);if(c)xs=xs.filter(m=>m.cat===c);}
-  if(f==='unread')xs=xs.filter(m=>!m.r);else if(f==='act')xs=xs.filter(m=>m.act);return xs;}
-function dayHdr(d){const n=daysBetween(d,today());return n===0?'Dziś':n===1?'Wczoraj':fmtLong(d);}
-function mailItem(m){const C=MAIL_CAT[m.cat]||MAIL_CAT.klub;return `<button class="mitem ${m.r?'rd':'ur'} ${ui.mailSel===m.id?'sel':''}" style="--mc:${C[1]}" onclick="mailOpen('${m.id}')">
-   <span class="mav">${m.ic||mailInitials(m.from)}</span><span class="mtx"><span class="mfrom">${esc(m.from)}${m.r?'':'<i class="mdot"></i>'}${m.st?' <span class="mstar">★</span>':''}</span>
-   <span class="mttl">${esc(m.t)}</span><span class="msn">${esc(m.s)}</span><span class="mlabs"><span class="mlab" style="--mc:${C[1]}">${C[0]}</span>${m.lab?`<span class="mlab gr">${esc(m.lab)}</span>`:''}${m.act?'<span class="mlab act">Wymaga działania</span>':''}</span></span></button>`;}
-function mailView(){const box=mailBox();const xs=mailList();const c=ui.mailC||'';const f=ui.mailF||'all';
-  const cnt=k=>box.filter(m=>!m.ar&&!m.r&&m.cat===k).length;
-  const cats=`<div class="mcats"><button class="mcat ${!c?'on':''}" onclick="ui.mailC='';ui.mailSel=null;render()"><i style="background:var(--acc)"></i>Wszystkie<b>${unreadN()||''}</b></button>
-    <button class="mcat ${c==='star'?'on':''}" onclick="ui.mailC='star';ui.mailSel=null;render()"><i style="background:#cbd5e1"></i>Oznaczone<b>${box.filter(m=>m.st).length||''}</b></button>
-    <div class="ngh">Kategorie</div>${Object.entries(MAIL_CAT).map(([k,[n,col]])=>`<button class="mcat ${c===k?'on':''}" onclick="ui.mailC='${k}';ui.mailSel=null;render()"><i style="background:${col}"></i>${n}<b>${cnt(k)||''}</b></button>`).join('')}
-    <div class="mcsep"></div><button class="mcat ${c==='arch'?'on':''}" onclick="ui.mailC='arch';ui.mailSel=null;render()"><i style="background:#64748b"></i>Archiwum</button>
-    <div class="ngh">Raporty treningowe</div>${[['trD','Dzienne'],['trW','Tygodniowe'],['trM','Miesięczne']].map(([k,l])=>`<label class="mopt"><input type="checkbox" ${mailOpts()[k]?'checked':''} onchange="mailOpts().${k}=this.checked?1:0;save()"> ${l}</label>`).join('')}</div>`;
-  let list='',last=null;for(const m of xs.slice(0,120)){if(m.d!==last){list+=`<div class="mday"><span>${dayHdr(m.d)}</span>${daysBetween(m.d,today())<=1?`<span>${fmtLong(m.d)}</span>`:''}</div>`;last=m.d;}list+=mailItem(m);}
+  if(f==='unread')xs=xs.filter(m=>!m.r);else if(f==='act')xs=xs.filter(m=>m.act);
+  const q=(ui.mailQ||'').trim().toLowerCase();if(q)xs=xs.filter(m=>(m.t+' '+m.s+' '+m.from).toLowerCase().includes(q));return xs;}
+function dayHdr(d){const n=daysBetween(d,today());return n===0?'Dziś · '+fmtShort(d):n===1?'Wczoraj · '+fmtShort(d):fmtShort(d);}
+function mailItem(m){const C=MAIL_CAT[m.cat]||MAIL_CAT.klub;return `<button class="mx ${m.r?'rd':'ur'} ${ui.mailSel===m.id?'sel':''}" style="--mc:${C[1]}" onclick="mailOpen('${m.id}')">
+   <span class="mxf">${esc(m.from)}${m.st?' <span class="mstar">★</span>':''}</span><span class="mxc">${C[0]}</span>
+   <span class="mxt">${m.r?'':'<i class="mdot"></i>'}${esc(m.t)}</span><span class="mxh">${m.tm||mailTime(m)}</span>
+   ${m.act?'<span class="mxa">Wymaga działania</span>':''}</button>`;}
+function mailView(){const box=mailBox();const xs=mailList();const c=ui.mailC||'';const f=ui.mailF||'all';const un=unreadN(),ac=box.filter(m=>m.act&&!m.ar).length;
+  let list='',last=null;for(const m of xs.slice(0,150)){if(m.d!==last){list+=`<div class="mxd">${dayHdr(m.d)}</div>`;last=m.d;}list+=mailItem(m);}
   const sel=box.find(m=>m.id===ui.mailSel);
-  return `<div class="mail ${sel?'hasSel':''}">
-   <div class="mlist"><div class="mlh"><h2 style="margin:0">Poczta</h2><span class="small mut" style="text-align:right">${box.filter(m=>!m.ar).length} wiadomości<br>${unreadN()} nieprzeczytanych</span></div>
-    <div class="mfil">${[['all','Wszystkie'],['unread','Nieprzeczytane'],['act','Wymaga działania']].map(([k,l])=>`<button class="${f===k?'on':''}" onclick="ui.mailF='${k}';render()">${l}</button>`).join('')}<span class="sp"></span>${unreadN()?'<button class="link small" onclick="mailAllRead()">Oznacz wszystkie</button>':''}</div>
-    <select class="mcatsel" onchange="ui.mailC=this.value;ui.mailSel=null;render()"><option value="">Wszystkie kategorie</option><option value="star" ${c==='star'?'selected':''}>Oznaczone</option>${Object.entries(MAIL_CAT).map(([k,[n]])=>`<option value="${k}" ${c===k?'selected':''}>${n}</option>`).join('')}<option value="arch" ${c==='arch'?'selected':''}>Archiwum</option></select>
+  return `<div class="mail mail2 ${sel?'hasSel':''}">
+   <div class="mlist"><div class="mxh1"><b>Skrzynka</b><span class="mut small">${box.filter(m=>!m.ar).length} wiadomości</span></div>
+    <div class="mxtabs">${[['all','Wszystkie'],['unread',`Nowe (${un})`],['act',`Zadania (${ac})`]].map(([k,l])=>`<button class="${f===k?'on':''}" onclick="ui.mailF='${k}';render()">${l}</button>`).join('')}
+     <span class="sp"></span><button class="mxi ${ui.mailS?'on':''}" title="Szukaj" onclick="ui.mailS=!ui.mailS;if(!ui.mailS)ui.mailQ='';render();setTimeout(()=>{const e=document.getElementById('mxq');if(e)e.focus()},0)">⌕</button><button class="mxi" title="Oznacz wszystkie jako przeczytane" onclick="mailAllRead()">✓</button></div>
+    ${ui.mailS?`<input id="mxq" class="mxq" placeholder="Szukaj w poczcie…" value="${esc(ui.mailQ||'')}" oninput="ui.mailQ=this.value;const p=this.selectionStart;render();const e=document.getElementById('mxq');if(e){e.focus();e.setSelectionRange(p,p);}">`:''}
+    <select class="mcatsel" onchange="ui.mailC=this.value;ui.mailSel=null;render()"><option value="">Wszystkie kategorie</option><option value="star" ${c==='star'?'selected':''}>Oznaczone ★</option>${Object.entries(MAIL_CAT).map(([k,[n]])=>`<option value="${k}" ${c===k?'selected':''}>${n}${box.filter(m=>!m.ar&&!m.r&&m.cat===k).length?` (${box.filter(m=>!m.ar&&!m.r&&m.cat===k).length})`:''}</option>`).join('')}<option value="arch" ${c==='arch'?'selected':''}>Archiwum</option></select>
     <div class="mitems">${list||'<p class="mut small" style="padding:14px">Brak wiadomości.</p>'}</div></div>
    <div class="mpane">${sel?mailPane(sel):'<div class="mempty"><div style="font-size:40px">✉️</div><p class="mut">Wybierz wiadomość z listy.</p></div>'}</div></div>`;}
+function mailRel(m){const b=m.b||{};const out=[];const c=myNext();const s=S();
+  const nx=()=>{if(!c)return;const e=nextEvent();out.push(['Zapowiedź następnego meczu',`${esc(TEAMS[c.h].short)} – ${esc(TEAMS[c.a].short)}${e?' · '+fmtShort(e.d)+(e.t?' '+e.t:''):''}`,"go('mecz')",'#A32D2D']);};
+  const add=(l,t,a,col)=>out.push([l,t,a,col]);
+  if(b.type==='match'){add('Analiza','Centrum danych',"go('dane')",'#185FA5');nx();}
+  else if(b.type==='train')add('Trening','Plan i raporty treningowe',"go('trening')",'#0F6E56');
+  else if(b.type==='fit'){add('Skład','Sprawdź ustawienie',"go('sklad')",'#0F6E56');nx();}
+  else if(b.type==='md'||m.cat==='fin')add('Finanse','Przychody i wydatki',"go('finanse')",'#854F0B');
+  else if(m.cat==='skaut')add('Skauting','Raporty i zadania skautów',"go('skauting')",'#534AB7');
+  else if(m.cat==='trans'||b.type==='offer')add('Transfery','Lista transferowa',"go('transfery')",'#993C1D');
+  else if(m.cat==='spon')add('Sponsorzy','Umowy i oferty',"go('sponsorzy')",'#3B6D11');
+  else if(m.cat==='med'){add('Skład','Sprawdź ustawienie',"go('sklad')",'#0F6E56');}
+  else if(m.cat==='zarz')add('Trener','Zaufanie zarządu',"go('trener')",'#444441');
+  if(out.length<2&&b.type!=='match'&&b.type!=='fit')nx();
+  return out.length?`<div class="mxrel"><div class="mxrt">Powiązane informacje</div><div class="mxrg">${out.slice(0,3).map(([l,t,a,col])=>`<button class="mxrc" style="--rc:${col}" onclick="${a}"><small>${l}</small><b>${t}</b></button>`).join('')}</div></div>`:'';}
 function mailPane(m){const C=MAIL_CAT[m.cat]||MAIL_CAT.klub;
-  return `<div class="mph"><button class="ghost sm mback" onclick="ui.mailSel=null;render()">← Wróć</button><span class="sp"></span>
-    <button class="ghost sm" onclick="mailStar('${m.id}')" title="Oznacz gwiazdką">${m.st?'★':'☆'}</button><button class="ghost sm" onclick="mailUnread('${m.id}')" title="Oznacz jako nieprzeczytaną">● Nieprzeczytana</button><button class="ghost sm" onclick="mailArch('${m.id}')">${m.ar?'Przywróć':'Archiwizuj'}</button></div>
-   <div class="mbody"><div class="mcatl" style="--mc:${C[1]}">${C[0]}${m.lab?' · '+esc(m.lab):''}</div><h1 class="mtitle">${esc(m.t)}</h1>
-    <div class="msender"><span class="mav big">${m.ic||mailInitials(m.from)}</span><b>${esc(m.from)}</b><span class="sp"></span><span class="mut">${fmtLong(m.d)}</span></div>
-    ${mailBodyHtml(m)}</div>`;}
+  return `<div class="mxph" style="--mc:${C[1]}"><button class="ghost sm mback" onclick="ui.mailSel=null;render()">←</button><span class="mav big">${m.ic||mailInitials(m.from)}</span>
+    <div class="mxpt"><small>${esc(m.from)} · <span style="color:${C[1]}">${C[0]}${m.lab?' · '+esc(m.lab):''}</span></small><h1>${esc(m.t)}</h1></div><span class="sp"></span>
+    <div class="mxpa"><span class="mxtm">${fmtShort(m.d)} · ${m.tm||mailTime(m)}</span><span><button class="mxi" onclick="mailStar('${m.id}')" title="Oznacz gwiazdką">${m.st?'★':'☆'}</button><button class="mxi" onclick="mailUnread('${m.id}')" title="Oznacz jako nieprzeczytaną">●</button><button class="mxi" onclick="mailArch('${m.id}')" title="${m.ar?'Przywróć':'Archiwizuj'}">${m.ar?'↺':'🗄'}</button></span></div></div>
+   <div class="mbody mxb">${mailBodyHtml(m)}${mailRel(m)}</div>`;}
+// ---- test wydolności przed meczem (zawodnicy po kontuzji) ----
+function fitMail(d){if(SAVE.team==null||!SAVE.world)return;const ev=(myEvents()[d]||[]).find(e=>!e.r);if(!ev)return;SAVE.fitSent=SAVE.fitSent||{};if(SAVE.fitSent[d])return;
+  const lu=new Set(Object.values(SAVE.lineup||{}));const rows=[];
+  for(const p of myTeam().players){const L=p.injLast;if(!L||p.inj)continue;const since=daysBetween(L.back,d);if(since<0||since>14)continue;const fr=Math.round(frOf(p));
+    let test,rec,lvl;if(since<=3){if(fr>=75){test='zaliczony';rec='Może zagrać, małe ryzyko';lvl=2;}else{test='częściowo';rec='Najwyżej 2 sety, potem zmiana';lvl=1;}}
+    else{test='nie wymagany';if(fr<70){rec='Braki kondycyjne, wymaga obserwacji';lvl=1;}else{rec='Gotowy do pełnego meczu';lvl=2;}}
+    rows.push({id:p.id,n:p.first+' '+p.last,pos:p.pos,role:lu.has(p.id)?'podstawowy skład':'rezerwowy',inj:L.n,days:L.days,since,test,rec,lvl,fr});}
+  SAVE.fitSent[d]=1;for(const k of Object.keys(SAVE.fitSent))if(daysBetween(k,d)>30)delete SAVE.fitSent[k];
+  if(!rows.length)return;const med=SAVE.staff&&SAVE.staff.med;const op=TEAMS[ev.op];
+  sendMail({cat:'med',from:med?`${med.first[0]}. ${med.last} (fizjoterapeuta)`:'Pion medyczny',t:'Testy wydolności przed meczem',s:`${rows.length} ${rows.length===1?'zawodnik':'zawodników'} po kontuzji przed meczem z ${op.name}.`,b:{type:'fit',rows,op:ev.op},lab:'Kontuzje'});}
+function fitMailHtml(b){const op=TEAMS[b.op];const tc=t=>t==='zaliczony'?'good':t==='częściowo'?'warn':'mut';
+  return `<p class="mtext">Przedstawiam wyniki przedmeczowego testu wydolności ${b.rows.length} ${b.rows.length===1?'zawodnika':'zawodników'} przed spotkaniem z ${esc(op?op.name:'rywalem')}.</p>
+   <div class="mxbox"><h3 style="margin:0">Monitorowani zawodnicy</h3><div class="small mut">Powrót po kontuzji w ciągu ostatnich 2 tygodni</div>
+   <div class="tw"><table class="mxft"><thead><tr><th class="l">Zawodnik</th><th class="l">Ostatnia kontuzja</th><th class="l">Test</th><th class="l">Zalecenie</th></tr></thead><tbody>
+   ${b.rows.map(r=>`<tr><td class="l"><button class="link pn" onclick="openPop('${r.id}')">${esc(r.n)}</button> ${pTag(r.pos)}<br><small class="mut">${r.role} · świeżość <b style="color:${frCol(r.fr)}">${r.fr}%</b></small></td><td class="l">${esc(r.inj)}<br><small class="mut">${typeof r.days==='number'&&r.days?r.days+' dni przerwy · ':''}wrócił ${r.since===0?'dziś':r.since+' dni temu'}</small></td>
+     <td class="l"><span class="mxpill ${tc(r.test)}">${r.test==='zaliczony'?'✓ ':''}${r.test}</span></td><td class="l">${esc(r.rec)}</td></tr>`).join('')}</tbody></table></div>
+   <div class="mx2"><div><b>Testy wydolności</b><p>Zawodnicy wracający po kontuzji przechodzą test przed meczem. Wynik mówi, ile mogą zagrać i czy grozi im nawrót urazu.</p></div>
+   <div><b>Porada pionu medycznego</b><p>Wystawienie zawodnika, który nie jest w pełni sił, zwiększa ryzyko pogłębienia urazu. Możesz się z tym nie zgodzić — decyzja o składzie należy do Ciebie.</p></div></div></div>`;}
 function mailBodyHtml(m){const b=m.b||{};
   if(b.type==='match')return matchMailHtml(b);
   if(b.type==='train')return trainMailHtml(b);
@@ -86,6 +117,7 @@ function mailBodyHtml(m){const b=m.b||{};
   if(b.type==='offer')return offerMailHtml(m);
   if(b.type==='fin')return finMailHtml(b);
   if(b.type==='md'&&typeof mdMailHtml==='function')return mdMailHtml(b);
+  if(b.type==='fit')return fitMailHtml(b);
   return `<p class="mtext">${esc(b.x||m.s)}</p>`;}
 function matchMailHtml(b){const T=i=>TEAMS[i];const h=b.home?b.me:b.op,a=b.home?b.op:b.me;const sw=b.home?b.sw:[b.sw[1],b.sw[0]];const sets=b.sets.map(s=>b.home?s:[s[1],s[0]]);
   const st=(l,x,y)=>`<tr><td class="l">${l}</td><td><b>${x}</b></td><td><b>${y}</b></td></tr>`;const pc2=(k,n)=>n?Math.round(k/n*100)+'%':'–';

@@ -44,7 +44,7 @@ function setDob(p,ref){ref=ref||today();const mm=1+Math.floor(R()*12),dd=1+Math.
 function updateAges(){if(!SAVE.world)return;const d=today();for(const p of W().players){if(!p.dob)setDob(p,d);p.age=ageAt(p.dob,d);}}
 function updateInjuries(){if(!SAVE.world)return;const d=today();
   for(const p of W().players){if(!p.injUntil){if(p.inj>0){p.injUntil=addDays(d,p.inj*7);p.inj=daysBetween(d,p.injUntil);}continue;}
-    const rem=daysBetween(d,p.injUntil);if(rem<=0){p.inj=0;delete p.injUntil;if(p.tm===SAVE.team)news(`✅ ${p.first} ${p.last} wrócił do zdrowia.`);}else p.inj=rem;}}
+    const rem=daysBetween(d,p.injUntil);if(rem<=0){p.inj=0;delete p.injUntil;p.injLast={n:p.injN||'Uraz',days:p.injD||'?',back:d};delete p.injN;delete p.injD;if(p.tm===SAVE.team)news(`✅ ${p.first} ${p.last} wrócił do zdrowia.`);}else p.inj=rem;}}
 function monthly(d){if(!SAVE.fin||SAVE.team==null)return;const m=+d.slice(5,7);const pay=payroll()/12,sp=sponsorAmt()/12;
   const stp=staffPay()/12,mnt=maintenance();const shm=shopMonth(myInfra().sklep,false);const shp=shm.tot;SAVE.eco.shopLast={m:(m+10)%12+1,rows:shm.rows,tot:shm.tot,rev:shm.rev};
   const spd=typeof sponsorsMonth==='function'?sponsorsMonth(d):null;const spm=spd?spd.inc:sp;
