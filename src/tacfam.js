@@ -52,8 +52,9 @@ function tacEff(ti){const k=tfKnow(ti),s=tfSkill(ti),c=tfConv(ti),i=tfInfo(ti);r
 function tfMatchX(ti){try{const e=tacEff(ti);const all={};const f=TFM(ti);for(const key in f)all[key]=f[key]/100;const kn=e.k.score/100;
   return {sb:clamp((e.score-65)/35*0.02,-0.025,0.025),fam:all,tfE:1+(0.7-kn)*0.15};}catch(x){console.error(x);return {sb:0};}}
 // ---- widok ----
-function tdot(v){return `<span class="tfd" style="background:${v>=70?'var(--good)':v>=45?'var(--acc)':'var(--bad)'}" title="${v}/100"></span>`;}
-function tbar(v){let h='';for(let i=0;i<10;i++)h+=`<i class="${v>=(i+1)*10?(v>=70?'g':v>=45?'y':'r'):''}"></i>`;return `<span class="tfbar" title="${v}/100">${h}</span>`;}
+function tfCol(v){return v<=50?'#e24b4a':v<=75?'#ef9f27':v<=85?'#3b8a1e':'#97c459';}
+function tdot(v){v=Math.round(clamp(v,0,100));return `<span class="tfpv"><small>${v}%</small><span class="tfpie" style="background:conic-gradient(${tfCol(v)} ${v*3.6}deg,#ffffff1f 0)" title="${v}%"></span></span>`;}
+function tbar(v){let h='';for(let i=0;i<10;i++)h+=`<i ${v>=(i+1)*10?`style="background:${tfCol(v)}"`:''}></i>`;return `<span class="tfbar" title="${v}/100">${h}</span>`;}
 function setTakF(g){ensTrn().takF=g;save();render();}
 function tacEffView(){const ti=SAVE.team;const e=tacEff(ti);const k=e.k,s=e.s,c=e.c,i=e.i;const focus=(SAVE.trn&&SAVE.trn.takF)||'';
   const col=(title,sc,desc,rows,note)=>`<div class="tfcol"><div class="row"><b class="tfh">${title}</b><span class="sp"></span>${tbar(sc)}<b>${sc}</b></div><p class="small mut">${desc}</p><div class="tsec" style="margin:4px 0">Kluczowe czynniki</div>${rows}<div class="tfnote">${note}</div></div>`;
