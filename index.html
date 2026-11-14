@@ -864,7 +864,7 @@ var RECV={
  5:{1:[3.4,7.1],2:[8.1,7.6],3:[4.6,2.5],4:[8.1,1.4],5:[6.4,0.9],6:[3.4,4.6]},
  4:{1:[1.9,7.4],2:[5.1,7.1],3:[8.1,4.5],4:[8.1,1.6],5:[3.6,1.8],6:[3.6,4.5]},
  3:{1:[3.6,7.1],2:[8.1,7.5],3:[8.1,4.5],4:[4.2,1.8],5:[3.4,4.3],6:[1.6,5.8]},
- 2:{1:[3.6,7.1],2:[8.1,7.4],3:[5.1,1.9],4:[8.1,1.0],5:[1.9,1.4],6:[3.6,4.5]}};var AW=[0.9,0.6],SWP=0.08,SW=0.85,LTB=1.25;// waga atakującego u rozgrywającego: pierwsza linia, druga linia
+ 2:{1:[3.6,7.1],2:[8.1,7.4],3:[5.1,1.9],4:[8.1,1.0],5:[1.9,1.4],6:[3.6,4.5]}};var AW=[0.84,0.56],SWP=0.08,SW=0.85,LTB=1.25,BKD=0.7,CVB=0.18;// BKD: część bloków spadająca na stronę atakujących, CVB: baza asekuracji// waga atakującego u rozgrywającego: pierwsza linia, druga linia
 function attackPhase(m,A,q,by,log,act,pd){
   const side=m.sides[A],opp=m.sides[1-A];
   const cA=onCourt(side,m.serving===A),cO=onCourt(opp,m.serving!==A);
@@ -904,6 +904,14 @@ function attackPhase(m,A,q,by,log,act,pd){
   if(R()<(0.006+(1-rz)*0.01)*kc(setter,m)){log.push(`błąd rozegrania (${nm(setter)})`);seq.push({k:'out',s:1-A});return {done:true,winner:1-A,type:'setErr'};}
   const tac=side.tactics.dist;
   const cands=cA.filter(x=>x.p!==setter&&x.role!=='L');
+  // strefa, w którą trafiła piłka po przyjęciu/obronie: 0 = za 3. metrem, 4 = lewa, 3 = środek (punkt 0), 2 = prawa
+  const pz=px<6?0:py<3.5?4:py>7.3?2:3;
+  // tor ataku zawodnika: L lewe skrzydło, R prawe, M środek, B druga linia
+  const laneOf=x=>!isFront(x.zone)?'B':x.role==='S'?'M':x.role==='A'?(p1keep?'L':'R'):x.role==='P'?(p1keep?'R':'L'):'M';
+  const PZW={4:{L:1.25,R:0.75,M:0.6,B:0.9},2:{L:0.85,R:1.2,M:1,B:1},0:{L:1,R:1,M:0.25,B:0.7}};
+  // gorąca ręka: w kontrze rozgrywający szuka tego, kto w tym meczu kończy najlepiej (tym częściej, im lepiej czyta grę)
+  const hotF=!fb&&real?clamp((eff(setter,'czy')-6)/12,0.2,1):0;
+  const hot=x=>{const t=x.p.st;if(!t||!t.att)return 0;return clamp((t.kill-t.attErr-(t.blocked||0))/(t.att+4)*2-0.5,-0.3,0.6);};
   const att=pickW(cands,x=>{
     const fr=isFront(x.zone);let w=0;
     if(x.p===late)return 0;
@@ -918,9 +926,15 @@ function attackPhase(m,A,q,by,log,act,pd){
     if(m._noQuick&&x.p.id===m._noQuick)w*=0.15;
     if((rot===3||rot===6)&&x.role==='S'&&fr&&q>=2)w*=1.2;// krótka z tyłu: środkowy wbiega zza pleców rozgrywającego
     if(opp.tactics.blk3===2&&x.role==='S'&&isFront(x.zone))w*=1+clamp((rz-0.45)*2,0,0.9);
+    if(opp.tactics.mCom&&x.role==='S'&&fr)w*=1-clamp((eff(setter,'czy')-8)/12,0,1)*0.5;// rozgrywający widzi środkowego w ciemno i omija krótką
+    if(PZW[pz])w*=PZW[pz][laneOf(x)];
+    if(pz===0)w*=Math.pow(eff(x.p,'ata')/12,1.5);// po złym dograniu: wysoka piłka do najlepszego atakującego
+    if(hotF)w*=1+hot(x)*hotF;
     return w*(0.5+eff(x.p,'ata')/20);
   });
   const a=att.p,fr=isFront(att.zone),quick=att.role==='S'&&fr;m._noQuick=null;
+  {const ln=laneOf(att);if(pz===4&&ln==='R')sq=clamp(sq-0.05,0.05,1);else if(pz===2&&ln==='L')sq=clamp(sq-0.04,0.05,1);}
+  if(fb&&pz!==3)log.push(pz===0?'piłka za 3. metrem':`piłka w ${pz}. strefie`);
   act.push(a.id);
   const swp=p1keep&&fr&&(att.role==='A'||att.role==='P');// P1: skrzydłowi zamienieni stronami
   const wing=quick||(att.role==='P'&&!fr)||att.role==='S'?'M':(att.role==='P')!==swp?'L4':'R2';
@@ -947,8 +961,17 @@ function attackPhase(m,A,q,by,log,act,pd){
     if(AD===1)c=c*(1-comply)+0.92*comply;else if(AD===2)c=c*(1-comply)+0.08*comply;dir=R()<c?'cross':'line';}
   const tool=AD===4&&dir!=='tip';
   let z6c=null;if(wing!=='M'&&(dir==='line'||dir==='cross')){if(bset===0)z6c='line';else if(bset===2)z6c=opp.tactics.dsys===1?'rot':'cross';else{const z6=cO.find(x=>!isFront(x.zone)&&dZone(x)===6);const cz=z6?eff(z6.p,'czy'):10;const pc=clamp(0.5+(cz-10)/30,0.3,0.8);z6c=R()<pc?dir:(dir==='line'?'cross':'line');}}
-  const blockers=blockGroup(cO,wing,quick,triple);
-  seq.push(Object.assign({k:'att',id:a.id,s:A,q:quick,d:dir,w:wing,tr:triple?1:0,z6:z6c,bl:blockers.map(x=>x.p.id)},swp?{sw:1}:{},behind?{bh:1}:{}));
+  let blockers=blockGroup(cO,wing,quick,triple);
+  // środkowy bloku: czyta grę albo skacze „w ciemno” do krótkiej; dobry rozgrywający potrafi go zmylić
+  const oMid=cO.find(x=>isFront(x.zone)&&x.role!=='L'&&dZone(x)===3);const mCom=!!opp.tactics.mCom;
+  let solo=false,midLate=false;
+  if(oMid&&!triple&&blockers.includes(oMid)&&blockers.length>1){
+    const dec=real&&sq>=0.6?clamp((rz-0.55)*0.8+(eff(setter,'czy')-10)/40-(eff(oMid.p,'czy')-10)/40,0,0.3)*(mCom?0.5:1):0;
+    const pLate=mCom?(quick?0:pz===0||sq<0.5?0.05:0.4):dec;// po złym dograniu nie ma krótkiej, więc środkowy nie skacze w ciemno
+    if(!quick&&R()<pLate){blockers=blockers.filter(x=>x!==oMid);solo=true;midLate=true;}}
+  if(quick&&oMid&&!mCom&&real&&sq>=0.6&&R()<clamp((rz-0.55)*0.8,0,0.25))midLate=true;// krótka szybsza niż reakcja środkowego
+  if(solo)log.push(mCom?'środkowy skoczył w ciemno do krótkiej — pojedynczy blok':'rozgrywający zmylił środkowego — pojedynczy blok');
+  seq.push(Object.assign({k:'att',id:a.id,s:A,q:quick,d:dir,w:wing,tr:triple?1:0,z6:z6c,bl:blockers.map(x=>x.p.id)},swp?{sw:1}:{},behind?{bh:1}:{},solo&&oMid?{ml:oMid.p.id,mc:mCom?1:0}:{}));
   a.st.att++;
   const backO=cO.filter(x=>!isFront(x.zone));
   const lineZ=wing==='L4'?1:5,crossZ=wing==='L4'?5:1;
@@ -957,9 +980,9 @@ function attackPhase(m,A,q,by,log,act,pd){
   const covO=offB?backO.concat([offB]):backO;
   const tipOn=!!opp.tactics[wing==='M'?'tipM':wing==='L4'?'tipR':'tipL'];
   if(dir==='tip'){
-    const cover=bset===2||tipOn;const tz=wing==='M'?6:lineZ;
+    const cover=bset===2||tipOn||midLate;const tz=wing==='M'?6:lineZ;
     if(R()<0.03*kc(a,m)){a.st.attErr++;seq.push({k:'net',s:1-A});log.push(setTxt,`kiwka w siatkę${nerves(a,m)}`);rec('tip','err');return {done:true,winner:1-A,type:'attErr'};}
-    const d=pickW(covO,x=>(x===offB?(tipOn?6:2.6):dZone(x)===tz?(cover&&!(tipOn&&offB)?4:2):dZone(x)===6?1.3:1)*(0.5+eff(x.p,'czy')/20)).p;
+    const d=pickW(midLate&&oMid?covO.concat([oMid]):covO,x=>(x===oMid&&midLate?3:x===offB?(tipOn?6:2.6):dZone(x)===tz?(cover&&!(tipOn&&offB)?4:2):dZone(x)===6?1.3:1)*(0.5+eff(x.p,'czy')/20)).p;
     const dc=(eff(d,'czy')*0.5+eff(d,'szy')*0.25+eff(d,'obr')*0.25)/20;
     const killT=clamp(0.34+(triple?0.1:0)+(kiwN-0.5)*0.42+(czA-0.5)*0.12+bn(side)-(tipOn?0.2:cover?0.15:0)-(dc-0.5)*0.3+mb(a,m,A)+(AD===3?0.04:0)-(AT===2?0.03:0),0.06,0.62);
     if(R()<killT){a.st.kill++;seq.push({k:'floor',s:1-A,tip:1});log.push(setTxt,`KIWKA — PUNKT!`);rec('tip','kill');return {done:true,winner:A,type:'kill'};}
@@ -967,7 +990,7 @@ function attackPhase(m,A,q,by,log,act,pd){
     return {done:false,next:1-A,q:R()<0.45+dc*0.35?2:1,by:d};
   }
   const an=0.1+eff(a,'ata')/20*0.4+eff(a,'sil')/20*0.08+eff(a,'sko')/20*0.22+(a.h-197)/100+sq*0.42+bn(side)-(fr?0:0.06)+(quick&&sq>0.7?(0.05+(a.szy-12)/20*0.08)*(0.4+ch):0)+mb(a,m,A)+(AT===1?0.035:AT===2?-0.015:0)-(swp?SWP:0)-(fb&&fb.rp&&a.id===fb.rec?0.03:0)+(behind?((typeof pairChem==='function'&&real?pairChem(setter,a):ch)-0.6)*0.18:0);
-  const nb=quick?1.4:triple?3.0:sq<0.4?2.8:2.2;
+  const nb=solo?1.3:quick?(mCom?2.0:midLate?0.9:1.4):triple?3.0:sq<0.4?2.8:2.2;
   const bs=blockers.reduce((s,x)=>s+(eff(x.p,'blo')*0.55+eff(x.p,'czy')*0.2+eff(x.p,'sko')*0.15+eff(x.p,'szy')*0.1)/20+(x.p.h-197)/120,0)/blockers.length*(0.75+nb*0.12)+bn(opp);
   const errP=(0.075+(1-sq)*0.08+(0.75-eff(a,'ata')/20)*0.08)*kc(a,m)*(AT===1?1.15:AT===2?0.92:1)*(tool?1.1:1);
   if(R()<errP){a.st.attErr++;const net=R()<0.5;seq.push({k:net?'net':'out',s:1-A});log.push(setTxt,`atak ${net?'w siatkę':'w aut'}${nerves(a,m)}`);rec(dir,'err');return {done:true,winner:1-A,type:'attErr'};}
@@ -985,12 +1008,18 @@ function attackPhase(m,A,q,by,log,act,pd){
   else if(dir in MD){if(bset===1){const cz=blockers.reduce((s,x)=>s+eff(x.p,'czy'),0)/blockers.length;mult=1+(cz-10)/10*0.1;}else mult=MD[dir]===bset?1.8:0.55;if(opp.tactics.blk3===2)mult*=0.6;}
   {const bk=wing==='M'?'blkM':(wing==='L4'?'blkR':'blkL');mult=1+(mult-1)*famF(opp,bk);}
   if(triple)mult*=1.28;
+  if(mCom&&quick)mult*=2.0;// środkowy w ciemno: krótka wpada prosto w blok
   if(late||swp)mult*=LTB;// mniej opcji ataku albo atak poza pozycją: blok rywala ma łatwiej
   if(AT===1)mult*=1.05;if(tool)mult*=0.8;
   const blockP=clamp((0.17+(bs-an+0.17)*0.3)*mult,0.02,0.45);
   if(R()<blockP){
     const b=pickW(blockers,x=>eff(x.p,'blo')+eff(x.p,'czy')*0.3+(x.role==='S'?4:0)).p;act.push(b.id);seq.push({k:'blk',id:b.id,s:1-A});
-    if(R()<0.55){a.st.blocked++;b.st.blk++;seq.push({k:'floor',s:A,blk:1});log.push(setTxt,`BLOK ${nm(b)}!`);rec(dir,'blk');return {done:true,winner:1-A,type:'block'};}
+    if(R()<BKD){
+      // piłka po bloku spada na stronę atakujących: asekuracja może ją podbić (spóźniony atakujący jest już blisko)
+      const cv=pickW(cA.filter(x=>x.p!==a),x=>(x.p===late?3:x.role==='L'?1.5:x.role==='R'?1.2:isFront(x.zone)?0.8:1)*(0.5+eff(x.p,'czy')/20)).p;
+      const sv=clamp(CVB+(eff(cv,'czy')*0.5+eff(cv,'zwi')*0.3+eff(cv,'obr')*0.2-11)/20*0.25+(cv===late?0.05:0)+(tool?-0.05:0),0.06,0.42);
+      if(R()<sv){cv.st.dig++;act.push(cv.id);seq.push({k:'dig',id:cv.id,s:A,cov:1});log.push(setTxt,`blok ${nm(b)}, asekuruje ${nm(cv)}`);rec(dir,'wyb');return {done:false,next:A,q:1,by:cv};}
+      a.st.blocked++;b.st.blk++;seq.push({k:'floor',s:A,blk:1});log.push(setTxt,`BLOK ${nm(b)}!`);rec(dir,'blk');return {done:true,winner:1-A,type:'block'};}
     log.push(setTxt,`wybloka ${nm(b)}`);rec(dir,'wyb');return {done:false,next:1-A,q:2,by:b};
   }
   const tz=dir==='line'?lineZ:dir==='cross'?crossZ:dir==='midL'?5:dir==='midR'?1:6;
@@ -2719,10 +2748,12 @@ function hallAnim(m,pre,ev,done){
         else if(s.z6==='rot')moves.push(mvTo(b,1.9,z===5?2.7:6.3));// obrońca skosu przesuwa się w miejsce szóstki
         else moves.push(mvTo(b,2.3,z===5?1.5:7.5));});
       side(d).filter(b=>!opp.includes(b)&&isFrontZ(b.zone)).forEach(b=>{const dy=defY(b);moves.push(EB&&EB.off?ebM(b,EB.off):w!=='M'&&!fb?mvTo(b,6.1,dy<3?3.1:dy>6?5.9:4.5):w==='M'&&!fb?mvTo(b,tipOn?7.0:6.8,dy<3?(tipOn?3.0:2.0):dy>6?(tipOn?6.0:7.0):4.5):mvTo(b,6.3,dy<3?0.9:dy>6?8.1:4.5));});
-      to={x:hx,y:hy,h:fb?2.6:3.4};peak=fb?1.0:1.6;dur=780;ph=fb?'Piłka sytuacyjna':o.role==='R'?'Wystawa':'Rozegranie';lastAtt=o;lastAttD=fb?'free':s.d;}
+      to={x:hx,y:hy,h:fb?2.6:3.4};peak=fb?1.0:1.6;dur=780;ph=fb?'Piłka sytuacyjna':o.role==='R'?'Wystawa':'Rozegranie';lastAtt=o;lastAttD=fb?'free':s.d;
+      if(s.ml&&P[s.ml])moves.push(mvTo(P[s.ml],6.9,clamp(9-ly+(9-ly<4.5?1.2:-1.2),1.5,7.5),1));// środkowy spóźniony do bloku: asekuruje kiwkę
+      if(s.ml)ph=s.mc?'Środkowy w ciemno — pojedynczy blok':'Zmylony środkowy — pojedynczy blok';}
     else if(s.k==='blk'){to={x:cx(o),y:cy(o),h:3.0};dur=230;ph=s.tool?'Obicie bloku!':'Blok!';}
     else if(s.k==='whistle'){const i=s.s;const [X,Y]=s.why==='net'?gl(i,7.6+R()*0.8,1+R()*7):gl(i,2+R()*4,1+R()*7);to={x:X,y:Y,h:0};dur=s.why==='net'?420:520;peak=s.why==='net'?0.3:0.5;ph=s.why==='net'?'Gwizdek! Blokujący dotknął siatki':'Gwizdek! Atak z drugiej linii sprzed linii 3 m';}
-    else if(s.k==='dig'){const dx=(R()-0.5)*1.4,dy=(R()-0.5)*1.4;moves.push({id:o.id,x:cx(o)+dx,y:cy(o)+dy});to={x:cx(o)+dx,y:cy(o)+dy,h:0.35};dur=s.free?900:s.tip?620:430;peak=s.free?2.6:s.tip?1.4:0;ph=s.free?'Przebicie':s.tip?'Kiwka — obrona':'Atak — obrona';}
+    else if(s.k==='dig'){const dx=(R()-0.5)*1.4,dy=(R()-0.5)*1.4;moves.push({id:o.id,x:cx(o)+dx,y:cy(o)+dy});to={x:cx(o)+dx,y:cy(o)+dy,h:0.35};dur=s.free?900:s.tip?620:s.cov?520:430;peak=s.free?2.6:s.tip?1.4:s.cov?1.1:0;ph=s.free?'Przebicie':s.tip?'Kiwka — obrona':s.cov?'Asekuracja!':'Atak — obrona';}
     else if(s.k==='floor'){const i=s.s;let lx,ly;if(s.mix&&lastMix){lx=lastMix[0]+(R()-0.5)*0.6;ly=lastMix[1]+(R()-0.5)*0.6;}else if(s.blk){lx=7.4+R()*0.8;ly=lastAtt?lastLy+(R()-0.5):4.5;}else if(s.tip){lx=6.4+R()*1.2;ly=9-lastLy+(R()-0.5)*1.6;}else if(s.d==='line'){lx=0.5+R()*2.6;ly=clamp(9-lastLy+(R()-0.5)*1.2,0.3,8.7);}else if(s.d==='cross'){lx=1+R()*3.2;ly=clamp(lastLy+(R()-0.5)*1.8,0.3,8.7);}else if(s.d==='midS'){lx=0.8+R()*3;ly=3.6+R()*1.8;}else if(s.d==='midL'){lx=1+R()*3;ly=0.6+R()*2;}else if(s.d==='midR'){lx=1+R()*3;ly=6.4+R()*2;}else{lx=0.6+R()*7.2;ly=0.6+R()*7.8;}const [X,Y]=gl(i,lx,ly);to={x:X,y:Y,h:0};
       if(!s.blk&&!s.mix){// najbliższy obrońca rzuca się do piłki, ale nie sięga
         let nb=null,nd=1e9;for(const b of side(i)){const dd=Math.hypot(cx(b)-X,cy(b)-Y);if(dd<nd){nd=dd;nb=b;}}
@@ -3032,6 +3063,7 @@ function blockTacHtml(t){const rot=t.dsys===1;return `
   <div class="tacrow"><div class="tacl"><b>Blok — lewa strona siatki</b><small class="mut">przeciw atakującemu rywala (jego prawe skrzydło)</small></div><div class="row wrap" style="gap:6px">${segBtns(t.blkL,"setBlk.bind(null,'L')")}${tipBtn('tipL',t)}</div><div class="small mut tacd">${defTxt('L',t.blkL??1,t)}</div></div>
   <div class="tacrow"><div class="tacl"><b>Blok — prawa strona siatki</b><small class="mut">przeciw przyjmującemu rywala (jego lewe skrzydło)</small></div><div class="row wrap" style="gap:6px">${segBtns(t.blkR,"setBlk.bind(null,'R')")}${tipBtn('tipR',t)}</div><div class="small mut tacd">${defTxt('R',t.blkR??1,t)}</div></div>
   <div class="tacrow"><div class="tacl"><b>Blok — środek siatki</b><small class="mut">przeciw szybkiej piłce i atakowi z drugiej linii</small></div><div class="row wrap" style="gap:6px"><div class="seg">${MID_ORDER.map(i=>`<button class="${(t.blkM??1)===i?'on':''}" onclick="tacSet('blkM',${i})" title="${esc(MID_OPT[i][1])}">${MID_OPT[i][0]}</button>`).join('')}</div>${tipBtn('tipM',t)}</div><div class="small mut tacd">${midDefTxt(t.blkM??1)}${t.tipM?' Gracze pierwszej linii, którzy nie blokują, stoją bliżej siatki i łapią kiwki.':''}</div></div>
+  <div class="tacrow"><div class="tacl"><b>Środkowy w bloku</b><small class="mut">reakcja na rozegranie rywala</small></div><div class="seg"><button class="${t.mCom?'':'on'}" onclick="tacSet('mCom',0)">Czyta grę</button><button class="${t.mCom?'on':''}" onclick="tacSet('mCom',1)">W ciemno na krótką</button></div><div class="small mut tacd">${t.mCom?'Środkowy skacze razem ze środkowym rywala: krótka częściej wpada w blok, ale przy ataku ze skrzydła często nie zdąży i zostaje pojedynczy blok (wtedy idzie asekurować kiwkę). Dobry rozgrywający rywala to widzi i rzadziej gra krótką. Najlepsze na drużyny grające dużo środkiem.':'Środkowy czeka na wystawę i dopiero wtedy biegnie do bloku. Bezpieczniejszy podwójny blok na skrzydłach, ale dobry rozgrywający rywala potrafi go zmylić i zostawić atakującemu pojedynczy blok.'}</div></div>
   <div class="tacrow"><div class="tacl"><b>Liczba blokujących</b><small class="mut">blok podwójny czy potrójny</small></div><select onchange="tacSet('blk3',+this.value)">${B3_OPT.map((o,i)=>`<option value="${i}" ${(t.blk3||0)===i?'selected':''}>${o[0]}</option>`).join('')}</select><div class="small mut tacd">${esc(B3_OPT[t.blk3||0][1])}${(t.blk3||0)>0?' Przy potrójnym bloku z „+ kiwka” kiwkę łapie obrońca prostej, który wychodzi pod blok.':''}</div></div>
   <div class="row wrap small" style="gap:8px;align-items:center"><button class="ghost sm" onclick="setPreset('pl')">★ Ustaw jak najczęściej w PlusLidze</button><span class="mut">„Diament”, blok w kierunek ataku na skrzydłach, środek zamyka stronę stref 5/6, potrójny przy wysokiej piłce.</span></div>
   <div class="small mut">Obie strony naraz: ${BLK_OPT.map((o,i)=>`<button class="link" onclick="setBlk('B',${i})">${o[0].toLowerCase()}</button>`).join(' · ')}.</div>`;}
