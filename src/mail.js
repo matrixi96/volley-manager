@@ -85,6 +85,7 @@ function mailBodyHtml(m){const b=m.b||{};
   if(typeof sponsMailHtml==='function'&&/^(spons|spexp)$/.test(b.type))return sponsMailHtml(m);
   if(b.type==='offer')return offerMailHtml(m);
   if(b.type==='fin')return finMailHtml(b);
+  if(b.type==='md'&&typeof mdMailHtml==='function')return mdMailHtml(b);
   return `<p class="mtext">${esc(b.x||m.s)}</p>`;}
 function matchMailHtml(b){const T=i=>TEAMS[i];const h=b.home?b.me:b.op,a=b.home?b.op:b.me;const sw=b.home?b.sw:[b.sw[1],b.sw[0]];const sets=b.sets.map(s=>b.home?s:[s[1],s[0]]);
   const st=(l,x,y)=>`<tr><td class="l">${l}</td><td><b>${x}</b></td><td><b>${y}</b></td></tr>`;const pc2=(k,n)=>n?Math.round(k/n*100)+'%':'–';
