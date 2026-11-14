@@ -36,6 +36,7 @@ function render(){
   else if(ui.tab==='transfery')body=transferView();
   else if(ui.tab==='finanse')body=financeView();
   else if(ui.tab==='poczta')body=mailView();
+  else if(ui.tab==='dane')body=dataView();
   else if(ui.tab==='skauting')body=scoutView();
   else if(ui.tab==='sponsorzy')body=sponsorView();
   else if(ui.tab==='zapis')body=saveView();
@@ -75,8 +76,7 @@ function squadView(){
     t.players.slice().sort((a,b)=>(a.pos===pos?0:1)-(b.pos===pos?0:1)||rating(b,pos)-rating(a,pos)).map(p=>`<option value="${p.id}" ${lu[k]===p.id?'selected':''}>${p.inj?'🚑 ':''}${esc(p.last)} (${POS_SHORT[p.pos]}) — ${rating(p,pos)}</option>`).join('')}</select></label>`;
   return `<div class="card"><div class="row"><h2>Skład wyjściowy</h2><span class="sp"></span><button class="ghost" onclick="autoLu()">Ustaw automatycznie</button></div>
   <p class="mut small">System 5-1. Ocena w nawiasie dotyczy wybranej pozycji: zawodnik grający poza swoją pozycją wypada słabiej. Libero wchodzi za środkowego w drugiej linii.</p>
-  ${lineupCourt(t,lu)}
-  <div class="lugrid">${LINEUP_KEYS.map(sel).join('')}</div>${injWarn()}
+  ${lineupCourt(t,lu)}${injWarn()}
   <div class="row small mut" style="margin-top:8px">Siła składu: <b style="color:var(--txt);margin-left:4px">${lineupStrength(t,lu)}</b><span style="margin-left:14px">${chemBadge(t,lu)}</span><span class="sp"></span>${ui.confirmReset?`<span class="bad">Zmiana klubu kasuje obecną grę (sloty zostają). Na pewno?</span> <button class="link" onclick="changeClub()">Tak, zmień</button> <button class="link" onclick="ui.confirmReset=false;render()">Nie</button>`:`<button class="link" onclick="changeClub()">Zmień klub</button>`}</div></div>
   <div class="card"><div class="row"><h2>Kadra (${t.players.length})</h2><span class="sp"></span><div class="lgt"><button class="${ui.sqFull?'':'on'}" onclick="ui.sqFull=0;render()">Widok prosty</button><button class="${ui.sqFull?'on':''}" onclick="ui.sqFull=1;render()">Pełne atrybuty ▸</button></div></div>${ui.sqFull?'':squadSimple(pl,inLu)}${!ui.sqFull?'':`<div class="tw"><table class="squad"><thead><tr class="grp"><th colspan="5"></th><th colspan="${ATTRS.length}" class="msep gt">Techniczne</th><th colspan="${PHYS.length}" class="msep gf">Fizyczne</th><th colspan="${MENTAL.length}" class="msep men">Mentalne</th><th colspan="5" class="msep">Klub</th></tr><tr>
   <th onclick="srt('pos')">#</th><th class="l" onclick="srt('pos')">Zawodnik</th><th onclick="srt('pos')">Poz</th><th onclick="srt('wiek')">Wiek</th><th onclick="srt('h')">Wzrost</th>

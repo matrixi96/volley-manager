@@ -28,24 +28,6 @@ function popModal(){const P=PLAYERS[ui.pop];if(!P){ui.pop=null;return '';}const 
     ${mine&&!p.jr?(isCap(p)?'<span class="small mut">To jest kapitan drużyny.</span>':`<button class="ghost" onclick="ui.pop=null;setCaptain('${p.id}')">©️ Mianuj kapitanem</button>`):''}</div></div></div>`;}
 
 // ---- boisko w zakładce Skład: cała siódemka z twarzami ----
-function lineupCourt(t,lu){const g=k=>t.players.find(p=>p.id===lu[k]);
-  const Z={1:['R','Rozgrywający'],2:['P1','Przyjmujący'],3:['S1','Środkowy'],4:['A','Atakujący'],5:['P2','Przyjmujący'],6:['S2','Środkowy']};
-  const card=(k,lab,z)=>{const p=g(k);if(!p)return `<div class="lcz empty">${z||''}</div>`;const pos=LINEUP_KEYS.find(x=>x[0]===k)[2];const r=rating(p,pos);
-    const ks=(KEY_ATTR[pos]||[]).slice(0,3);
-    return `<div class="lcz ${k==='L'?'lib':''}" onclick="openPop('${p.id}')" title="${esc(p.first+' '+p.last)} · ${lab}">
-      ${z?`<span class="lczn">${z}</span>`:''}${p.inj?'<span class="lcinj" title="Kontuzja">🚑</span>':''}
-      <div class="lcf">${pFace(p,46)}${capBadge(p)}<span class="lcnum">${p.num}</span></div>
-      <b class="fmnm" style="font-size:13px">${esc(p.last)}</b><span class="fmps2">${lab.toUpperCase()}${k==='S2'?' · ZA NIEGO LIBERO':''}</span>
-      <div class="lcst"><span title="Ocena na tej pozycji"><small>ocena</small><b style="color:var(--acc)">${r}</b></span>${ks.map(a=>`<span title="${attrName(a)}"><small>${attrSh(a)}</small><b style="color:${attrCol(p[a])}">${p[a]}</b></span>`).join('')}<span title="Morale"><small>mor.</small><b>${morEmo(p.mor)}</b></span></div>
-      <div class="lctr">${trChips(p)}</div>
-      <span class="fmen" style="width:86%" title="Kondycja ${p.kon}"><i style="width:${p.kon*5}%;background:${attrCol(p.kon)}"></i></span></div>`;};
-  const c=myCaptain();
-  return `<div class="lcwrap"><div class="lcourt"><div class="fmnet">siatka</div><div class="lcgrid">${[4,3,2,5,6,1].map(z=>card(Z[z][0],Z[z][1],z)).join('')}</div></div>
-   <div class="lcside"><div class="ttl small mut">LIBERO</div>${card('L','Libero',0)}
-    <div class="lccap"><div class="small mut">KAPITAN</div>${c?`<div class="row" style="gap:8px">${pFace(c,34)}<div><b>${esc(c.first+' '+c.last)}</b><div class="small">${capInfo(c)}</div></div></div>`:''}
-     <select onchange="setCaptain(this.value)">${t.players.slice().sort((a,b)=>capScoreUi(b)-capScoreUi(a)).map(p=>`<option value="${p.id}" ${c&&c.id===p.id?'selected':''}>${esc(p.last)}${hasT(p,'lid')?' (Lider)':''}</option>`).join('')}</select>
-     <div class="small mut" style="margin-top:4px">Dobry kapitan (Lider, komunikacja, opanowanie) podnosi zgranie i morale w końcówkach i wzmacnia przemowy w czasie.</div></div></div></div>
-   <div class="small mut" style="margin:2px 0 10px">Ustawienie startowe (ustawienie 1). Kliknij zawodnika: najważniejsze atrybuty dla jego pozycji i charakter.</div>`;}
 function capScoreUi(p){return capBonus(p)*100+rating(p)/50;}
 
 // ---- prosta tabela kadry ----
