@@ -101,6 +101,11 @@ function chemOf(ps,ti,cap){ps=ps.filter(Boolean);
 function capBonus(c){if(!c)return 0;return clamp(((c.kom||10)-10)*0.004+((c.opa||10)-10)*0.002+(hasT(c,'lid')?0.04:0)-(hasT(c,'ner')||hasT(c,'ind')||hasT(c,'kap')?0.03:0),-0.05,0.08);}
 function autoCaptain(ps){let b=null,bs=-1e9;for(const p of ps.filter(Boolean)){const s=(hasT(p,'lid')?8:0)+(p.kom||10)+(p.opa||10)*0.6+Math.min(p.age,32)*0.25-(hasT(p,'ner')||hasT(p,'kap')||hasT(p,'ind')?5:0);if(s>bs){bs=s;b=p;}}return b;}
 function pdFrom(q){return q>=3?R()*0.8:q===2?0.9+R()*1.8:2.5+R()*3.3;}
+// znajomość taktyki: klucze ustawień i wartości domyślne
+const TFK=['serve','dist','atk','adir','blkL','blkR','blkM','blk3','dsys','tip','free'];const TFD={serve:1,dist:0,atk:0,adir:0,blkL:1,blkR:1,blkM:1,blk3:0,dsys:0,tip:0,free:0};
+function tfV(t,k){if(k==='tip')return (t.tipL?1:0)+(t.tipR?2:0)+(t.tipM?4:0);return t[k]==null?TFD[k]:t[k];}
+// 0,55–1: jak dobrze drużyna zna obecnie ustawioną opcję (1 = bez danych, np. w testach)
+function famF(side,k){const f=side.fam;if(!f)return 1;const v=f[k+':'+tfV(side.tactics,k)];return 0.55+0.45*(v==null?0.3:v);}
 // ustawienie startowe: ile rotacji od ustawienia 1 (rozgrywający w strefie 1)
 function baseRot(tac){const n=((tac&&tac.startRot)||0)%6;const r=[0,1,2,3,4,5];for(let i=0;i<n;i++)r.push(r.shift());return r;}
 function makeSide(team,lu,tac,home,x){
@@ -111,7 +116,7 @@ function makeSide(team,lu,tac,home,x){
   {let d=0;if(st7.some(p=>p&&hasT(p,'lid')))d+=3;if(cap&&hasT(cap,'lid'))d+=2;if(pl.some(p=>hasT(p,'kap')&&(p.unh||0)>=3))d-=3;
    for(const p of pl){let e=d;if(hasT(p,'amb'))e+=2;if(hasT(p,'kap')&&(p.unh||0)>=3)e-=8;if(e)p.mor=Math.round(clamp(p.mor+e,5,100));}}
   if(typeof pairBonusSide==='function'){try{pairBonusSide(team,lu,pl);}catch(e){}}
-  return {chem,cap:cap?cap.id:null,team,pl,slots,libero:g(lu.L),rot:baseRot(tac),tactics:Object.assign({},tac),mom:0,home:!!home,fatMul:(x&&x.fat)||1,momMul:(x&&x.momMul)||1,prB:(x&&x.prB)||0,trB:(x&&x.trB)||0,form:nz()*0.09+(home?(x&&x.hb!=null?x.hb:0.015):0)+((x&&x.sb)||0),to:2,subs:6};
+  return {chem,cap:cap?cap.id:null,team,pl,slots,libero:g(lu.L),rot:baseRot(tac),tactics:Object.assign({},tac),mom:0,home:!!home,fatMul:(x&&x.fat)||1,momMul:(x&&x.momMul)||1,prB:(x&&x.prB)||0,trB:(x&&x.trB)||0,form:nz()*0.09+(home?(x&&x.hb!=null?x.hb:0.015):0)+((x&&x.sb)||0),to:2,subs:6,fam:(x&&x.fam)||null,tfE:(x&&x.tfE)||1};
 }
 function newMatch(a,b){
   const m={sides:[makeSide(a.team,a.lineup,a.tactics,a.home,a.x),makeSide(b.team,b.lineup,b.tactics,b.home,b.x)],setNo:1,score:[0,0],setsWon:[0,0],sets:[],firstServe:R()<0.5?0:1,run:{t:-1,n:0},over:false,rallies:0,sideout:[0,0]};
@@ -128,7 +133,7 @@ function mb(p,m,i){let b=(p.mor==null?0:(p.mor-60)/40*0.045)+formB(p)+(p.pcB||0)
   if(pr&&sd.cap){const c=sd.pl.find(x=>x.id===sd.cap);if(c&&c!==p)b+=capBonus(c)*0.25;}
   const sh=sd.sh;if(sh&&sh.u>m.rallies){b+=sh.p||0;if(pr)b+=sh.pr||0;if(tr)b+=sh.b||0;}
   return b;}
-function kc(p,m){let k=1.25-p.kcj/20*0.5;{const sd=m.sides&&m.sides.find(x=>x.pl.includes(p));if(sd&&sd.sh&&sd.sh.u>m.rallies&&sd.sh.e)k*=1-sd.sh.e;}if(pressure(m))k*=1.15-p.opa/20*0.3;if(p.tr){if(hasT(p,'pro'))k*=0.9;if(hasT(p,'ner')&&pressure(m))k*=1.1;if(hasT(p,'ind'))k*=1.04;}return k;}
+function kc(p,m){let k=1.25-p.kcj/20*0.5;{const sd=m.sides&&m.sides.find(x=>x.pl.includes(p));if(sd&&sd.sh&&sd.sh.u>m.rallies&&sd.sh.e)k*=1-sd.sh.e;if(sd&&sd.tfE)k*=sd.tfE;}if(pressure(m))k*=1.15-p.opa/20*0.3;if(p.tr){if(hasT(p,'pro'))k*=0.9;if(hasT(p,'ner')&&pressure(m))k*=1.1;if(hasT(p,'ind'))k*=1.04;}return k;}
 function nerves(p,m){return pressure(m)&&p.opa<10?' Nerwy w końcówce!':'';}
 function bn(s){return s.mom*0.01*(s.momMul||1)+s.form;}
 function ensAttrs(p){if(!p||p.czy!=null&&p.kiw!=null&&p.kom!=null)return p;const t=TEMPL[p.pos]||TEMPL.P;
@@ -233,7 +238,7 @@ function attackPhase(m,A,q,by,log,act,pd){
   const AT=side.tactics.atk||0,AD=side.tactics.adir||0;
   let tipP=quick?0.02:sq<0.42?0.1+kiwN*0.3:0.025+kiwN*0.05;
   if(!quick){if(AT===1)tipP*=0.3;else if(AT===2)tipP=Math.min(0.55,tipP*2.4+0.04);if(AD===3)tipP=Math.min(0.6,tipP+0.07);}
-  const comply=0.5+czA*0.35;// na ile zawodnik wykona polecenie trenera co do kierunku
+  const comply=(0.5+czA*0.35)*(AD?famF(side,'adir'):1);// na ile zawodnik wykona polecenie trenera co do kierunku
   let dir;
   if(R()<tipP)dir='tip';else if(wing==='M'){const t=midTend(a);let pS=t[0],pL=t[1];const sh=clamp((eff(a,'czy')-8)/12,0,1)*0.1;
     if(bset===0){pS-=sh;pL+=sh/2;}else if(bset===2){pL-=sh;pS+=sh/2;}else if(bset===3){pS+=sh/2;}
@@ -279,6 +284,7 @@ function attackPhase(m,A,q,by,log,act,pd){
   let mult=1;const MD={midS:0,midL:2,midR:3};
   if(wing!=='M'){if(bset===1){const cz=blockers.reduce((s,x)=>s+eff(x.p,'czy'),0)/blockers.length;mult=1+(cz-10)/10*0.12;}else mult=((bset===0)===(dir==='cross'))?1.55:0.5;}
   else if(dir in MD){if(bset===1){const cz=blockers.reduce((s,x)=>s+eff(x.p,'czy'),0)/blockers.length;mult=1+(cz-10)/10*0.1;}else mult=MD[dir]===bset?1.8:0.55;if(opp.tactics.blk3===2)mult*=0.6;}
+  {const bk=wing==='M'?'blkM':(wing==='L4'?'blkR':'blkL');mult=1+(mult-1)*famF(opp,bk);}
   if(triple)mult*=1.28;
   if(AT===1)mult*=1.05;if(tool)mult*=0.8;
   const blockP=clamp((0.17+(bs-an+0.17)*0.3)*mult,0.02,0.45);
@@ -349,7 +355,8 @@ function stepRally(m){
   m.rallies++;
   const recv=1-m.serving;m.sideout[1]++;if(r.winner===recv)m.sideout[0]++;
   {const rs=m.rs||(m.rs=[{},{}]);for(const i of [0,1]){const z=m.sides[i].rot.indexOf(0)+1;const o=rs[i][z]||(rs[i][z]=[0,0,0,0]);if(i===m.serving){o[2]++;if(r.winner===i)o[3]++;}else{o[0]++;if(r.winner===i)o[1]++;}}
-   const pt=m.pt||(m.pt=[{},{}]);pt[r.winner][r.type]=(pt[r.winner][r.type]||0)+1;}
+   const pt=m.pt||(m.pt=[{},{}]);pt[r.winner][r.type]=(pt[r.winner][r.type]||0)+1;
+   const tu=m.tu||(m.tu=[{},{}]);for(const i of [0,1]){const t=m.sides[i].tactics;for(const k of TFK){const key=k+':'+tfV(t,k);tu[i][key]=(tu[i][key]||0)+1;}}}
   fatigue(m,ex.n);
   const w=r.winner;m.score[w]++;(m.hist=m.hist||[]).push([m.setNo,m.score[0],m.score[1]]);
   if(m.run.t===w)m.run.n++;else m.run={t:w,n:1};

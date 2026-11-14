@@ -531,6 +531,16 @@ td.nw{white-space:nowrap}
 .dct td{padding:10px 8px}.dct tr.on td{background:#ffffff0a}.dct tr.best td:first-child{box-shadow:inset 3px 0 0 var(--good)}.dct .big{font-family:var(--fc);font-size:22px}
 .lcourt.mini .lcgrid{gap:6px}.mz{background:#0003;border:1px solid #ffffff22;border-radius:6px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative;font-size:12px}.mz.set{border-color:var(--acc)}.mz small{color:#ffffffaa;font-size:10.5px}
 @media (max-width:900px){.dcrot{grid-template-columns:minmax(0,1fr)}}
+.tfgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;margin-top:8px}
+.tfcol{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}.tfh{font-family:var(--fc);font-size:19px;text-transform:uppercase;letter-spacing:.03em}
+.tfr{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;padding:5px 6px;border-radius:4px}.tfr:nth-child(odd){background:#ffffff06}
+.tfd{width:12px;height:12px;border-radius:50%;flex:none;box-shadow:0 0 0 2px #0004}
+.tfnote{margin-top:auto;padding-top:10px;border-top:1px solid var(--line);font-size:12.5px;color:#cfcac0}
+.tfbar{display:inline-flex;gap:2px;margin:0 6px}.tfbar i{width:5px;height:14px;border-radius:1px;background:#ffffff18}.tfbar i.g{background:var(--good)}.tfbar i.y{background:var(--acc)}.tfbar i.r{background:var(--bad)}
+.tfbig{font-family:var(--fc);font-size:28px}
+.tfgroups{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:10px}.tfgrp{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+.tfopt{display:grid;grid-template-columns:minmax(0,1fr) 110px 44px;gap:8px;align-items:center;font-size:13px;padding:5px 0;border-bottom:1px solid #ffffff08}.tfopt small{grid-column:1/-1;margin-top:-3px}
+.famt{display:block;font-size:11px;font-weight:600;margin-top:3px}
 </style></head><body><div id="app"></div>
 <script>
 'use strict';
@@ -636,6 +646,11 @@ function chemOf(ps,ti,cap){ps=ps.filter(Boolean);
 function capBonus(c){if(!c)return 0;return clamp(((c.kom||10)-10)*0.004+((c.opa||10)-10)*0.002+(hasT(c,'lid')?0.04:0)-(hasT(c,'ner')||hasT(c,'ind')||hasT(c,'kap')?0.03:0),-0.05,0.08);}
 function autoCaptain(ps){let b=null,bs=-1e9;for(const p of ps.filter(Boolean)){const s=(hasT(p,'lid')?8:0)+(p.kom||10)+(p.opa||10)*0.6+Math.min(p.age,32)*0.25-(hasT(p,'ner')||hasT(p,'kap')||hasT(p,'ind')?5:0);if(s>bs){bs=s;b=p;}}return b;}
 function pdFrom(q){return q>=3?R()*0.8:q===2?0.9+R()*1.8:2.5+R()*3.3;}
+// znajomość taktyki: klucze ustawień i wartości domyślne
+const TFK=['serve','dist','atk','adir','blkL','blkR','blkM','blk3','dsys','tip','free'];const TFD={serve:1,dist:0,atk:0,adir:0,blkL:1,blkR:1,blkM:1,blk3:0,dsys:0,tip:0,free:0};
+function tfV(t,k){if(k==='tip')return (t.tipL?1:0)+(t.tipR?2:0)+(t.tipM?4:0);return t[k]==null?TFD[k]:t[k];}
+// 0,55–1: jak dobrze drużyna zna obecnie ustawioną opcję (1 = bez danych, np. w testach)
+function famF(side,k){const f=side.fam;if(!f)return 1;const v=f[k+':'+tfV(side.tactics,k)];return 0.55+0.45*(v==null?0.3:v);}
 // ustawienie startowe: ile rotacji od ustawienia 1 (rozgrywający w strefie 1)
 function baseRot(tac){const n=((tac&&tac.startRot)||0)%6;const r=[0,1,2,3,4,5];for(let i=0;i<n;i++)r.push(r.shift());return r;}
 function makeSide(team,lu,tac,home,x){
@@ -646,7 +661,7 @@ function makeSide(team,lu,tac,home,x){
   {let d=0;if(st7.some(p=>p&&hasT(p,'lid')))d+=3;if(cap&&hasT(cap,'lid'))d+=2;if(pl.some(p=>hasT(p,'kap')&&(p.unh||0)>=3))d-=3;
    for(const p of pl){let e=d;if(hasT(p,'amb'))e+=2;if(hasT(p,'kap')&&(p.unh||0)>=3)e-=8;if(e)p.mor=Math.round(clamp(p.mor+e,5,100));}}
   if(typeof pairBonusSide==='function'){try{pairBonusSide(team,lu,pl);}catch(e){}}
-  return {chem,cap:cap?cap.id:null,team,pl,slots,libero:g(lu.L),rot:baseRot(tac),tactics:Object.assign({},tac),mom:0,home:!!home,fatMul:(x&&x.fat)||1,momMul:(x&&x.momMul)||1,prB:(x&&x.prB)||0,trB:(x&&x.trB)||0,form:nz()*0.09+(home?(x&&x.hb!=null?x.hb:0.015):0)+((x&&x.sb)||0),to:2,subs:6};
+  return {chem,cap:cap?cap.id:null,team,pl,slots,libero:g(lu.L),rot:baseRot(tac),tactics:Object.assign({},tac),mom:0,home:!!home,fatMul:(x&&x.fat)||1,momMul:(x&&x.momMul)||1,prB:(x&&x.prB)||0,trB:(x&&x.trB)||0,form:nz()*0.09+(home?(x&&x.hb!=null?x.hb:0.015):0)+((x&&x.sb)||0),to:2,subs:6,fam:(x&&x.fam)||null,tfE:(x&&x.tfE)||1};
 }
 function newMatch(a,b){
   const m={sides:[makeSide(a.team,a.lineup,a.tactics,a.home,a.x),makeSide(b.team,b.lineup,b.tactics,b.home,b.x)],setNo:1,score:[0,0],setsWon:[0,0],sets:[],firstServe:R()<0.5?0:1,run:{t:-1,n:0},over:false,rallies:0,sideout:[0,0]};
@@ -663,7 +678,7 @@ function mb(p,m,i){let b=(p.mor==null?0:(p.mor-60)/40*0.045)+formB(p)+(p.pcB||0)
   if(pr&&sd.cap){const c=sd.pl.find(x=>x.id===sd.cap);if(c&&c!==p)b+=capBonus(c)*0.25;}
   const sh=sd.sh;if(sh&&sh.u>m.rallies){b+=sh.p||0;if(pr)b+=sh.pr||0;if(tr)b+=sh.b||0;}
   return b;}
-function kc(p,m){let k=1.25-p.kcj/20*0.5;{const sd=m.sides&&m.sides.find(x=>x.pl.includes(p));if(sd&&sd.sh&&sd.sh.u>m.rallies&&sd.sh.e)k*=1-sd.sh.e;}if(pressure(m))k*=1.15-p.opa/20*0.3;if(p.tr){if(hasT(p,'pro'))k*=0.9;if(hasT(p,'ner')&&pressure(m))k*=1.1;if(hasT(p,'ind'))k*=1.04;}return k;}
+function kc(p,m){let k=1.25-p.kcj/20*0.5;{const sd=m.sides&&m.sides.find(x=>x.pl.includes(p));if(sd&&sd.sh&&sd.sh.u>m.rallies&&sd.sh.e)k*=1-sd.sh.e;if(sd&&sd.tfE)k*=sd.tfE;}if(pressure(m))k*=1.15-p.opa/20*0.3;if(p.tr){if(hasT(p,'pro'))k*=0.9;if(hasT(p,'ner')&&pressure(m))k*=1.1;if(hasT(p,'ind'))k*=1.04;}return k;}
 function nerves(p,m){return pressure(m)&&p.opa<10?' Nerwy w końcówce!':'';}
 function bn(s){return s.mom*0.01*(s.momMul||1)+s.form;}
 function ensAttrs(p){if(!p||p.czy!=null&&p.kiw!=null&&p.kom!=null)return p;const t=TEMPL[p.pos]||TEMPL.P;
@@ -768,7 +783,7 @@ function attackPhase(m,A,q,by,log,act,pd){
   const AT=side.tactics.atk||0,AD=side.tactics.adir||0;
   let tipP=quick?0.02:sq<0.42?0.1+kiwN*0.3:0.025+kiwN*0.05;
   if(!quick){if(AT===1)tipP*=0.3;else if(AT===2)tipP=Math.min(0.55,tipP*2.4+0.04);if(AD===3)tipP=Math.min(0.6,tipP+0.07);}
-  const comply=0.5+czA*0.35;// na ile zawodnik wykona polecenie trenera co do kierunku
+  const comply=(0.5+czA*0.35)*(AD?famF(side,'adir'):1);// na ile zawodnik wykona polecenie trenera co do kierunku
   let dir;
   if(R()<tipP)dir='tip';else if(wing==='M'){const t=midTend(a);let pS=t[0],pL=t[1];const sh=clamp((eff(a,'czy')-8)/12,0,1)*0.1;
     if(bset===0){pS-=sh;pL+=sh/2;}else if(bset===2){pL-=sh;pS+=sh/2;}else if(bset===3){pS+=sh/2;}
@@ -814,6 +829,7 @@ function attackPhase(m,A,q,by,log,act,pd){
   let mult=1;const MD={midS:0,midL:2,midR:3};
   if(wing!=='M'){if(bset===1){const cz=blockers.reduce((s,x)=>s+eff(x.p,'czy'),0)/blockers.length;mult=1+(cz-10)/10*0.12;}else mult=((bset===0)===(dir==='cross'))?1.55:0.5;}
   else if(dir in MD){if(bset===1){const cz=blockers.reduce((s,x)=>s+eff(x.p,'czy'),0)/blockers.length;mult=1+(cz-10)/10*0.1;}else mult=MD[dir]===bset?1.8:0.55;if(opp.tactics.blk3===2)mult*=0.6;}
+  {const bk=wing==='M'?'blkM':(wing==='L4'?'blkR':'blkL');mult=1+(mult-1)*famF(opp,bk);}
   if(triple)mult*=1.28;
   if(AT===1)mult*=1.05;if(tool)mult*=0.8;
   const blockP=clamp((0.17+(bs-an+0.17)*0.3)*mult,0.02,0.45);
@@ -884,7 +900,8 @@ function stepRally(m){
   m.rallies++;
   const recv=1-m.serving;m.sideout[1]++;if(r.winner===recv)m.sideout[0]++;
   {const rs=m.rs||(m.rs=[{},{}]);for(const i of [0,1]){const z=m.sides[i].rot.indexOf(0)+1;const o=rs[i][z]||(rs[i][z]=[0,0,0,0]);if(i===m.serving){o[2]++;if(r.winner===i)o[3]++;}else{o[0]++;if(r.winner===i)o[1]++;}}
-   const pt=m.pt||(m.pt=[{},{}]);pt[r.winner][r.type]=(pt[r.winner][r.type]||0)+1;}
+   const pt=m.pt||(m.pt=[{},{}]);pt[r.winner][r.type]=(pt[r.winner][r.type]||0)+1;
+   const tu=m.tu||(m.tu=[{},{}]);for(const i of [0,1]){const t=m.sides[i].tactics;for(const k of TFK){const key=k+':'+tfV(t,k);tu[i][key]=(tu[i][key]||0)+1;}}}
   fatigue(m,ex.n);
   const w=r.winner;m.score[w]++;(m.hist=m.hist||[]).push([m.setNo,m.score[0],m.score[1]]);
   if(m.run.t===w)m.run.n++;else m.run={t:w,n:1};
@@ -1073,11 +1090,13 @@ const SERVE_OPT=[['Bezpieczna','Mniej błędów, ale łatwiejsze przyjęcie dla 
 const DIST_OPT=[['Zrównoważone','Rozgrywający gra do wszystkich.'],['Skrzydła','Więcej piłek do przyjmujących i atakującego.'],['Środek','Więcej szybkich piłek do środkowych (wymaga dobrego przyjęcia).'],['Na atakującego','Główna opcja: atakujący.']];
 const ATK_OPT=[['Mieszany','Zawodnicy sami wybierają między mocnym atakiem a kiwką.'],['Mocny atak','Prawie bez kiwek: mocniejsze uderzenia, ale więcej błędów i trochę więcej bloków.'],['Więcej kiwek','Częste kiwki i plasy: mniej błędów, ale rywal z asekuracją kiwki łatwo je broni.']];
 const ADIR_OPT=[['Wg zawodnika','Każdy atakuje w swoim ulubionym kierunku.'],['Po skosie','Atak po przekątnej boiska. Groźny, gdy blok rywala zamyka prostą.'],['Po prostej','Atak wzdłuż linii. Groźny, gdy blok zamyka skos.'],['Za blok','Plasy i kiwki tuż za blok. Dobre na wysoki blok bez asekuracji.'],['Atak po bloku','Celowe uderzenie w ręce blokujących (obijanie bloku), żeby piłka po bloku wyszła w aut. Najlepsze na wysoki, silny blok; przeciw niskiemu blokowi łatwiej o aut bez dotknięcia.']];
-function atkTacHtml(t){return `<div class="tacrow"><div class="tacl"><b>Rodzaj ataku</b><small class="mut">siła czy technika</small></div><div class="seg">${ATK_OPT.map((o,i)=>`<button class="${(t.atk||0)===i?'on':''}" onclick="tacSet('atk',${i})" title="${esc(o[1])}">${o[0]}</button>`).join('')}</div><div class="small mut tacd">${esc(ATK_OPT[t.atk||0][1])}</div></div>
-  <div class="tacrow"><div class="tacl"><b>Kierunek ataku</b><small class="mut">polecenie dla atakujących</small></div><div class="seg">${ADIR_OPT.map((o,i)=>`<button class="${(t.adir||0)===i?'on':''}" onclick="tacSet('adir',${i})" title="${esc(o[1])}">${o[0]}</button>`).join('')}</div><div class="small mut tacd">${esc(ADIR_OPT[t.adir||0][1])} Im lepsze czytanie gry zawodnika, tym dokładniej wykonuje polecenie.</div></div>`;}
-function optGroup(name,opts,cur,fn){return `<div class="opts">${opts.map(([l,d],i)=>`<button class="opt ${cur===i?'on':''}" onclick="${fn}(${i})"><b>${l}</b><small>${d}</small></button>`).join('')}</div>`;}
-function tacticsView(){const tc=myTac();
-  return `<div class="card"><h2>Zagrywka</h2>${optGroup('serve',SERVE_OPT,tc.serve,'setServe')}</div>
+function atkTacHtml(t){return `<div class="tacrow"><div class="tacl"><b>Rodzaj ataku</b><small class="mut">siła czy technika</small></div><div class="seg">${ATK_OPT.map((o,i)=>`<button class="${(t.atk||0)===i?'on':''}" onclick="tacSet('atk',${i})" title="${esc(o[1])} Znajomość: ${typeof famOf==='function'&&SAVE.team!=null?Math.round(famOf(SAVE.team,'atk',i)):'?'}%">${o[0]}</button>`).join('')}</div><div class="small mut tacd">${esc(ATK_OPT[t.atk||0][1])} ${famTag('atk',t.atk||0)}</div></div>
+  <div class="tacrow"><div class="tacl"><b>Kierunek ataku</b><small class="mut">polecenie dla atakujących</small></div><div class="seg">${ADIR_OPT.map((o,i)=>`<button class="${(t.adir||0)===i?'on':''}" onclick="tacSet('adir',${i})" title="${esc(o[1])} Znajomość: ${typeof famOf==='function'&&SAVE.team!=null?Math.round(famOf(SAVE.team,'adir',i)):'?'}%">${o[0]}</button>`).join('')}</div><div class="small mut tacd">${famTag('adir',t.adir||0)} ${esc(ADIR_OPT[t.adir||0][1])} Im lepsze czytanie gry zawodnika, tym dokładniej wykonuje polecenie.</div></div>`;}
+function famTag(k,i){if(SAVE.team==null||typeof famOf!=='function'||!TF_EL.some(x=>x[0]===k))return '';const v=Math.round(famOf(SAVE.team,k,i));return `<span class="famt" style="color:${v>=70?'var(--good)':v>=45?'var(--acc)':'var(--bad)'}" title="Znajomość tej opcji przez zespół">znajomość ${v}%</span>`;}
+function optGroup(name,opts,cur,fn){return `<div class="opts">${opts.map(([l,d],i)=>`<button class="opt ${cur===i?'on':''}" onclick="${fn}(${i})"><b>${l}</b><small>${d}</small>${famTag(name,i)}</button>`).join('')}</div>`;}
+function tacticsView(){const tc=myTac();const tt=ui.tacT||'set';const tabs=`<div class="ptabs"><button class="tabb ${tt==='set'?'on':''}" onclick="ui.tacT='set';render()">Ustawienia</button><button class="tabb ${tt==='eff'?'on':''}" onclick="ui.tacT='eff';render()">Efektywność taktyczna <small class="mut">${tacEff(SAVE.team).score}</small></button></div>`;
+  if(tt==='eff')return tabs+tacEffView();
+  return tabs+`<div class="card"><h2>Zagrywka</h2>${optGroup('serve',SERVE_OPT,tc.serve,'setServe')}</div>
   <div class="card"><h2>Rozegranie</h2>${optGroup('dist',DIST_OPT,tc.dist,'setDist')}</div>
   <div class="card"><h2>Atak</h2>${atkTacHtml(tc)}</div>
   <div class="card"><h2>Blok i obrona</h2>${blockTacHtml(tc)}</div>
@@ -1312,9 +1331,9 @@ function tableFrom(results){const T=TEAMS.map(t=>({i:t.idx,m:0,w:0,l:0,pts:0,sw:
 function rankOf(i){return leagueTable().findIndex(x=>x.i===i)+1;}
 
 // ---- uczestnicy / symulacja ----
-function participant(i,home){const t=TEAMS[i];const mine=i===SAVE.team;return {team:t,lineup:mine?healthyLineup(t,myLineup()).lu:autoLineup(t),tactics:mine?Object.assign({},myTac()):{serve:1,dist:0},home,x:(()=>{const md=clubMods(i);const o={hb:md.hb,fat:md.fat,sb:md.sb};if(mine){o.cap=SAVE.captain;const cx=coachMatchX();o.sb+=(cx.sb||0)+(typeof tacPrep==='function'?tacPrep()*0.004:0)+(typeof oppPrepBonus==='function'?oppPrepBonus():0);o.momMul=cx.momMul;o.prB=cx.prB;o.trB=cx.trB;}return o;})()};}
+function participant(i,home){const t=TEAMS[i];const mine=i===SAVE.team;return {team:t,lineup:mine?healthyLineup(t,myLineup()).lu:autoLineup(t),tactics:mine?Object.assign({},myTac()):{serve:1,dist:0},home,x:(()=>{const md=clubMods(i);const o={hb:md.hb,fat:md.fat,sb:md.sb};if(typeof tfMatchX==='function'){const tx=tfMatchX(i);o.sb+=tx.sb||0;o.fam=tx.fam;o.tfE=tx.tfE;}if(mine){o.cap=SAVE.captain;const cx=coachMatchX();o.sb+=(cx.sb||0)+(typeof tacPrep==='function'?tacPrep()*0.004:0)+(typeof oppPrepBonus==='function'?oppPrepBonus():0);o.momMul=cx.momMul;o.prB=cx.prB;o.trB=cx.trB;}return o;})()};}
 function resultOf(m,h,a){const flip=m.sides[0].team.idx!==h;return {h,a,sets:m.sets.map(x=>flip?[x[1],x[0]]:x.slice()),sw:flip?[m.setsWon[1],m.setsWon[0]]:m.setsWon.slice()};}
-function addTogether(m){try{formAfterMatch(m);}catch(e){console.error(e);}try{if(typeof pairsAfterMatch==='function')pairsAfterMatch(m);}catch(e){}for(const sd of m.sides)for(const p of sd.pl){const x=p.st;if(x.srv+x.rec+x.att+x.dig+x.blk===0&&!sd.slots.some(z=>z.p.id===p.id)&&sd.libero!==p)continue;
+function addTogether(m){try{formAfterMatch(m);}catch(e){console.error(e);}try{if(typeof pairsAfterMatch==='function')pairsAfterMatch(m);if(typeof famAfterMatch==='function')famAfterMatch(m);}catch(e){}for(const sd of m.sides)for(const p of sd.pl){const x=p.st;if(x.srv+x.rec+x.att+x.dig+x.blk===0&&!sd.slots.some(z=>z.p.id===p.id)&&sd.libero!==p)continue;
   const w=PLAYERS[p.id]&&PLAYERS[p.id].p;if(!w)continue;if(w.tcTm!==sd.team.idx){w.tcTm=sd.team.idx;w.tc=0;}w.tc=(w.tc||0)+1;}}
 function recordStats(m){addTogether(m);const s=S();const ps=s.ps;const ts=s.ts||(s.ts={});
   m.sides.forEach((sd,i)=>{const r=ts[sd.team.idx]||(ts[sd.team.idx]={m:0,sets:0,kill:0,att:0,attErr:0,blk:0,ace:0,srvErr:0,srv:0,rec:0,recPos:0,dig:0,pw:0,pl:0});
@@ -1483,13 +1502,13 @@ function statsView(){
 }
 
 // ---- zapis gry ----
-function serMatch(m){return {sides:m.sides.map(s=>({ti:s.team.idx,pl:s.pl.map(p=>({id:p.id,en:p.en,st:p.st,mor:p.mor})),tmp:s.tmp,slots:s.slots.map(x=>({role:x.role,id:x.p.id})),lib:s.libero.id,rot:s.rot,tactics:s.tactics,mom:s.mom,home:s.home,fatMul:s.fatMul,momMul:s.momMul,prB:s.prB,trB:s.trB,form:s.form,to:s.to,subs:s.subs,chem:s.chem})),
-  setNo:m.setNo,score:m.score,setsWon:m.setsWon,sets:m.sets,firstServe:m.firstServe,serving:m.serving,run:m.run,rallies:m.rallies,sideout:m.sideout,log:m.log.slice(-150),ctx:m.ctx,hist:m.hist||[],att:m.att,cap:m.cap,hallLv:m.hallLv,homeIdx:m.homeIdx,mid:m.mid,dirStats:m.dirStats||[],mixN:m.mixN||[0,0],rs:m.rs,pt:m.pt};}
+function serMatch(m){return {sides:m.sides.map(s=>({ti:s.team.idx,pl:s.pl.map(p=>({id:p.id,en:p.en,st:p.st,mor:p.mor})),tmp:s.tmp,slots:s.slots.map(x=>({role:x.role,id:x.p.id})),lib:s.libero.id,rot:s.rot,tactics:s.tactics,mom:s.mom,home:s.home,fatMul:s.fatMul,momMul:s.momMul,prB:s.prB,trB:s.trB,form:s.form,to:s.to,subs:s.subs,chem:s.chem,fam:s.fam,tfE:s.tfE})),
+  setNo:m.setNo,score:m.score,setsWon:m.setsWon,sets:m.sets,firstServe:m.firstServe,serving:m.serving,run:m.run,rallies:m.rallies,sideout:m.sideout,log:m.log.slice(-150),ctx:m.ctx,hist:m.hist||[],att:m.att,cap:m.cap,hallLv:m.hallLv,homeIdx:m.homeIdx,mid:m.mid,dirStats:m.dirStats||[],mixN:m.mixN||[0,0],rs:m.rs,pt:m.pt,tu:m.tu};}
 function deserMatch(o){const m=Object.assign({},o,{over:false,paused:true,hl:[]});
   m.sides=o.sides.map(x=>{const t=TEAMS[x.ti];const pl=t.players.map(cloneP);const g=id=>pl.find(p=>p.id===id);
     if(typeof pairBonusSide==='function'){try{pairBonusSide(t,{R:x.slots[0].id,P1:x.slots[1].id,S1:x.slots[2].id,A:x.slots[3].id,P2:x.slots[4].id,S2:x.slots[5].id,L:x.lib},pl);}catch(e){}}
     for(const q of x.pl){const p=g(q.id);if(!p)continue;p.en=q.en;p.st=q.st;if(q.mor!=null)p.mor=q.mor;}
-    return {team:t,pl,slots:x.slots.map(s=>({role:s.role,p:g(s.id)})),libero:g(x.lib),tmp:x.tmp,rot:x.rot,tactics:x.tactics,mom:x.mom,home:x.home,fatMul:x.fatMul||1,momMul:x.momMul||1,prB:x.prB||0,trB:x.trB||0,form:x.form,to:x.to,subs:x.subs,chem:x.chem!=null?x.chem:chemOf(x.slots.map(s=>g(s.id)).concat([g(x.lib)]),t.idx)};});
+    return {team:t,pl,slots:x.slots.map(s=>({role:s.role,p:g(s.id)})),libero:g(x.lib),tmp:x.tmp,rot:x.rot,tactics:x.tactics,mom:x.mom,home:x.home,fatMul:x.fatMul||1,momMul:x.momMul||1,prB:x.prB||0,trB:x.trB||0,form:x.form,to:x.to,subs:x.subs,fam:x.fam||null,tfE:x.tfE||1,chem:x.chem!=null?x.chem:chemOf(x.slots.map(s=>g(s.id)).concat([g(x.lib)]),t.idx)};});
   if(m.att==null&&m.ctx)matchCrowd(m);
   return m;}
 function persistLive(){const m=ui.match;SAVE.live=m&&!m.over&&m.ctx?serMatch(m):null;save();}
@@ -3228,6 +3247,7 @@ function trainDay(d,md){const t=myTeam();if(!t)return;const trn=ensTrn();const i
     const g={},up=[];for(const k of ALL_KEYS){const dv=(p[k]-a0[k])+(((p.xp&&p.xp[k])||0)-x0[k]);if(dv>0.0005)g[k]=Math.round(dv*1000)/1000;if(p[k]>a0[k])up.push(k);}
     const r={fr:p.fr,f:[Math.round(fm0),Math.round(fmOf(p))],n};if(scs.length)r.s=Math.round(clamp((scs.reduce((a,b)=>a+b,0)/scs.length+7)/10,1,10)*10)/10;
     if(Object.keys(g).length)r.g=g;if(up.length)r.up=up;if(inj)r.inj=inj;rp[p.id]=r;}
+  if(typeof famTrainDay==='function')famTrainDay(units);
   if(units.includes('tak')){trn.tak.push(d);trn.tak=trn.tak.slice(-8);}
   trn.log.unshift({d,u:units,m:isM?1:0});trn.log=trn.log.slice(0,14);
   trn.rep=trn.rep||[];trn.rep.unshift({d,u:units,m:isM?1:0,p:rp});trn.rep=trn.rep.slice(0,31);
@@ -3267,6 +3287,7 @@ function trainingView(){
   const inj=t.players.filter(p=>p.inj);const avg=Math.round(teamFr());const avF=Math.round(t.players.reduce((s,p)=>s+fmOf(p),0)/t.players.length);
   return `<div class="card"><div class="row wrap"><h2 style="margin:0">Plan treningowy</h2><span class="sp"></span>
     <div class="seg"><button class="${trn.mode==='own'?'on':''}" onclick="setTrMode('own')">✍️ Sam układam</button><button class="${trn.mode==='asy'?'on':''}" onclick="setTrMode('asy')">🧑‍🏫 Asystent układa${asy?` (${sk}/20)`:''}</button></div></div>
+   <p class="small mut">Jednostki „Taktyka” ćwiczą: <select onchange="setTakF(this.value)">${TF_GRP.map(([g,l])=>`<option value="${g}" ${(trn.takF||'')===g?'selected':''}>${l}</option>`).join('')}</select> <button class="link" onclick="ui.tacT='eff';go('taktyka')">Efektywność taktyczna →</button></p>
    <p class="small mut">Codziennie 3 jednostki: rano, po południu i wieczorem. ${act?'':'<b>Teraz trwa urlop — treningi ruszają 1 sierpnia.</b>'}</p>
    ${grid}
    <div class="row wrap" style="gap:6px;margin-top:6px">${trn.mode==='own'?`<button class="ghost sm" onclick="copyAsstPlan()">🧑‍🏫 Wczytaj propozycję asystenta</button><button class="ghost sm" onclick="resetWeek()">↺ Plan domyślny</button>`:`<button class="ghost sm" onclick="copyAsstPlan()">✍️ Przejmij ten plan i edytuj sam</button>`}</div>
@@ -3825,6 +3846,81 @@ function dcDefView(ms){const pl=dcPl(ms);const ids=Object.keys(pl).filter(id=>pl
    ${dirTable(o,'Ataki rywali przeciwko nam: strefy i kierunki','opp')}`;}
 function dcMatchesView(ms,title){return `<div class="card"><h2>${title||'Mecze'}</h2><div class="tw"><table><thead><tr><th class="l">Data</th><th class="l">Rywal</th><th>Wynik</th><th>Atak</th><th>Bloki</th><th>Asy</th><th>Błędy</th><th>Przyjęcie+</th><th class="l">Najlepszy</th></tr></thead><tbody>
   ${(title?ms:ms.slice().reverse()).map(m=>{const T=m.T;const best=m.pl.slice().sort((a,b)=>b[b.length-1]-a[a.length-1])[0];return `<tr><td class="l">${fmtShort(m.d)} <small class="mut">${m.kind==='spar'?'sparing':m.kind==='po'?'play-off':''}</small></td><td class="l">${tDot(m.op)}${esc(TEAMS[m.op].name)} <small class="mut">${m.home?'dom':'wyjazd'}</small></td><td class="${m.won?'good':'bad'}"><b>${m.sw[0]}:${m.sw[1]}</b></td><td>${pcs(dpc(T.kill,T.att))}</td><td>${T.blk}</td><td>${T.ace}</td><td>${T.attErr+T.srvErr}</td><td>${pcs(dpc(T.recPos,T.rec))}</td><td class="l">${best?plName(best[0])+` <b>${fx1(best[best.length-1])}</b>`:''}</td></tr>`;}).join('')}</tbody></table></div></div>`;}
+// ================= EFEKTYWNOŚĆ TAKTYCZNA: ZNAJOMOŚĆ TAKTYKI, DOPASOWANIE, PRZEKONANIE, WIEDZA O RYWALU =================
+// znajomość: SAVE.tfam[ti]['klucz:opcja'] 0–100; rośnie z każdą akcją rozegraną w danym ustawieniu i na treningu „Taktyka”
+const TF_EL=[['serve','zag','Zagrywka',()=>SERVE_OPT],['dist','roz','Rozegranie',()=>DIST_OPT],['atk','atk','Rodzaj ataku',()=>ATK_OPT],['adir','atk','Kierunek ataku',()=>ADIR_OPT],
+  ['blkL','blk','Blok — lewa strona',()=>BLK_OPT],['blkR','blk','Blok — prawa strona',()=>BLK_OPT],['blkM','blk','Blok — środek',()=>MID_OPT],['blk3','blk','Liczba blokujących',()=>B3_OPT],
+  ['dsys','obr','System obrony',()=>[['Klasyczna'],['Rotacyjna']]],['tip','obr','Asekuracja kiwki',()=>null],['free','obr','Piłki sytuacyjne',()=>FREE_OPT]];
+const TF_GRP=[['','Wszystko po trochu'],['zag','Zagrywka'],['roz','Rozegranie'],['atk','Atak'],['blk','Blok'],['obr','Obrona i piłki sytuacyjne']];
+const TF_DEF={serve:1,dist:0,atk:0,adir:0,blkL:1,blkR:1,blkM:1,blk3:0,dsys:0,tip:0,free:0};
+function tfVal(t,k){t=t||{};if(k==='tip')return (t.tipL?1:0)+(t.tipR?2:0)+(t.tipM?4:0);return t[k]==null?TF_DEF[k]:t[k];}
+function tfOptName(k,v){if(k==='tip'){const a=[];if(v&1)a.push('lewa');if(v&2)a.push('prawa');if(v&4)a.push('środek');return a.length?'asekuracja: '+a.join(', '):'bez asekuracji';}const o=TF_EL.find(x=>x[0]===k)[3]();return o&&o[v]?o[v][0]:String(v);}
+function tacOf(ti){return ti===SAVE.team?myTac():{serve:1,dist:0};}
+function TFM(ti){const all=SAVE.tfam||(SAVE.tfam={});if(!all[ti]){const t=tacOf(ti);const f={};for(const [k] of TF_EL)f[k+':'+tfVal(t,k)]=ti===SAVE.team?75:80;all[ti]=f;}return all[ti];}
+function famOf(ti,k,v){const f=TFM(ti)[k+':'+v];return f==null?30:f;}
+function famAdd(ti,key,d){const f=TFM(ti);const c=f[key]==null?30:f[key];f[key]=clamp(c+(d>0?d*Math.max(0.1,1-c/115):d),0,100);}
+// po meczu: każda rozegrana akcja w danym ustawieniu uczy
+function famAfterMatch(m){if(!m.tu)return;m.sides.forEach((sd,i)=>{const ti=sd.team.idx;for(const key in m.tu[i])famAdd(ti,key,m.tu[i][key]*0.03);});}
+// trening „Taktyka”: uczy aktualnie ustawionych opcji (mocniej w wybranym elemencie); nieużywane opcje powoli się zapominają
+function famTrainDay(units){const ti=SAVE.team;const f=TFM(ti);const t=myTac();const n=units.filter(u=>u==='tak').length;const focus=(SAVE.trn&&SAVE.trn.takF)||'';
+  const q=0.6+(staffSkill('asy')+cA('tak'))/40;const cur=new Set(TF_EL.map(([k])=>k+':'+tfVal(t,k)));
+  for(const [k,g] of TF_EL){const key=k+':'+tfVal(t,k);if(n)famAdd(ti,key,n*q*(focus?(focus===g?2.5:0.4):1));}
+  for(const key in f)if(!cur.has(key)&&f[key]>20)f[key]=Math.max(20,f[key]-0.25);}
+// ---- filary ----
+const mapc=(v,a,b)=>clamp((v-a)/(b-a)*100,0,100);
+function luPlayers(ti){const t=TEAMS[ti];const lu=ti===SAVE.team?myLineup():autoLineup(t);return {t,lu,P:k=>t.players.find(p=>p.id===lu[k])};}
+function tfKnow(ti){const t=tacOf(ti);const rows=TF_EL.map(([k,g,l])=>{const v=tfVal(t,k);return {k,g,l,v,f:Math.round(famOf(ti,k,v))};});const {P}=luPlayers(ti);
+  const st=['R','A','P1','P2','S1','S2','L'].map(P).filter(Boolean);const newb=st.filter(p=>togetherOf(p,ti)<8);
+  const nonDef=TF_EL.filter(([k])=>tfVal(t,k)!==TF_DEF[k]).length;const cx=Math.round(clamp(100-Math.max(0,nonDef-3)*12,30,100));
+  const avg=rows.reduce((a,r)=>a+r.f,0)/rows.length;const score=Math.round(clamp(avg*(1-0.35*newb.length/Math.max(1,st.length))*(0.85+0.15*cx/100),0,100));
+  return {score,rows,cx,nonDef,newb};}
+function tfSkill(ti){const t=tacOf(ti);const {P}=luPlayers(ti);const six=['R','A','P1','P2','S1','S2'].map(P).filter(Boolean);const att=['A','P1','P2','S1','S2'].map(P).filter(Boolean);const avg=(ps,k)=>ps.reduce((a,p)=>a+p[k],0)/Math.max(1,ps.length);
+  const f=[];const sv=tfVal(t,'serve');f.push(['Zagrywka a umiejętności serwujących',sv===2?mapc(avg(six,'zag'),9,16):sv===1?mapc(avg(six,'zag'),6,13):92]);
+  const d=tfVal(t,'dist');const S=['S1','S2'].map(P).filter(Boolean);const R=P('R');f.push(['Rozegranie a rozgrywający i atakujący',d===2?(mapc(avg(S,'szy'),9,16)+mapc(R?R.tpa:10,9,16))/2:d===1?mapc(avg(['A','P1','P2'].map(P).filter(Boolean),'ata'),10,17):mapc(R?R.roz:10,8,16)]);
+  const a=tfVal(t,'atk');f.push(['Rodzaj ataku a atakujący',a===1?(mapc(avg(att,'ata'),10,17)+mapc(avg(att,'sil'),10,17))/2:a===2?mapc(avg(att,'kiw'),8,15):mapc(avg(att,'czy'),7,14)]);
+  const ad=tfVal(t,'adir');f.push(['Kierunek ataku a czytanie gry',ad===0?90:ad===4?(mapc(avg(att,'czy'),9,16)+mapc(avg(att,'ata'),10,17))/2:mapc(avg(att,'czy'),8,15)]);
+  const bl=[tfVal(t,'blkL'),tfVal(t,'blkR'),tfVal(t,'blkM')].filter(v=>v!==1).length;const b3=tfVal(t,'blk3');f.push(['Blok a środkowi',bl||b3?(mapc(avg(S,'blo'),10,17)+mapc(avg(S,'czy'),8,15))/2:mapc(avg(S,'czy'),7,14)]);
+  const back=['L','P1','P2'].map(P).filter(Boolean);f.push(['Obrona a obrońcy',tfVal(t,'dsys')===1?(mapc(avg(back,'obr'),10,17)+mapc(avg(back,'zwi'),9,16))/2:mapc(avg(back,'obr'),8,15)]);
+  const off=LINEUP_KEYS.filter(([k,,pos])=>{const p=P(k);return p&&p.pos!==pos;}).length;f.push(['Zawodnicy na swoich pozycjach',100-off*30]);
+  const score=Math.round(f.reduce((a,x)=>a+clamp(x[1],0,100),0)/f.length);return {score,f:f.map(x=>[x[0],Math.round(clamp(x[1],0,100))])};}
+function tfConv(ti){const {P}=luPlayers(ti);const st=['R','A','P1','P2','S1','S2','L'].map(P).filter(Boolean);const mine=ti===SAVE.team;
+  const fm=st.reduce((a,p)=>a+fmOf(p),0)/Math.max(1,st.length);const f=[['Forma i morale',mapc(fm,40,75)]];
+  if(mine){f.push(['Autorytet i motywacja trenera',mapc((cA('aut')+cA('mot'))/2,6,17)]);}
+  const form=teamForm(ti)||[];const w=form.filter(Boolean).length;f.push(['Wyniki w ostatnich meczach',form.length?w/form.length*100:60]);
+  const cap=mine?myCaptain():autoCaptain(st);const unh=TEAMS[ti].players.filter(p=>(p.unh||0)>=3).length;f.push(['Kapitan i szatnia',clamp(60+capBonus(cap)*500-unh*12,0,100)]);
+  const score=Math.round(f.reduce((a,x)=>a+x[1],0)/f.length);return {score,f:f.map(x=>[x[0],Math.round(x[1])])};}
+function tfInfo(ti){if(ti!==SAVE.team)return {score:60,f:[]};const c=myNext();const op=c?(c.h===SAVE.team?c.a:c.h):null;const f=[];
+  const rep=op!=null?mailBox().find(m=>m.b&&m.b.type==='opp'&&m.b.op===op&&daysBetween(m.d,today())<=4):null;
+  f.push(['Raport o rywalu',!rep?15:rep.applied?95:rep.r?75:45]);
+  if(op!=null){const ps=autoLineup(TEAMS[op]);const ks=Object.values(ps).map(id=>PLAYERS[id]&&PLAYERS[id].p).filter(Boolean);f.push(['Wiedza o zawodnikach rywala',ks.reduce((a,p)=>a+knowOf(p),0)/Math.max(1,ks.length)]);}
+  f.push(['Odprawa taktyczna (trening „Taktyka” przed meczem)',Math.min(100,(typeof tacPrep==='function'?tacPrep():0)*40+20)]);
+  const score=Math.round(f.reduce((a,x)=>a+x[1],0)/f.length);return {score,f:f.map(x=>[x[0],Math.round(x[1])]),op,rep};}
+function tacEff(ti){const k=tfKnow(ti),s=tfSkill(ti),c=tfConv(ti),i=tfInfo(ti);return {score:Math.round(k.score*0.35+s.score*0.25+c.score*0.25+i.score*0.15),k,s,c,i};}
+// dane do meczu: bonus z efektywności, znajomość opcji (skaluje działanie ustawień), mnożnik prostych błędów
+function tfMatchX(ti){try{const e=tacEff(ti);const all={};const f=TFM(ti);for(const key in f)all[key]=f[key]/100;const kn=e.k.score/100;
+  return {sb:clamp((e.score-65)/35*0.02,-0.025,0.025),fam:all,tfE:1+(0.7-kn)*0.15};}catch(x){console.error(x);return {sb:0};}}
+// ---- widok ----
+function tdot(v){return `<span class="tfd" style="background:${v>=70?'var(--good)':v>=45?'var(--acc)':'var(--bad)'}" title="${v}/100"></span>`;}
+function tbar(v){let h='';for(let i=0;i<10;i++)h+=`<i class="${v>=(i+1)*10?(v>=70?'g':v>=45?'y':'r'):''}"></i>`;return `<span class="tfbar" title="${v}/100">${h}</span>`;}
+function setTakF(g){ensTrn().takF=g;save();render();}
+function tacEffView(){const ti=SAVE.team;const e=tacEff(ti);const k=e.k,s=e.s,c=e.c,i=e.i;const focus=(SAVE.trn&&SAVE.trn.takF)||'';
+  const col=(title,sc,desc,rows,note)=>`<div class="tfcol"><div class="row"><b class="tfh">${title}</b><span class="sp"></span>${tbar(sc)}<b>${sc}</b></div><p class="small mut">${desc}</p><div class="tsec" style="margin:4px 0">Kluczowe czynniki</div>${rows}<div class="tfnote">${note}</div></div>`;
+  const fr=xs=>xs.map(([l,v])=>`<div class="tfr"><span>${esc(l)}</span>${tdot(v)}</div>`).join('');
+  const weak=k.rows.filter(r=>r.f<45);const kNote=weak.length?`Zawodnicy wciąż uczą się: ${weak.map(r=>r.l.toLowerCase()+' ('+tfOptName(r.k,r.v).toLowerCase()+')').slice(0,3).join(', ')}.`:k.newb.length?`Nowi w składzie słabiej znają taktykę: ${k.newb.map(p=>p.last).slice(0,3).join(', ')}.`:'Zespół dobrze zna obecną taktykę.';
+  const sw=s.f.filter(x=>x[1]<45);const sNote=sw.length?`Słabo pasuje: ${sw.map(x=>x[0].toLowerCase()).slice(0,2).join('; ')}.`:'Taktyka pasuje do umiejętności zawodników.';
+  const cw=c.f.slice().sort((a,b)=>a[1]-b[1])[0];const cNote=cw&&cw[1]<45?`Najsłabiej: ${cw[0].toLowerCase()}.`:'Zawodnicy wierzą w plan.';
+  const iNote=i.op==null?'Brak zaplanowanego meczu.':!i.rep?'Brak raportu o najbliższym rywalu — włącz zadanie „Następny rywal” w Skautingu.':i.rep.applied?'Raport przeczytany i zalecenia zastosowane.':'Raport jest w poczcie — przeczytaj i zastosuj zalecenia.';
+  const grp=TF_GRP.slice(1).map(([g,l])=>{const rs=k.rows.filter(r=>r.g===g);return `<div class="tfgrp"><div class="row"><b>${l}</b><span class="sp"></span><button class="ghost sm ${focus===g?'on':''}" onclick="setTakF('${focus===g?'':g}')">${focus===g?'✓ Ćwiczone na treningu':'Ćwicz na treningu'}</button></div>
+    ${rs.map(r=>{const others=Object.entries(TFM(ti)).filter(([key])=>key.startsWith(r.k+':')&&key!==r.k+':'+r.v).sort((a,b)=>b[1]-a[1]).slice(0,2);return `<div class="tfopt"><span>${esc(r.l)}: <b>${esc(tfOptName(r.k,r.v))}</b></span><span class="kbar wide"><i style="width:${r.f}%;background:${r.f>=70?'var(--good)':r.f>=45?'var(--acc)':'var(--bad)'}"></i></span><b>${r.f}%</b>${others.length?`<small class="mut">inne: ${others.map(([key,v])=>esc(tfOptName(r.k,+key.split(':')[1]))+' '+Math.round(v)+'%').join(', ')}</small>`:''}</div>`;}).join('')}</div>`;}).join('');
+  return `<div class="card"><div class="row wrap"><h2 style="margin:0">Efektywność taktyczna</h2><span class="sp"></span><span class="small mut">Ogólna efektywność</span>${tbar(e.score)}<b class="tfbig">${e.score}</b></div>
+   <p class="small mut">Jak dobrze każdy zawodnik i cały zespół rozumie i potrafi zagrać Twoją taktykę w dniu meczu. Wpływa na całą grę (do ±2%) i na to, jak skutecznie działają poszczególne ustawienia.</p>
+   <div class="tfgrid">${col('Znajomość taktyki',k.score,'Ile razy graliśmy tymi ustawieniami i ile ćwiczyliśmy je na treningu.',fr(k.rows.map(r=>[r.l,r.f]).concat([['Złożoność taktyki ('+k.nonDef+' niestandardowych ustawień)',k.cx]])),kNote)}
+    ${col('Umiejętności zawodników',s.score,'Czy wybrane ustawienia pasują do umiejętności zawodników w składzie.',fr(s.f),sNote)}
+    ${col('Przekonanie zawodników',c.score,'Czy zawodnicy chcą realizować Twój plan.',fr(c.f),cNote)}
+    ${col('Wiedza o rywalu',i.score,'Jak dobrze znamy najbliższego rywala.',fr(i.f),iNote)}</div></div>
+  <div class="card"><div class="row wrap"><h2 style="margin:0">Znajomość ustawień</h2><span class="sp"></span><span class="small mut">Jednostki „Taktyka” ćwiczą:</span><select onchange="setTakF(this.value)">${TF_GRP.map(([g,l])=>`<option value="${g}" ${focus===g?'selected':''}>${l}</option>`).join('')}</select></div>
+   <p class="small mut">Każda akcja rozegrana w danym ustawieniu uczy zawodników (ok. +5 pkt za mecz, wolniej przy wysokiej znajomości). Trening „Taktyka” uczy obecnie ustawionych opcji — najmocniej wybranego elementu, szybciej przy dobrym asystencie i Twojej taktyce. Nieużywane opcje powoli się zapominają. Nowa opcja zaczyna od ok. 30%: zmiana taktyki tuż przed meczem lub w trakcie meczu jest ryzykowna.</p>
+   <div class="tfgroups">${grp}</div></div>`;}
 // ================= SZKIELET INTERFEJSU: MENU BOCZNE, PASEK KLUBU, EKRAN GŁÓWNY =================
 const NAV=[['home','🏠','Ekran główny'],['mecz','🏐','Mecz i sezon'],['sklad','👥','Skład'],['taktyka','📋','Taktyka'],['trening','🏋️','Trening'],['kalendarz','📅','Terminarz'],['tabela','🏆','Tabela'],['staty','📈','Statystyki'],['transfery','🔁','Transfery'],['finanse','💰','Finanse'],['sztab','🧑‍🏫','Sztab'],['juniorzy','🌱','Juniorzy'],['klub','🏟️','Infrastruktura'],['trener','🎓','Trener']];
 function teamCrest(i,size){const t=TEAMS[i];if(!t)return '';if(SAVE.custom&&SAVE.custom.idx===i)return crestSvg(t.name,t.short,t.color,size,SAVE.custom.crest);return crestSvg(t.name,t.short,t.color,size,(i*7+3)%20);}
