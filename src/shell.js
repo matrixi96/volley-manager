@@ -162,8 +162,8 @@ function hvWatch(){const pool=myTeam().players.concat(juniorsOf(SAVE.team));if(!
   return `<div class="card hvc hvw"><div class="hvlab acc">Zawodnik do obserwacji</div><div class="row" style="gap:12px;align-items:flex-start">${pFace(p,64)}<div><button class="link hvpn" onclick="openPop('${p.id}')">${esc(p.last)}</button><div class="small">${pTag(p.pos)} <span class="mut">${p.age} l. · ${fmt(pValue(p))}${p.jr?' · junior':''}</span></div>
     <div class="small mut" style="margin-top:4px">Teraz <span class="stars">${stars(rating(p)+3)}</span></div><div class="small mut">Potencjał <span class="stars">${potStars(p)}</span></div></div></div>
    <div class="hvat">${ks.map(k=>`<div><span>${attrName(k)}</span><b style="color:${attrCol(p[k])}">${p[k]}</b></div>`).join('')}</div></div>`;}
-function hvFit(){const ps=myTeam().players.slice().sort((a,b)=>frOf(a)-frOf(b)).slice(0,10);
-  return `<div class="card hvc"><div class="hvlab row"><span>Świeżość zawodników</span><span class="sp"></span><button class="link" onclick="go('trening')">Trening →</button></div>${ps.map(p=>{const f=Math.round(frOf(p));return `<div class="hvfit"><button class="link" onclick="openPop('${p.id}')">${esc(p.last)}${p.inj?' 🚑':''}</button>${pTag(p.pos)}<span class="hvbar"><i style="width:${f}%;background:${frCol(f)}"></i></span><b>${f}%</b></div>`;}).join('')}</div>`;}
+function hvFit(){const ps=myTeam().players.slice().sort((a,b)=>frOf(a)-frOf(b));
+  return `<div class="card hvc hvgrow"><div class="hvlab row"><span>Świeżość zawodników</span><span class="sp"></span><button class="link" onclick="go('trening')">Trening →</button></div><div class="hvgl">${ps.map(p=>{const f=Math.round(frOf(p));return `<div class="hvfit"><button class="link" onclick="openPop('${p.id}')">${esc(p.last)}${p.inj?' 🚑':''}</button>${pTag(p.pos)}<span class="hvbar"><i style="width:${f}%;background:${frCol(f)}"></i></span><b>${f}%</b></div>`;}).join('')}</div></div>`;}
 function hvLast(){const L=SAVE.lastMatch;const form=`<div class="hvlab">Forma drużyny</div><div class="small mut">Ostatnie 5 meczów, wszystkie rozgrywki</div><div style="margin:6px 0 12px">${hvForm(SAVE.team)}</div>`;
   if(!L)return `<div class="card hvc">${form}<div class="small mut">Po pierwszym meczu zobaczysz tu wynik i najlepszego zawodnika.</div></div>`;
   const w=(L.h===SAVE.team)===(L.sw[0]===3);
@@ -174,7 +174,11 @@ function hvLast(){const L=SAVE.lastMatch;const form=`<div class="hvlab">Forma dr
    <button class="link small" onclick="go('poczta')">Raport z meczu ›</button></div>`;}
 function hvUp(){const ev=myEvents();const up=[];for(const d of Object.keys(ev).sort())for(const e of ev[d])if(!e.r)up.push({d,...e});
   const kind=e=>e.kind==='spar'?'Sparing':e.kind==='liga'?`${e.k}. kol.`:'Play-off';
-  return `<div class="card hvc"><div class="hvlab row"><span>Najbliższe mecze</span><span class="sp"></span><button class="link" onclick="go('kalendarz')">Terminarz →</button></div>${up.slice(0,6).map(e=>`<div class="hvup"><span class="mut">${fmtShort(e.d)}</span><span class="l">${teamCrest(e.op,20)}${esc(TEAMS[e.op].name)}</span><span>${e.home?'D':'W'}</span><span class="mut">${kind(e)}</span></div>`).join('')||'<div class="small mut">Brak zaplanowanych meczów.</div>'}</div>`;}
+  return `<div class="card hvc"><div class="hvlab row"><span>Najbliższe mecze</span><span class="sp"></span><button class="link" onclick="go('kalendarz')">Terminarz →</button></div>${up.slice(0,4).map(e=>`<div class="hvup"><span class="mut">${fmtShort(e.d)}</span><span class="l">${teamCrest(e.op,20)}${esc(TEAMS[e.op].name)}</span><span>${e.home?'D':'W'}</span><span class="mut">${kind(e)}</span></div>`).join('')||'<div class="small mut">Brak zaplanowanych meczów.</div>'}</div>`;}
+function hvNews(){const n=(SAVE.news||[]).slice(0,14);const strip=t=>String(t).replace(/^\p{Extended_Pictographic}️?\s*/u,'');
+  return `<div class="card hvc hvgrow"><div class="hvlab">Wiadomości</div><div class="hvgl">${n.map(x=>`<div class="hvnw"><span>${newsIcon(x.t)}</span><span class="mut">${x.d?x.d.slice(8)+'.'+x.d.slice(5,7):''}</span><span class="t">${esc(strip(x.t))}</span></div>`).join('')||'<div class="small mut">Tu pojawią się wyniki, kontuzje, transfery i decyzje zarządu.</div>'}</div></div>`;}
 function homeView(){const s=S();if(!s)return '';
-  return `${ui.msg?`<div class="card msg">${ui.msg}</div>`:''}${hvHero()}<div class="hv3"><div class="hvcol">${hvTodo()}${hvTable()}</div><div class="hvcol">${hvWatch()}${hvFit()}</div><div class="hvcol">${hvLast()}${hvUp()}</div></div>
-   <div class="hv2">${s.phase==='off'?'':boardCard()}${hNews()}</div>`;}
+  return `${ui.msg?`<div class="card msg">${ui.msg}</div>`:''}${hvHero()}<div class="hv3"><div class="hvcol">${hvTodo()}${hvTable()}</div><div class="hvcol">${hvWatch()}${hvFit()}</div><div class="hvcol">${hvLast()}${hvUp()}${hvNews()}</div></div>`;}
+
+function hvClip(){document.querySelectorAll('.hvgl').forEach(g=>{const b=g.getBoundingClientRect().bottom;for(const c of g.children)c.style.visibility=c.getBoundingClientRect().bottom>b+1?'hidden':'';});}
+window.addEventListener('resize',()=>{if(ui.tab==='home')hvClip();});
