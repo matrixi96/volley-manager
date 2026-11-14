@@ -130,7 +130,7 @@ function trainingView(){
   const cnt={};for(const d of days)for(const u of dayPlan(d,md))if(u)cnt[u]=(cnt[u]||0)+1;
   const ps=t.players.slice().sort((a,b)=>({R:0,A:1,P:2,S:3,L:4})[a.pos]-({R:0,A:1,P:2,S:3,L:4})[b.pos]||rating(b)-rating(a));
   const inj=t.players.filter(p=>p.inj);const avg=Math.round(teamFr());const avF=Math.round(t.players.reduce((s,p)=>s+fmOf(p),0)/t.players.length);
-  return `<div class="card"><div class="row wrap"><h2 style="margin:0">Plan treningowy</h2><span class="sp"></span>
+  return `${S().phase==='spar'&&typeof campCard==='function'?campCard():''}<div class="card"><div class="row wrap"><h2 style="margin:0">Plan treningowy</h2><span class="sp"></span>
     <div class="seg"><button class="${trn.mode==='own'?'on':''}" onclick="setTrMode('own')">✍️ Sam układam</button><button class="${trn.mode==='asy'?'on':''}" onclick="setTrMode('asy')">🧑‍🏫 Asystent układa${asy?` (${sk}/20)`:''}</button></div></div>
    <p class="small mut">Jednostki „Taktyka” ćwiczą: <select onchange="setTakF(this.value)">${TF_GRP.map(([g,l])=>`<option value="${g}" ${(trn.takF||'')===g?'selected':''}>${l}</option>`).join('')}</select> <button class="link" onclick="ui.tacT='eff';go('taktyka')">Efektywność taktyczna →</button></p>
    <p class="small mut">Codziennie 3 jednostki: rano, po południu i wieczorem. ${act?'':'<b>Teraz trwa urlop — treningi ruszają 1 sierpnia.</b>'}</p>
