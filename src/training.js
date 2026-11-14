@@ -84,7 +84,7 @@ function trainDay(d,md){const t=myTeam();if(!t)return;const trn=ensTrn();const i
       if(u==='int'){if(p.tcTm!==SAVE.team){p.tcTm=SAVE.team;p.tc=0;}p.tc=Math.min(60,(p.tc||0)+0.3);formAdd(p,hasT(p,'kap')||hasT(p,'ind')?1.5:0.5);if(p.unh>0&&R()<0.3)p.unh--;}
       if(u==='off')formAdd(p,(60-fmOf(p))*0.02);
       if(U.load>3&&R()<0.0004*U.load/6*TRAIN_INT[intI][2]*mods.injChance*(fr<40?2.2:fr<60?1.4:1)*(1.3-p.kon/20*0.6)){
-        const days=Math.max(2,Math.round((3+R()*R()*18)*mods.injDur));p.inj=days;p.injUntil=addDays(d,days);inj=days;news(`🚑 ${p.first} ${p.last} doznał urazu na treningu (${U.n.toLowerCase()}) — przerwa ok. ${days} dni.`);break;}}
+        const days=Math.max(2,Math.round((3+R()*R()*18)*mods.injDur));p.inj=days;p.injUntil=addDays(d,days);p.injN=injName(days);p.injD=days;inj=days;news(`🚑 ${p.first} ${p.last} doznał urazu na treningu (${U.n.toLowerCase()}): ${p.injN.toLowerCase()} — przerwa ok. ${days} dni.`);break;}}
     p.fr=Math.round(clamp(fr,0,100));
     const g={},up=[];for(const k of ALL_KEYS){const dv=(p[k]-a0[k])+(((p.xp&&p.xp[k])||0)-x0[k]);if(dv>0.0005)g[k]=Math.round(dv*1000)/1000;if(p[k]>a0[k])up.push(k);}
     const r={fr:p.fr,f:[Math.round(fm0),Math.round(fmOf(p))],n};if(scs.length)r.s=Math.round(clamp((scs.reduce((a,b)=>a+b,0)/scs.length+7)/10,1,10)*10)/10;
