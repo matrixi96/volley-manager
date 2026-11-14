@@ -71,7 +71,7 @@ function injuryCheck(m,mult){
       const P=PLAYERS[cp.id];if(!P)continue;const p=P.p;if(p.inj)continue;
       if(R()<0.012*im*(1.3-p.kon/20*0.6)*mult){const d=1+Math.floor(R()*R()*7);const days=Math.max(3,Math.round((d*7-3+R()*6)*md.injDur));p.inj=days;p.injUntil=addDays(today(),days);if(!mine)aiStarInjNews(p,days);if(mine)news(`🚑 ${p.first} ${p.last} doznał kontuzji — przerwa ok. ${days} dni (powrót ok. ${fmtDMY(p.injUntil)}).`);}}}
 }
-function roundTick(kind,home,att){
+function roundTick(kind,home,att,opp){
   const tr=SAVE.training;
   const MODS={};const mm=ti=>MODS[ti]||(MODS[ti]=clubMods(ti));
   for(const p of W().players){
@@ -84,9 +84,9 @@ function roundTick(kind,home,att){
   ROUND_PLAYED=new Set();
   const s=S();
   if(kind==='liga'){money(TV_ROUND,'Prawa TV');
-    let t=null;if(home){t=att!=null?{att,inc:att*tixPrice()}:ticketIncome(1);money(t.inc,'Bilety');}
-    finLog(`Kolejka ${s.round}: prawa TV${t?`, bilety (${t.att} widzów)`:''}`,TV_ROUND+(t?t.inc:0));}
-  if(kind==='po'&&home){const t=att!=null?{att,inc:att*tixPrice()}:ticketIncome(1.5);money(t.inc,'Bilety');finLog(`Play-off: bilety (${t.att} widzów)`,t.inc);}
+    let t=null;if(home)t=payMatchday(1,att,opp);
+    finLog(`Kolejka ${s.round}: prawa TV${t?`, mecz u siebie (${t.att} widzów: bilety, jedzenie, parking)`:''}`,TV_ROUND+(t?t.tot:0));}
+  if(kind==='po'&&home){const t=payMatchday(1.5,att,opp);finLog(`Play-off: mecz u siebie (${t.att} widzów: bilety, jedzenie, parking)`,t.tot);}
 }
 
 // ---- transfery ----
@@ -244,9 +244,9 @@ function cardModal(){
 function openCard(id){ui.card=id;ui.offers=null;ui.tmsg=null;ui.confirm=null;render();}
 function financeView(){
   const f=SAVE.fin;const pay=payroll(),sp=sponsorAmt();const rep=SAVE.ai[SAVE.team].rep;
-  const stp=staffPay(),mnt=maintenance()*12,shp=shopIncome(myInfra().sklep)*12;
-  const proj=sp+TV_ROUND*22+ticketIncome(1,true).inc*11+shp-pay-stp-mnt;
-  const cats=['Sponsor','Prawa TV','Bilety','Sklep','Nagrody','Transfery','Pensje','Sztab','Utrzymanie','Infrastruktura','Odprawy'];
+  const stp=staffPay(),mnt=maintenance()*12,shp=shopIncome(myInfra().sklep)*12;const md=matchday(1,null,null,true);const kh=ECO().karS.season===S().n?ECO().karS.inc:0;
+  const proj=sp+TV_ROUND*22+md.tot*11+shp+kh-pay-stp-mnt;
+  const cats=['Sponsor','Prawa TV','Bilety','Karnety','Gastronomia','Parking','Sklep','Nagrody','Transfery','Pensje','Sztab','Utrzymanie','Infrastruktura','Odprawy'];
   const row=(o)=>cats.map(c=>`<tr><td class="l">${c}</td><td class="${(o[c]||0)<0?'bad':(o[c]||0)>0?'good':''}">${o[c]?fmt(o[c]):'—'}</td></tr>`).join('')+`<tr><td class="l"><b>Razem</b></td><td><b>${fmt(cats.reduce((s,c)=>s+(o[c]||0),0))}</b></td></tr>`;
   const spFree=typeof spSlots==='function'?Object.entries(spSlots()).reduce((a,[k,n])=>a+Math.max(0,n-spUsed(k)),0):0;
   return `<div class="card fin"><div class="big ${f.bal<0?'bad':''}">${fmtFull(f.bal)}</div><div class="mut">Saldo klubu${f.bal<0?' — jesteś na minusie! Dopuszczalny debet to 500 tys. zł, poniżej nie kupisz zawodników.':''}</div></div>
@@ -257,7 +257,7 @@ function financeView(){
    <tr><td class="l">Sklep kibica</td><td class="good">+${fmt(shp)}</td></tr>
    <tr><td class="l">Sponsorzy (podpisane umowy, renoma ${rep}/100)</td><td class="good">+${fmt(sp)}</td></tr>
    <tr><td class="l">Prawa TV (${fmt(TV_ROUND)} za kolejkę)</td><td class="good">+${fmt(TV_ROUND*22)}</td></tr>
-   <tr><td class="l">Bilety (ok. ${fmt(ticketIncome(1,true).inc)} za mecz u siebie, cena ${tixPrice()} zł)</td><td class="good">~ +${fmt(ticketIncome(1,true).inc*11)}</td></tr>
+   <tr><td class="l">Mecze u siebie: bilety, jedzenie, parking (ok. ${fmt(md.tot)} za mecz)</td><td class="good">~ +${fmt(md.tot*11)}</td></tr>${kh?`<tr><td class="l">Karnety (sprzedane w tym sezonie)</td><td class="good">+${fmt(kh)}</td></tr>`:''}
    <tr><td class="l"><b>Prognoza bilansu (bez transferów i nagród)</b></td><td class="${proj<0?'bad':'good'}"><b>${proj>=0?'+':''}${fmt(proj)}</b></td></tr></tbody></table>
    ${spFree?`<p class="small" style="color:var(--acc)">Masz ${spFree} wolnych miejsc dla sponsorów — podpisz umowy w zakładce <button class="link" onclick="go('sponsorzy')">Sponsorzy</button>, żeby poprawić bilans.</p>`:''}<p class="mut small">Pensje i sponsorzy rozliczają się co miesiąc (1. dnia), prawa TV co kolejkę ligową, bilety po każdym meczu u siebie. Nagrody za miejsce w sezonie: od 50 tys. do 1 mln zł. Lepsze wyniki podnoszą renomę, a ta podnosi sponsorów i frekwencję.</p></div>${pricesCard()}
   <div class="card"><h2>Sezon ${sLabel(S().n)}</h2><table class="cmp"><tbody>${row(f.sea)}</tbody></table>${f.prev?`<h3>Poprzedni sezon</h3><table class="cmp"><tbody>${row(f.prev)}</tbody></table>`:''}</div>
@@ -267,8 +267,8 @@ function offView(){
   const s=S(),exp=expiring();
   return `<div class="card"><h2>Okno transferowe przed sezonem ${sLabel(s.n)}</h2><p>Między sezonami: zawodnicy są o rok starsi, część zakończyła kariery, kluby dostały juniorów z akademii, a rywale zrobili transfery (szczegóły w wiadomościach). Teraz Twój ruch: przedłuż kontrakty, kupuj i sprzedawaj (zakładka Transfery).</p>
   ${ui.tmsg?`<div class="tmsg ${ui.tmsg.ok?'ok':'no'}">${esc(ui.tmsg.t)}</div>`:''}
-  ${exp.length?`<h3>Wygasające kontrakty (${exp.length})</h3><p class="mut small">Ci zawodnicy odejdą przy starcie sezonu, jeśli nie przedłużysz z nimi umów. Kliknij, żeby otworzyć kartę.</p>${exp.map(p=>`<div class="res row">⚠️ <button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} ${esc(p.last)}</button> <small class="mut">${POS_SHORT[p.pos]} · ${p.age} l. · ocena ${rating(p)} · chce ${fmt(wageNeeded(p))}/rok</small></div>`).join('')}`:'<p class="good">Wszystkie kontrakty są ważne.</p>'}
-  ${agedOut().length?`<h3>Juniorzy kończący 20 lat (${agedOut().length})</h3><p class="mut small">Awansuj ich do pierwszej drużyny albo odejdą z klubu przy starcie przygotowań.</p>${agedOut().map(p=>`<div class="res row">🎓 <button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} ${esc(p.last)}</button> <small class="mut">${POS_SHORT[p.pos]} · ocena ${rating(p)} · potencjał ${potStars(p)}</small><span class="sp"></span><button class="ghost sm" onclick="promote('${p.id}')">⬆️ Awans</button></div>`).join('')}`:''}
+  ${exp.length?`<h3>Wygasające kontrakty (${exp.length})</h3><p class="mut small">Ci zawodnicy odejdą przy starcie sezonu, jeśli nie przedłużysz z nimi umów. Kliknij, żeby otworzyć kartę.</p>${exp.map(p=>`<div class="res row">⚠️ <button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} ${esc(p.last)}</button> <small class="mut">${pTag(p.pos)} · ${p.age} l. · ocena ${rating(p)} · chce ${fmt(wageNeeded(p))}/rok</small></div>`).join('')}`:'<p class="good">Wszystkie kontrakty są ważne.</p>'}
+  ${agedOut().length?`<h3>Juniorzy kończący 20 lat (${agedOut().length})</h3><p class="mut small">Awansuj ich do pierwszej drużyny albo odejdą z klubu przy starcie przygotowań.</p>${agedOut().map(p=>`<div class="res row">🎓 <button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} ${esc(p.last)}</button> <small class="mut">${pTag(p.pos)} · ocena ${rating(p)} · potencjał ${potStars(p)}</small><span class="sp"></span><button class="ghost sm" onclick="promote('${p.id}')">⬆️ Awans</button></div>`).join('')}`:''}
   <div class="row wrap" style="margin-top:12px"><button class="btn" onclick="startSeasonFromOff()">${ui.confirm==='start'?`Na pewno? Odejdzie ${exp.length} zawodników`:'Rozpocznij przygotowania do sezonu '+sLabel(s.n)}</button><button class="ghost" onclick="go('transfery')">Przejdź do transferów</button></div></div>`;
 }
 function newsHtml(){const n=(SAVE.news||[]).slice(0,10);if(!n.length)return '';return `<div class="card"><h2>Wiadomości</h2>${n.map(x=>`<div class="res"><span class="mut small">${x.d?fmtShort(x.d):''}</span> ${esc(x.t)}</div>`).join('')}</div>`;}

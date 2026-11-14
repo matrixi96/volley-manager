@@ -90,7 +90,7 @@ function makeOffers(fired){const c=coach();const cur=initRepStatic(myTeam());
 function fireCoach(why){SAVE.fired={why,d:today()};SAVE.offers=makeOffers(true);news(`❌ Zostałeś zwolniony z ${myTeam().name}. ${why}`);
   coach().hist.push({n:S().n,team:SAVE.team,fired:true,d:today()});coach().rep=Math.max(0,coach().rep-5);}
 function acceptJob(ti){const old=SAVE.team;const c=coach();
-  if(SAVE.build){const b=SAVE.build;infraOf(old)[b.k]=b.to;SAVE.build=null;}
+  for(const b of BLD())infraOf(old)[b.k]=b.to;SAVE.builds=[];
   SAVE.team=ti;SAVE.lineup=autoLineup(TEAMS[ti]);SAVE.tactics={serve:1,dist:0};
   const rep=SAVE.ai[ti].rep;SAVE.fin={bal:round5k(1000000+rep*15000),log:[],sea:{},prev:null};
   SAVE.staff=null;SAVE.staffPool=null;SAVE.inbox=[];initClub();

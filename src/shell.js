@@ -48,7 +48,7 @@ function topBar(){const t=myTeam();const s=S();const d=today();
   </div>`;}
 function searchDrop(){const el=document.getElementById('psd');if(!el)return;const q=(ui.q||'').trim().toLowerCase();if(q.length<2){el.innerHTML='';el.classList.remove('on');return;}
   const res=W().players.filter(p=>(p.first+' '+p.last).toLowerCase().includes(q)).sort((a,b)=>(b.tm===SAVE.team)-(a.tm===SAVE.team)||rating(b)-rating(a)).slice(0,8);
-  el.innerHTML=res.length?res.map(p=>`<button onclick="ui.q='';openPop('${p.id}')">${pFace(p,24)}<span><b>${esc(p.first)} ${esc(p.last)}</b><small>${POS_SHORT[p.pos]} · ${p.age} l. · ${p.tm>=0?esc(TEAMS[p.tm].short)+(p.jr?' U20':''):'wolny'}</small></span><em>${rating(p)}</em></button>`).join(''):'<div class="small mut" style="padding:8px">Brak zawodników.</div>';el.classList.add('on');}
+  el.innerHTML=res.length?res.map(p=>`<button onclick="ui.q='';openPop('${p.id}')">${pFace(p,24)}<span><b>${esc(p.first)} ${esc(p.last)}</b><small>${pTag(p.pos)} · ${p.age} l. · ${p.tm>=0?esc(TEAMS[p.tm].short)+(p.jr?' U20':''):'wolny'}</small></span><em>${rating(p)}</em></button>`).join(''):'<div class="small mut" style="padding:8px">Brak zawodników.</div>';el.classList.add('on');}
 // pasek kontekstu pod górnym paskiem: rozgrywki, następny rywal, stan drużyny
 function ctxBar(){if(ui.tab==='mecz'&&liveMatch())return '';const t=myTeam();const s=S();const ps=t.players;
   const mor=Math.round(ps.reduce((a,p)=>a+(p.mor==null?60:p.mor),0)/Math.max(1,ps.length));
