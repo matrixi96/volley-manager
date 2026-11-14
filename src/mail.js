@@ -122,6 +122,7 @@ function mailBodyHtml(m){const b=m.b||{};
   if(b.type==='fin')return finMailHtml(b);
   if(b.type==='md'&&typeof mdMailHtml==='function')return mdMailHtml(b);
   if(b.type==='fit')return fitMailHtml(b);
+  if(b.type==='camp'&&typeof campMailHtml==='function')return campMailHtml(b);
   if(b.type==='talk'&&typeof talkMailHtml==='function')return talkMailHtml(b);
   return `<p class="mtext">${esc(b.x||m.s)}</p>`;}
 function matchMailHtml(b){const T=i=>TEAMS[i];const h=b.home?b.me:b.op,a=b.home?b.op:b.me;const sw=b.home?b.sw:[b.sw[1],b.sw[0]];const sets=b.sets.map(s=>b.home?s:[s[1],s[0]]);

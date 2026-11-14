@@ -149,6 +149,7 @@ function hvTodo(){const it=[];const t=myTeam();
   const un=mailBox().filter(m=>!m.r&&!m.ar).length;if(un)it.push([`${un} nieprzeczytanych wiadomości`,"go('poczta')"]);
   const spFree=typeof spSlots==='function'?Object.entries(spSlots()).reduce((a,[k,n])=>a+Math.max(0,n-spUsed(k)),0):0;if(spFree)it.push([`${spFree} ${spFree===1?'wolne miejsce':'wolnych miejsc'} dla sponsorów`,"go('sponsorzy')"]);
   for(const b of BLD()){const f=INFRA.find(x=>x.k===b.k);it.push([`Trwa budowa: ${f.n.toLowerCase()} (${Math.max(0,daysBetween(today(),b.until))} dni)`,"go('klub')"]);}
+  if(typeof campCanBook==='function'&&campCanBook())it.push(['Wybierz miejsce obozu przygotowawczego',S().phase==='off'?"go('mecz')":"go('trening')"]);
   const inj=t.players.filter(p=>p.inj).length;if(inj)it.push([`${inj} ${inj===1?'kontuzjowany zawodnik':'kontuzjowanych zawodników'}`,"go('sklad')"]);
   const ag=typeof agedOut==='function'?agedOut().length:0;if(ag)it.push([`${ag} juniorów kończy 20 lat — awansuj albo odejdą`,"go('juniorzy')"]);
   if(SAVE.fin&&SAVE.fin.bal<0)it.push([`Saldo klubu jest na minusie (${fmt(SAVE.fin.bal)})`,"go('finanse')"]);

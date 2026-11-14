@@ -651,6 +651,9 @@ small .pt,.mut .pt{font-size:9px;padding:2px 5px;min-width:26px}
 .ngpat{display:inline-flex;gap:3px;vertical-align:middle;margin-left:4px}.ngpat i{width:10px;height:10px;border-radius:50%;background:#ffffff1a}.ngpat i.on{background:var(--acc)}
 .nglog{margin:12px 0;max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:6px}.ngm{padding:7px 10px;border-radius:8px;background:#ffffff0a;font-size:13.5px;max-width:88%}.ngm.me{align-self:flex-end;background:#ffb02018}.ngm.sys{align-self:center;color:var(--bad);background:transparent}.ngm.club{border-left:3px solid #60a5fa}.ngm.ag{border-left:3px solid #a78bfa}
 .ngform{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.ngform label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px}.ngform input{width:130px}.ngdeal{border:1px solid #22c55e66;background:#22c55e12;border-radius:8px;padding:10px}.ngcnt{width:110px}
+.campgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}.campc{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column}.campc.on{border-color:var(--acc)}.campc p{flex:1}
+.campflag{font-size:26px;line-height:1}.campfx{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px}.campfx div{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);padding:2px 0;border-bottom:1px solid #ffffff0a}.campfx b{color:var(--acc);font-weight:600;letter-spacing:1px}
+.mbody .campfx{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.campsel{display:flex;gap:12px;align-items:center}
 </style></head><body><div id="app"></div>
 <script>
 'use strict';
@@ -1962,7 +1965,7 @@ function startSeasonFromOff(){
   for(const p of agedOut()){p.tm=-1;p.jr=false;news(`👋 ${p.first} ${p.last} (${p.age} l.) kończy wiek juniora i odchodzi z akademii.`);}
   syncTeams();
   if(myTeam().players.length<SQUAD_MIN){while(myTeam().players.length<SQUAD_MIN){const t=myTeam();const pos=['R','A','P','S','L'].find(x=>posCount(t,x)<POS_MIN[x])||randPos();aiSign(t,pos);syncTeams();}news('Klub dobrał zawodników z wolnego rynku, żeby uzupełnić kadrę do minimum.');}
-  s.phase='spar';ui.tmsg=null;syncDate();save();render();
+  s.phase='spar';ui.tmsg=null;try{campStart();}catch(e){}syncDate();save();render();
 }
 
 // ---- widoki ----
@@ -1991,7 +1994,7 @@ function financeView(){
   const f=SAVE.fin;const pay=payroll(),sp=sponsorAmt();const rep=SAVE.ai[SAVE.team].rep;
   const stp=staffPay(),mnt=maintenance()*12,shp=shopIncome(myInfra().sklep)*12;const md=matchday(1,null,null,true);const kh=ECO().karS.season===S().n?ECO().karS.inc:0;
   const proj=sp+TV_ROUND*22+md.tot*11+shp+kh-pay-stp-mnt;
-  const cats=['Sponsor','Prawa TV','Bilety','Karnety','Gastronomia','Parking','Sklep','Nagrody','Transfery','Pensje','Sztab','Utrzymanie','Infrastruktura','Odprawy'];
+  const cats=['Sponsor','Prawa TV','Bilety','Karnety','Gastronomia','Parking','Sklep','Obóz','Nagrody','Transfery','Pensje','Sztab','Utrzymanie','Infrastruktura','Odprawy'];
   const row=(o)=>cats.map(c=>`<tr><td class="l">${c}</td><td class="${(o[c]||0)<0?'bad':(o[c]||0)>0?'good':''}">${o[c]?fmt(o[c]):'—'}</td></tr>`).join('')+`<tr><td class="l"><b>Razem</b></td><td><b>${fmt(cats.reduce((s,c)=>s+(o[c]||0),0))}</b></td></tr>`;
   const spFree=typeof spSlots==='function'?Object.entries(spSlots()).reduce((a,[k,n])=>a+Math.max(0,n-spUsed(k)),0):0;
   return `<div class="card fin"><div class="big ${f.bal<0?'bad':''}">${fmtFull(f.bal)}</div><div class="mut">Saldo klubu${f.bal<0?' — jesteś na minusie! Dopuszczalny debet to 500 tys. zł, poniżej nie kupisz zawodników.':''}</div></div>
@@ -2014,7 +2017,7 @@ function offView(){
   ${ui.tmsg?`<div class="tmsg ${ui.tmsg.ok?'ok':'no'}">${esc(ui.tmsg.t)}</div>`:''}
   ${exp.length?`<h3>Wygasające kontrakty (${exp.length})</h3><p class="mut small">Ci zawodnicy odejdą przy starcie sezonu, jeśli nie przedłużysz z nimi umów. Kliknij, żeby otworzyć kartę.</p>${exp.map(p=>`<div class="res row">⚠️ <button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} ${esc(p.last)}</button> <small class="mut">${pTag(p.pos)} · ${p.age} l. · ocena ${rating(p)} · chce ${fmt(wageNeeded(p))}/rok</small></div>`).join('')}`:'<p class="good">Wszystkie kontrakty są ważne.</p>'}
   ${agedOut().length?`<h3>Juniorzy kończący 20 lat (${agedOut().length})</h3><p class="mut small">Awansuj ich do pierwszej drużyny albo odejdą z klubu przy starcie przygotowań.</p>${agedOut().map(p=>`<div class="res row">🎓 <button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} ${esc(p.last)}</button> <small class="mut">${pTag(p.pos)} · ocena ${rating(p)} · potencjał ${potStars(p)}</small><span class="sp"></span><button class="ghost sm" onclick="promote('${p.id}')">⬆️ Awans</button></div>`).join('')}`:''}
-  <div class="row wrap" style="margin-top:12px"><button class="btn" onclick="startSeasonFromOff()">${ui.confirm==='start'?`Na pewno? Odejdzie ${exp.length} zawodników`:'Rozpocznij przygotowania do sezonu '+sLabel(s.n)}</button><button class="ghost" onclick="go('transfery')">Przejdź do transferów</button></div></div>`;
+  <div class="row wrap" style="margin-top:12px"><button class="btn" onclick="startSeasonFromOff()">${ui.confirm==='start'?`Na pewno? Odejdzie ${exp.length} zawodników`:'Rozpocznij przygotowania do sezonu '+sLabel(s.n)}</button><button class="ghost" onclick="go('transfery')">Przejdź do transferów</button></div></div>${campCard()}`;
 }
 function newsHtml(){const n=(SAVE.news||[]).slice(0,10);if(!n.length)return '';return `<div class="card"><h2>Wiadomości</h2>${n.map(x=>`<div class="res"><span class="mut small">${x.d?fmtShort(x.d):''}</span> ${esc(x.t)}</div>`).join('')}</div>`;}
 function healthyLineup(team,lu){
@@ -2082,7 +2085,7 @@ function monthly(d){if(!SAVE.fin||SAVE.team==null)return;const m=+d.slice(5,7);c
 function advanceTo(t){
   let d=today();const born=[];const mine=SAVE.team!=null&&SAVE.world?myTeam().players:[];const tdays=[];
   while(d<t){d=addDays(d,1);tdays.push(d);SAVE._now=d;if(d.endsWith('-01'))monthly(d);checkBuild(d);const md=d.slice(5);for(const p of mine)if(p.dob&&p.dob.slice(5)===md)born.push(p);}
-  try{if(mine.length)for(const x of tdays){SAVE._now=x;if(typeof trainDays==='function')trainDays([x]);if(typeof mailDaily==='function')mailDaily(x);if(typeof scoutDay==='function')scoutDay(x);if(typeof karDay==='function')karDay(x);if(typeof tlDay==='function')tlDay(x);}}catch(e){console.error(e);}
+  try{if(mine.length)for(const x of tdays){SAVE._now=x;if(typeof trainDays==='function')trainDays([x]);if(typeof mailDaily==='function')mailDaily(x);if(typeof scoutDay==='function')scoutDay(x);if(typeof karDay==='function')karDay(x);if(typeof tlDay==='function')tlDay(x);if(typeof campDay==='function')campDay(x);}}catch(e){console.error(e);}
   delete SAVE._now;
   SAVE.date=d;updateAges();updateInjuries();
   for(const p of born)if(p.tm===SAVE.team)news(`🎂 ${p.first} ${p.last} kończy ${p.age} lat.`);
@@ -3439,7 +3442,7 @@ function trainingView(){
   const cnt={};for(const d of days)for(const u of dayPlan(d,md))if(u)cnt[u]=(cnt[u]||0)+1;
   const ps=t.players.slice().sort((a,b)=>({R:0,A:1,P:2,S:3,L:4})[a.pos]-({R:0,A:1,P:2,S:3,L:4})[b.pos]||rating(b)-rating(a));
   const inj=t.players.filter(p=>p.inj);const avg=Math.round(teamFr());const avF=Math.round(t.players.reduce((s,p)=>s+fmOf(p),0)/t.players.length);
-  return `<div class="card"><div class="row wrap"><h2 style="margin:0">Plan treningowy</h2><span class="sp"></span>
+  return `${S().phase==='spar'&&typeof campCard==='function'?campCard():''}<div class="card"><div class="row wrap"><h2 style="margin:0">Plan treningowy</h2><span class="sp"></span>
     <div class="seg"><button class="${trn.mode==='own'?'on':''}" onclick="setTrMode('own')">✍️ Sam układam</button><button class="${trn.mode==='asy'?'on':''}" onclick="setTrMode('asy')">🧑‍🏫 Asystent układa${asy?` (${sk}/20)`:''}</button></div></div>
    <p class="small mut">Jednostki „Taktyka” ćwiczą: <select onchange="setTakF(this.value)">${TF_GRP.map(([g,l])=>`<option value="${g}" ${(trn.takF||'')===g?'selected':''}>${l}</option>`).join('')}</select> <button class="link" onclick="ui.tacT='eff';go('taktyka')">Efektywność taktyczna →</button></p>
    <p class="small mut">Codziennie 3 jednostki: rano, po południu i wieczorem. ${act?'':'<b>Teraz trwa urlop — treningi ruszają 1 sierpnia.</b>'}</p>
@@ -3619,6 +3622,7 @@ function mailBodyHtml(m){const b=m.b||{};
   if(b.type==='fin')return finMailHtml(b);
   if(b.type==='md'&&typeof mdMailHtml==='function')return mdMailHtml(b);
   if(b.type==='fit')return fitMailHtml(b);
+  if(b.type==='camp'&&typeof campMailHtml==='function')return campMailHtml(b);
   if(b.type==='talk'&&typeof talkMailHtml==='function')return talkMailHtml(b);
   return `<p class="mtext">${esc(b.x||m.s)}</p>`;}
 function matchMailHtml(b){const T=i=>TEAMS[i];const h=b.home?b.me:b.op,a=b.home?b.op:b.me;const sw=b.home?b.sw:[b.sw[1],b.sw[0]];const sets=b.sets.map(s=>b.home?s:[s[1],s[0]]);
@@ -3818,6 +3822,56 @@ function buyAct(p){const o=windowOpen();const ag=agentOf(p);const lk=negLocked(p
     <p class="small">Agent: <b>${esc(ag.first)} ${esc(ag.last)}</b> · <span class="acc">${ag.S[0]}</span> — ${esc(ag.S[1])}</p>
     ${lk?`<p class="small bad">Rozmowy zerwane — wznowienie możliwe od ${fmtDMY(lk)}.</p>`:`<button class="btn" onclick="negOpen('${p.id}','${p.tm>=0?'buy':'free'}')">💼 Rozpocznij negocjacje</button>`}
     <p class="mut small">Saldo klubu: ${fmt(SAVE.fin.bal)} · kadra: ${myTeam().players.length}/${SQUAD_MAX}</p>`:'<p class="mut small">Okno transferowe jest zamknięte. Otwiera się przed sezonem i trwa do końca sparingów.</p>'}</div>`;}
+// ================= OBÓZ PRZYGOTOWAWCZY PRZED SEZONEM =================
+// [klucz, miejscowość, państwo, flaga, dni, koszt bazowy, {kon,zgr,tak,mor,reg,inj}, opis]
+const CAMPS=[
+ ['spala','Spała (COS)','Polska','🇵🇱',10,120000,{kon:1,zgr:2,tak:2,mor:0,reg:1,inj:1},'Centralny Ośrodek Sportu: hale, siłownie i spokój. Dobra baza do pracy nad zgraniem i taktyką.'],
+ ['szczyrk','Szczyrk','Polska','🇵🇱',7,110000,{kon:1.5,zgr:1,tak:1,mor:1,reg:1,inj:1},'Krótki obóz w Beskidach. Tanio, dobra atmosfera, umiarkowana praca nad kondycją.'],
+ ['zakopane','Zakopane','Polska','🇵🇱',10,180000,{kon:2.5,zgr:1,tak:0.5,mor:0,reg:0,inj:1.3},'Klasyka: góry, biegi i siłownia. Duży przyrost kondycji, ale zawodnicy wrócą zmęczeni.'],
+ ['cetniewo','Władysławowo (Cetniewo)','Polska','🇵🇱',7,140000,{kon:1.5,zgr:1.5,tak:0.5,mor:1,reg:1,inj:1},'Ośrodek nad morzem: siła, skoczność i siatkówka plażowa, która buduje zgranie.'],
+ ['kopaonik','Kopaonik','Serbia','🇷🇸',10,160000,{kon:2.5,zgr:1,tak:1,mor:-1,reg:0,inj:1.2},'Tani obóz wysokogórski. Mocny bodziec kondycyjny, skromne warunki obniżają humor.'],
+ ['saalfelden','Saalfelden','Austria','🇦🇹',10,380000,{kon:2,zgr:1.5,tak:1,mor:1,reg:2,inj:0.9},'Alpejski ośrodek z dobrą odnową biologiczną. Kondycja bez nadmiernego zmęczenia.'],
+ ['lignano','Lignano Sabbiadoro','Włochy','🇮🇹',10,400000,{kon:1,zgr:2.5,tak:3,mor:1.5,reg:1.5,inj:0.9},'Włoskie centrum siatkówki: sparingpartnerzy z Serie A, świetna praca nad taktyką i zgraniem.'],
+ ['belek','Belek','Turcja','🇹🇷',10,350000,{kon:1.5,zgr:2,tak:1.5,mor:2.5,reg:2.5,inj:0.8},'Ciepło, hotel z pełnym zapleczem. Zawodnicy wracają wypoczęci i zadowoleni.'],
+ ['livigno','Livigno','Włochy','🇮🇹',14,520000,{kon:3.5,zgr:1.5,tak:1,mor:0.5,reg:0.5,inj:1.4},'Długi obóz na 1800 m n.p.m. Największy przyrost kondycji i siły, wyższe ryzyko urazów.'],
+ ['teneryfa','Teneryfa','Hiszpania','🇪🇸',12,600000,{kon:2,zgr:2.5,tak:2,mor:3,reg:2.5,inj:0.8},'Najdroższa opcja: wysokogórski trening w słońcu i komfort. Mocny plus we wszystkim.']];
+const CAMP_FX=[['kon','Kondycja'],['zgr','Zgranie'],['tak','Taktyka'],['mor','Morale'],['reg','Świeżość'],['inj','Urazy']];
+function campCost(c){const rep=SAVE.ai?SAVE.ai[SAVE.team].rep:50;return round5k(c[5]*(0.8+rep/250)*(myTeam().players.length/14));}
+function campOf(){const c=SAVE.camp;return c&&S()&&c.season===S().n?c:null;}
+function campCanBook(){const s=S();return !campOf()&&(s.phase==='off'||s.phase==='spar'&&s.spar.res.length<N_SPAR);}
+function campBook(k){const c=CAMPS.find(x=>x[0]===k);if(!c||!campCanBook())return;const cost=campCost(c);
+  if(SAVE.fin.bal-cost<-500000)return tradeMsg(false,`Za mało pieniędzy na obóz (${fmt(cost)}).`);
+  if(ui.confirm!=='camp'+k){ui.confirm='camp'+k;render();return;}ui.confirm=null;
+  money(-cost,'Obóz');finLog(`Obóz przygotowawczy: ${c[1]} (${c[2]})`,-cost);const s=S();
+  SAVE.camp={k,season:s.n,cost,start:s.phase==='off'?null:addDays(today(),1),until:s.phase==='off'?null:addDays(today(),c[4]),done:0};
+  news(`🏕️ Zarezerwowano obóz przygotowawczy: ${c[1]} (${c[2]}), ${c[4]} dni.${s.phase==='off'?' Ruszy razem z przygotowaniami do sezonu.':''}`);save();tradeMsg(true,`Obóz w ${c[1]} zarezerwowany.`);}
+function campStart(){const c=campOf();if(!c||c.start)return;const d=CAMPS.find(x=>x[0]===c.k);c.start=today();c.until=addDays(today(),d[4]);news(`🚌 Drużyna wyjeżdża na obóz: ${d[1]} (${d[2]}). Powrót ${fmtDMY(c.until)}.`);}
+function campDay(d){const c=campOf();if(!c||c.done||!c.until||d<c.until)return;const C=CAMPS.find(x=>x[0]===c.k);const fx=C[6];c.done=1;const t=myTeam();const rows=[];
+  const k=0.9+staffSkill('fiz')/40;// trener przygotowania fizycznego wzmacnia efekt
+  for(const p of t.players){if(p.inj)continue;p.xp=p.xp||{};const ups=[];
+    for(const a of ['kon','szy','sil','sko']){if(p[a]>=20)continue;const v=(p.xp[a]||0)+fx.kon*0.28*k*(0.7+R()*0.6)*(p.age>=31?0.7:1);if(v>=1){p[a]++;p.xp[a]=Math.round((v-1)*100)/100;ups.push(a);}else p.xp[a]=Math.round(v*1000)/1000;}
+    addMor(p,fx.mor*5);p.fr=Math.round(clamp(72+fx.reg*8+(R()*6-3),40,100));
+    if(R()<0.025*fx.inj*(1.25-p.kon/20*0.5)){const days=Math.max(3,Math.round(4+R()*10));p.inj=days;p.injUntil=addDays(d,days);p.injN=injName(days);p.injD=days;rows.push([p.id,p.last,ups,days]);continue;}
+    rows.push([p.id,p.last,ups,0]);}
+  // zgranie par i znajomość taktyki
+  const P=SAVE.pairs||(SAVE.pairs={});const ps=t.players;for(let i=0;i<ps.length;i++)for(let j=i+1;j<ps.length;j++){const key=pairKey(ps[i].id,ps[j].id);P[key]=(P[key]!=null?P[key]:pairN(ps[i],ps[j]))+Math.round(fx.zgr*3);}
+  try{const tc=myTac();for(const [el] of TF_EL)famAdd(SAVE.team,el+':'+tfVal(tc,el),fx.tak*5);}catch(e){}
+  const up=rows.filter(r=>r[2].length).length,inj=rows.filter(r=>r[3]);
+  sendMail({cat:'trening',from:asyName(),t:`Obóz w ${C[1]} zakończony`,s:`${up} zawodników poprawiło cechy fizyczne${inj.length?`, kontuzje: ${inj.length}`:''}.`,b:{type:'camp',k:c.k,rows,cost:c.cost},lab:'Obóz'});
+  news(`🏕️ Koniec obozu w ${C[1]}. Drużyna wraca do klubu.`);}
+function campMailHtml(b){const C=CAMPS.find(x=>x[0]===b.k);const fx=C[6];
+  return `<p class="mtext">Wróciliśmy z obozu w ${esc(C[1])} (${C[3]} ${esc(C[2])}, ${C[4]} dni, koszt ${fmt(b.cost)}). Podsumowanie:</p>
+   <div class="campfx">${CAMP_FX.map(([k,n])=>`<span class="tkp ${k==='inj'?(fx[k]>1?'r':'g'):fx[k]>0?'g':fx[k]<0?'r':'y'}">${n}: ${campLvl(fx[k],k)}</span>`).join('')}</div>
+   <div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th class="l">Podniesione cechy</th><th>Uraz</th></tr></thead><tbody>${b.rows.map(r=>`<tr><td class="l"><button class="link pn" onclick="openPop('${r[0]}')">${esc(r[1])}</button></td><td class="l">${r[2].map(a=>`<span class="trt tu-up">${attrSh(a)} +1</span>`).join('')||'<span class="mut">—</span>'}</td><td>${r[3]?`<span class="bad">🚑 ${r[3]} dni</span>`:'<span class="mut">—</span>'}</td></tr>`).join('')}</tbody></table></div>
+   <p class="small mut">Zgranie par i znajomość taktyki wzrosły — sprawdzisz to w Centrum danych i w zakładce Taktyka → Skuteczność.</p>`;}
+function campLvl(v,k){if(k==='inj')return v>=1.3?'wysokie':v>=1?'normalne':'niskie';if(v<0)return 'spadek';const n=Math.round(v);return n<=0?'—':'●'.repeat(Math.min(4,n))+'○'.repeat(Math.max(0,4-Math.min(4,n)));}
+function campCard(){const c=campOf();const s=S();
+  if(c){const C=CAMPS.find(x=>x[0]===c.k);return `<div class="card"><h2>Obóz przygotowawczy</h2><div class="campsel"><span class="campflag">${C[3]}</span><div><b>${esc(C[1])}</b> <span class="mut small">${esc(C[2])} · ${C[4]} dni · ${fmt(c.cost)}</span><div class="small">${c.done?'<span class="good">Obóz zakończony — raport w poczcie.</span>':c.start?`Trwa: ${fmtShort(c.start)} – ${fmtShort(c.until)}`:'Wyjazd razem ze startem przygotowań do sezonu.'}</div></div></div></div>`;}
+  if(!campCanBook())return '';
+  return `<div class="card"><h2>Obóz przygotowawczy</h2><p class="small mut">Wybierz miejsce obozu przed sezonem. Każde daje inne korzyści i kosztuje inaczej. Efekt wzmacnia trener przygotowania fizycznego. Jeden obóz na sezon${s.phase==='off'?'; wyjazd nastąpi razem ze startem przygotowań':'; wyjazd jutro'}.</p>
+   <div class="campgrid">${CAMPS.map(C=>{const cost=campCost(C);const fx=C[6];return `<div class="campc ${ui.confirm==='camp'+C[0]?'on':''}"><div class="row" style="gap:8px"><span class="campflag">${C[3]}</span><div><b>${esc(C[1])}</b><div class="small mut">${esc(C[2])} · ${C[4]} dni</div></div><span class="sp"></span><b class="acc">${fmt(cost)}</b></div>
+     <p class="small mut" style="margin:6px 0">${esc(C[7])}</p><div class="campfx">${CAMP_FX.map(([k,n])=>`<div><span>${n}</span><b class="${k==='inj'?(fx[k]>1?'bad':fx[k]<1?'good':''):fx[k]<0?'bad':''}">${campLvl(fx[k],k)}</b></div>`).join('')}</div>
+     <button class="${ui.confirm==='camp'+C[0]?'btn':'ghost'} sm" style="margin-top:8px;width:100%" onclick="campBook('${C[0]}')">${ui.confirm==='camp'+C[0]?`Potwierdź: zapłacisz ${fmt(cost)}`:'Wybierz'}</button></div>`;}).join('')}</div></div>`;}
 // ================= SKAUTING: WIEDZA O ZAWODNIKACH, ZADANIA SKAUTÓW, RAPORT O RYWALU =================
 function SC(){const s=SAVE.sc||(SAVE.sc={});if(!s.know)s.know={};if(!s.tasks)s.tasks=[];if(!s.short)s.short=[];if(!s.opp)s.opp={on:1,done:{}};if(!s.nid)s.nid=1;return s;}
 function isMineP(p){return p&&p.tm===SAVE.team;}
@@ -4738,6 +4792,7 @@ function hvTodo(){const it=[];const t=myTeam();
   const un=mailBox().filter(m=>!m.r&&!m.ar).length;if(un)it.push([`${un} nieprzeczytanych wiadomości`,"go('poczta')"]);
   const spFree=typeof spSlots==='function'?Object.entries(spSlots()).reduce((a,[k,n])=>a+Math.max(0,n-spUsed(k)),0):0;if(spFree)it.push([`${spFree} ${spFree===1?'wolne miejsce':'wolnych miejsc'} dla sponsorów`,"go('sponsorzy')"]);
   for(const b of BLD()){const f=INFRA.find(x=>x.k===b.k);it.push([`Trwa budowa: ${f.n.toLowerCase()} (${Math.max(0,daysBetween(today(),b.until))} dni)`,"go('klub')"]);}
+  if(typeof campCanBook==='function'&&campCanBook())it.push(['Wybierz miejsce obozu przygotowawczego',S().phase==='off'?"go('mecz')":"go('trening')"]);
   const inj=t.players.filter(p=>p.inj).length;if(inj)it.push([`${inj} ${inj===1?'kontuzjowany zawodnik':'kontuzjowanych zawodników'}`,"go('sklad')"]);
   const ag=typeof agedOut==='function'?agedOut().length:0;if(ag)it.push([`${ag} juniorów kończy 20 lat — awansuj albo odejdą`,"go('juniorzy')"]);
   if(SAVE.fin&&SAVE.fin.bal<0)it.push([`Saldo klubu jest na minusie (${fmt(SAVE.fin.bal)})`,"go('finanse')"]);
