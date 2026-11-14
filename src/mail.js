@@ -56,7 +56,7 @@ function mailList(){const f=ui.mailF||'all',c=ui.mailC||'';let xs=mailBox();
   if(c==='star')xs=xs.filter(m=>m.st);else if(c==='arch')xs=xs.filter(m=>m.ar);else{xs=xs.filter(m=>!m.ar);if(c)xs=xs.filter(m=>m.cat===c);}
   if(f==='unread')xs=xs.filter(m=>!m.r);else if(f==='act')xs=xs.filter(m=>m.act);
   const q=(ui.mailQ||'').trim().toLowerCase();if(q)xs=xs.filter(m=>(m.t+' '+m.s+' '+m.from).toLowerCase().includes(q));return xs;}
-function dayHdr(d){const n=daysBetween(d,today());return n===0?'Dziś · '+fmtShort(d):n===1?'Wczoraj · '+fmtShort(d):fmtShort(d);}
+function dayHdr(d){const n=daysBetween(d,today());const x=fmtShort(d);return n===0?'dziś, '+x:n===1?'wczoraj, '+x:x;}
 function mailItem(m){const C=MAIL_CAT[m.cat]||MAIL_CAT.klub;return `<button class="mx ${m.r?'rd':'ur'} ${ui.mailSel===m.id?'sel':''}" style="--mc:${C[1]}" onclick="mailOpen('${m.id}')">
    <span class="mxf">${esc(m.from)}${m.st?' <span class="mstar">★</span>':''}</span><span class="mxc">${C[0]}</span>
    <span class="mxt">${m.r?'':'<i class="mdot"></i>'}${esc(m.t)}</span><span class="mxh">${m.tm||mailTime(m)}</span>
@@ -66,11 +66,12 @@ function mailView(){const box=mailBox();const xs=mailList();const c=ui.mailC||''
   let list='',last=null;for(const m of xs.slice(0,150)){if(m.d!==last){list+=`<div class="mxd">${dayHdr(m.d)}</div>`;last=m.d;}list+=mailItem(m);}
   const sel=box.find(m=>m.id===ui.mailSel);
   return `<div class="mail mail2 ${sel?'hasSel':''}">
-   <div class="mlist"><div class="mxh1"><b>Skrzynka</b><span class="mut small">${box.filter(m=>!m.ar).length} wiadomości</span></div>
-    <div class="mxtabs">${[['all','Wszystkie'],['unread',`Nowe (${un})`],['act',`Zadania (${ac})`]].map(([k,l])=>`<button class="${f===k?'on':''}" onclick="ui.mailF='${k}';render()">${l}</button>`).join('')}
-     <span class="sp"></span><button class="mxi ${ui.mailS?'on':''}" title="Szukaj" onclick="ui.mailS=!ui.mailS;if(!ui.mailS)ui.mailQ='';render();setTimeout(()=>{const e=document.getElementById('mxq');if(e)e.focus()},0)">🔍</button><button class="mxi" title="Oznacz wszystkie jako przeczytane" onclick="mailAllRead()">✓</button></div>
+   <div class="mlist"><div class="mxh1"><b>Skrzynka</b></div>
+    <div class="mxtabs">${[['all','Wszystkie'],['unread',`Nowe (${un})`],['act',`Zadania (${ac})`]].map(([k,l])=>`<button class="${f===k?'on':''}" onclick="ui.mailF='${k}';render()">${l}</button>`).join('')}</div>
+    <div class="mxtools"><button class="mxi ${ui.mailS?'on':''}" title="Szukaj" onclick="ui.mailS=!ui.mailS;if(!ui.mailS)ui.mailQ='';render();setTimeout(()=>{const e=document.getElementById('mxq');if(e)e.focus()},0)">⌕</button>
+     <select class="mxcat" onchange="ui.mailC=this.value;ui.mailSel=null;render()"><option value="">Wszystkie kategorie</option><option value="star" ${c==='star'?'selected':''}>Oznaczone ★</option>${Object.entries(MAIL_CAT).map(([k,[n]])=>{const u=box.filter(m=>!m.ar&&!m.r&&m.cat===k).length;return `<option value="${k}" ${c===k?'selected':''}>${n}${u?` (${u})`:''}</option>`;}).join('')}<option value="arch" ${c==='arch'?'selected':''}>Archiwum</option></select>
+     <button class="mxi" title="Oznacz wszystkie jako przeczytane" onclick="mailAllRead()">✓</button></div>
     ${ui.mailS?`<input id="mxq" class="mxq" placeholder="Szukaj w poczcie…" value="${esc(ui.mailQ||'')}" oninput="ui.mailQ=this.value;const p=this.selectionStart;render();const e=document.getElementById('mxq');if(e){e.focus();e.setSelectionRange(p,p);}">`:''}
-    <select class="mcatsel" onchange="ui.mailC=this.value;ui.mailSel=null;render()"><option value="">Wszystkie kategorie</option><option value="star" ${c==='star'?'selected':''}>Oznaczone ★</option>${Object.entries(MAIL_CAT).map(([k,[n]])=>`<option value="${k}" ${c===k?'selected':''}>${n}${box.filter(m=>!m.ar&&!m.r&&m.cat===k).length?` (${box.filter(m=>!m.ar&&!m.r&&m.cat===k).length})`:''}</option>`).join('')}<option value="arch" ${c==='arch'?'selected':''}>Archiwum</option></select>
     <div class="mitems">${list||'<p class="mut small" style="padding:14px">Brak wiadomości.</p>'}</div></div>
    <div class="mpane">${sel?mailPane(sel):'<div class="mempty"><div style="font-size:40px">✉️</div><p class="mut">Wybierz wiadomość z listy.</p></div>'}</div></div>`;}
 function mailRel(m){const b=m.b||{};const out=[];const c=myNext();const s=S();
@@ -87,10 +88,11 @@ function mailRel(m){const b=m.b||{};const out=[];const c=myNext();const s=S();
   else if(m.cat==='zarz')add('Trener','Zaufanie zarządu',"go('trener')",'#444441');
   if(out.length<2&&b.type!=='match'&&b.type!=='fit')nx();
   return out.length?`<div class="mxrel"><div class="mxrt">Powiązane informacje</div><div class="mxrg">${out.slice(0,3).map(([l,t,a,col])=>`<button class="mxrc" style="--rc:${col}" onclick="${a}"><small>${l}</small><b>${t}</b></button>`).join('')}</div></div>`:'';}
-function mailPane(m){const C=MAIL_CAT[m.cat]||MAIL_CAT.klub;
-  return `<div class="mxph" style="--mc:${C[1]}"><button class="ghost sm mback" onclick="ui.mailSel=null;render()">←</button><span class="mav big">${m.ic||mailInitials(m.from)}</span>
-    <div class="mxpt"><small>${esc(m.from)}</small><h1>${esc(m.t)}</h1></div><span class="sp"></span>
-    <div class="mxpa"><span class="mxtm">${fmtShort(m.d)} · ${m.tm||mailTime(m)}</span><span><button class="mxi" onclick="mailStar('${m.id}')" title="Oznacz gwiazdką">${m.st?'★':'☆'}</button><button class="mxi" onclick="mailUnread('${m.id}')" title="Oznacz jako nieprzeczytaną">●</button><button class="mxi" onclick="mailArch('${m.id}')" title="${m.ar?'Przywróć':'Archiwizuj'}">${m.ar?'↺':'🗄'}</button></span></div></div>
+function mailPane(m){const C=MAIL_CAT[m.cat]||MAIL_CAT.klub;const from=String(m.from).replace(/\s*\(([^)]*)\)\s*$/,' · $1');
+  return `<div class="mxph" style="--mc:${C[1]}"><button class="ghost sm mback" onclick="ui.mailSel=null;render()">←</button><span class="mxav">${m.ic||mailInitials(m.from)}</span>
+    <div class="mxpt"><small>${esc(from)}</small><h1>${esc(m.t)}</h1></div><span class="sp"></span>
+    <div class="mxpa"><button class="mxdots" onclick="ui.mailMenu=!ui.mailMenu;render()">⋯</button><span class="mxtm">${m.tm||mailTime(m)}</span>
+     ${ui.mailMenu?`<div class="mxmenu"><button onclick="ui.mailMenu=0;mailStar('${m.id}')">${m.st?'★ Usuń gwiazdkę':'☆ Oznacz gwiazdką'}</button><button onclick="ui.mailMenu=0;mailUnread('${m.id}')">● Oznacz jako nieprzeczytaną</button><button onclick="ui.mailMenu=0;mailArch('${m.id}')">${m.ar?'↺ Przywróć z archiwum':'🗄 Archiwizuj'}</button><div class="mxmd">${C[0]}${m.lab?' · '+esc(m.lab):''} · ${fmtLong(m.d)}</div></div>`:''}</div></div>
    <div class="mbody mxb">${mailBodyHtml(m)}${mailRel(m)}</div>`;}
 // ---- test wydolności przed meczem (zawodnicy po kontuzji) ----
 function fitMail(d){if(SAVE.team==null||!SAVE.world)return;const ev=(myEvents()[d]||[]).find(e=>!e.r);if(!ev)return;SAVE.fitSent=SAVE.fitSent||{};if(SAVE.fitSent[d])return;
@@ -105,9 +107,9 @@ function fitMail(d){if(SAVE.team==null||!SAVE.world)return;const ev=(myEvents()[
 function fitMailHtml(b){const op=TEAMS[b.op];const tc=t=>t==='zaliczony'?'good':t==='częściowo'?'warn':'mut';
   return `<p class="mtext">Przedstawiam wyniki przedmeczowego testu wydolności ${b.rows.length} ${b.rows.length===1?'zawodnika':'zawodników'} przed spotkaniem z ${esc(op?op.name:'rywalem')}.</p>
    <div class="mxbox"><h3 style="margin:0">Monitorowani zawodnicy</h3><div class="small mut">Powrót po kontuzji w ciągu ostatnich 2 tygodni</div>
-   <div class="tw"><table class="mxft"><thead><tr><th class="l">Zawodnik</th><th class="l">Ostatnia kontuzja</th><th class="l">Test</th><th class="l">Zalecenie</th></tr></thead><tbody>
-   ${b.rows.map(r=>`<tr><td class="l"><button class="link pn" onclick="openPop('${r.id}')">${esc(r.n)}</button> ${pTag(r.pos)}<br><small class="mut">${r.role} · świeżość <b style="color:${frCol(r.fr)}">${r.fr}%</b></small></td><td class="l">${esc(r.inj)}<br><small class="mut">${typeof r.days==='number'&&r.days?r.days+' dni przerwy · ':''}wrócił ${r.since===0?'dziś':r.since+' dni temu'}</small></td>
-     <td class="l"><span class="mxpill ${tc(r.test)}">${r.test==='zaliczony'?'✓ ':''}${r.test}</span></td><td class="l">${esc(r.rec)}</td></tr>`).join('')}</tbody></table></div>
+   <div class="tw"><table class="mxft"><thead><tr><th class="l">Zawodnik</th><th class="l">Ostatnia kontuzja</th><th class="l">Test</th><th class="l">Zalecenie</th><th>Świeżość</th></tr></thead><tbody>
+   ${b.rows.map(r=>`<tr><td class="l"><button class="link pn" onclick="openPop('${r.id}')">${esc(r.n)}</button> ${pTag(r.pos)}<br><small class="mut">${r.role}</small></td><td class="l">${esc(r.inj)}<br><small class="mut">${typeof r.days==='number'&&r.days?r.days+' dni przerwy · ':''}wrócił ${r.since===0?'dziś':r.since+' dni temu'}</small></td>
+     <td class="l"><span class="mxpill ${tc(r.test)}">${r.test==='zaliczony'?'✓ ':''}${r.test}</span></td><td class="l">${esc(r.rec)}</td><td><b style="color:${frCol(r.fr)}">${r.fr}%</b></td></tr>`).join('')}</tbody></table></div>
    <div class="mx2"><div><b>Testy wydolności</b><p>Zawodnicy wracający po kontuzji przechodzą test przed meczem. Wynik mówi, ile mogą zagrać i czy grozi im nawrót urazu.</p></div>
    <div><b>Porada pionu medycznego</b><p>Wystawienie zawodnika, który nie jest w pełni sił, zwiększa ryzyko pogłębienia urazu. Możesz się z tym nie zgodzić — decyzja o składzie należy do Ciebie.</p></div></div></div>`;}
 function mailBodyHtml(m){const b=m.b||{};
