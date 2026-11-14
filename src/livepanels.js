@@ -15,7 +15,7 @@ function playersPanel(m,i){
     const d=del&&del[p.id]!=null?del[p.id]:null;
     return `<div class="prow ${e?'on':'bench'} ${click?'clk':''} ${!e&&mine&&ui.subSel!=null?'pick':''}" ${click}>
       <div class="pf">${faceSvg(p.id,{size:30,age:p.age,color:kc,kind:'player'})}<span class="pn2" style="background:${e&&e.role==='L'?libColor(kc,'#000'):kc};color:${lum(e&&e.role==='L'?libColor(kc,'#000'):kc)>0.6?'#111':'#fff'}">${p.num}</span></div>
-      <div class="pm"><div class="pnm"><b>${esc(p.last)}</b> <small class="mut">${POS_SHORT[e?e.role:p.pos]}${e?'':' · ławka'}</small>${d!=null&&d!==0?` <span class="dlt ${d>0?'good':'bad'}">${d>0?'+':''}${d}</span>`:''}</div>
+      <div class="pm"><div class="pnm"><b>${esc(p.last)}</b> <small class="mut">${pTag(e?e.role:p.pos)}${e?'':' · ławka'}</small>${d!=null&&d!==0?` <span class="dlt ${d>0?'good':'bad'}">${d>0?'+':''}${d}</span>`:''}</div>
         <div class="pbars"><span title="Kondycja ${Math.round(p.en)}%">⚡${bar(p.en,p.en>75?'#22c55e':p.en>55?'#eab308':'#ef4444')}</span><span title="Morale: ${morLabel(mor)} (${mor})">${mor>=62?'😀':mor>=45?'😐':'😟'}${bar(mor,morCol(mor))}</span></div>
         <div class="pst">${pts} pkt · atak ${x.kill}/${x.att}${x.blk?` · blok ${x.blk}`:''}${x.ace?` · as ${x.ace}`:''}${x.rec?` · przyj. ${pc(x.recPos,x.rec)}`:''}${x.dig?` · obr. ${x.dig}`:''}${err?` · <span class="bad">bł. ${err}</span>`:''}</div></div></div>`;};
   const avgM=Math.round(oc.reduce((s,e)=>s+(e.p.mor==null?60:e.p.mor),0)/oc.length);
@@ -66,14 +66,14 @@ function talkCard(m){const to=ui.to;const st=talkState();const opp=onCourt(m.sid
   <div class="tsec">2. Wskazówka do gry <small class="mut">(działa ${dur} akcji)</small>${st.hint?' <span class="good">✓ wydana</span>':''}</div>
   <div class="opts tone4"><button class="opt ${st.hint==='srv'?'on':''}" ${st.hint?'disabled':''} onclick="applyHint('srv')"><b>Ryzykujcie na zagrywce</b><small>Mocniejsza zagrywka: więcej asów, ale i więcej błędów.</small></button>
    <button class="opt ${st.hint==='rec'?'on':''}" ${st.hint?'disabled':''} onclick="applyHint('rec')"><b>Skupcie się na przyjęciu</b><small>Lepsze przyjęcie, spokój dla przyjmujących i libero.</small></button></div>
-  <div class="tsub">Zagrywka w zawodnika:</div><div class="tgtl">${opp.map(({p,role})=>`<button class="ghost sm ${st.hint==='target'&&ui.match.sides[0].tmp&&ui.match.sides[0].tmp.id===p.id?'on':''}" ${st.hint?'disabled':''} onclick="applyHint('target','${p.id}')"><b>${esc(p.last)}</b> <small class="mut">${POS_SHORT[p.pos]} · przyjęcie ${p.prz}</small></button>`).join('')}</div></div>`;}
+  <div class="tsub">Zagrywka w zawodnika:</div><div class="tgtl">${opp.map(({p,role})=>`<button class="ghost sm ${st.hint==='target'&&ui.match.sides[0].tmp&&ui.match.sides[0].tmp.id===p.id?'on':''}" ${st.hint?'disabled':''} onclick="applyHint('target','${p.id}')"><b>${esc(p.last)}</b> <small class="mut">${pTag(p.pos)} · przyjęcie ${p.prz}</small></button>`).join('')}</div></div>`;}
 // ---- karta ustawienia ----
 const ROT_TIP={1:'Rozgrywający z tyłu na prawej: trzech atakujących w pierwszej linii.',6:'Rozgrywający z tyłu w środku: trzech atakujących z przodu.',5:'Rozgrywający z tyłu na lewej: trzech atakujących z przodu, najdłuższy dobieg do siatki.',4:'Rozgrywający z przodu na lewej: tylko dwóch atakujących w pierwszej linii.',3:'Rozgrywający z przodu w środku: dwóch atakujących z przodu, możliwa kiwka.',2:'Rozgrywający z przodu na prawej: dwóch atakujących z przodu, klasyczna wystawa.'};
 function rotBox(m,i){const sd=m.sides[i];const sv=m.serving===i;const oc=onCourt(sd,sv);const kc=kitColors(m)[i];
   const setter=oc.find(e=>e.role==='R');const rz=setter?setter.zone+1:0;const front=oc.filter(e=>isFrontZ(e.zone)),back=oc.filter(e=>!isFrontZ(e.zone));
   const atk=front.filter(e=>e.role!=='R'&&e.role!=='L').length;const lib=oc.find(e=>e.role==='L');const libFor=lib?sd.slots[sd.rot[lib.zone]]:null;
   const cell=z=>{const e=oc.find(x=>x.zone===z-1);if(!e)return '<div class="rz"></div>';const col=e.role==='L'?libColor(kc,'#000'):kc;
-    return `<div class="rz ${e.role==='R'?'rs':''}" title="Strefa ${z}: ${esc(e.p.first+' '+e.p.last)} (${POS_NAMES[e.role]})"><span class="rzn">${z}</span><i style="background:${col};color:${lum(col)>0.6?'#111':'#fff'}">${e.p.num}</i><small>${POS_SHORT[e.role]}</small></div>`;};
+    return `<div class="rz ${e.role==='R'?'rs':''}" title="Strefa ${z}: ${esc(e.p.first+' '+e.p.last)} (${POS_NAMES[e.role]})"><span class="rzn">${z}</span><i style="background:${col};color:${lum(col)>0.6?'#111':'#fff'}">${e.p.num}</i><small>${pTag(e.role)}</small></div>`;};
   const grid=i===0?[[5,4],[6,3],[1,2]]:[[2,1],[3,6],[4,5]];
   const tac=sd.tactics||{serve:1,dist:0};
   return `<div class="rbox"><div class="row"><b style="color:${kc}">●</b> <b>${esc(sd.team.short)}</b><span class="sp"></span><span class="rtag ${sv?'srv':'rcv'}">${sv?'🏐 na zagrywce':'🛡️ w przyjęciu'}</span></div>
@@ -81,7 +81,7 @@ function rotBox(m,i){const sd=m.sides[i];const sv=m.serving===i;const oc=onCourt
    <div class="rtxt"><div class="rtitle">Ustawienie ${rz||'?'}</div><div class="small mut">${rz?`rozgrywający w strefie ${rz} · system 5-1`:'system 5-1'}</div>
    <div class="small">${ROT_TIP[rz]||''}</div>
    <div class="small mut" style="margin-top:4px">Atakujący z przodu: <b style="color:var(--txt)">${atk}</b>${lib?` · libero ${esc(lib.p.last)} za ${esc(libFor?libFor.p.last:'środkowego')}`:''}</div>
-   <div class="small mut">W obronie: ${[1,6,5].map(z=>{const e=back.find(x=>defZone(x)===z);return e?`<b style="color:var(--txt)">${z}</b> ${POS_SHORT[e.role]} ${esc(e.p.last)}`:''}).filter(Boolean).join(' · ')}</div>
+   <div class="small mut">W obronie: ${[1,6,5].map(z=>{const e=back.find(x=>defZone(x)===z);return e?`<b style="color:var(--txt)">${z}</b> ${pTag(e.role)} ${esc(e.p.last)}`:''}).filter(Boolean).join(' · ')}</div>
    <div class="small mut">Zagrywka: <b style="color:var(--txt)">${SERVE_OPT[tac.serve][0]}</b> · rozegranie: <b style="color:var(--txt)">${DIST_OPT[tac.dist][0]}</b></div>
    ${sd.tmp&&sd.tmp.n>0?`<div class="small tmpb">📋 ${esc(TALK_TMP[sd.tmp.k]||'')} — ${sd.tmp.n} akcji</div>`:''}</div></div></div>`;}
 function rotCard(m){if(m.over)return '';return `<div class="card rotcard"><div class="row"><h3 style="margin:0">Grane ustawienie</h3><span class="sp"></span><span class="small mut">Set ${m.setNo} · ${m.score[0]}:${m.score[1]}</span></div><div class="rboxes">${rotBox(m,0)}${rotBox(m,1)}</div>

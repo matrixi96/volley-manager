@@ -42,6 +42,7 @@ function render(){
   else if(ui.tab==='zapis')body=saveView();
   const wide=ui.tab==='mecz'&&ui.match&&!(ui.match.over&&ui.view==='post');
   app.innerHTML=`<div class="shell ${wide?'live':''}">${topBar()}${sideNav()}<main class="${wide?'wide':''}">${ctxBar()}${body}</main></div>`+(ui.card?cardModal():ui.pop?popModal():ui.teamPop!=null?teamModal():'');
+  if(ui.tab==='klub'&&typeof v3Mount==='function')try{v3Mount();}catch(e){console.error(e);}
   if(ui.tab==='mecz'&&ui.match){const lg=$('#log');if(lg)lg.scrollTop=0;if(typeof drawHallStatic==='function'&&typeof document.getElementById==='function')drawHallStatic();}
 }
 function hdr(nav){
@@ -81,7 +82,7 @@ function squadView(){
   <div class="card"><div class="row"><h2>Kadra (${t.players.length})</h2><span class="sp"></span><div class="lgt"><button class="${ui.sqFull?'':'on'}" onclick="ui.sqFull=0;render()">Widok prosty</button><button class="${ui.sqFull?'on':''}" onclick="ui.sqFull=1;render()">Pełne atrybuty ▸</button></div></div>${ui.sqFull?'':squadSimple(pl,inLu)}${!ui.sqFull?'':`<div class="tw"><table class="squad"><thead><tr class="grp"><th colspan="5"></th><th colspan="${ATTRS.length}" class="msep gt">Techniczne</th><th colspan="${PHYS.length}" class="msep gf">Fizyczne</th><th colspan="${MENTAL.length}" class="msep men">Mentalne</th><th colspan="5" class="msep">Klub</th></tr><tr>
   <th onclick="srt('pos')">#</th><th class="l" onclick="srt('pos')">Zawodnik</th><th onclick="srt('pos')">Poz</th><th onclick="srt('wiek')">Wiek</th><th onclick="srt('h')">Wzrost</th>
   ${[[ATTRS,'gt'],[PHYS,'gf'],[MENTAL,'men']].map(([G,c])=>G.map(([k,l,s,d],j)=>`<th class="${j?'':'msep'} ${c}" onclick="srt('${k}')" title="${l}: ${d}">${s}</th>`).join('')).join('')}<th onclick="srt('ocena')" class="msep">Ocena</th><th onclick="srt('pot')">Potencjał</th><th onclick="srt('wart')">Wartość</th><th onclick="srt('pensja')">Pensja</th><th onclick="srt('kontrakt')">Kontrakt</th></tr></thead><tbody>
-  ${pl.map(p=>`<tr class="${inLu.has(p.id)?'starter':''}"><td>${p.num}</td><td class="l"><span class="fcell">${pFace(p,28)}<button class="link pn" onclick="openPop('${p.id}')">${esc(p.first)} <b>${esc(p.last)}</b>${p.star?' ⭐':''}</button>${capBadge(p)}</span>${p.inj?` 🚑<small class="bad">${p.inj}</small>`:''}${inLu.has(p.id)?` <span class="tag">${inLu.get(p.id)}</span>`:''}</td><td>${POS_SHORT[p.pos]}</td><td>${p.age}</td><td>${p.h}</td>
+  ${pl.map(p=>`<tr class="${inLu.has(p.id)?'starter':''}"><td>${p.num}</td><td class="l"><span class="fcell">${pFace(p,28)}<button class="link pn" onclick="openPop('${p.id}')">${esc(p.first)} <b>${esc(p.last)}</b>${p.star?' ⭐':''}</button>${capBadge(p)}</span>${p.inj?` 🚑<small class="bad">${p.inj}</small>`:''}${inLu.has(p.id)?` <span class="tag">${inLu.get(p.id)}</span>`:''}</td><td>${pTag(p.pos)}</td><td>${p.age}</td><td>${p.h}</td>
   ${[ATTRS,PHYS,MENTAL].map(G=>G.map(([k],j)=>{const d=p.base?p[k]-p.base[k]:0;return `<td class="${j?'':'msep'}"><span class="attr ${aCls(p[k])}">${p[k]}</span>${d?`<sup class="${d>0?'good':'bad'}">${d>0?'+':''}${d}</sup>`:''}</td>`;}).join('')).join('')}<td class="msep"><b>${rating(p)}</b></td><td class="stars">${potStars(p)}</td><td>${fmt(pValue(p))}</td><td>${fmt(p.wage)}</td><td class="${p.ce<=S().n?'bad':''}">${ceDate(p.ce)}</td></tr>`).join('')}
   </tbody></table></div>`}<p class="mut small">Atrybuty w skali 1–20. Małe liczby to zmiana od początku sezonu. Kliknij nagłówek, żeby posortować, a nazwisko, żeby otworzyć kartę zawodnika (kontrakt, sprzedaż).</p>
   <details class="legend"><summary>Co oznaczają atrybuty?</summary>${[['Techniczne',ATTRS],['Fizyczne',PHYS],['Mentalne',MENTAL]].map(([n,G])=>`<div class="lg"><b class="gh">${n}</b>${G.map(([k,l,s,d])=>`<div><b>${s}</b> ${l}: ${d}</div>`).join('')}</div>`).join('')}</details></div>`;
@@ -196,7 +197,7 @@ function jersey(p,color,isLib,opp){
 function chip(x,side,i,mine){
   const p=x.p;const hl=ui.match.hl.includes(p.id);const srv=ui.match.serving===i&&x.zone===0;
   return `<div class="pl ${hl?'hl':''} ${mine?'click':''}" data-pid="${p.id}" ${mine?`onclick="selSub(${x.slot==='L'?"'L'":x.slot})"`:''} title="${esc(p.first+' '+p.last)} — ${POS_NAMES[x.role]}">
-  ${jersey(p,kitColors(ui.match)[i],x.role==='L',kitColors(ui.match)[1-i])}${srv?'<span class="ball">🏐</span>':''}<span class="rl">${POS_SHORT[x.role]}</span><span class="en"><i style="width:${p.en}%;background:${p.en>75?'var(--good)':p.en>55?'#eab308':'var(--bad)'}"></i></span></div>`;
+  ${jersey(p,kitColors(ui.match)[i],x.role==='L',kitColors(ui.match)[1-i])}${srv?'<span class="ball">🏐</span>':''}<span class="rl">${pTag(x.role)}</span><span class="en"><i style="width:${p.en}%;background:${p.en>75?'var(--good)':p.en>55?'#eab308':'var(--bad)'}"></i></span></div>`;
 }
 function courtHtml(m){
   const L=onCourt(m.sides[0],m.serving===0),Rr=onCourt(m.sides[1],m.serving===1);
@@ -211,7 +212,7 @@ function liveView(){
   if(ui.subSel!==null&&!m.over){const s=a;const isL=ui.subSel==='L';const cur=isL?s.libero:s.slots[ui.subSel].p;
     const bench=benchOf(s).sort((x,y)=>(x.pos===(isL?'L':s.slots[ui.subSel].role)?0:1)-(y.pos===(isL?'L':s.slots[ui.subSel].role)?0:1)||rating(y)-rating(x));
     subPanel=`<div class="card sub"><div class="row"><b>Zmiana za: ${esc(cur.last)} (${isL?'libero':POS_NAMES[s.slots[ui.subSel].role]})</b><span class="sp"></span><button class="ghost" onclick="ui.subSel=null;render()">Anuluj</button></div>
-    ${!isL&&s.subs<=0?'<p class="bad">Brak zmian w tym secie.</p>':`<div class="benchlist">${bench.map(p=>`<button class="ghost" onclick="doSub('${p.id}')">${p.num} ${esc(p.last)} <small>${POS_SHORT[p.pos]} · ${rating(p)} · ${Math.round(p.en)}%</small></button>`).join('')}</div>`}
+    ${!isL&&s.subs<=0?'<p class="bad">Brak zmian w tym secie.</p>':`<div class="benchlist">${bench.map(p=>`<button class="ghost" onclick="doSub('${p.id}')">${p.num} ${esc(p.last)} <small>${pTag(p.pos)} · ${rating(p)} · ${Math.round(p.en)}%</small></button>`).join('')}</div>`}
     <p class="mut small">${isL?'Zmiana libero nie liczy się do limitu.':'Pozostało zmian w secie: '+s.subs}</p></div>`;}
   return fmLiveView(subPanel);
   return `<div class="card score">
@@ -253,7 +254,7 @@ function histChart(m){
 }
 function attackShare(sd){const tot=sd.pl.reduce((s,p)=>s+p.st.att,0);if(!tot)return '';
   const arr=sd.pl.filter(p=>p.st.att).sort((a,b)=>b.st.att-a.st.att);
-  return `<div class="share">${arr.map(p=>`<div class="shr"><span>${esc(p.last)} <small class="mut">${POS_SHORT[p.pos]}</small></span><span class="shb"><i style="width:${p.st.att/tot*100}%;background:${sd.team.color}"></i></span><b>${Math.round(p.st.att/tot*100)}%</b></div>`).join('')}</div>`;}
+  return `<div class="share">${arr.map(p=>`<div class="shr"><span>${esc(p.last)} <small class="mut">${pTag(p.pos)}</small></span><span class="shb"><i style="width:${p.st.att/tot*100}%;background:${sd.team.color}"></i></span><b>${Math.round(p.st.att/tot*100)}%</b></div>`).join('')}</div>`;}
 function statsBlock(m){
   const [A,B]=m.sides.map(teamTotals);
   const rows=[['Punkty (atak+blok+as)',A.pts,B.pts],['Skończone ataki',`${A.kill}/${A.att} (${pc(A.kill,A.att)})`,`${B.kill}/${B.att} (${pc(B.kill,B.att)})`],['Błędy w ataku',A.attErr,B.attErr],['…w tym atak sprzed linii 3 m',A.e3,B.e3],['Punkty po obiciu bloku',A.bout,B.bout],['Dotknięcia siatki w bloku',A.ne,B.ne],['Bloki punktowe',A.blk,B.blk],['Asy',A.ace,B.ace],['Błędy zagrywki',A.srvErr,B.srvErr],['Przyjęcie pozytywne',pc(A.recPos,A.rec),pc(B.recPos,B.rec)]];
@@ -265,7 +266,7 @@ function statsBlock(m){
 function playerTable(s){
   const ps=s.pl.filter(p=>p.st.srv+p.st.rec+p.st.att+p.st.dig+p.st.blk>0).sort((a,b)=>(b.st.kill+b.st.blk+b.st.ace)-(a.st.kill+a.st.blk+a.st.ace));
   return `<div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th>Poz</th><th>Pkt</th><th>Atak</th><th>Skut.</th><th>Bł.</th><th>Blok</th><th>As</th><th>Bł.zag</th><th>Przyj.poz</th><th>Obr.</th><th>Energia</th></tr></thead><tbody>
-  ${ps.map(p=>{const x=p.st;return `<tr><td class="l">${p.num} <b>${esc(p.last)}</b></td><td>${POS_SHORT[p.pos]}</td><td><b>${x.kill+x.blk+x.ace}</b></td><td>${x.kill}/${x.att}</td><td>${pc(x.kill,x.att)}</td><td>${x.attErr}</td><td>${x.blk}</td><td>${x.ace}</td><td>${x.srvErr}</td><td>${x.rec?pc(x.recPos,x.rec)+' <small class="mut">('+x.rec+')</small>':'–'}</td><td>${x.dig}</td><td>${Math.round(p.en)}%</td></tr>`;}).join('')}</tbody></table></div>`;
+  ${ps.map(p=>{const x=p.st;return `<tr><td class="l">${p.num} <b>${esc(p.last)}</b></td><td>${pTag(p.pos)}</td><td><b>${x.kill+x.blk+x.ace}</b></td><td>${x.kill}/${x.att}</td><td>${pc(x.kill,x.att)}</td><td>${x.attErr}</td><td>${x.blk}</td><td>${x.ace}</td><td>${x.srvErr}</td><td>${x.rec?pc(x.recPos,x.rec)+' <small class="mut">('+x.rec+')</small>':'–'}</td><td>${x.dig}</td><td>${Math.round(p.en)}%</td></tr>`;}).join('')}</tbody></table></div>`;
 }
 function postMatchView(){
   const m=ui.match,w=m.sides[m.winner];
