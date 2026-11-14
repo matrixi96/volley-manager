@@ -630,7 +630,8 @@ function cloneP(p){const fm=p.fm==null?60:p.fm;return Object.assign({},p,{en:p.f
 function formB(p){return p&&p.fm!=null?(p.fm-60)/40*0.04:0;}
 // zgranie: mecze rozegrane razem w tym klubie (30+ = pełne zgranie)
 function togetherOf(p,ti){return p.tcTm==null?(p.tc!=null?0:15):(p.tcTm===ti?(p.tc||0):0);}
-function chemOf(ps,ti,cap){ps=ps.filter(Boolean);const v=ps.map(p=>Math.min(1,togetherOf(p,ti)/30));if(!v.length)return 0.6;let c=0.3+0.7*v.reduce((a,b)=>a+b,0)/v.length;
+function chemOf(ps,ti,cap){ps=ps.filter(Boolean);
+  if(typeof teamPairChem==='function'&&ps.length>=2){const v=teamPairChem(ps);return clamp(v+(cap?capBonus(cap)*0.6:0),0.3,1);}const v=ps.map(p=>Math.min(1,togetherOf(p,ti)/30));if(!v.length)return 0.6;let c=0.3+0.7*v.reduce((a,b)=>a+b,0)/v.length;
   for(const p of ps){if(hasT(p,'ind'))c-=0.03;if(hasT(p,'lid'))c+=0.015;}if(cap)c+=capBonus(cap)*0.6;return clamp(c,0.3,1);}
 function capBonus(c){if(!c)return 0;return clamp(((c.kom||10)-10)*0.004+((c.opa||10)-10)*0.002+(hasT(c,'lid')?0.04:0)-(hasT(c,'ner')||hasT(c,'ind')||hasT(c,'kap')?0.03:0),-0.05,0.08);}
 function autoCaptain(ps){let b=null,bs=-1e9;for(const p of ps.filter(Boolean)){const s=(hasT(p,'lid')?8:0)+(p.kom||10)+(p.opa||10)*0.6+Math.min(p.age,32)*0.25-(hasT(p,'ner')||hasT(p,'kap')||hasT(p,'ind')?5:0);if(s>bs){bs=s;b=p;}}return b;}
@@ -2951,7 +2952,7 @@ function anaTable(m,i){const D=anaData(m,i);if(!D.pl.length)return '<div class="
 function chemPct(c){return Math.round(((c-0.3)/0.7)*100);}
 function chemBadge(t,lu){const ids=Object.values(lu||{});const ps=ids.map(id=>t.players.find(p=>p.id===id)).filter(Boolean);const c=chemOf(ps,t.idx,t.idx===SAVE.team?myCaptain():null);const v=chemPct(c);
   const low=ps.filter(p=>togetherOf(p,t.idx)<10).map(p=>p.last);
-  return `Zgranie zespołu: <b style="color:${v>=75?'var(--good)':v>=45?'var(--acc)':'var(--bad)'}">${v}%</b> <span title="Rośnie z każdym meczem rozegranym razem w tym klubie (pełne po ok. 30). Nowi zawodnicy zaczynają od zera. Zgranie i komunikacja decydują o nieporozumieniach przy niedokładnym przyjęciu, o wystawach w trudnych sytuacjach i o szybkich piłkach.">ⓘ</span>${low.length?` <span class="mut">· mało gry razem: ${esc(low.slice(0,3).join(', '))}${low.length>3?'…':''}</span>`:''}`;}
+  return `Zgranie zespołu: <b style="color:${v>=75?'var(--good)':v>=45?'var(--acc)':'var(--bad)'}">${v}%</b> <span title="Średnia ze zgrania wszystkich par w składzie (najważniejsze: rozgrywający z atakującymi i linia przyjęcia) plus wpływ kapitana. Para zgrywa się z każdym wspólnym meczem (pełne po ok. 25). Nowi zawodnicy zaczynają od zera. Zgranie i komunikacja decydują o nieporozumieniach przy niedokładnym przyjęciu, o wystawach w trudnych sytuacjach i o szybkich piłkach.">ⓘ</span>${low.length?` <span class="mut">· mało gry razem: ${esc(low.slice(0,3).join(', '))}${low.length>3?'…':''}</span>`:''}`;}
 // ================= CZAS: ZEJŚCIE DO ŁAWEK, 15 s, POWRÓT =================
 const TO_SEC=15;
 function benchScene(m,sc){const out=sc.map(o=>Object.assign({},o,{j:0}));const by=MV.FY1?(MV.FY1-24-MV.Y0)/MV.SC:10.4;
@@ -3705,8 +3706,10 @@ function pricesCard(){const e=ECO();const c=crowdFor(SAVE.team,1,e.tix,true);con
    <div class="prow" style="margin-top:12px"><div><b>Ceny w sklepie kibica</b><div class="small mut">${esc(SHOP_LV[e.shop][1])}</div></div><div class="seg">${SHOP_LV.map((x,i)=>`<button class="${e.shop===i?'on':''}" onclick="setShop(${i})">${x[0]}</button>`).join('')}</div></div></div>`;}
 // ================= ZGRANIE PAR, SKŁAD WYJŚCIOWY (KAFELKI), CENTRUM DANYCH =================
 function pairKey(a,b){return a<b?a+'|'+b:b+'|'+a;}
-function pairN(a,b){if(!a||!b)return 0;const P=SAVE.pairs||{};const k=pairKey(a.id,b.id);if(P[k]!=null)return P[k];const ti=a.tm;return Math.round(Math.min(togetherOf(a,ti),togetherOf(b,ti))*0.6);}
+function pairN(a,b){if(!a||!b)return 0;const P=SAVE.pairs||{};const k=pairKey(a.id,b.id);if(P[k]!=null)return P[k];const ti=a.tm;return Math.round(Math.min(togetherOf(a,ti),togetherOf(b,ti))*0.85);}
 function pairChem(a,b){if(!a||!b)return 0.5;let c=0.3+0.7*Math.min(1,pairN(a,b)/25);if(hasT(a,'ind')||hasT(b,'ind'))c-=0.05;if(hasT(a,'lid')||hasT(b,'lid'))c+=0.03;return clamp(c,0.3,1);}
+// zgranie całej drużyny = średnia ze zgrania wszystkich par w składzie (ważniejsze: rozgrywający z atakującymi i linia przyjęcia)
+function teamPairChem(ps){let s=0,w=0;for(let i=0;i<ps.length;i++)for(let j=i+1;j<ps.length;j++){const a=ps[i],b=ps[j];const k=a.pos==='R'||b.pos==='R'?1.5:(/[PL]/.test(a.pos)&&/[PL]/.test(b.pos))?1.3:1;s+=pairChem(a,b)*k;w+=k;}return w?s/w:0.6;}
 function pairsAfterMatch(m){if(SAVE.team==null)return;const sd=m.sides.find(s=>s.team.idx===SAVE.team);if(!sd)return;const P=SAVE.pairs||(SAVE.pairs={});
   const ids=sd.slots.map(z=>z.p).concat([sd.libero]).filter(p=>p&&p.st.srv+p.st.rec+p.st.att+p.st.dig+p.st.blk>0).map(p=>p.id);
   for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++){const k=pairKey(ids[i],ids[j]);P[k]=(P[k]!=null?P[k]:pairN(PLAYERS[ids[i]]&&PLAYERS[ids[i]].p,PLAYERS[ids[j]]&&PLAYERS[ids[j]].p))+1;}}

@@ -1,7 +1,9 @@
 // ================= ZGRANIE PAR, SKŁAD WYJŚCIOWY (KAFELKI), CENTRUM DANYCH =================
 function pairKey(a,b){return a<b?a+'|'+b:b+'|'+a;}
-function pairN(a,b){if(!a||!b)return 0;const P=SAVE.pairs||{};const k=pairKey(a.id,b.id);if(P[k]!=null)return P[k];const ti=a.tm;return Math.round(Math.min(togetherOf(a,ti),togetherOf(b,ti))*0.6);}
+function pairN(a,b){if(!a||!b)return 0;const P=SAVE.pairs||{};const k=pairKey(a.id,b.id);if(P[k]!=null)return P[k];const ti=a.tm;return Math.round(Math.min(togetherOf(a,ti),togetherOf(b,ti))*0.85);}
 function pairChem(a,b){if(!a||!b)return 0.5;let c=0.3+0.7*Math.min(1,pairN(a,b)/25);if(hasT(a,'ind')||hasT(b,'ind'))c-=0.05;if(hasT(a,'lid')||hasT(b,'lid'))c+=0.03;return clamp(c,0.3,1);}
+// zgranie całej drużyny = średnia ze zgrania wszystkich par w składzie (ważniejsze: rozgrywający z atakującymi i linia przyjęcia)
+function teamPairChem(ps){let s=0,w=0;for(let i=0;i<ps.length;i++)for(let j=i+1;j<ps.length;j++){const a=ps[i],b=ps[j];const k=a.pos==='R'||b.pos==='R'?1.5:(/[PL]/.test(a.pos)&&/[PL]/.test(b.pos))?1.3:1;s+=pairChem(a,b)*k;w+=k;}return w?s/w:0.6;}
 function pairsAfterMatch(m){if(SAVE.team==null)return;const sd=m.sides.find(s=>s.team.idx===SAVE.team);if(!sd)return;const P=SAVE.pairs||(SAVE.pairs={});
   const ids=sd.slots.map(z=>z.p).concat([sd.libero]).filter(p=>p&&p.st.srv+p.st.rec+p.st.att+p.st.dig+p.st.blk>0).map(p=>p.id);
   for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++){const k=pairKey(ids[i],ids[j]);P[k]=(P[k]!=null?P[k]:pairN(PLAYERS[ids[i]]&&PLAYERS[ids[i]].p,PLAYERS[ids[j]]&&PLAYERS[ids[j]].p))+1;}}

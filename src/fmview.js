@@ -244,7 +244,7 @@ function anaTable(m,i){const D=anaData(m,i);if(!D.pl.length)return '<div class="
 function chemPct(c){return Math.round(((c-0.3)/0.7)*100);}
 function chemBadge(t,lu){const ids=Object.values(lu||{});const ps=ids.map(id=>t.players.find(p=>p.id===id)).filter(Boolean);const c=chemOf(ps,t.idx,t.idx===SAVE.team?myCaptain():null);const v=chemPct(c);
   const low=ps.filter(p=>togetherOf(p,t.idx)<10).map(p=>p.last);
-  return `Zgranie zespołu: <b style="color:${v>=75?'var(--good)':v>=45?'var(--acc)':'var(--bad)'}">${v}%</b> <span title="Rośnie z każdym meczem rozegranym razem w tym klubie (pełne po ok. 30). Nowi zawodnicy zaczynają od zera. Zgranie i komunikacja decydują o nieporozumieniach przy niedokładnym przyjęciu, o wystawach w trudnych sytuacjach i o szybkich piłkach.">ⓘ</span>${low.length?` <span class="mut">· mało gry razem: ${esc(low.slice(0,3).join(', '))}${low.length>3?'…':''}</span>`:''}`;}
+  return `Zgranie zespołu: <b style="color:${v>=75?'var(--good)':v>=45?'var(--acc)':'var(--bad)'}">${v}%</b> <span title="Średnia ze zgrania wszystkich par w składzie (najważniejsze: rozgrywający z atakującymi i linia przyjęcia) plus wpływ kapitana. Para zgrywa się z każdym wspólnym meczem (pełne po ok. 25). Nowi zawodnicy zaczynają od zera. Zgranie i komunikacja decydują o nieporozumieniach przy niedokładnym przyjęciu, o wystawach w trudnych sytuacjach i o szybkich piłkach.">ⓘ</span>${low.length?` <span class="mut">· mało gry razem: ${esc(low.slice(0,3).join(', '))}${low.length>3?'…':''}</span>`:''}`;}
 // ================= CZAS: ZEJŚCIE DO ŁAWEK, 15 s, POWRÓT =================
 const TO_SEC=15;
 function benchScene(m,sc){const out=sc.map(o=>Object.assign({},o,{j:0}));const by=MV.FY1?(MV.FY1-24-MV.Y0)/MV.SC:10.4;

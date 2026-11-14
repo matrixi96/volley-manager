@@ -95,7 +95,8 @@ function cloneP(p){const fm=p.fm==null?60:p.fm;return Object.assign({},p,{en:p.f
 function formB(p){return p&&p.fm!=null?(p.fm-60)/40*0.04:0;}
 // zgranie: mecze rozegrane razem w tym klubie (30+ = pełne zgranie)
 function togetherOf(p,ti){return p.tcTm==null?(p.tc!=null?0:15):(p.tcTm===ti?(p.tc||0):0);}
-function chemOf(ps,ti,cap){ps=ps.filter(Boolean);const v=ps.map(p=>Math.min(1,togetherOf(p,ti)/30));if(!v.length)return 0.6;let c=0.3+0.7*v.reduce((a,b)=>a+b,0)/v.length;
+function chemOf(ps,ti,cap){ps=ps.filter(Boolean);
+  if(typeof teamPairChem==='function'&&ps.length>=2){const v=teamPairChem(ps);return clamp(v+(cap?capBonus(cap)*0.6:0),0.3,1);}const v=ps.map(p=>Math.min(1,togetherOf(p,ti)/30));if(!v.length)return 0.6;let c=0.3+0.7*v.reduce((a,b)=>a+b,0)/v.length;
   for(const p of ps){if(hasT(p,'ind'))c-=0.03;if(hasT(p,'lid'))c+=0.015;}if(cap)c+=capBonus(cap)*0.6;return clamp(c,0.3,1);}
 function capBonus(c){if(!c)return 0;return clamp(((c.kom||10)-10)*0.004+((c.opa||10)-10)*0.002+(hasT(c,'lid')?0.04:0)-(hasT(c,'ner')||hasT(c,'ind')||hasT(c,'kap')?0.03:0),-0.05,0.08);}
 function autoCaptain(ps){let b=null,bs=-1e9;for(const p of ps.filter(Boolean)){const s=(hasT(p,'lid')?8:0)+(p.kom||10)+(p.opa||10)*0.6+Math.min(p.age,32)*0.25-(hasT(p,'ner')||hasT(p,'kap')||hasT(p,'ind')?5:0);if(s>bs){bs=s;b=p;}}return b;}
