@@ -125,5 +125,56 @@ function hCalendar(){const ev=myEvents();const s=S();const tr=SAVE.training?(TRA
     if(!list.length)list.push(s.phase==='off'?'<div class="hev">Urlop / przygotowania</div>':(()=>{const tp=typeof todayPlanTxt==='function'?todayPlanTxt(d):null;return `<div class="hev">${tp?'Trening: '+esc(tp):'Wolne'}</div>`;})());
     out.push(`<div class="hdaycol ${k===0?'today':''}"><div class="hdh">${k===0?'Dziś':fmtShort(d)}</div>${list.join('')}</div>`);}
   return `<div class="hcal">${out.join('')}</div>`;}
+function hvForm(i,n){const f=teamForm(i).slice(-(n||5));return `<span class="hvf">${f.map(w=>`<i class="${w?'w':'l'}">${w?'W':'P'}</i>`).join('')||'<small class="mut">brak meczów</small>'}</span>`;}
+function hvPos(i){const s=S();if(!(s.phase==='liga'||s.phase==='po'||s.phase==='end'))return '';const k=leagueTable().findIndex(x=>x.i===i)+1;return k?`${k}. w tabeli`:'';}
+function hvNotes(c,op){const out=[];const lu=SAVE.lineup||{};const t=myTeam();const ids=Object.values(lu);
+  const tired=t.players.filter(p=>ids.includes(p.id)&&frOf(p)<60);if(tired.length)out.push(`${tired.length} ${tired.length===1?'zawodnik':'zawodników'} z podstawy jest zmęczonych (${tired.slice(0,3).map(p=>esc(p.last)).join(', ')}) — rozważ zmianę.`);
+  const inj=t.players.filter(p=>ids.includes(p.id)&&p.inj);if(inj.length)out.push(`W składzie są kontuzjowani: ${inj.map(p=>esc(p.last)).join(', ')}.`);
+  const s=S();let h2h=null;for(const rd of s.results||[])for(const g of rd)if((g.h===SAVE.team&&g.a===op)||(g.a===SAVE.team&&g.h===op))h2h=g;
+  if(h2h){const me=h2h.h===SAVE.team;const won=(h2h.sw[0]===3)===me;out.push(`Ostatnio ${won?'wygraliśmy':'przegraliśmy'} z nimi ${me?h2h.sw[0]+':'+h2h.sw[1]:h2h.sw[1]+':'+h2h.sw[0]}.`);}
+  const a=teamStrength(t),b=teamStrength(TEAMS[op]);out.push(b>a+2?`Rywal jest silniejszy (siła ${b} wobec naszej ${a}).`:b<a-2?`Jesteśmy faworytem (siła ${a} wobec ${b}).`:`Wyrównany mecz (siła ${a} wobec ${b}).`);
+  return out.slice(0,4);}
+function hvHero(){const s=S();const c=myNext();const e=nextEvent();const asy=SAVE.staff&&SAVE.staff.asy;
+  if(!c)return `<div class="card hvhero"><div class="hvlab"><span class="acc">Prowadzisz</span> ${SAVE.coach?esc(SAVE.coach.first+' '+SAVE.coach.last):''}</div><div class="hvteam">${teamCrest(SAVE.team,58)}<div><div class="hvtn">${esc(myTeam().name)}</div><div class="hvsub">${hvPos(SAVE.team)} ${hvForm(SAVE.team)}</div></div></div><p class="mut">Brak zaplanowanych meczów w tej fazie sezonu.</p><button class="btn" onclick="nextAction()">Dalej</button></div>`;
+  const home=c.h===SAVE.team,op=home?c.a:c.h;const days=e?daysBetween(today(),e.d):0;
+  const comp=s.phase==='spar'?`Sparing ${s.spar.res.length+1}/${N_SPAR}`:s.phase==='liga'?`${s.round+1}. kolejka`:`Play-off · ${STAGE[s.po.series.find(x=>x.id===c.sid).st]}`;
+  const side=(i,right)=>`<div class="hvteam ${right?'r':''}">${right?'':teamCrest(i,58)}<div><button class="link hvtn" onclick="openTeam(${i})">${esc(TEAMS[i].name)}</button><div class="hvsub">${right?hvForm(i)+' '+hvPos(i):hvPos(i)+' '+hvForm(i)}</div></div>${right?teamCrest(i,58):''}</div>`;
+  return `<div class="card hvhero"><div><div class="hvlab"><span class="acc">Prowadzisz</span> ${SAVE.coach?esc(SAVE.coach.first+' '+SAVE.coach.last):''}</div>
+    <div class="hvvs">${side(SAVE.team,false)}<b class="acc hvv">vs</b>${side(op,true)}</div>
+    <div class="hvmi"><b>${comp}</b><span>${e?fmtLong(e.d)+(e.t?', '+e.t:''):''}</span><span>${home?'u siebie':'wyjazd'}</span>${days>0?`<span class="mut">za ${days} ${days===1?'dzień':'dni'}</span>`:'<span class="acc">dzień meczowy</span>'}<button class="link" onclick="go('kalendarz')">Terminarz →</button><span class="sp"></span>
+     ${days<=0?`<button class="ghost" onclick="simNext()">Szybki wynik</button><button class="btn" onclick="playNext()">▶ Graj mecz</button>`:`<button class="btn" onclick="nextAction()">⏩ Do dnia meczu</button>`}</div></div>
+   <div class="hvnotes"><div class="hvlab acc">Notatki przed meczem</div><div class="small mut" style="margin-bottom:6px">${asy?`Asystent: ${esc(asy.first[0]+'. '+asy.last)}`:'Brak asystenta trenera'}</div>${hvNotes(c,op).map(x=>`<div class="hvn">${x}</div>`).join('')}<button class="link" onclick="go('sklad')">Sprawdź skład ›</button></div></div>`;}
+function hvTodo(){const it=[];const t=myTeam();
+  const ex=typeof expiring==='function'?expiring():[];if(ex.length)it.push([`${ex.length} ${ex.length===1?'kontrakt kończy się':'kontraktów kończy się'} w tym sezonie`,"go('transfery')"]);
+  const un=mailBox().filter(m=>!m.r&&!m.ar).length;if(un)it.push([`${un} nieprzeczytanych wiadomości`,"go('poczta')"]);
+  const spFree=typeof spSlots==='function'?Object.entries(spSlots()).reduce((a,[k,n])=>a+Math.max(0,n-spUsed(k)),0):0;if(spFree)it.push([`${spFree} ${spFree===1?'wolne miejsce':'wolnych miejsc'} dla sponsorów`,"go('sponsorzy')"]);
+  for(const b of BLD()){const f=INFRA.find(x=>x.k===b.k);it.push([`Trwa budowa: ${f.n.toLowerCase()} (${Math.max(0,daysBetween(today(),b.until))} dni)`,"go('klub')"]);}
+  const inj=t.players.filter(p=>p.inj).length;if(inj)it.push([`${inj} ${inj===1?'kontuzjowany zawodnik':'kontuzjowanych zawodników'}`,"go('sklad')"]);
+  const ag=typeof agedOut==='function'?agedOut().length:0;if(ag)it.push([`${ag} juniorów kończy 20 lat — awansuj albo odejdą`,"go('juniorzy')"]);
+  if(SAVE.fin&&SAVE.fin.bal<0)it.push([`Saldo klubu jest na minusie (${fmt(SAVE.fin.bal)})`,"go('finanse')"]);
+  return `<div class="card hvc"><div class="hvlab">Do zrobienia</div>${it.length?it.map(([t,a])=>`<button class="hvrow" onclick="${a}"><span>${t}</span><span>›</span></button>`).join(''):'<div class="small mut">Wszystko pod kontrolą.</div>'}</div>`;}
+function hvTable(){const s=S();const live=s.phase==='liga'||s.phase==='po'||s.phase==='end';const tb=live?leagueTable():TEAMS.map(t=>({i:t.idx,w:0,l:0,pts:0,m:0})).sort((a,b)=>teamStrength(TEAMS[b.i])-teamStrength(TEAMS[a.i]));
+  const c=myNext();const op=c?(c.h===SAVE.team?c.a:c.h):-1;
+  return `<div class="card hvc"><div class="hvlab row"><span>${live?'Tabela ligi':'Faworyci ligi (siła składu)'}</span><span class="sp"></span><button class="link" onclick="go('tabela')">Pełna →</button></div>
+   <table class="hvtb"><tr><th>#</th><th class="l">Drużyna</th><th>W</th><th>P</th><th>Pkt</th></tr>${tb.map((x,k)=>`<tr class="${x.i===SAVE.team?'me':x.i===op?'op':''} ${k===7&&live?'cut':''}"><td>${k+1}</td><td class="l"><button class="link tlk" onclick="openTeam(${x.i})">${tDot(x.i)}${esc(TEAMS[x.i].name)}</button></td><td>${live?x.w:'–'}</td><td>${live?x.l:'–'}</td><td><b>${live?x.pts:teamStrength(TEAMS[x.i])}</b></td></tr>`).join('')}</table></div>`;}
+function hvWatch(){const pool=myTeam().players.concat(juniorsOf(SAVE.team));if(!pool.length)return '';
+  const sc=p=>(p.pot||rating(p))-rating(p)*0.4-(p.age>23?30:0)+(p.jr?2:0);const p=pool.slice().sort((a,b)=>sc(b)-sc(a))[0];const ks=(KEY_ATTR[p.pos]||[]).slice(0,6);
+  return `<div class="card hvc hvw"><div class="hvlab acc">Zawodnik do obserwacji</div><div class="row" style="gap:12px;align-items:flex-start">${pFace(p,64)}<div><button class="link hvpn" onclick="openPop('${p.id}')">${esc(p.last)}</button><div class="small">${pTag(p.pos)} <span class="mut">${p.age} l. · ${fmt(pValue(p))}${p.jr?' · junior':''}</span></div>
+    <div class="small mut" style="margin-top:4px">Teraz <span class="stars">${stars(rating(p)+3)}</span></div><div class="small mut">Potencjał <span class="stars">${potStars(p)}</span></div></div></div>
+   <div class="hvat">${ks.map(k=>`<div><span>${attrName(k)}</span><b style="color:${attrCol(p[k])}">${p[k]}</b></div>`).join('')}</div></div>`;}
+function hvFit(){const ps=myTeam().players.slice().sort((a,b)=>frOf(a)-frOf(b)).slice(0,10);
+  return `<div class="card hvc"><div class="hvlab row"><span>Świeżość zawodników</span><span class="sp"></span><button class="link" onclick="go('trening')">Trening →</button></div>${ps.map(p=>{const f=Math.round(frOf(p));return `<div class="hvfit"><button class="link" onclick="openPop('${p.id}')">${esc(p.last)}${p.inj?' 🚑':''}</button>${pTag(p.pos)}<span class="hvbar"><i style="width:${f}%;background:${frCol(f)}"></i></span><b>${f}%</b></div>`;}).join('')}</div>`;}
+function hvLast(){const L=SAVE.lastMatch;const form=`<div class="hvlab">Forma drużyny</div><div class="small mut">Ostatnie 5 meczów, wszystkie rozgrywki</div><div style="margin:6px 0 12px">${hvForm(SAVE.team)}</div>`;
+  if(!L)return `<div class="card hvc">${form}<div class="small mut">Po pierwszym meczu zobaczysz tu wynik i najlepszego zawodnika.</div></div>`;
+  const w=(L.h===SAVE.team)===(L.sw[0]===3);
+  return `<div class="card hvc">${form}<div class="hvlab">Ostatni mecz${L.kind==='liga'&&L.k?` · ${L.k}. kolejka`:L.kind==='spar'?' · sparing':L.kind==='po'?' · play-off':''}</div>
+   <div class="hvlm">${teamCrest(L.h,30)}<b>${esc(TEAMS[L.h].short)}</b><b class="${w?'good':'bad'} hvsc">${L.sw[0]}–${L.sw[1]}</b><b>${esc(TEAMS[L.a].short)}</b>${teamCrest(L.a,30)}</div>
+   <div class="small mut">${L.sets.map(x=>x[0]+'–'+x[1]).join(' · ')}${L.d?' · '+fmtDMY(L.d):''}</div>
+   ${L.top?`<div class="small" style="margin-top:6px">Najlepszy u nas: <b>${esc(L.top.n)}</b> <span class="hvr">${String(L.top.r).replace('.',',')}</span></div>`:L.mvp?`<div class="small" style="margin-top:6px">MVP: <b>${esc(L.mvp)}</b></div>`:''}
+   <button class="link small" onclick="go('poczta')">Raport z meczu ›</button></div>`;}
+function hvUp(){const ev=myEvents();const up=[];for(const d of Object.keys(ev).sort())for(const e of ev[d])if(!e.r)up.push({d,...e});
+  const kind=e=>e.kind==='spar'?'Sparing':e.kind==='liga'?`${e.k}. kol.`:'Play-off';
+  return `<div class="card hvc"><div class="hvlab row"><span>Najbliższe mecze</span><span class="sp"></span><button class="link" onclick="go('kalendarz')">Terminarz →</button></div>${up.slice(0,6).map(e=>`<div class="hvup"><span class="mut">${fmtShort(e.d)}</span><span class="l">${teamCrest(e.op,20)}${esc(TEAMS[e.op].name)}</span><span>${e.home?'D':'W'}</span><span class="mut">${kind(e)}</span></div>`).join('')||'<div class="small mut">Brak zaplanowanych meczów.</div>'}</div>`;}
 function homeView(){const s=S();if(!s)return '';
-  return `${ui.msg?`<div class="card msg">${ui.msg}</div>`:''}${s.phase==='off'?'':boardCard()}<div class="hgrid"><div class="hcol">${hNext()}${hTable()}${hFixtures()}</div><div class="hcol">${hLeague()}${hNews()}${hLast()}</div></div>${hCalendar()}`;}
+  return `${ui.msg?`<div class="card msg">${ui.msg}</div>`:''}${hvHero()}<div class="hv3"><div class="hvcol">${hvTodo()}${hvTable()}</div><div class="hvcol">${hvWatch()}${hvFit()}</div><div class="hvcol">${hvLast()}${hvUp()}</div></div>
+   <div class="hv2">${s.phase==='off'?'':boardCard()}${hNews()}</div>`;}
