@@ -76,10 +76,15 @@ function fmAttack(m){const sd=m.sides[0];const tot=sd.pl.reduce((s,p)=>s+p.st.at
   return `<div class="card fmw"><div class="fmh"><b>Rozkład ataków</b><span class="small mut">${esc(sd.team.short)}</span></div>
    ${arr.map(p=>`<div class="fmar"><span class="fmtn">${esc(p.last)}</span><span class="shb"><i style="width:${p.st.att/tot*100}%;background:${kc}"></i></span><span class="small mut">${p.st.kill}/${p.st.att}</span></div>`).join('')||'<div class="small mut">Jeszcze bez ataków.</div>'}</div>`;}
 // ---- statystyki przy boisku ----
-function fmTeamStats(m,i){const t=teamTotals(m.sides[i]);const kc=kitColors(m)[i];
-  const sd=m.sides[i];const mixN=(m.mixN||[0,0])[i];
-  const rows=[['Punkty',t.pts],['Atak',pc(t.kill,t.att)],['Przyjęcie+',pc(t.recPos,t.rec)],['Asy',t.ace],['Bloki',t.blk],['Błędy',t.attErr+t.srvErr],['Zgranie',chemPct(sd.chem??0.6)+'%'],['Nieporoz.',mixN]];
-  return `<div class="fmst"><div class="fmh"><b style="border-bottom:2px solid ${kc}">${esc(m.sides[i].team.short)}</b></div>${rows.map(r=>`<div class="fmsr"><span>${r[0]}</span><b>${r[1]}</b></div>`).join('')}</div>`;}
+function fmTeamStats(m,i){const t=teamTotals(m.sides[i]),o=teamTotals(m.sides[1-i]);const kc=kitColors(m)[i];
+  const sd=m.sides[i];const mixN=(m.mixN||[0,0])[i];const sh=(a,b)=>a+b?Math.round(a/(a+b)*100):0;const pr=(a,b)=>b?Math.round(a/b*100):0;
+  const bar=w=>`<span class="fsb"><i style="width:${w}%;background:${kc}"></i></span>`;
+  const row=(l,v,w,sub)=>`<div class="fsr"><div class="fsl"><span>${l}</span><b>${v}</b></div>${sub?`<small>${sub}</small>`:''}${w!=null?bar(w):''}</div>`;
+  const err=t.attErr+t.srvErr+t.recErr;
+  return `<div class="fmst"><div class="fmh"><b style="border-bottom:2px solid ${kc}">${esc(sd.team.short)}</b></div>
+   ${row('Punkty',t.pts,sh(t.pts,o.pts))}${row('Atak',t.att?pr(t.kill,t.att)+'%':'–',pr(t.kill,t.att),t.att?`${t.kill} / ${t.att}`:'')}
+   ${row('Przyjęcie+',t.rec?pr(t.recPos,t.rec)+'%':'–',pr(t.recPos,t.rec),t.rec?`${t.recPos} / ${t.rec}`:'')}${row('Obrony',t.dig,sh(t.dig,o.dig))}
+   ${row('Asy · Bloki',`${t.ace} · ${t.blk}`)}${row('Błędy',err)}${row('Zgranie',chemPct(sd.chem??0.6)+'%')}${mixN?row('Nieporoz.',mixN):''}</div>`;}
 // ---- pasek składu ----
 function fmStrip(m){const a=m.sides[0];const oc=onCourt(a,m.serving===0);const ord={R:0,A:1,P:2,S:3,L:4};
   const on=oc.slice().sort((x,y)=>ord[x.role]-ord[y.role]||x.zone-y.zone);
@@ -125,14 +130,14 @@ function fmLiveView(subPanel){const m=ui.match;
   ${ui.talk&&!m.over?talkCard(m):''}
   ${m.over?`<div class="card row"><b>Mecz zakończony: ${esc(m.sides[m.winner].team.name)} wygrywa ${Math.max(...m.setsWon)}:${Math.min(...m.setsWon)}</b><span class="sp"></span><button class="btn" onclick="ui.view='post';render()">Podsumowanie</button><button class="ghost" onclick="ui.match=null;render()">Dalej</button></div>`:''}
   <div class="fmwrap"><div class="fmlay">
-   <div class="fml">${fmFormation(m,0)}${fmLiveTable(m)}${fmPlayerStats(m,0)}</div>
+   <div class="fml">${fmFormation(m,0)}${fmAssistant(m)}${fmAnalyst(m)}</div>
    <div class="fmc">
     <div class="card fmcourt">${fmTeamStats(m,0)}<div class="fmcv">
       ${ui.mview==='klasyczny'?courtHtml(m):`<div class="hallbar small mut">🏟️ ${tName(m.homeIdx!=null?m.homeIdx:m.sides[0].team.idx)} · <b style="color:var(--txt)">${(m.att||0).toLocaleString('pl-PL')}</b> / ${(m.cap||0).toLocaleString('pl-PL')} widzów · <span class="mcom ${m.comm&&m.comm.w!=null?(m.comm.w===0?'me':'op'):''}">${m.comm?esc(m.comm.t):''}</span><span id="mph" class="mph">${ui.to?'Czas':m.over?'Koniec meczu':'Przed zagrywką'}</span></div>${toBanner(m)}<canvas id="mcv" class="mcv"></canvas>`}
       ${m.over?'':`<div class="fmctl">${ui.to?`<button class="btn fmbig go" onclick="endTimeout()">↩ Wracamy na boisko</button>`:`<button class="btn ppbtn fmbig ${m.paused?'go':''}" onclick="togglePause()">${m.paused?'▶ Graj':'⏸ Pauza'}</button>`}<button class="ghost sm tobtn ${ui.toReq?'on':''}" ${m.sides[0].to<=0||ui.to?'disabled':''} onclick="myTimeout()">${ui.toReq?'⏱ Czas po akcji…':`⏱ Czas (${m.sides[0].to})`}</button><span class="small mut">Spacja = pauza</span></div>${shoutBar(m)}`}</div>${fmTeamStats(m,1)}</div>
-    <div class="fmws">${fmAssistant(m)}${fmMomentum(m)}${fmAnalyst(m)}</div>
+    <div class="fmws one">${fmMomentum(m)}</div>
    </div>
-   <div class="fmr">${fmFormation(m,1)}${fmRecent(m)}${fmPlayerStats(m,1)}</div>
+   <div class="fmr">${fmFormation(m,1)}${fmPlayerStats(m,0)}${fmPlayerStats(m,1)}</div>
   </div>
   ${fmStrip(m)}
   ${m.over?'':fmBench(m)}
@@ -142,9 +147,9 @@ function fmLiveView(subPanel){const m=ui.match;
 function fmPlayerStats(m,i){const sd=m.sides[i];const onIds=new Set(onCourt(sd,m.serving===i).map(e=>e.p.id));
   const ps=sd.pl.filter(p=>onIds.has(p.id)||p.st.srv+p.st.rec+p.st.att+p.st.dig+p.st.blk>0)
     .sort((a,b)=>(onIds.has(b.id)-onIds.has(a.id))||((b.st.kill+b.st.blk+b.st.ace)-(a.st.kill+a.st.blk+a.st.ace)));
-  return `<div class="card fmside2 fmps-card"><div class="fmh"><b>Statystyki zawodników</b><span class="small mut">${esc(sd.team.short)}</span></div>
-   <table class="fmpt-t"><thead><tr><th class="l">Zawodnik</th><th title="Punkty: atak + blok + as">Pkt</th><th title="Skończone ataki / wszystkie">Atak</th><th title="Przyjęcie pozytywne">Prz+</th><th title="Bloki">Blok</th><th title="Asy">As</th><th title="Błędy: atak, zagrywka, przyjęcie">Bł.</th></tr></thead><tbody>
-   ${ps.map(p=>{const x=p.st;const err=x.attErr+x.srvErr+x.recErr;return `<tr class="${onIds.has(p.id)?'':'off'}"><td class="l"><span class="mut">${p.num}</span> ${esc(p.last)}</td><td><b>${x.kill+x.blk+x.ace}</b></td><td>${x.att?`${x.kill}/${x.att}`:'–'}</td><td>${x.rec?pc(x.recPos,x.rec):'–'}</td><td>${x.blk||'–'}</td><td>${x.ace||'–'}</td><td class="${err?'bad':''}">${err||'–'}</td></tr>`;}).join('')}
+  return `<div class="card fmside2 fmps-card"><div class="fmh"><b>Statystyki: ${esc(sd.team.short)}</b><span class="small mut">${i===0?'Twoja drużyna':'rywal'}</span></div>
+   <table class="fmpt-t"><thead><tr><th class="l">Zawodnik</th><th title="Punkty: atak + blok + as">Pkt</th><th title="Skończone ataki / wszystkie">Atak</th><th title="Przyjęcie pozytywne">Prz+</th><th title="Obrony">Obr</th><th title="Bloki">Bl</th><th title="Asy">As</th><th title="Błędy: atak, zagrywka, przyjęcie">Bł.</th></tr></thead><tbody>
+   ${ps.map(p=>{const x=p.st;const err=x.attErr+x.srvErr+x.recErr;return `<tr class="${onIds.has(p.id)?'':'off'}"><td class="l"><span class="mut">${p.num}</span> ${esc(p.last)}</td><td><b>${x.kill+x.blk+x.ace}</b></td><td>${x.att?`${x.kill}/${x.att}`:'–'}</td><td>${x.rec?pc(x.recPos,x.rec):'–'}</td><td>${x.dig||'–'}</td><td>${x.blk||'–'}</td><td>${x.ace||'–'}</td><td class="${err?'bad':''}">${err||'–'}</td></tr>`;}).join('')}
    </tbody></table></div>`;}
 // ---- ławka rezerwowych z umiejętnościami ----
 const FM_KEY={R:['roz','zag','kiw'],P:['prz','ata','kiw'],A:['ata','blo','kiw'],S:['blo','czy','ata'],L:['prz','obr','czy']};

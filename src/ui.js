@@ -240,7 +240,7 @@ function liveView(){
   <div class="card"><div class="row"><button class="tabb ${ui.view==='log'?'on':''}" onclick="ui.view='log';render()">Komentarz</button><button class="tabb ${ui.view==='stats'?'on':''}" onclick="ui.view='stats';render()">Statystyki</button></div>
   ${ui.view==='stats'?statsBlock(m):`<div id="log" class="log">${m.log.slice(-150).reverse().map(e=>`<div class="le ${e.c}">${e.t}</div>`).join('')}</div>`}</div>`;
 }
-function teamTotals(s){const t={pts:0,kill:0,att:0,attErr:0,blk:0,ace:0,srvErr:0,rec:0,recPos:0,recErr:0,blocked:0,bout:0,ne:0,e3:0};for(const p of s.pl){const x=p.st;t.bout+=x.bout||0;t.ne+=x.ne||0;t.e3+=x.e3||0;t.kill+=x.kill;t.att+=x.att;t.attErr+=x.attErr;t.blk+=x.blk;t.ace+=x.ace;t.srvErr+=x.srvErr;t.rec+=x.rec;t.recPos+=x.recPos;t.recErr+=x.recErr;t.blocked+=x.blocked;}t.pts=t.kill+t.blk+t.ace;return t;}
+function teamTotals(s){const t={pts:0,kill:0,att:0,attErr:0,blk:0,ace:0,srvErr:0,rec:0,recPos:0,recErr:0,blocked:0,bout:0,ne:0,e3:0,dig:0};for(const p of s.pl){const x=p.st;t.dig+=x.dig||0;t.bout+=x.bout||0;t.ne+=x.ne||0;t.e3+=x.e3||0;t.kill+=x.kill;t.att+=x.att;t.attErr+=x.attErr;t.blk+=x.blk;t.ace+=x.ace;t.srvErr+=x.srvErr;t.rec+=x.rec;t.recPos+=x.recPos;t.recErr+=x.recErr;t.blocked+=x.blocked;}t.pts=t.kill+t.blk+t.ace;return t;}
 const pc=(a,b)=>b?Math.round(a/b*100)+'%':'–';
 function histChart(m){
   const h=m.hist||[];if(!h.length)return '';
