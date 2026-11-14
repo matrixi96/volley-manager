@@ -129,7 +129,7 @@ function onCourt(side,serving){
     return {zone:z,role:s.role,p:s.p,slot:si};});
 }
 function pressure(m){const a=m.score[0],b=m.score[1],t=m.setNo===5?15:25;return Math.max(a,b)>=t-4&&Math.min(a,b)>=t-8;}
-function mb(p,m,i){let b=(p.mor==null?0:(p.mor-60)/40*0.045)+formB(p)+(p.pcB||0);const sd=m.sides[i];const pr=pressure(m);if(pr)b+=(p.opa-11)/20*0.14+(sd.prB||0);const tr=m.score[1-i]-m.score[i]>=3||(m.setsWon&&m.setsWon[1-i]>m.setsWon[i]);if(m.score[1-i]-m.score[i]>=3)b+=(p.wal-11)/20*0.1+(sd.trB||0);
+function mb(p,m,i){let b=(p.mor==null?0:(p.mor-60)/40*0.045)+formB(p)+(p.pcB||0)+(p.tkB&&typeof today==='function'&&p.tkBd===today()?p.tkB:0);const sd=m.sides[i];const pr=pressure(m);if(pr)b+=(p.opa-11)/20*0.14+(sd.prB||0);const tr=m.score[1-i]-m.score[i]>=3||(m.setsWon&&m.setsWon[1-i]>m.setsWon[i]);if(m.score[1-i]-m.score[i]>=3)b+=(p.wal-11)/20*0.1+(sd.trB||0);
   if(p.tr){if(pr){if(hasT(p,'spo'))b+=0.025;if(hasT(p,'ner'))b-=0.035;if(hasT(p,'amb'))b+=0.012;}if(tr&&hasT(p,'zde'))b+=0.03;}
   if(pr&&sd.cap){const c=sd.pl.find(x=>x.id===sd.cap);if(c&&c!==p)b+=capBonus(c)*0.25;}
   const sh=sd.sh;if(sh&&sh.u>m.rallies){b+=sh.p||0;if(pr)b+=sh.pr||0;if(tr)b+=sh.b||0;}

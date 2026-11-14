@@ -639,6 +639,13 @@ small .pt,.mut .pt{font-size:9px;padding:2px 5px;min-width:26px}
 .trhlw{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0 4px}.trhlw h3{font-size:14.5px;margin:0 0 8px;text-transform:none;letter-spacing:0}.trhlw h3 small{font-weight:400;font-size:12px}
 .trhl{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #34363c;border-radius:8px;margin-bottom:6px}.trhl.g{border-left:3px solid #22c55e}.trhl.b{border-left:3px solid #ef4444}.trhl>div{flex:1;min-width:0}.trhs{font-size:20px}
 @media(max-width:760px){.trhlw{grid-template-columns:1fr}}
+.tkcard{max-width:560px;width:94vw}.tkkv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.tkkv div{background:#ffffff0a;border-radius:8px;padding:7px 10px}.tkkv span{display:block;font-size:11px;color:var(--mut)}.tkkv b{font-size:17px}
+.tklab{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);font-weight:700;margin:14px 0 6px}
+.tkopt{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin-bottom:6px;color:var(--txt);cursor:pointer}.tkopt small{display:block;color:var(--mut);font-size:11.5px}.tkopt.on{border-color:var(--acc);background:#ffb02012}
+.tkp{font-size:11.5px;padding:2px 8px;border-radius:6px;white-space:nowrap}.tkp.g{background:#22c55e1f;color:var(--good)}.tkp.y{background:#eab3081f;color:#eab308}.tkp.r{background:#ef44441f;color:var(--bad)}
+.tktone{display:flex;gap:6px}.tktone button{background:transparent;border:1px solid var(--line);border-radius:7px;padding:5px 12px;color:var(--txt)}.tktone button.on{border-color:var(--acc);color:var(--acc)}
+.tkbub{background:#ffffff0c;border-radius:10px;padding:10px 13px;font-style:italic;margin:6px 0;border-left:3px solid var(--line)}.tkbub.g{border-left-color:#22c55e}.tkbub.b{border-left-color:#ef4444}.tkbub.n{border-left-color:#eab308}
+.tkfx{display:flex;gap:6px;flex-wrap:wrap}.tkbtn.sm{padding:2px 7px;font-size:12px}
 </style></head><body><div id="app"></div>
 <script>
 'use strict';
@@ -772,7 +779,7 @@ function onCourt(side,serving){
     return {zone:z,role:s.role,p:s.p,slot:si};});
 }
 function pressure(m){const a=m.score[0],b=m.score[1],t=m.setNo===5?15:25;return Math.max(a,b)>=t-4&&Math.min(a,b)>=t-8;}
-function mb(p,m,i){let b=(p.mor==null?0:(p.mor-60)/40*0.045)+formB(p)+(p.pcB||0);const sd=m.sides[i];const pr=pressure(m);if(pr)b+=(p.opa-11)/20*0.14+(sd.prB||0);const tr=m.score[1-i]-m.score[i]>=3||(m.setsWon&&m.setsWon[1-i]>m.setsWon[i]);if(m.score[1-i]-m.score[i]>=3)b+=(p.wal-11)/20*0.1+(sd.trB||0);
+function mb(p,m,i){let b=(p.mor==null?0:(p.mor-60)/40*0.045)+formB(p)+(p.pcB||0)+(p.tkB&&typeof today==='function'&&p.tkBd===today()?p.tkB:0);const sd=m.sides[i];const pr=pressure(m);if(pr)b+=(p.opa-11)/20*0.14+(sd.prB||0);const tr=m.score[1-i]-m.score[i]>=3||(m.setsWon&&m.setsWon[1-i]>m.setsWon[i]);if(m.score[1-i]-m.score[i]>=3)b+=(p.wal-11)/20*0.1+(sd.trB||0);
   if(p.tr){if(pr){if(hasT(p,'spo'))b+=0.025;if(hasT(p,'ner'))b-=0.035;if(hasT(p,'amb'))b+=0.012;}if(tr&&hasT(p,'zde'))b+=0.03;}
   if(pr&&sd.cap){const c=sd.pl.find(x=>x.id===sd.cap);if(c&&c!==p)b+=capBonus(c)*0.25;}
   const sh=sd.sh;if(sh&&sh.u>m.rallies){b+=sh.p||0;if(pr)b+=sh.pr||0;if(tr)b+=sh.b||0;}
@@ -1150,7 +1157,7 @@ function render(){
   else if(ui.tab==='sponsorzy')body=sponsorView();
   else if(ui.tab==='zapis')body=saveView();
   const wide=ui.tab==='mecz'&&ui.match&&!(ui.match.over&&ui.view==='post');
-  app.innerHTML=`<div class="shell ${wide?'live':''}">${topBar()}${sideNav()}<main class="${wide?'wide':''}">${ctxBar()}${body}</main></div>`+(ui.card?cardModal():ui.pop?popModal():ui.teamPop!=null?teamModal():'');
+  app.innerHTML=`<div class="shell ${wide?'live':''}">${topBar()}${sideNav()}<main class="${wide?'wide':''}">${ctxBar()}${body}</main></div>`+(ui.talk?talkModal():ui.card?cardModal():ui.pop?popModal():ui.teamPop!=null?teamModal():'');
   if(ui.tab==='home'&&typeof hvClip==='function')hvClip();
   if(ui.tab==='klub'&&typeof v3Mount==='function')try{v3Mount();}catch(e){console.error(e);}
   if(ui.tab==='mecz'&&ui.match){const lg=$('#log');if(lg)lg.scrollTop=0;if(typeof drawHallStatic==='function'&&typeof document.getElementById==='function')drawHallStatic();}
@@ -3167,7 +3174,7 @@ function popModal(){const P=PLAYERS[ui.pop];if(!P){ui.pop=null;return '';}const 
   return `<div class="modal" onclick="if(event.target===this){ui.pop=null;render()}"><div class="mcard ppop">
    <div class="row" style="gap:12px"><span class="cface">${pFace(p,72)}</span><div style="min-width:0"><div class="mut small">${p.tm>=0?tDot(p.tm)+esc(TEAMS[p.tm].name):'Wolny zawodnik'}</div>
     <h2 style="margin:2px 0">${p.num&&p.tm>=0?p.num+'. ':''}${esc(p.first)} ${esc(p.last)} ${mine?capBadge(p):''}</h2>
-    <div class="small mut">${pTag(p.pos)} ${POS_NAMES[p.pos]} · ${p.age} l. · ${p.h} cm · ocena <b style="color:var(--acc)">${typeof rTxt==='function'?rTxt(p):rating(p)}</b>${p.inj?` · <span class="bad">🚑 ${p.inj} dni</span>`:''}</div></div><span class="sp"></span><button class="ghost" onclick="ui.pop=null;render()">✕</button></div>
+    <div class="small mut">${pTag(p.pos)} ${POS_NAMES[p.pos]} · ${p.age} l. · ${p.h} cm · ocena <b style="color:var(--acc)">${typeof rTxt==='function'?rTxt(p):rating(p)}</b>${p.inj?` · <span class="bad">🚑 ${p.inj} dni</span>`:''}</div></div><span class="sp"></span>${mine?talkBtn(p.id):''}<button class="ghost" onclick="ui.pop=null;render()">✕</button></div>
    <div class="pkey">${ks.map(k=>`<div title="${esc((ALL_ATTRS.find(x=>x[0]===k)||[])[3]||'')}"><span>${attrName(k)}</span><i><b style="width:${(typeof aEst==='function'?(aEst(p,k)[0]+aEst(p,k)[1])/2:p[k])*5}%;background:${attrCol(p[k])}"></b></i><em style="color:${attrCol(p[k])}">${typeof aTxt==='function'?aTxt(p,k):p[k]}</em></div>`).join('')}</div>
    <div class="pmeta"><div><small>Forma</small><b>${formChip(p,true)}</b></div>${mine?`<div><small>Świeżość</small><b style="color:${frCol(frOf(p))}">${Math.round(frOf(p))}%</b></div>`:''}<div><small>Kondycja</small><b style="color:${attrCol(p.kon)}">${p.kon}</b></div>${mine?`<div><small>Morale</small><b>${morEmo(mor)}</b></div>`:''}<div><small>Potencjał</small><b class="stars">${potStars(p)}</b></div><div><small>Wartość</small><b>${fmt(pValue(p))}</b></div></div>
    <div class="ptr">${p.tr.map(k=>`<div>${trChip(k,true)}<span class="small mut">${esc(TRAITS[k][2])}</span></div>`).join('')}</div>
@@ -3325,7 +3332,7 @@ function trainDay(d,md){const t=myTeam();if(!t)return;const trn=ensTrn();const i
     for(const u of units){const U=TR_UNITS[u];
       if(U.load>0)fr-=U.load*lm*(1.25-p.kon/20*0.5);else fr-=U.load*rk;
       if(U.k.length)devSession(p,U,intI,mods);
-      if(U.load>0){n++;const sc=58+nz()*(hasT(p,'pro')?10:18)+(hasT(p,'pra')?7:0)-(hasT(p,'len')?8:0)+(hasT(p,'amb')?3:0)+(fr<45?-12:0);scs.push(sc);formAdd(p,(sc-fmOf(p))*0.035);}
+      if(U.load>0){n++;const sc=(p.trB&&p.trB.until>=d?p.trB.v*10:0)+58+nz()*(hasT(p,'pro')?10:18)+(hasT(p,'pra')?7:0)-(hasT(p,'len')?8:0)+(hasT(p,'amb')?3:0)+(fr<45?-12:0);scs.push(sc);formAdd(p,(sc-fmOf(p))*0.035);}
       if(u==='int'){if(p.tcTm!==SAVE.team){p.tcTm=SAVE.team;p.tc=0;}p.tc=Math.min(60,(p.tc||0)+0.3);formAdd(p,hasT(p,'kap')||hasT(p,'ind')?1.5:0.5);if(p.unh>0&&R()<0.3)p.unh--;}
       if(u==='off')formAdd(p,(60-fmOf(p))*0.02);
       if(U.load>3&&R()<0.0004*U.load/6*TRAIN_INT[intI][2]*mods.injChance*(fr<40?2.2:fr<60?1.4:1)*(1.3-p.kon/20*0.6)){
@@ -3385,7 +3392,7 @@ function trainingView(){
    <p class="small mut">Zawodnicy rozwijają się na każdej jednostce (aż do potencjału), najszybciej młodzi i pracowici. Dodatkowo rozwijają się w meczach, w których grają. Każda jednostka męczy: zmęczony zawodnik (niska świeżość) słabiej trenuje, łatwiej o uraz i zaczyna mecz z mniejszą energią. Forma rośnie po dobrych meczach i dobrych treningach, spada po słabych; profesjonaliści mają równą formę, kapryśni — chwiejną.</p></details></div>
   <div class="card"><div class="row wrap"><h2 style="margin:0">Zespół</h2><span class="sp"></span><span class="small mut">Średnia świeżość <b style="color:${frCol(avg)}">${avg}%</b> · średnia forma <b style="color:${formLv(avF)[2]}">${formLv(avF)[1]}</b></span></div>
    <div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th>Wiek</th><th>Forma</th><th class="l">Ostatnie mecze</th><th class="l">Świeżość</th><th>Ocena</th><th>Zmiana</th><th>Potencjał</th></tr></thead><tbody>
-   ${ps.map(p=>{const d=rating(p)-baseRating(p);return `<tr><td class="l"><button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} <b>${esc(p.last)}</b></button> <small class="mut">${pTag(p.pos)}</small>${p.inj?' 🚑':''}</td><td>${p.age}</td><td>${formChip(p,true)}</td><td class="l">${fmHist(p)}</td><td class="l frc">${frBar(p)}</td><td><b>${rating(p)}</b></td><td class="${d>0?'good':d<0?'bad':''}">${d>0?'+':''}${d||'–'}</td><td class="stars">${potStars(p)}</td></tr>`;}).join('')}</tbody></table></div></div>
+   ${ps.map(p=>{const d=rating(p)-baseRating(p);return `<tr><td class="l"><button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} <b>${esc(p.last)}</b></button> <small class="mut">${pTag(p.pos)}</small>${p.inj?' 🚑':''} ${talkBtn(p.id,1)}</td><td>${p.age}</td><td>${formChip(p,true)}</td><td class="l">${fmHist(p)}</td><td class="l frc">${frBar(p)}</td><td><b>${rating(p)}</b></td><td class="${d>0?'good':d<0?'bad':''}">${d>0?'+':''}${d||'–'}</td><td class="stars">${potStars(p)}</td></tr>`;}).join('')}</tbody></table></div></div>
   ${trainReport()}
   ${trn.log.length?`<div class="card"><h2>Ostatnie treningi</h2>${trn.log.slice(0,7).map(x=>`<div class="res row wrap"><span class="mut small" style="min-width:70px">${fmtShort(x.d)}</span>${x.u.map(unitTag).join('')}${x.m?unitTag(null):''}</div>`).join('')}</div>`:''}
   <div class="card"><h2>Gabinet medyczny</h2>${inj.length?inj.map(p=>`<div class="res">🚑 <button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} ${esc(p.last)}</button> — powrót ok. ${p.injUntil?fmtDMY(p.injUntil):'?'} (jeszcze ${p.inj} dni)</div>`).join(''):'<p class="mut">Brak kontuzji.</p>'}</div>`;
@@ -3552,6 +3559,7 @@ function mailBodyHtml(m){const b=m.b||{};
   if(b.type==='fin')return finMailHtml(b);
   if(b.type==='md'&&typeof mdMailHtml==='function')return mdMailHtml(b);
   if(b.type==='fit')return fitMailHtml(b);
+  if(b.type==='talk'&&typeof talkMailHtml==='function')return talkMailHtml(b);
   return `<p class="mtext">${esc(b.x||m.s)}</p>`;}
 function matchMailHtml(b){const T=i=>TEAMS[i];const h=b.home?b.me:b.op,a=b.home?b.op:b.me;const sw=b.home?b.sw:[b.sw[1],b.sw[0]];const sets=b.sets.map(s=>b.home?s:[s[1],s[0]]);
   const st=(l,x,y)=>`<tr><td class="l">${l}</td><td><b>${x}</b></td><td><b>${y}</b></td></tr>`;const pc2=(k,n)=>n?Math.round(k/n*100)+'%':'–';
@@ -3569,7 +3577,7 @@ function trainMailHtml(b){const sm=b.sm;const ag=sm.ag.slice().sort((x,y)=>(y[3]
   return `<p class="mtext">${b.k==='D'?'Podsumowanie dzisiejszych zajęć.':`Okres: ${fmtShort(sm.from)} – ${fmtShort(sm.to)} (${sm.n} dni treningowych).`}</p>
    <div class="trsum small">${TR_ORDER.filter(u=>sm.cnt[u]).map(u=>`<span class="trt tu-${u}">${TR_UNITS[u].ic} ${TR_UNITS[u].n}${b.k==='D'?'':' × '+sm.cnt[u]}</span>`).join('')}</div>
    ${(()=>{const rt=ag.filter(x=>x[3]!=null);const top=rt.filter(x=>x[3]>=7).slice(0,3),low=rt.filter(x=>x[3]<6.5).slice(-3).reverse();const pp=x=>{const P=PLAYERS[x[0]];return P?P.p:null;};
-     const card=(x,good)=>{const p=pp(x);return `<div class="trhl ${good?'g':'b'}">${p?pFace(p,40):''}<div><button class="link pn" onclick="openPop('${x[0]}')"><b>${esc(x[1])}</b></button> ${p?pTag(p.pos):''}<div class="small mut">${x[2]} jedn. · postęp +${(x[4]||0).toFixed(2).replace('.',',')}${x[8].length?' · '+x[8].map(k=>attrSh(k)+' +1').join(', '):''}</div></div><b class="${scCls(x[3])} trhs">${fx1(x[3])}</b></div>`;};
+     const card=(x,good)=>{const p=pp(x);return `<div class="trhl ${good?'g':'b'}">${p?pFace(p,40):''}<div><button class="link pn" onclick="openPop('${x[0]}')"><b>${esc(x[1])}</b></button> ${p?pTag(p.pos):''}<div class="small mut">${x[2]} jedn. · postęp +${(x[4]||0).toFixed(2).replace('.',',')}${x[8].length?' · '+x[8].map(k=>attrSh(k)+' +1').join(', '):''}</div></div><b class="${scCls(x[3])} trhs">${fx1(x[3])}</b>${talkBtn(x[0],1)}</div>`;};
      return `<div class="trhlw"><div><h3>Wyróżniający się <small class="mut">(ocena 7,0 i wyżej)</small></h3>${top.map(x=>card(x,1)).join('')||'<p class="small mut">Nikt nie przekroczył oceny 7,0.</p>'}</div>
       <div><h3>Poniżej oczekiwań <small class="mut">(ocena poniżej 6,5)</small></h3>${low.map(x=>card(x,0)).join('')||'<p class="small mut">Nikt nie spadł poniżej 6,5.</p>'}</div></div><h3 style="margin-top:14px">Wszyscy zawodnicy</h3>`;})()}
    <div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th>Jedn.</th><th>Ocena</th><th>Postęp</th><th class="l">Podniesione</th><th>Forma</th><th>Świeżość</th></tr></thead><tbody>
@@ -3579,6 +3587,63 @@ function finMailHtml(b){return `<div class="tw"><table class="cmp"><tbody>${b.ro
 function offerMailHtml(m){const b=m.b;const o=(SAVE.inbox||[]).find(x=>x.pid===b.pid&&x.tm===b.tm);const P=PLAYERS[b.pid];if(!P)return '<p class="mut">Zawodnik nie jest już dostępny.</p>';const p=P.p;
   return `<p class="mtext">${esc(TEAMS[b.tm].name)} chce kupić <b>${esc(p.first)} ${esc(p.last)}</b> (${POS_NAMES[p.pos]}, ${p.age} l., ocena ${rating(p)}) i oferuje <b>${fmt(b.fee)}</b>.</p>
    ${o&&p.tm===SAVE.team?`<div class="mact">${windowOpen()?`<button class="btn" onclick="mailDone('${m.id}');acceptBuy('${p.id}',${b.tm},${b.fee})">Akceptuj</button>`:''}<button class="ghost" onclick="mailDone('${m.id}');rejectInbox(SAVE.inbox.indexOf(SAVE.inbox.find(x=>x.pid==='${b.pid}'&&x.tm===${b.tm})))">Odrzuć</button><button class="ghost" onclick="openCard('${p.id}')">Karta zawodnika</button></div>`:'<p class="mut small">Oferta jest już nieaktualna.</p>'}`;}
+// ================= ROZMOWY Z ZAWODNIKAMI (POCHWAŁA / KRYTYKA / MOTYWACJA) =================
+const TALK_K=[['praise','Pochwal za trening','Doceń jego pracę na treningach'],['crit','Skrytykuj trening','Powiedz, że oczekujesz więcej'],['motiv','Zmotywuj przed meczem','„Liczę na Ciebie w najbliższym meczu”']];
+const TALK_T=[['Łagodny',0.7],['Normalny',1],['Stanowczy',1.4]];
+const TALK_CD=7;
+function wkRating(p){const rep=(SAVE.trn&&SAVE.trn.rep)||[];const lim=addDays(today(),-7);const a=repAgg(rep.filter(x=>x.d>lim),p.id);return a.avg==null?null:Math.round(a.avg*10)/10;}
+function talkLeft(p){if(!p.talkD)return 0;return Math.max(0,TALK_CD-daysBetween(p.talkD,today()));}
+function nextMatchIn(){const e=nextEvent();return e?daysBetween(today(),e.d):99;}
+// wynik rozmowy: q od −2 (bardzo źle) do +2 (bardzo dobrze)
+function talkScore(p,k,t){const r=wkRating(p);const tk=TALK_T[t][1];let q=0;const why=[];
+  if(k==='praise'){if(r==null){q=0.5;why.push('brak ocen z treningów');}else if(r>=7){q=1.6;why.push('pochwała zasłużona');}else if(r>=6.5){q=0.9;}else{q=0.2;why.push('pochwała na wyrost');}
+    if(hasT(p,'amb'))q+=0.3;if(hasT(p,'kap'))q+=0.3;if(r!=null&&r<6.5&&hasT(p,'len')){q-=0.4;why.push('leniwy może się rozluźnić');}
+    if(t===2)q-=0.3;}
+  else if(k==='crit'){if(r==null){q=-0.8;why.push('brak powodu do krytyki');}else if(r<6.5){q=0.7;why.push('krytyka uzasadniona');}else if(r<7){q=-0.4;}else{q=-1.8;why.push('krytyka niesprawiedliwa');}
+    if(hasT(p,'pro')||hasT(p,'pra'))q+=0.6;if(hasT(p,'amb'))q+=0.3;if(hasT(p,'zde'))q+=0.3;
+    if(hasT(p,'kap')){q-=1;why.push('kapryśny źle znosi krytykę');}if(hasT(p,'ind'))q-=0.6;if(hasT(p,'ner')){q-=0.5;if(t===2)q-=0.6;}
+    if(q<0&&t===0)q*=0.5;}
+  else{const d=nextMatchIn();if(d>3){q=0.1;why.push('do meczu jeszcze daleko');}else{q=1;why.push('mecz tuż-tuż');}
+    if(hasT(p,'lid')||hasT(p,'amb'))q+=0.4;if(hasT(p,'ner')){q-=t===2?1.2:0.2;if(t===2)why.push('nerwowy źle znosi presję');}if(hasT(p,'spo'))q+=0.2;}
+  q=clamp(q*(q>0?tk:(t===0?0.8:tk)),-2,2);return {q,r,why};}
+function talkPred(q){return q>=1.2?['bardzo dobra','g']:q>=0.5?['dobra','g']:q>-0.3?['niepewna','y']:q>-1?['zła','r']:['bardzo zła','r'];}
+const TALK_LINES={
+  praise:{g:['Dzięki, trenerze. Ciężko pracowałem i dobrze to słyszeć. Będę dalej dawał z siebie wszystko.','Miło, że pan to zauważył. To mnie napędza!','Dziękuję. Czuję, że idę w dobrą stronę.'],
+    n:['Dzięki… choć sam wiem, że stać mnie na więcej.','OK, dziękuję.'],b:['Skoro jest tak dobrze, to chyba mogę trochę odpuścić…','Hm, pochwała? Przecież ten tydzień był przeciętny.']},
+  crit:{g:['Ma pan rację, ten tydzień był słaby. Poprawię się.','Rozumiem. Od jutra pokażę, że stać mnie na więcej.','Przyjmuję to. Dzięki za szczerość.'],
+    n:['Postaram się… choć nie było aż tak źle.','No dobrze, przyjąłem.'],b:['Naprawdę? Daję z siebie wszystko, a słyszę krytykę?!','To niesprawiedliwe. Niech pan spojrzy na innych.','Nie podoba mi się ten ton, trenerze.']},
+  motiv:{g:['Może pan na mnie liczyć. Dam z siebie wszystko!','Jestem gotowy. Wygramy to.','Czuję się świetnie — będzie dobrze.'],
+    n:['Postaram się, trenerze.','Zobaczymy, jak to pójdzie.'],b:['Nie musi mi pan tego powtarzać, czuję presję…','Trochę mnie pan zestresował, trenerze.']}};
+function talkDo(pid,k,t){const P=PLAYERS[pid];if(!P)return;const p=P.p;if(talkLeft(p))return;const sc=talkScore(p,k,t);const q=sc.q;
+  const out=q>=0.5?'g':q>-0.3?'n':'b';const lines=TALK_LINES[k][out];const line=lines[Math.floor(R()*lines.length)];
+  const m0=p.mor==null?60:p.mor,f0=fmOf(p);const fx=[];
+  addMor(p,q*7);formAdd(p,q*1.5);
+  if(k==='crit'&&q>0){p.trB={v:Math.round((0.15+q*0.15)*100)/100,until:addDays(today(),14)};fx.push(`lepsze oceny treningów przez 2 tygodnie (+${fx1(p.trB.v)})`);}
+  if(k==='praise'&&sc.r!=null&&sc.r<6.5&&hasT(p,'len')){p.trB={v:-0.2,until:addDays(today(),7)};fx.push('rozluźnił się: słabsze treningi przez tydzień');}
+  if(k==='motiv'&&q>0){p.tkB=Math.round(q*0.006*1000)/1000;p.tkBd=nextEvent()?nextEvent().d:today();fx.push('lepsza gra w najbliższym meczu');}
+  if(out==='b'&&hasT(p,'kap')){p.unh=(p.unh||0)+1;fx.push('psuje atmosferę w szatni');}
+  p.talkD=today();const m1=p.mor,f1=fmOf(p);
+  const res={pid,k,t,line,out,m0,m1,f0,f1,fx,why:sc.why};ui.talkRes=res;
+  sendMail({cat:'druz',from:`${p.first} ${p.last}`,t:`Rozmowa: ${TALK_K.find(x=>x[0]===k)[1].toLowerCase()} (${p.last})`,s:`„${line}”`,b:{type:'talk',res},ic:'💬'});
+  save();render();}
+function talkOpen(pid){ui.talk=pid;ui.talkK=ui.talkK||'praise';ui.talkT=ui.talkT==null?1:ui.talkT;ui.talkRes=null;ui.pop=null;render();}
+function talkFx(r){const md=Math.round(r.m1-r.m0),fd=Math.round((r.f1-r.f0)*10)/10;
+  return `<div class="tkfx"><span class="tkp ${md>0?'g':md<0?'r':'y'}">Morale: ${morLabel(r.m0)} → ${morLabel(r.m1)} (${md>0?'+':''}${md})</span><span class="tkp ${fd>0?'g':fd<0?'r':'y'}">Forma ${fd>0?'+':''}${String(fd).replace('.',',')}</span>${r.fx.map(x=>`<span class="tkp ${/słabsze|psuje/.test(x)?'r':'g'}">${x}</span>`).join('')}</div>`;}
+function talkModal(){const P=PLAYERS[ui.talk];if(!P){ui.talk=null;return '';}const p=P.p;ensTraits(p);const r=wkRating(p);const left=talkLeft(p);const res=ui.talkRes;
+  const head=`<div class="row" style="gap:12px"><span>${pFace(p,60)}</span><div><h2 style="margin:0">${esc(p.first)} ${esc(p.last)}</h2><div class="small mut">${pTag(p.pos)} ${p.age} l. · charakter: ${p.tr.map(k=>TRAITS[k][0].toLowerCase()).join(', ')}</div></div><span class="sp"></span><button class="ghost" onclick="ui.talk=null;ui.talkRes=null;render()">✕</button></div>
+   <div class="tkkv"><div><span>Trening (7 dni)</span><b class="${r==null?'mut':scCls(r)}">${r==null?'–':fx1(r)}</b></div><div><span>Morale</span><b>${morLabel(p.mor==null?60:p.mor)}</b></div><div><span>Forma</span><b>${Math.round(fmOf(p))}</b></div></div>`;
+  let body;
+  if(res&&res.pid===p.id){body=`<div class="tklab">Odpowiedź zawodnika</div><div class="tkbub ${res.out}">„${esc(res.line)}”</div><div class="tklab">Skutek</div>${talkFx(res)}
+     ${res.why.length?`<p class="small mut" style="margin-top:8px">Asystent: ${res.why.join(', ')}.</p>`:''}<div class="row" style="margin-top:12px;gap:8px"><button class="btn" onclick="ui.talk=null;ui.talkRes=null;render()">Zamknij</button></div>`;}
+  else if(left){body=`<p class="mut" style="margin-top:14px">Rozmawiałeś z nim niedawno (${fmtShort(p.talkD)}). Kolejna rozmowa możliwa za ${left} ${left===1?'dzień':'dni'}.</p>`;}
+  else{body=`<div class="tklab">Co chcesz powiedzieć?</div>${TALK_K.map(([k,n,d])=>{const s=talkScore(p,k,ui.talkT);const [pl,c]=talkPred(s.q);return `<button class="tkopt ${ui.talkK===k?'on':''}" onclick="ui.talkK='${k}';render()"><span><b>${n}</b><small>${d}</small></span><span class="tkp ${c}">reakcja: ${pl}</span></button>`;}).join('')}
+    <div class="tklab">Ton</div><div class="tktone">${TALK_T.map(([n],i)=>`<button class="${ui.talkT===i?'on':''}" onclick="ui.talkT=${i};render()">${n}</button>`).join('')}</div>
+    <div class="row" style="gap:8px;margin-top:12px"><button class="btn" onclick="talkDo('${p.id}',ui.talkK,ui.talkT)">Porozmawiaj</button><span class="small mut">Z jednym zawodnikiem możesz rozmawiać raz na ${TALK_CD} dni.</span></div>`;}
+  return `<div class="modal" onclick="if(event.target===this){ui.talk=null;ui.talkRes=null;render()}"><div class="mcard tkcard">${head}${body}</div></div>`;}
+function talkMailHtml(b){const r=b.res;const P=PLAYERS[r.pid];const p=P?P.p:null;
+  return `<p class="mtext">${p?esc(p.first+' '+p.last):'Zawodnik'} po rozmowie (${TALK_K.find(x=>x[0]===r.k)[1].toLowerCase()}, ton ${TALK_T[r.t][0].toLowerCase()}):</p><div class="tkbub ${r.out}">„${esc(r.line)}”</div>${talkFx(r)}${r.why.length?`<p class="small mut" style="margin-top:8px">Asystent: ${r.why.join(', ')}.</p>`:''}
+   ${p?`<div class="mact"><button class="ghost" onclick="openPop('${p.id}')">Profil zawodnika</button></div>`:''}`;}
+function talkBtn(pid,sm){const P=PLAYERS[pid];if(!P||P.p.tm!==SAVE.team)return '';const l=talkLeft(P.p);return `<button class="ghost ${sm?'sm':''} tkbtn" title="${l?'Kolejna rozmowa za '+l+' dni':'Porozmawiaj'}" onclick="event.stopPropagation();talkOpen('${pid}')">💬${sm?'':' Porozmawiaj'}</button>`;}
 // ================= SKAUTING: WIEDZA O ZAWODNIKACH, ZADANIA SKAUTÓW, RAPORT O RYWALU =================
 function SC(){const s=SAVE.sc||(SAVE.sc={});if(!s.know)s.know={};if(!s.tasks)s.tasks=[];if(!s.short)s.short=[];if(!s.opp)s.opp={on:1,done:{}};if(!s.nid)s.nid=1;return s;}
 function isMineP(p){return p&&p.tm===SAVE.team;}

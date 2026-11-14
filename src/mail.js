@@ -122,6 +122,7 @@ function mailBodyHtml(m){const b=m.b||{};
   if(b.type==='fin')return finMailHtml(b);
   if(b.type==='md'&&typeof mdMailHtml==='function')return mdMailHtml(b);
   if(b.type==='fit')return fitMailHtml(b);
+  if(b.type==='talk'&&typeof talkMailHtml==='function')return talkMailHtml(b);
   return `<p class="mtext">${esc(b.x||m.s)}</p>`;}
 function matchMailHtml(b){const T=i=>TEAMS[i];const h=b.home?b.me:b.op,a=b.home?b.op:b.me;const sw=b.home?b.sw:[b.sw[1],b.sw[0]];const sets=b.sets.map(s=>b.home?s:[s[1],s[0]]);
   const st=(l,x,y)=>`<tr><td class="l">${l}</td><td><b>${x}</b></td><td><b>${y}</b></td></tr>`;const pc2=(k,n)=>n?Math.round(k/n*100)+'%':'–';
@@ -139,7 +140,7 @@ function trainMailHtml(b){const sm=b.sm;const ag=sm.ag.slice().sort((x,y)=>(y[3]
   return `<p class="mtext">${b.k==='D'?'Podsumowanie dzisiejszych zajęć.':`Okres: ${fmtShort(sm.from)} – ${fmtShort(sm.to)} (${sm.n} dni treningowych).`}</p>
    <div class="trsum small">${TR_ORDER.filter(u=>sm.cnt[u]).map(u=>`<span class="trt tu-${u}">${TR_UNITS[u].ic} ${TR_UNITS[u].n}${b.k==='D'?'':' × '+sm.cnt[u]}</span>`).join('')}</div>
    ${(()=>{const rt=ag.filter(x=>x[3]!=null);const top=rt.filter(x=>x[3]>=7).slice(0,3),low=rt.filter(x=>x[3]<6.5).slice(-3).reverse();const pp=x=>{const P=PLAYERS[x[0]];return P?P.p:null;};
-     const card=(x,good)=>{const p=pp(x);return `<div class="trhl ${good?'g':'b'}">${p?pFace(p,40):''}<div><button class="link pn" onclick="openPop('${x[0]}')"><b>${esc(x[1])}</b></button> ${p?pTag(p.pos):''}<div class="small mut">${x[2]} jedn. · postęp +${(x[4]||0).toFixed(2).replace('.',',')}${x[8].length?' · '+x[8].map(k=>attrSh(k)+' +1').join(', '):''}</div></div><b class="${scCls(x[3])} trhs">${fx1(x[3])}</b></div>`;};
+     const card=(x,good)=>{const p=pp(x);return `<div class="trhl ${good?'g':'b'}">${p?pFace(p,40):''}<div><button class="link pn" onclick="openPop('${x[0]}')"><b>${esc(x[1])}</b></button> ${p?pTag(p.pos):''}<div class="small mut">${x[2]} jedn. · postęp +${(x[4]||0).toFixed(2).replace('.',',')}${x[8].length?' · '+x[8].map(k=>attrSh(k)+' +1').join(', '):''}</div></div><b class="${scCls(x[3])} trhs">${fx1(x[3])}</b>${talkBtn(x[0],1)}</div>`;};
      return `<div class="trhlw"><div><h3>Wyróżniający się <small class="mut">(ocena 7,0 i wyżej)</small></h3>${top.map(x=>card(x,1)).join('')||'<p class="small mut">Nikt nie przekroczył oceny 7,0.</p>'}</div>
       <div><h3>Poniżej oczekiwań <small class="mut">(ocena poniżej 6,5)</small></h3>${low.map(x=>card(x,0)).join('')||'<p class="small mut">Nikt nie spadł poniżej 6,5.</p>'}</div></div><h3 style="margin-top:14px">Wszyscy zawodnicy</h3>`;})()}
    <div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th>Jedn.</th><th>Ocena</th><th>Postęp</th><th class="l">Podniesione</th><th>Forma</th><th>Świeżość</th></tr></thead><tbody>
