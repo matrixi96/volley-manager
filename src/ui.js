@@ -18,6 +18,7 @@ function render(){
   if(!t){app.innerHTML=hdr(false)+`<main>${coachCreateView()}</main>`;return;}
   if(!SAVE.coach){app.innerHTML=hdr(false)+`<main>${coachCreateView()}</main>`;return;}
   if(!SAVE.season)newSeason(1);
+  if(SAVE.world&&SAVE.ai&&typeof initSponsors==='function'){try{initSponsors();}catch(e){console.error(e);}}
   let body='';
   if(ui.tab==='home')body=homeView();
   else if(ui.tab==='sklad')body=squadView();
@@ -34,6 +35,9 @@ function render(){
   else if(ui.tab==='klub')body=clubView();
   else if(ui.tab==='transfery')body=transferView();
   else if(ui.tab==='finanse')body=financeView();
+  else if(ui.tab==='poczta')body=mailView();
+  else if(ui.tab==='skauting')body=scoutView();
+  else if(ui.tab==='sponsorzy')body=sponsorView();
   else if(ui.tab==='zapis')body=saveView();
   const wide=ui.tab==='mecz'&&ui.match&&!(ui.match.over&&ui.view==='post');
   app.innerHTML=`<div class="shell ${wide?'live':''}">${topBar()}${sideNav()}<main class="${wide?'wide':''}">${ctxBar()}${body}</main></div>`+(ui.card?cardModal():ui.pop?popModal():ui.teamPop!=null?teamModal():'');
@@ -46,7 +50,7 @@ function hdr(nav){
   ${nav?`<nav>${tabs.map(([k,l])=>`<button class="${ui.tab===k?'on':''}" onclick="go('${k}')">${l}</button>`).join('')}</nav>
   <div class="club" style="--c:${t.color}">${SAVE.custom&&SAVE.custom.idx===SAVE.team?crestSvg(t.name,t.short,t.color,20,SAVE.custom.crest):''}<span class="date" title="${fmtLong(today())}">📅 ${fmtShort(today())}.${today().slice(0,4)}</span><i></i>${SAVE.coach?`<span class="hface" onclick="go('trener')" title="${esc(SAVE.coach.first+' '+SAVE.coach.last)}">${coachFace(SAVE.coach,26)}</span>`:''}${esc(t.name)}${SAVE.fin?` <small class="${SAVE.fin.bal<0?'bad':'mut'}">${fmt(SAVE.fin.bal)}</small>`:''}</div>`:''}</header>`;
 }
-function go(tab){ui.msg=null;ui.tmsg=null;ui.card=null;ui.confirm=null;if(ui.match&&!ui.match.over&&tab!=='mecz')ui.match.paused=true;ui.tab=tab;ui.subSel=null;render();}
+function go(tab){ui.msg=null;ui.scMsg=null;ui.tmsg=null;ui.card=null;ui.confirm=null;if(ui.match&&!ui.match.over&&tab!=='mecz')ui.match.paused=true;ui.tab=tab;ui.subSel=null;render();}
 
 function pickTeamView(){
   return `<div class="card"><h2>Wybierz klub</h2><p class="mut">Fikcyjna polska liga, 12 drużyn. Sezon: 7 sparingów, 22 kolejki (mecz i rewanż), a potem play-off dla czołowej ósemki. Słabszy klub to większe wyzwanie.</p>

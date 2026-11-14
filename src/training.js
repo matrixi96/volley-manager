@@ -91,7 +91,8 @@ function trainDay(d,md){const t=myTeam();if(!t)return;const trn=ensTrn();const i
     if(Object.keys(g).length)r.g=g;if(up.length)r.up=up;if(inj)r.inj=inj;rp[p.id]=r;}
   if(units.includes('tak')){trn.tak.push(d);trn.tak=trn.tak.slice(-8);}
   trn.log.unshift({d,u:units,m:isM?1:0});trn.log=trn.log.slice(0,14);
-  trn.rep=trn.rep||[];trn.rep.unshift({d,u:units,m:isM?1:0,p:rp});trn.rep=trn.rep.slice(0,31);}
+  trn.rep=trn.rep||[];trn.rep.unshift({d,u:units,m:isM?1:0,p:rp});trn.rep=trn.rep.slice(0,31);
+  if(typeof mailTraining==='function')mailTraining('D',[trn.rep[0]]);}
 // wywoływane przy upływie czasu (każdy dzień)
 function trainDays(days){if(!days.length)return;const md=matchDays();for(const d of days)if(trainingActive(d))trainDay(d,md);}
 // bonus z odprawy taktycznej (jednostki „Taktyka” w dniu meczu i 2 dni przed nim)
