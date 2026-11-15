@@ -95,16 +95,16 @@ function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1
 function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=__APPV__').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
-function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,kit:K[o.i]}));}
+function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
 function v3dBench(m,sc){const K=v3dKits(m);const on=new Set(sc.map(o=>String(o.id)));
   return {teams:[0,1].map(i=>{const sd=m.sides[i];const res=sd.pl.filter(p=>!on.has(String(p.id))).slice(0,7).map(p=>({id:String(p.id),num:p.num,last:p.last,h:(p.h||195)/100,role:sd.libero&&sd.libero.id===p.id?'L':'X'}));
     return {i,kit:K[i],coachKit:{jersey:v3dHex(K[i].jersey,0.45),shorts:'#1f2937',lib:'#1f2937',num:'#ffffff',libNum:'#ffffff'},res};})};}
 function v3dSb(m){const T=m.sides.map(x=>x.team);const kc=kitColors(m);const w0=m.sets.filter(x=>x[0]>x[1]).length,w1=m.sets.length-w0;return {n0:T[0].short,n1:T[1].short,c0:kc[0],c1:kc[1],p0:m.score[0],p1:m.score[1],set:m.setNo||m.sets.length+1,s0:w0,s1:w1};}
 function v3dJump(o){if(!o||o.role==='S'||o.role==='L')return false;let h=0;for(const c of String(o.id))h=(h*31+c.charCodeAt(0))>>>0;return h%10<7;}
 // zmiany zawodników w 3D: porównanie składu na boisku z poprzednim widokiem (zmiany libero pomijane)
-function v3dSubs(m,list,M,then){const pv=V3D.prev&&V3D.prev.m===m?V3D.prev.list:null;V3D.prev={m,list};if(!pv)return then();
+function v3dSubs(m,list,M,then){const mk=m.sides.map(x=>x.team.name).join('|');const pv=V3D.prev&&V3D.prev.mk===mk?V3D.prev.list:null;V3D.prev={mk,list};if(!pv)return then();
   const jobs=[];for(const i of [0,1]){const a=pv.filter(o=>o.i===i),b=list.filter(o=>o.i===i);const outs=a.filter(o=>o.role!=='L'&&!b.some(x=>x.id===o.id)),ins=b.filter(o=>o.role!=='L'&&!a.some(x=>x.id===o.id));
-    for(const n of ins){let bo=null,bd=9;for(const o of outs){const d=Math.hypot(o.x-n.x,o.y-n.y);if(d<bd){bd=d;bo=o;}}if(bo&&bd<1.5){outs.splice(outs.indexOf(bo),1);jobs.push({i,out:bo,inn:n});}}}
+    for(const n of ins){let bo=n.slot!=null?outs.find(o=>o.slot===n.slot):null;if(!bo&&outs.length===1&&ins.length===1)bo=outs[0];if(bo){outs.splice(outs.indexOf(bo),1);jobs.push({i,out:bo,inn:Object.assign({},n,{x:bo.x,y:bo.y})});}}}// ta sama pozycja w ustawieniu (slot), niezależnie od rotacji
   if(!jobs.length||jobs.length>3)return then();
   let cur=pv.slice();const next=()=>{const j=jobs.shift();if(!j){then();return;}
     M.sub({pre:cur,out:j.out.id,inP:j.inn,i:j.i,done:()=>{cur=cur.map(o=>o.id===j.out.id?Object.assign({},j.inn,{x:j.out.x,y:j.out.y}):o);next();}});};next();}
