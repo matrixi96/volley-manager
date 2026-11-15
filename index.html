@@ -760,8 +760,8 @@ const TEAM_DEFS=[
   {name:'Bóbr Ostrołęka',short:'BOB',q:7.6,color:'#92400e',lg:2},
   {name:'Sowa Przemyśl',short:'SOW',q:7.4,color:'#4f46e5',lg:2}
 ];
-// ---- ligi: 0 = Ekstra Liga, 1 = 1. Liga, 2 = 2. Liga (przynależność zmienia się po sezonie: SAVE.lg) ----
-var LG_N=['Ekstra Liga','1. Liga','2. Liga'],LG_SHORT=['EL','1L','2L'],LG_ECO=[1,0.45,0.2],LG_PRIZE=[1,0.3,0.1],LG_REP=[[95,7],[50,3],[30,2]];
+// ---- ligi: 0 = Ekstraliga, 1 = 1. Liga, 2 = 2. Liga (przynależność zmienia się po sezonie: SAVE.lg) ----
+var LG_N=['Ekstraliga','1. Liga','2. Liga'],LG_SHORT=['EL','1L','2L'],LG_ECO=[1,0.45,0.2],LG_PRIZE=[1,0.3,0.1],LG_REP=[[95,7],[50,3],[30,2]];
 function lgOf(i){return (typeof SAVE!=='undefined'&&SAVE&&SAVE.lg&&SAVE.lg[i]!=null)?SAVE.lg[i]:(TEAM_DEFS[i].lg||0);}
 function lgIds(l){const out=[];for(let i=0;i<TEAM_DEFS.length;i++)if(lgOf(i)===l)out.push(i);return out;}
 function genTeam(def,idx){
@@ -1705,7 +1705,7 @@ function finishSeason(){
   for(const k in s.lgFinal){const [b0,st]=LG_REP[k];s.lgFinal[k].forEach((ti,pl)=>{const a=SAVE.ai[ti];a.rep=Math.round(clamp(a.rep*0.75+(b0-pl*st)*0.25,5,100));});
     if(+k!==myLg())news(`🏆 ${TEAMS[s.lgFinal[k][0]].name} wygrywa ${LG_N[k]} w sezonie ${sLabel(s.n)}.`);}
   s.moves=leagueMoves(s.lgFinal);
-  for(const mv of s.moves)news(mv.up?`⬆️ ${TEAMS[mv.i].name} awansuje do ${LG_N[mv.to]==='Ekstra Liga'?'Ekstra Ligi':LG_N[mv.to]==='1. Liga'?'1. Ligi':LG_N[mv.to]}${mv.i===SAVE.team?' — to nasz awans!':''}.`:`⬇️ ${TEAMS[mv.i].name} spada do ${LG_N[mv.to]==='1. Liga'?'1. Ligi':'2. Ligi'}${mv.i===SAVE.team?' — to nasz spadek.':''}.`);
+  for(const mv of s.moves)news(mv.up?`⬆️ ${TEAMS[mv.i].name} awansuje do ${LG_N[mv.to]==='Ekstraliga'?'Ekstraligi':LG_N[mv.to]==='1. Liga'?'1. Ligi':LG_N[mv.to]}${mv.i===SAVE.team?' — to nasz awans!':''}.`:`⬇️ ${TEAMS[mv.i].name} spada do ${LG_N[mv.to]==='1. Liga'?'1. Ligi':'2. Ligi'}${mv.i===SAVE.team?' — to nasz spadek.':''}.`);
   const myPl=s.final.indexOf(SAVE.team);const pz=Math.round(PRIZE[myPl]*LG_PRIZE[myLg()]/5000)*5000;money(pz,'Nagrody');finLog(`Nagroda za ${myPl+1}. miejsce (${LG_N[myLg()]}) w sezonie ${sLabel(s.n)}`,pz);
   SAVE.history=SAVE.history||[];SAVE.history.push({n:s.n,team:SAVE.team,lg:myLg(),place:s.final.indexOf(SAVE.team)+1,champ:s.final[0],league:s.seed.indexOf(SAVE.team)+1,mv:(s.moves.find(x=>x.i===SAVE.team)||{}).up});
   seasonEvaluation();
@@ -1787,7 +1787,7 @@ function seasonView(){
   }
   // end
   const f=s.final,my=f.indexOf(SAVE.team)+1;
-  out+=`<div class="card post ${my===1?'won':''}"><h2>${my===1?(myLg()===0?'🏆 MISTRZOSTWO POLSKI!':'🏆 Mistrzostwo '+LG_N[myLg()].replace('Liga','Ligi')+'!'):my<=3?'🥉 Medal!'.replace('🥉',my===2?'🥈':'🥉'):'Koniec sezonu'}</h2>${(()=>{const mv=(s.moves||[]).find(x=>x.i===SAVE.team);return mv?`<p class="${mv.up?'good':'bad'}" style="font-size:18px"><b>${mv.up?'⬆️ AWANS do '+(mv.to===0?'Ekstra Ligi':'1. Ligi')+'!':'⬇️ Spadek do '+(mv.to===1?'1. Ligi':'2. Ligi')}</b></p>`:'';})()}
+  out+=`<div class="card post ${my===1?'won':''}"><h2>${my===1?(myLg()===0?'🏆 MISTRZOSTWO POLSKI!':'🏆 Mistrzostwo '+LG_N[myLg()].replace('Liga','Ligi')+'!'):my<=3?'🥉 Medal!'.replace('🥉',my===2?'🥈':'🥉'):'Koniec sezonu'}</h2>${(()=>{const mv=(s.moves||[]).find(x=>x.i===SAVE.team);return mv?`<p class="${mv.up?'good':'bad'}" style="font-size:18px"><b>${mv.up?'⬆️ AWANS do '+(mv.to===0?'Ekstraligi':'1. Ligi')+'!':'⬇️ Spadek do '+(mv.to===1?'1. Ligi':'2. Ligi')}</b></p>`:'';})()}
    <p>${esc(myTeam().name)} kończy sezon ${sLabel(s.n)} na <b>${my}. miejscu</b>.${s.eval?` Cel zarządu (${goalTxt(s.eval.goal,myLg())}): ${s.eval.met?'<b class="good">wykonany ✓</b>':'<b class="bad">niewykonany ✗</b>'} · reputacja trenera ${s.eval.dr>=0?'+':''}${s.eval.dr}.`:''}</p>${awardsHtml()}${SAVE.offers&&SAVE.offers.length?`<div class="card"><h3>📨 Oferty pracy dla Ciebie</h3>${offersList(false)}</div>`:''}<button class="btn" onclick="nextSeason()">Przejdź do okna transferowego (sezon ${sLabel(s.n+1)})</button></div>
    <div class="card"><h2>Klasyfikacja końcowa · ${LG_N[myLg()]}</h2>${f.map((t,i)=>`<div class="res ${t===SAVE.team?'me':''}"><b>${i+1}.</b> ${i<3?['🥇','🥈','🥉'][i]:''} ${tDot(t)}${tName(t)}${(myLg()>0&&i<2)?' <span class="good small">awans ⬆</span>':''}${(myLg()<2&&i>=10)?' <span class="bad small">spadek ⬇</span>':''}</div>`).join('')}</div>`;
   if(SAVE.history&&SAVE.history.length>1)out+=`<div class="card"><h2>Historia</h2>${SAVE.history.map(h=>`<div class="res">Sezon ${sLabel(h.n)}: ${tName(h.team)}${h.lg!=null?' ('+LG_N[h.lg]+')':''} — ${h.place}. miejsce${h.mv===true?' · awans ⬆':h.mv===false?' · spadek ⬇':''} (po fazie zasadniczej ${h.league}.) · mistrz: ${tName(h.champ)}</div>`).join('')}</div>`;
@@ -2554,7 +2554,7 @@ function coachCreateView(){
 }
 function clubPickView(){const c=ui.pendingCoach;
   return `<div class="card"><div class="row wrap">${coachFace(c,64)}<div><h2 style="margin:0">${esc(c.first)} ${esc(c.last)}</h2><div class="mut small">${C_EXP.find(x=>x[0]===c.exp)[1]} · reputacja <b>${c.rep}</b></div></div><span class="sp"></span><button class="ghost" onclick="ui.cc.step=1;ui.pendingCoach=null;render()">← Wróć do trenera</button></div>
-  <h2 style="margin-top:14px">Wybierz klub</h2><p class="mut">Fikcyjne polskie ligi: Ekstra Liga, 1. Liga i 2. Liga, po 12 drużyn. Co sezon dwie drużyny awansują i dwie spadają. Kluby z kłódką nie zatrudnią trenera z tak niską reputacją: na lepszą pracę trzeba zasłużyć wynikami. Cel zarządu zależy od siły składu.</p>
+  <h2 style="margin-top:14px">Wybierz klub</h2><p class="mut">Fikcyjne polskie ligi: Ekstraliga, 1. Liga i 2. Liga, po 12 drużyn. Co sezon dwie drużyny awansują i dwie spadają. Kluby z kłódką nie zatrudnią trenera z tak niską reputacją: na lepszą pracę trzeba zasłużyć wynikami. Cel zarządu zależy od siły składu.</p>
   ${[0,1,2].map(l=>`<h3 style="margin-top:16px">${LG_N[l]}</h3><div class="grid">${l===2?foundCard():''}${lgTeams(l).sort((a,b)=>teamStrength(b)-teamStrength(a)).map(t=>{const ok=canTake(t.idx,c.rep);const g=goalFor(t.idx);return `<button class="teamcard ${ok?'':'locked'}" style="--c:${t.color}" ${ok?`onclick="pickTeam(${t.idx})"`:'disabled'}><span class="row" style="gap:8px;align-items:center">${teamCrest(t.idx,34)}<b>${ok?'':'🔒 '}${esc(t.name)}</b></span><span class="stars">${stars(teamStrength(t))}</span><small class="mut">Siła: ${teamStrength(t)} · cel: ${goalTxt(g,l)}</small>${ok?'':`<small class="bad">Wymagana reputacja: ${clubReq(t)-25}</small>`}</button>`;}).join('')}</div>`).join('')}</div>`;}
 // ---- zarząd ----
 const GOAL_TXT={2:'finał (top 2)',4:'półfinał (top 4)',8:'play-off (top 8)',10:'miejsce w pierwszej dziesiątce',12:'budowa zespołu (bez presji wyniku)'};
@@ -3953,7 +3953,7 @@ function negOpen(pid,kind){const P=PLAYERS[pid];if(!P)return;const p=P.p;const l
   if(kind!=='renew'){if(!windowOpen())return tradeMsg(false,'Okno transferowe jest zamknięte (otwarte przed sezonem i w trakcie sparingów).');
     if(myTeam().players.length>=SQUAD_MAX)return tradeMsg(false,`Kadra jest pełna (maks. ${SQUAD_MAX}). Najpierw kogoś sprzedaj albo zwolnij.`);
     if(p.tm>=0&&!canSellAI(p))return tradeMsg(false,`${TEAMS[p.tm].name} nie sprzeda zawodnika — nie ma go kim zastąpić.`);
-    if(p.tm>=0&&myLg()-lgOf(p.tm)>=2&&isStarter(p))return tradeMsg(false,`${p.first} ${p.last} gra w podstawie w ${LG_N[lgOf(p.tm)]==='Ekstra Liga'?'Ekstra Lidze':LG_N[lgOf(p.tm)]} i nie zamierza schodzić do ${LG_N[myLg()].replace('Liga','Ligi')}.`);}
+    if(p.tm>=0&&myLg()-lgOf(p.tm)>=2&&isStarter(p))return tradeMsg(false,`${p.first} ${p.last} gra w podstawie w ${LG_N[lgOf(p.tm)]==='Ekstraliga'?'Ekstralidze':LG_N[lgOf(p.tm)]} i nie zamierza schodzić do ${LG_N[myLg()].replace('Liga','Ligi')}.`);}
   const ag=agentOf(p);const n={pid,kind,stage:p.tm>=0&&kind!=='renew'?'club':'agent',log:[],fee:0,ok:null};ui.neg=n;
   if(n.stage==='club'){const ask=Math.round(askingPrice(p)*(1.05-cA('neg')/200)/10000)*10000;const need=isStarter(p)?0.9:0.8;
     n.club={ask,min:Math.min(ask,Math.round(ask*(need+R()*0.06)/10000)*10000),pat:3+(isStarter(p)?0:1)+negBonusPat(),pat0:0};n.club.pat0=n.club.pat;
