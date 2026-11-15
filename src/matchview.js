@@ -101,17 +101,24 @@ function v3dBench(m,sc){const K=v3dKits(m);const on=new Set(sc.map(o=>String(o.i
     return {i,kit:K[i],coachKit:{jersey:v3dHex(K[i].jersey,0.45),shorts:'#1f2937',lib:'#1f2937',num:'#ffffff',libNum:'#ffffff'},res};})};}
 function v3dSb(m){const T=m.sides.map(x=>x.team);const kc=kitColors(m);const w0=m.sets.filter(x=>x[0]>x[1]).length,w1=m.sets.length-w0;return {n0:T[0].short,n1:T[1].short,c0:kc[0],c1:kc[1],p0:m.score[0],p1:m.score[1],set:m.setNo||m.sets.length+1,s0:w0,s1:w1};}
 function v3dJump(o){if(!o||o.role==='S'||o.role==='L')return false;let h=0;for(const c of String(o.id))h=(h*31+c.charCodeAt(0))>>>0;return h%10<7;}
+// zmiany zawodników w 3D: porównanie składu na boisku z poprzednim widokiem (zmiany libero pomijane)
+function v3dSubs(m,list,M,then){const pv=V3D.prev&&V3D.prev.m===m?V3D.prev.list:null;V3D.prev={m,list};if(!pv)return then();
+  const jobs=[];for(const i of [0,1]){const a=pv.filter(o=>o.i===i),b=list.filter(o=>o.i===i);const outs=a.filter(o=>o.role!=='L'&&!b.some(x=>x.id===o.id)),ins=b.filter(o=>o.role!=='L'&&!a.some(x=>x.id===o.id));
+    for(const n of ins){let bo=null,bd=9;for(const o of outs){const d=Math.hypot(o.x-n.x,o.y-n.y);if(d<bd){bd=d;bo=o;}}if(bo&&bd<1.5){outs.splice(outs.indexOf(bo),1);jobs.push({i,out:bo,inn:n});}}}
+  if(!jobs.length||jobs.length>3)return then();
+  let cur=pv.slice();const next=()=>{const j=jobs.shift();if(!j){then();return;}
+    M.sub({pre:cur,out:j.out.id,inP:j.inn,i:j.i,done:()=>{cur=cur.map(o=>o.id===j.out.id?Object.assign({},j.inn,{x:j.out.x,y:j.out.y}):o);next();}});};next();}
 function v3dPlay(m,pre,ev,steps,label,sf,done){const M=V3D.mod;const srv=ev.seq[0]&&ev.seq[0].k==='srv'?String(ev.seq[0].id):null;const so=pre.find(o=>String(o.id)===srv);
   const kc=kitColors(m);
   M.bench(v3dBench(m,pre));
-  M.play({pre:v3dList(m,pre),srv,jump:v3dJump(so),steps:steps.map(x=>Object.assign({},x,{id:x.id!=null?String(x.id):null,moves:x.moves.map(v=>Object.assign({},v,{id:String(v.id)}))})),winner:ev.winner,label,wcol:kc[ev.winner],sig:{type:ev.type,how:((ev.seq||[]).find(x=>x.srv)||{}).how||null},short:ui.speed<1600,sb:v3dSb(m),
-    onPh:t=>{const e=document.getElementById('mph');if(e&&t)e.textContent=t;},paused:()=>!!m.paused,done});}
+  v3dSubs(m,v3dList(m,pre),M,()=>M.play({pre:v3dList(m,pre),srv,jump:v3dJump(so),steps:steps.map(x=>Object.assign({},x,{id:x.id!=null?String(x.id):null,moves:x.moves.map(v=>Object.assign({},v,{id:String(v.id)}))})),winner:ev.winner,label,wcol:kc[ev.winner],sig:{type:ev.type,how:((ev.seq||[]).find(x=>x.srv)||{}).how||null},short:ui.speed<1600,sb:v3dSb(m),
+    onPh:t=>{const e=document.getElementById('mph');if(e&&t)e.textContent=t;},paused:()=>!!m.paused,done}));}
 function v3dStatic(m){const el=document.getElementById('m3d');if(!el)return;
   v3dLoad().then(M=>{if(!M||!document.getElementById('m3d'))return;const box=document.getElementById('m3d');box.classList.add('on');M.mount(box);const cv=document.getElementById('mcv');if(cv)cv.style.display='none';
     if(ui.to&&!M.busy()){const back=ui.to.returning||!ui.to.end;const sc=back?formation(m):benchScene(m,formation(m));M.idle({pre:v3dList(m,sc),srv:null,huddle:!back,sb:v3dSb(m)});return;}
     M.bench(v3dBench(m,formation(m)));
-    if(!m.animating&&!M.busy()){const sc=formation(m);const sv=sc.find(o=>o.zone===0&&o.i===m.serving);M.idle({pre:v3dList(m,sc),srv:sv&&!m.over?String(sv.id):null,sb:v3dSb(m)});
-      if(!m.rallies&&!m.over&&!m.score[0]&&!m.score[1]&&(m.setNo||1)===1&&ui.v3dGr!==m&&typeof M.greet==='function'){ui.v3dGr=m;M.greet({pre:v3dList(m,sc),sb:v3dSb(m)});}}});}
+    if(!m.animating&&!M.busy()){const sc=formation(m);const sv=sc.find(o=>o.zone===0&&o.i===m.serving);const LL=v3dList(m,sc);v3dSubs(m,LL,M,()=>{if(M.busy())return;M.idle({pre:LL,srv:sv&&!m.over?String(sv.id):null,sb:v3dSb(m)});
+      if(!m.rallies&&!m.over&&!m.score[0]&&!m.score[1]&&(m.setNo||1)===1&&ui.v3dGr!==m&&typeof M.greet==='function'){ui.v3dGr=m;M.greet({pre:v3dList(m,sc),sb:v3dSb(m)});}});}});}
 function drawHallStatic(){const m=ui.match;if(!m||ui.mview==='klasyczny'||!document.getElementById('mcv'))return;
   if(v3dOn())v3dStatic(m);
   if(ui.to&&ui.to.scene){drawHall(m,ui.to.scene,null,null);return;}
