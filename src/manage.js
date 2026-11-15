@@ -123,6 +123,7 @@ function makeOffer(pid,fee,wage,years){
   const need=wageNeeded(p);if(wage<need)return tradeMsg(false,`${p.first} ${p.last} odrzuca warunki. Chce co najmniej ${fmt(need)} rocznie.`);
   const from=p.tm;
   if(from>=0){money(-fee,'Transfery');SAVE.ai[from].bud+=fee;finLog(`Zakup: ${p.first} ${p.last} (${TEAMS[from].short})`,-fee);}
+  achEv('sign');if(from>=0){achEv('buy');achMax('buyFee',fee);if(p.age<=21)achEv('buyYoung');if(lgOf(from)<myLg())achMax('buyUp',1);}else achEv('free');
   movePlayer(p,SAVE.team);p.wage=round5k(wage);p.ce=contractEndFor(years);
   news(`✍️ ${p.first} ${p.last} dołącza do zespołu${from>=0?` z ${TEAMS[from].name} za ${fmt(fee)}`:' jako wolny zawodnik'}.`);
   ui.card=null;save();tradeMsg(true,`${p.first} ${p.last} podpisał kontrakt do ${ceDate(p.ce)}!`);
@@ -136,7 +137,7 @@ function findBuyers(pid){const p=PLAYERS[pid].p;const r=rating(p);const out=[];
 function seekBuyers(pid){if(!windowOpen())return tradeMsg(false,'Okno transferowe jest zamknięte.');ui.offers={pid,list:findBuyers(pid)};render();}
 function acceptBuy(pid,tm,fee){const p=PLAYERS[pid].p;
   if(myTeam().players.length-1<SQUAD_MIN)return tradeMsg(false,`Nie możesz zejść poniżej ${SQUAD_MIN} zawodników w kadrze.`);
-  money(fee,'Transfery');SAVE.ai[tm].bud-=fee;finLog(`Sprzedaż: ${p.first} ${p.last} (${TEAMS[tm].short})`,fee);
+  money(fee,'Transfery');SAVE.ai[tm].bud-=fee;finLog(`Sprzedaż: ${p.first} ${p.last} (${TEAMS[tm].short})`,fee);achEv('sell');achEv('sellTot',fee);achMax('sellFee',fee);if(lgOf(tm)===0)achEv('sellEL');
   movePlayer(p,tm);p.wage=wageDemand(p);p.ce=contractEndFor(1+Math.floor(R()*3));
   SAVE.inbox=(SAVE.inbox||[]).filter(o=>o.pid!==pid);
   news(`💰 ${p.first} ${p.last} sprzedany do ${TEAMS[tm].name} za ${fmt(fee)}.`);ui.offers=null;ui.card=null;save();tradeMsg(true,`Sprzedano: ${p.first} ${p.last} za ${fmt(fee)}.`);}
@@ -149,7 +150,7 @@ function releasePlayer(pid){const p=PLAYERS[pid].p;
   movePlayer(p,-1);p.wage=0;p.ce=0;news(`📄 Rozwiązano kontrakt z ${p.first} ${p.last} (odprawa ${fmt(c)}).`);ui.card=null;save();tradeMsg(true,`Rozwiązano kontrakt. Odprawa: ${fmt(c)}.`);}
 function renew(pid,wage,years){const p=PLAYERS[pid].p;const need=wageNeeded(p);
   if(wage<need)return tradeMsg(false,`${p.last} nie zgadza się. Chce co najmniej ${fmt(need)} rocznie.`);
-  p.wage=round5k(wage);p.ce=contractEndFor(years);news(`✍️ ${p.first} ${p.last} przedłużył kontrakt do ${ceDate(p.ce)}.`);save();tradeMsg(true,`${p.last} przedłużył kontrakt do ${ceDate(p.ce)}.`);}
+  p.wage=round5k(wage);p.ce=contractEndFor(years);achEv('renew');news(`✍️ ${p.first} ${p.last} przedłużył kontrakt do ${ceDate(p.ce)}.`);save();tradeMsg(true,`${p.last} przedłużył kontrakt do ${ceDate(p.ce)}.`);}
 
 // ---- AI: transfery i kontrakty ----
 function aiSign(t,pos){

@@ -42,9 +42,10 @@ function render(){
   else if(ui.tab==='skauting')body=scoutView();
   else if(ui.tab==='sponsorzy')body=sponsorView();
   else if(ui.tab==='zapis')body=saveView();
+  else if(ui.tab==='osiagniecia')body=achView();
   const wide=ui.tab==='mecz'&&ui.match&&!(ui.match.over&&ui.view==='post');
   const _ks={};for(const s of ['.mitems','.side','.nglog'])  {const e=document.querySelector(s);if(e)_ks[s]=e.scrollTop;}
-  app.innerHTML=`<div class="shell ${wide?'live':''}">${topBar()}${sideNav()}<main class="${wide?'wide':''}">${ctxBar()}${body}</main></div>`+(ui.neg?negModal():ui.talk?talkModal():ui.card?cardModal():ui.pop?popModal():ui.teamPop!=null?teamModal():'');
+  app.innerHTML=`<div class="shell ${wide?'live':''}">${topBar()}${sideNav()}<main class="${wide?'wide':''}">${ctxBar()}${body}</main></div>`+(typeof achToastHtml==='function'?achToastHtml():'')+(ui.neg?negModal():ui.talk?talkModal():ui.card?cardModal():ui.pop?popModal():ui.teamPop!=null?teamModal():'');
   for(const s in _ks){const e=document.querySelector(s);if(e)e.scrollTop=_ks[s];}
   if(ui.tab==='home'&&typeof hvClip==='function')hvClip();
   if(ui.tab==='klub'&&typeof v3Mount==='function')try{v3Mount();}catch(e){console.error(e);}
@@ -187,10 +188,10 @@ function simToSetEnd(){const m=ui.match;if(!m||m.over)return;const s=m.setNo;whi
 function simToEnd(){const m=ui.match;if(!m)return;while(!m.over)doRally(m);render();}
 function selSub(slot){const m=ui.match;if(!m||m.over||!m.paused){if(m&&!m.over){m.paused=true;}}ui.subSel=slot;render();}
 function doDblSub(){const m=ui.match;if(!m||m.over)return;const s=m.sides[0];const [r,a]=dblCands(s)||[];const oR=s.slots.find(x=>x.role==='R').p,oA=s.slots.find(x=>x.role==='A').p;
-  if(dblSub(m,0)){m.log.push({t:`Podwójna zmiana: <b>${esc(a.last)}</b> za ${esc(oR.last)} i <b>${esc(r.last)}</b> za ${esc(oA.last)} — trzech atakujących pod siatką.`,c:'sys'});}
+  if(dblSub(m,0)){achEv('dblSub');m.log.push({t:`Podwójna zmiana: <b>${esc(a.last)}</b> za ${esc(oR.last)} i <b>${esc(r.last)}</b> za ${esc(oA.last)} — trzech atakujących pod siatką.`,c:'sys'});}
   ui.subSel=null;persistLive();render();}
 function doSub(pid){const m=ui.match;const s=m.sides[0];const slot=ui.subSel;
-  if(slot==='srv'){const old=s.slots[nextServerSlot(m,0)].p;if(serveSub(m,0,pid)){const np=s.pl.find(p=>p.id===pid);m.log.push({t:`Zmiana na zagrywkę: <b>${esc(np.last)}</b> za ${esc(old.last)}.`,c:'sys'});}ui.subSel=null;persistLive();render();return;}const old=slot==='L'?s.libero:s.slots[slot].p;
+  if(slot==='srv'){const old=s.slots[nextServerSlot(m,0)].p;if(serveSub(m,0,pid)){achEv('srvSub');const np=s.pl.find(p=>p.id===pid);m.log.push({t:`Zmiana na zagrywkę: <b>${esc(np.last)}</b> za ${esc(old.last)}.`,c:'sys'});}ui.subSel=null;persistLive();render();return;}const old=slot==='L'?s.libero:s.slots[slot].p;
   if(substitute(m,0,slot,pid)){const np=s.pl.find(p=>p.id===pid);m.log.push({t:`Zmiana: <b>${esc(np.last)}</b> za ${esc(old.last)}.`,c:'sys'});}
   ui.subSel=null;persistLive();render();}
 function lum(h){const n=parseInt(h.slice(1),16);return (0.299*(n>>16)+0.587*(n>>8&255)+0.114*(n&255))/255;}
