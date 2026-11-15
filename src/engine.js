@@ -92,8 +92,8 @@ const TEAM_DEFS=[
   {name:'Bóbr Ostrołęka',short:'BOB',q:7.6,color:'#92400e',lg:2},
   {name:'Sowa Przemyśl',short:'SOW',q:7.4,color:'#4f46e5',lg:2}
 ];
-// ---- ligi: 0 = Ekstra Liga, 1 = 1. Liga, 2 = 2. Liga (przynależność zmienia się po sezonie: SAVE.lg) ----
-var LG_N=['Ekstra Liga','1. Liga','2. Liga'],LG_SHORT=['EL','1L','2L'],LG_ECO=[1,0.45,0.2],LG_PRIZE=[1,0.3,0.1],LG_REP=[[95,7],[50,3],[30,2]];
+// ---- ligi: 0 = Ekstraliga, 1 = 1. Liga, 2 = 2. Liga (przynależność zmienia się po sezonie: SAVE.lg) ----
+var LG_N=['Ekstraliga','1. Liga','2. Liga'],LG_SHORT=['EL','1L','2L'],LG_ECO=[1,0.45,0.2],LG_PRIZE=[1,0.3,0.1],LG_REP=[[95,7],[50,3],[30,2]];
 function lgOf(i){return (typeof SAVE!=='undefined'&&SAVE&&SAVE.lg&&SAVE.lg[i]!=null)?SAVE.lg[i]:(TEAM_DEFS[i].lg||0);}
 function lgIds(l){const out=[];for(let i=0;i<TEAM_DEFS.length;i++)if(lgOf(i)===l)out.push(i);return out;}
 function genTeam(def,idx){
