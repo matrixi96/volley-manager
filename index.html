@@ -1806,7 +1806,7 @@ function awardsHtml(){const L=leaders();const top=(k)=>L[k][0];
   return `<div class="awards">${a.map(([l,k])=>{const x=top(k);if(!x||!PLAYERS[x.id]||!PLAYERS[x.id].t)return '';const P=PLAYERS[x.id];return `<div><span class="mut small">${l}</span><br><b>${esc(P.p.first)} ${esc(P.p.last)}</b> ${tDot(P.t.idx)}${esc(P.t.short)} — ${x.v}</div>`;}).join('')}</div>`;}
 
 // ---- statystyki ----
-function leaders(){const ps=S().ps;const arr=Object.entries(ps).map(([id,r])=>Object.assign({id},r));
+function leaders(l){l=l==null?myLg():l;const ps=S().ps;const arr=Object.entries(ps).filter(([id])=>{const P=PLAYERS[id];return P&&P.t&&lgOf(P.t.idx)===l;}).map(([id,r])=>Object.assign({id},r));
   const by=(f,min)=>arr.filter(x=>!min||min(x)).map(x=>({id:x.id,v:f(x),r:x})).sort((a,b)=>b.v-a.v).slice(0,10);
   const games=Math.max(1,...arr.map(x=>x.m));
   return {pts:by(x=>x.pts),ace:by(x=>x.ace),blk:by(x=>x.blk),mvp:by(x=>x.mvp,x=>x.mvp>0),
@@ -1814,10 +1814,10 @@ function leaders(){const ps=S().ps;const arr=Object.entries(ps).map(([id,r])=>Ob
 function statsView(){
   const s=S();
   if(!Object.keys(s.ps).length)return `<div class="card"><h2>Statystyki sezonu</h2><p class="mut">Statystyki liczą się od pierwszej kolejki ligi (sparingi się nie liczą). Rozegraj pierwszy mecz ligowy.</p></div>`;
-  const L=leaders();
+  const sl=ui.stLg!=null?ui.stLg:myLg();const L=leaders(sl);
   const box=(t,k,unit)=>`<div class="card lb"><h3>${t}</h3>${L[k].length?L[k].filter(x=>PLAYERS[x.id]&&PLAYERS[x.id].t).map((x,i)=>{const P=PLAYERS[x.id];return `<div class="lrow ${P.t.idx===SAVE.team?'me':''}" onclick="openCard('${P.p.id}')"><span class="mut">${i+1}.</span> ${tDot(P.t.idx)}<span class="ln">${esc(P.p.last)} <small class="mut">${esc(P.t.short)} · ${pTag(P.p.pos)}</small></span><b>${x.v}${unit||''}</b></div>`;}).join(''):'<p class="mut small">Brak danych</p>'}</div>`;
   const mine=myTeam().players.map(p=>({p,r:s.ps[p.id]})).filter(x=>x.r).sort((a,b)=>b.r.pts-a.r.pts);
-  return `<div class="card"><h2>Liderzy sezonu ${sLabel(s.n)}</h2><p class="mut small">Liga i play-off. Skuteczność ataku: minimum 6 ataków na mecz, przyjęcie: minimum 4 przyjęcia na mecz.</p></div>
+  return `<div class="card"><div class="row wrap"><h2 style="margin:0">Liderzy sezonu ${sLabel(s.n)}</h2><span class="sp"></span>${[0,1,2].map(l=>`<button class="tabb ${sl===l?'on':''}" onclick="ui.stLg=${l};render()">${LG_N[l]}${l===myLg()?' ★':''}</button>`).join('')}</div><p class="mut small">${LG_N[sl]}: liga i play-off. Skuteczność ataku: minimum 6 ataków na mecz, przyjęcie: minimum 4 przyjęcia na mecz.</p></div>
   <div class="lbgrid">${box('Punkty','pts')}${box('Skuteczność ataku','eff','%')}${box('Bloki','blk')}${box('Asy','ace')}${box('Przyjęcie pozytywne','rec','%')}${box('Obrony','dig')}${box('Nagrody MVP meczu','mvp')}</div>
   ${teamStatsHtml()}
   <div class="card"><h2>${esc(myTeam().name)}: statystyki zawodników</h2><div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th>Poz</th><th>M</th><th>Pkt</th><th>Pkt/m</th><th>Atak</th><th>Skut.</th><th>Bł.</th><th>Blok</th><th>As</th><th>Bł.zag</th><th>Przyj.poz</th><th>Obr.</th><th>MVP</th></tr></thead><tbody>
@@ -1995,7 +1995,7 @@ function posCount(t,pos){return t.players.filter(p=>p.pos===pos).length;}
 function isStarter(p){if(p.tm<0)return false;const lu=autoLineup(TEAMS[p.tm]);return Object.values(lu).includes(p.id);}
 function askingPrice(p){return Math.round(pValue(p)*(isStarter(p)?1.35:1.05)/10000)*10000;}
 function canSellAI(p){const t=TEAMS[p.tm];return posCount(t,p.pos)-1>=POS_MIN[p.pos]&&t.players.length-1>=SQUAD_MIN;}
-function wageNeeded(p){if(p.tm===SAVE.team)return round5k(wageDemand(p)*negF());const my=SAVE.ai[SAVE.team].rep;const cur=p.tm>=0?SAVE.ai[p.tm].rep:0;return round5k(wageDemand(p)*(p.tm<0?0.9:cur>my+10?1.15:1)*negF());}
+function wageNeeded(p){if(p.tm===SAVE.team)return round5k(wageDemand(p)*negF());const my=SAVE.ai[SAVE.team].rep;const cur=p.tm>=0?SAVE.ai[p.tm].rep:0;const ld=p.tm>=0?Math.max(0,myLg()-lgOf(p.tm)):0;return round5k(wageDemand(p)*(p.tm<0?0.9:cur>my+10?1.15:1)*(1+0.35*ld)*negF());}
 function contractEndFor(years){const s=S();return (s.phase==='off'?s.n-1:s.n)+years;}
 function movePlayer(p,tm){p.tm=tm;if(tm>=0)assignNum(p,tm);syncTeams();}
 function tradeMsg(ok,t){ui.tmsg={ok,t};render();}
@@ -3484,7 +3484,7 @@ function squadSimple(pl,inLu){
 const PS_KEYS=['pts','kill','blk','ace','dig','recPos','recErr','attErr','m'];
 function psSnap(){const o={};for(const [id,r] of Object.entries(S().ps||{})){o[id]={};for(const k of PS_KEYS)o[id][k]=r[k]||0;}return o;}
 function roundSummary(before,rd,n){const s=S();const ps=s.ps||{};const perf=[];
-  for(const [id,r] of Object.entries(ps)){const b=before[id]||{};const dm=(r.m||0)-(b.m||0);if(dm<=0||!PLAYERS[id])continue;const d=k=>(r[k]||0)-(b[k]||0);
+  for(const [id,r] of Object.entries(ps)){const b=before[id]||{};const dm=(r.m||0)-(b.m||0);if(dm<=0||!PLAYERS[id]||!PLAYERS[id].t||lgOf(PLAYERS[id].t.idx)!==myLg())continue;const d=k=>(r[k]||0)-(b[k]||0);
     const sc=d('pts')+d('dig')*0.25+d('recPos')*0.15-d('attErr')*0.5;perf.push({id,sc:Math.round(sc*10)/10,pts:d('pts'),blk:d('blk'),ace:d('ace')});}
   perf.sort((a,b)=>b.sc-a.sc);const used=new Set();const team=[];
   for(const [pos,c] of [['R',1],['A',1],['P',2],['S',2],['L',1]]){const xs=perf.filter(x=>!used.has(x.id)&&PLAYERS[x.id].p.pos===pos).slice(0,c);xs.forEach(x=>{used.add(x.id);team.push(x);});}
@@ -3952,7 +3952,8 @@ function negOpen(pid,kind){const P=PLAYERS[pid];if(!P)return;const p=P.p;const l
   if(lk)return tradeMsg(false,`Rozmowy zerwane — ${p.tm===SAVE.team||p.tm<0?'agent':'klub'} nie chce rozmawiać do ${fmtDMY(lk)}.`);
   if(kind!=='renew'){if(!windowOpen())return tradeMsg(false,'Okno transferowe jest zamknięte (otwarte przed sezonem i w trakcie sparingów).');
     if(myTeam().players.length>=SQUAD_MAX)return tradeMsg(false,`Kadra jest pełna (maks. ${SQUAD_MAX}). Najpierw kogoś sprzedaj albo zwolnij.`);
-    if(p.tm>=0&&!canSellAI(p))return tradeMsg(false,`${TEAMS[p.tm].name} nie sprzeda zawodnika — nie ma go kim zastąpić.`);}
+    if(p.tm>=0&&!canSellAI(p))return tradeMsg(false,`${TEAMS[p.tm].name} nie sprzeda zawodnika — nie ma go kim zastąpić.`);
+    if(p.tm>=0&&myLg()-lgOf(p.tm)>=2&&isStarter(p))return tradeMsg(false,`${p.first} ${p.last} gra w podstawie w ${LG_N[lgOf(p.tm)]==='Ekstra Liga'?'Ekstra Lidze':LG_N[lgOf(p.tm)]} i nie zamierza schodzić do ${LG_N[myLg()].replace('Liga','Ligi')}.`);}
   const ag=agentOf(p);const n={pid,kind,stage:p.tm>=0&&kind!=='renew'?'club':'agent',log:[],fee:0,ok:null};ui.neg=n;
   if(n.stage==='club'){const ask=Math.round(askingPrice(p)*(1.05-cA('neg')/200)/10000)*10000;const need=isStarter(p)?0.9:0.8;
     n.club={ask,min:Math.min(ask,Math.round(ask*(need+R()*0.06)/10000)*10000),pat:3+(isStarter(p)?0:1)+negBonusPat(),pat0:0};n.club.pat0=n.club.pat;
@@ -4271,12 +4272,12 @@ function transferView(){const o=windowOpen();const f=ui.mf||(ui.mf={pos:'',src:'
    <div class="row small mut" style="margin-top:8px;flex-wrap:wrap;gap:12px"><span>Pokazano ${list.length?f.pg*per+1:0}–${f.pg*per+shown.length} z ${list.length}</span><span><b class="stars">★</b> pewne · <span class="pstp">★</span> możliwe · im większa wiedza (skauting), tym węższy zakres oceny i potencjału</span><span class="sp"></span>${pages>1?`<span>Strona ${f.pg+1} z ${pages}</span><button class="link" ${f.pg?'':'disabled'} onclick="ui.mf.pg--;render()">← Poprzednia</button><button class="link" ${f.pg<pages-1?'':'disabled'} onclick="ui.mf.pg++;render()">Następna →</button>`:''}</div></div>`}`;}
 
 // ---- baza zawodników w skautingu: filtry jak w menedżerach + przypisanie skauta ----
-function SF(){return ui.sf||(ui.sf={q:'',pos:'',src:'all',tm:'',minR:0,minP:0,maxAge:40,maxVal:0,maxW:0,ce:0,kn:'',notObs:0,sort:'ocena',pg:0});}
+function SF(){return ui.sf||(ui.sf={q:'',pos:'',src:'all',lg:'',tm:'',minR:0,minP:0,maxAge:40,maxVal:0,maxW:0,ce:0,kn:'',notObs:0,sort:'ocena',pg:0});}
 function sfSet(k,v){const f=SF();f[k]=v;f.pg=0;render();}
 function scoutDb(){const f=SF();const all=allScouts();const s=SC();
   let xs=W().players.filter(p=>p.tm!==SAVE.team);
   if(f.src==='club')xs=xs.filter(p=>p.tm>=0&&!p.jr);else if(f.src==='fa')xs=xs.filter(p=>p.tm<0);else if(f.src==='jr')xs=xs.filter(p=>p.jr);else xs=xs.filter(p=>!p.jr);
-  if(f.q)xs=xs.filter(p=>(p.first+' '+p.last).toLowerCase().includes(f.q.toLowerCase()));if(f.pos)xs=xs.filter(p=>p.pos===f.pos);if(f.tm!=='')xs=xs.filter(p=>p.tm===+f.tm);
+  if(f.q)xs=xs.filter(p=>(p.first+' '+p.last).toLowerCase().includes(f.q.toLowerCase()));if(f.pos)xs=xs.filter(p=>p.pos===f.pos);if(f.tm!=='')xs=xs.filter(p=>p.tm===+f.tm);if(f.lg!=='')xs=xs.filter(p=>p.tm>=0&&lgOf(p.tm)===+f.lg);
   if(f.minR)xs=xs.filter(p=>rEst(p)[1]>=f.minR);if(f.minP)xs=xs.filter(p=>potRange(p)[1]>=f.minP);xs=xs.filter(p=>p.age<=f.maxAge);
   if(f.maxVal)xs=xs.filter(p=>(p.tm<0?0:pValue(p))<=f.maxVal);if(f.maxW)xs=xs.filter(p=>(p.tm<0?wageNeeded(p):p.wage)<=f.maxW);
   if(f.ce)xs=xs.filter(p=>p.tm<0||p.ce<=S().n+(+f.ce)-1);if(f.kn==='low')xs=xs.filter(p=>knowOf(p)<50);else if(f.kn==='high')xs=xs.filter(p=>knowOf(p)>=80);
@@ -4291,8 +4292,9 @@ function scoutDb(){const f=SF();const all=allScouts();const s=SC();
    <div class="filters2"><label class="flt"><span>Szukaj</span><input placeholder="Nazwisko…" value="${esc(f.q)}" onchange="sfSet('q',this.value)"></label>
     ${sel('pos','Pozycja',[['','Każda'],['R','Rozgrywający'],['A','Atakujący'],['P','Przyjmujący'],['S','Środkowy'],['L','Libero']])}
     ${sel('src','Kadra',[['all','Seniorzy (kluby i wolni)'],['club','Tylko z klubów'],['fa','Wolni zawodnicy'],['jr','Juniorzy rywali']])}
-    ${sel('tm','Drużyna',[['','Każda']].concat(TEAMS.filter(t=>t.idx!==SAVE.team).map(t=>[t.idx,t.name])))}
-    ${sel('minR','Min. ocena',[[0,'Każda'],[65,'65+'],[70,'70+'],[75,'75+'],[80,'80+'],[85,'85+']],1)}
+    ${sel('lg','Liga',[['','Każda']].concat(LG_N.map((n,i)=>[i,n])))}
+    ${sel('tm','Drużyna',[['','Każda']].concat([0,1,2].filter(l=>f.lg===''||+f.lg===l).flatMap(l=>lgTeams(l).filter(t=>t.idx!==SAVE.team).map(t=>[t.idx,LG_SHORT[l]+' · '+t.name]))))}
+    ${sel('minR','Min. ocena',[[0,'Każda'],[55,'55+'],[60,'60+'],[65,'65+'],[70,'70+'],[75,'75+'],[80,'80+'],[85,'85+']],1)}
     ${sel('minP','Min. potencjał',[[0,'Każdy'],[69,'★★+'],[76,'★★★+'],[83,'★★★★+'],[90,'★★★★★']],1)}
     ${sel('maxAge','Maks. wiek',[[40,'Każdy'],[19,'19'],[21,'21'],[23,'23'],[25,'25'],[28,'28'],[31,'31']],1)}
     ${sel('maxVal','Maks. wartość',[[0,'Bez limitu'],[200000,'200 tys.'],[500000,'500 tys.'],[1000000,'1 mln'],[2000000,'2 mln']],1)}

@@ -42,7 +42,7 @@ function squadSimple(pl,inLu){
 const PS_KEYS=['pts','kill','blk','ace','dig','recPos','recErr','attErr','m'];
 function psSnap(){const o={};for(const [id,r] of Object.entries(S().ps||{})){o[id]={};for(const k of PS_KEYS)o[id][k]=r[k]||0;}return o;}
 function roundSummary(before,rd,n){const s=S();const ps=s.ps||{};const perf=[];
-  for(const [id,r] of Object.entries(ps)){const b=before[id]||{};const dm=(r.m||0)-(b.m||0);if(dm<=0||!PLAYERS[id])continue;const d=k=>(r[k]||0)-(b[k]||0);
+  for(const [id,r] of Object.entries(ps)){const b=before[id]||{};const dm=(r.m||0)-(b.m||0);if(dm<=0||!PLAYERS[id]||!PLAYERS[id].t||lgOf(PLAYERS[id].t.idx)!==myLg())continue;const d=k=>(r[k]||0)-(b[k]||0);
     const sc=d('pts')+d('dig')*0.25+d('recPos')*0.15-d('attErr')*0.5;perf.push({id,sc:Math.round(sc*10)/10,pts:d('pts'),blk:d('blk'),ace:d('ace')});}
   perf.sort((a,b)=>b.sc-a.sc);const used=new Set();const team=[];
   for(const [pos,c] of [['R',1],['A',1],['P',2],['S',2],['L',1]]){const xs=perf.filter(x=>!used.has(x.id)&&PLAYERS[x.id].p.pos===pos).slice(0,c);xs.forEach(x=>{used.add(x.id);team.push(x);});}
