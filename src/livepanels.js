@@ -28,7 +28,7 @@ function weakestReceiver(m){const oc=onCourt(m.sides[1],m.serving===1).filter(e=
 // ton przemowy (jeden na czas) + wskazówka do gry (jedna na czas)
 const TALK_TONE=[['enc','Zachęć','„Wierzę w was, dacie radę!”','Podnosi morale, najbardziej gdy przegrywacie i gdy morale jest niskie. Przez 7 akcji cała drużyna gra trochę pewniej.','tgo'],
   ['dem','Zażądaj więcej','„Stać was na dużo więcej!”','Ambitni i waleczni się nakręcą, wrażliwi mogą się spiąć. Przez 7 akcji drużyna mocniej walczy, zwłaszcza przy stracie punktów.','tfight'],
-  ['calm','Uspokój','„Spokojnie, więcej koncentracji”','Pomaga nerwowym i zawodnikom z niskim morale. Przez 7 akcji mniej prostych błędów i pewniejsza końcówka.','tfocus'],
+  ['calm','Uspokój','„Spokojnie, więcej koncentracji”','Pomaga nerwowym i zawodnikom z niskim morale. Kasuje załamanie po błędach (🔻). Przez 7 akcji mniej prostych błędów i pewniejsza końcówka.','tfocus'],
   ['wake','Obudź','„Obudźcie się! Tak się nie gra!”','Ostra reprymenda: działa przy dużym autorytecie. Waleczni się nakręcą, nerwowi mogą się spiąć. Przez 7 akcji wyraźny impuls dla całej drużyny.','twake']];
 function talkList(m){return TALK_TONE.map(x=>[x[0],x[1]+': '+x[2],x[3]]).concat([['srv','Ryzykujcie na zagrywce!',''],['rec','Skupcie się na przyjęciu',''],['target','Zagrywka w wybranego zawodnika','']]);}
 function myTimeout(){const m=ui.match;if(!m||m.over||ui.to)return;if(m.sides[0].to<=0)return;
@@ -38,7 +38,7 @@ function talkState(){return ui.talkSt||(ui.talkSt={tone:null,hint:null});}
 function talkPlayers(m){const s=m.sides[0];return onCourt(s,m.serving===0).map(e=>e.p);}
 function applyTone(k){const m=ui.match;if(!m)return;const st=talkState();if(st.tone)return;const T=TALK_TONE.find(x=>x[0]===k);const s=m.sides[0];const oc=talkPlayers(m);
   const behind=m.score[1]-m.score[0];const mot=cA('mot'),aut=cA('aut');const cp=myCaptain();const amp=(0.8+aut/50)*(cp&&oc.some(x=>x.id===cp.id)?1+Math.max(0,capBonus(cp))*3:1);const del={};
-  for(const p of oc){const mor=p.mor==null?60:p.mor;let d=0;
+  for(const p of oc){const mor=p.mor==null?60:p.mor;let d=0;if(k==='calm'&&(p.cf||0)<0){p.cf=0;p.cfN=0;}
     if(k==='enc')d=2+(mot-10)*0.5+(behind>=3?3:0)+(mor<50?2:0);
     else if(k==='dem')d=((p.zaa+(hasT(p,'amb')?16:p.wal))/2-10)*0.8+(mot-10)*0.3-(p.opa<9?2:0)-(mor<45?2:0);
     else if(k==='calm')d=1+(60-mor)*0.12+(12-p.opa)*0.45;

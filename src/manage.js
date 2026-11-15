@@ -196,6 +196,7 @@ function offseason(){
   applyLeagueMoves(old);
   newSeason(n,'off');
   aiOffseason();juniorsOffseason();aiInfraOffseason();refreshStaffPool();
+  {const ps=staffSkill('psy');const t=TEAMS[SAVE.team];if(t&&ps>10)for(const p of t.players){if(p.tr&&p.tr.includes('ner')&&R()<(ps-10)*0.04){p.tr=p.tr.filter(x=>x!=='ner');news(`🧠 Praca z psychologiem: ${p.first} ${p.last} nie jest już nerwowy.`);}}}
   for(const r in SAVE.staff){const st=SAVE.staff[r];if(st){st.age++;if(st.age<50&&R()<0.4&&st.skill<20)st.skill++;}}
   // wolni zawodnicy: porządki i uzupełnienie
   let fa=W().players.filter(p=>p.tm<0).sort((a,b)=>rating(b)-rating(a));

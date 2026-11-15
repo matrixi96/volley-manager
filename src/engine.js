@@ -181,13 +181,15 @@ function kc(p,m){let k=1.25-p.kcj/20*0.5;{const sd=m.sides&&m.sides.find(x=>x.pl
 function nerves(p,m){return pressure(m)&&p.opa<10?' Nerwy w końcówce!':'';}
 // ---- pewność siebie w meczu (cf: -3 roztrzęsiony … +2 w gazie) ----
 var MENT=1;
-function cfK(p){const o=p.opa||10;let k=1+(11-o)/20*(o>11?2.4:2.2);if(p.tr){if(hasT(p,'ner'))k*=1.45;if(hasT(p,'spo'))k*=0.45;if(hasT(p,'pro'))k*=0.3;if(hasT(p,'zde'))k*=0.6;}return clamp(k,0.05,3);}
+function cfK(p){const o=p.opa||10;let k=(1+(11-o)/20*(o>11?2.4:2.2))*(p.age>=28?0.8:p.age<=21?1.15:1);if(p.tr){if(hasT(p,'ner'))k*=1.45;if(hasT(p,'spo'))k*=0.45;if(hasT(p,'pro'))k*=0.3;if(hasT(p,'zde'))k*=0.6;}return clamp(k,0.05,3);}
 // posłuszeństwo wobec poleceń trenera (indywidualista robi po swojemu)
 function obeyF(p){if(!MENT||!p||!p.tr)return 1;let k=1;if(hasT(p,'ind'))k*=0.55;if(hasT(p,'kap')&&(p.unh||0)>=3)k*=0.75;if(hasT(p,'pro'))k*=1.1;return k;}
 // czy zagrywający sam wyczuje roztrzęsionego przyjmującego
 function readF(p){return clamp(((p.czy||10)-8)/8,0,1.2)*(p.tr&&hasT(p,'ind')?0.7:1);}
-function cfHit(p,m,x){if(!MENT||!p)return;p.cf=clamp((p.cf||0)-x*cfK(p)*(pressure(m)?1.5:1),-3,2);}
-function cfUp(p,m,x){if(!MENT||!p)return;const sd=m.sides.find(s=>s.pl.includes(p));const k=1+((p.wal||10)-10)/20+(sd&&sd.cfLid?0.3:0);p.cf=clamp((p.cf||0)+x*k,-3,2);}
+// technika amortyzuje nerwy: atrybut 18+ = połowa załamania; po 2 błędach z rzędu dalej już nie spada
+function cfDamp(p,sk){if(!sk)return 1;const v=sk==='prz'?(p.prz||10)*0.7+(p.tod||10)*0.3:(p[sk]||10);return 1-clamp((v-14)/4,0,1)*0.75;}
+function cfHit(p,m,x,sk){if(!MENT||!p)return;p.cfN=(p.cfN||0)+1;if(p.cfN>2)return;p.cf=clamp((p.cf||0)-x*cfK(p)*cfDamp(p,sk)*(pressure(m)?1.5:1),-3,2);}
+function cfUp(p,m,x){if(!MENT||!p)return;const sd=m.sides.find(s=>s.pl.includes(p));const k=1+((p.wal||10)-10)/20+(sd&&sd.cfLid?0.5:0);p.cfN=0;p.cf=clamp((p.cf||0)+x*k,-3,2);}
 function cfB(p){return MENT?(p.cf||0)*0.035:0;}
 function mentQ(p,m){return ((p.kcj||10)*0.6+(pressure(m)?(p.opa||10):(p.kcj||10))*0.4)/20;}
 function bn(s){return s.mom*0.01*(s.momMul||1)+s.form;}
@@ -219,10 +221,10 @@ function rally(m,ex){
     if(st>0&&!(tc.srvRisk||[]).includes(server.id)&&R()<pS){st=0;sSafe=1;sT=0;}}
   server.st.srv++;
   const aim=(tc.tgt&&cD.some(x=>x.p.id===tc.tgt&&(x.role==='L'||x.role==='P')))||zt>0;const aimS=MENT&&tc.shk&&!aim&&cD.some(x=>(x.p.cf||0)<-0.7);
-  const errP=[0.075,0.15,0.25][st]*(1.45-0.9*n)*kc(server,m)*(sS.tmp&&sS.tmp.n>0&&sS.tmp.k==='srv'?1.25:1)*(aim?1+Math.max(0,13-server.zag)*(zt>0?0.015:0.025):aimS?1.03+Math.max(0,13-server.zag)*0.01:1)*SRV_ERR[ty]*ZERR[zt]*(sT?1+sT*0.1:1);
-  if(R()<errP){server.st.srvErr++;cfHit(server,m,1);if(MENT)server.sT=clamp(cfK(server),0.2,1.5)*(pressure(m)?1.5:1);sS.lastSrv={k:'err'};const r2=R();const how=r2<0.42?'net':r2<0.75?'long':'wide';seq.push({k:how==='net'?'net':'out',s:D,how,srv:1});return {winner:D,type:'serr',act,seq,text:`${nm(server)} psuje zagrywkę (${how==='net'?'siatka':how==='long'?'aut za linią końcową':'aut obok boiska'}).${nerves(server,m)}`};}
+  const errP=[0.075,0.15,0.25][st]*(1.45-0.9*n)*kc(server,m)*(sS.tmp&&sS.tmp.n>0&&sS.tmp.k==='srv'?1.25:1)*(aim?1+Math.max(0,13-server.zag)*(zt>0?0.015:0.025):aimS?1.03+Math.max(0,13-server.zag)*0.01:1)*SRV_ERR[ty]*ZERR[zt]*(sT?1+sT*0.045:1);
+  if(R()<errP){server.st.srvErr++;cfHit(server,m,0.6,'zag');if(MENT)server.sT=clamp(cfK(server),0.2,1.5)*cfDamp(server,'zag')*(pressure(m)?1.5:1);sS.lastSrv={k:'err'};const r2=R();const how=r2<0.42?'net':r2<0.75?'long':'wide';seq.push({k:how==='net'?'net':'out',s:D,how,srv:1});return {winner:D,type:'serr',act,seq,text:`${nm(server)} psuje zagrywkę (${how==='net'?'siatka':how==='long'?'aut za linią końcową':'aut obok boiska'}).${nerves(server,m)}`};}
   const tS0=sS.tmp&&sS.tmp.n>0?sS.tmp.k:null,tD0=sD.tmp&&sD.tmp.n>0?sD.tmp.k:null;
-  const pow=n-sT*0.005+(MENT?0.014:0)+[-0.14,0,0.13][st]+(tS0==='srv'?0.05:0)+SRV_POW[ty]+(zt===4?-0.05:0);
+  const pow=n+(MENT?-(server.cf||0)*0.018:0)+(MENT?0.026:0)+[-0.14,0,0.13][st]+(tS0==='srv'?0.05:0)+SRV_POW[ty]+(zt===4?-0.05:0);
   let recs=cD.filter(x=>x.role==='L'||x.role==='P');if(!recs.length)recs=cD.filter(x=>x.role!=='R');
   const tgt=tc.tgt;
   // ustawienie przyjęcia (te same pozycje co w animacji): y = 0 lewa strona (strefa 5), 9 prawa (strefa 1)
@@ -233,23 +235,23 @@ function rally(m,ex){
   if(zt===5&&recs.length>=2){const so=recs.slice().sort((a,b)=>ry(a)-ry(b));const k=R()*(so.length-1)|0;seam=[so[k],so[k+1]];}
   if(zt===4){const fr=recs.filter(x=>isFront(x.zone));if(fr.length)recs=fr.concat(recs.filter(x=>!isFront(x.zone)&&x.role==='L'));}
   const zw=x=>ty0!=null?1/(0.35+Math.abs(ry(x)-ty0)):zt===4?(isFront(x.zone)?3:1):1;
-  const rec=(seam?pickW(seam,x=>x.role==='L'?1.3:1):pickW(recs,x=>(x.role==='L'?1.4:1)*zw(x)*(tS0==='target'&&x.p.id===sS.tmp.id?4:1)*(tgt&&x.p.id===tgt?4.5:1)*(safeTgt&&x.p.id===safeTgt&&!tgt?4.5:1)*(MENT?1+Math.max(0,-(x.p.cf||0))*(tc.shk&&!tgt?2.2*obeyF(server)*(0.6+eff(server,'zag')/20*0.6):!tgt&&!zt?0.3*readF(server):0):1))).p;act.push(rec.id);
-  const rn=(eff(rec,'prz')*0.7+eff(rec,'tod')*0.2+eff(rec,'zwi')*0.1)/20+bn(sD)+mb(rec,m,D)+(tD0==='rec'?0.05:0)+(MENT?-(rec.cf||0)*0.002:0);
+  const rec=(seam?pickW(seam,x=>x.role==='L'?1.3:1):pickW(recs,x=>(x.role==='L'?1.4:1)*zw(x)*(tS0==='target'&&x.p.id===sS.tmp.id?4:1)*(tgt&&x.p.id===tgt?4.5:1)*(safeTgt&&x.p.id===safeTgt&&!tgt?4.5:1)*(sD.tactics.shield&&x.p.id===sD.tactics.shield&&x.role==='P'?0.5:1)*(MENT?1+Math.max(0,-(x.p.cf||0))*(tc.shk&&!tgt?2.2*obeyF(server)*(0.6+eff(server,'zag')/20*0.6):!tgt&&!zt?0.3*readF(server):0):1))).p;act.push(rec.id);
+  const rn=(eff(rec,'prz')*0.7+eff(rec,'tod')*0.2+eff(rec,'zwi')*0.1)/20+bn(sD)+mb(rec,m,D)+(tD0==='rec'?0.05:0)+(MENT?(rec.cf||0)*0.011:0);
   // strefa 1: rozgrywający z drugiej linii musi obiec przyjmującego; skrót: przyjmujący ustawieni głęboko (szczególnie na mocną zagrywkę)
   const sBack=rz!=null&&!isFront(rz);
   const zpen=(zt===1&&sBack?0.03:0)+(zt===4?0.03+(ty===2?0.03:0):0)+(seam?0.01:0);
   const v=0.52+(rn-pow-0.18)*0.6+nz()*0.6*(ty===1?1.1:1)-zpen;
   // między dwóch: nieporozumienie przyjmujących
   if(seam){const sd2=sD;const kom2=(eff(seam[0].p,'kom')+eff(seam[1].p,'kom'))/2;const pm=clamp(0.03-(kom2-10)/10*0.02-((sd2.chem??0.6)-0.5)*0.05,0.01,0.1);
-    if(R()<pm){server.st.ace++;rec.st.recErr++;cfHit(seam[0].p,m,0.6);cfHit(seam[1].p,m,0.6);cfUp(server,m,0.5);rec.st.rec++;sS.lastSrv={k:'ace',rec:rec.id};(m.mixN=m.mixN||[0,0])[D]++;
+    if(R()<pm){server.st.ace++;rec.st.recErr++;cfHit(seam[0].p,m,0.6,'prz');cfHit(seam[1].p,m,0.6,'prz');cfUp(server,m,0.5);rec.st.rec++;sS.lastSrv={k:'ace',rec:rec.id};(m.mixN=m.mixN||[0,0])[D]++;
       const py=(ry(seam[0])+ry(seam[1]))/2,px=(rx(seam[0])+rx(seam[1]))/2;
       seq.push({k:'mix',ids:[seam[0].p.id,seam[1].p.id],s:D,px:+px.toFixed(2),py:+py.toFixed(2),srv:1});seq.push({k:'floor',s:D,mix:1});
       return {winner:S,type:'ace',act,seq,text:`${nm(server)} — AS SERWISOWY! Zagrywka między ${nm(seam[0].p)} i ${nm(seam[1].p)}, nikt nie przyjął.`};}}
   rec.st.rec++;
-  if(v<0.17){server.st.ace++;rec.st.recErr++;cfHit(rec,m,1.2);cfUp(server,m,0.7);sS.lastSrv={k:'ace',rec:rec.id};const sh=v>=0.09;seq.push(Object.assign({k:'ace',id:rec.id,s:D,sh},zt===4?{z:'short'}:{}));return {winner:S,type:'ace',act,seq,text:sh?`${nm(server)} — AS SERWISOWY! ${nm(rec)} odbija piłkę poza boisko.`:`${nm(server)} — AS SERWISOWY! ${nm(rec)} nie zdążył do piłki.`};}
+  if(v<0.17){server.st.ace++;rec.st.recErr++;cfHit(rec,m,1.2,'prz');cfUp(server,m,0.7);sS.lastSrv={k:'ace',rec:rec.id};const sh=v>=0.09;seq.push(Object.assign({k:'ace',id:rec.id,s:D,sh},zt===4?{z:'short'}:{}));return {winner:S,type:'ace',act,seq,text:sh?`${nm(server)} — AS SERWISOWY! ${nm(rec)} odbija piłkę poza boisko.`:`${nm(server)} — AS SERWISOWY! ${nm(rec)} nie zdążył do piłki.`};}
   const q=v<0.42?1:v<0.74?2:3;
   seq.push(Object.assign({k:'rec',id:rec.id,s:D},zt===4?{z:'short'}:{}));
-  if(q>=2)rec.st.recPos++;if(q===3)rec.st.recPerf++;if(q===1)cfHit(rec,m,0.5);else cfUp(rec,m,q===3?0.3:0.05);
+  if(q>=2)rec.st.recPos++;if(q===3)rec.st.recPerf++;if(q===1)cfHit(rec,m,0.5,'prz');else cfUp(rec,m,q===3?0.3:0.05);
   log.push(`zagrywa ${nm(server)}${zt===4?' (skrót)':''}`,`przyjmuje ${nm(rec)} (${['','słabo','dobrze','idealnie'][q]})`);
   let A=D,qq=q,by=rec;
   m._fb={s:D,pow,rec:rec.id,rp:zt===3||zt===4};// pierwszy atak po przyjęciu: specyfika ustawienia (P1, P2, P3/P6)
@@ -309,7 +311,7 @@ function attackPhase(m,A,q,by,log,act,pd){
   sq=clamp(sq,0.05,1);
   seq.push(Object.assign({k:'set',id:setter.id,s:A,px:+px.toFixed(2),py:+py.toFixed(2),run,alt,mix},p1keep?{p1k:1}:{},late?{late:late.id}:{}));
   if(run===2)log.push(`${nm(setter)} goni piłkę`);else if(alt&&!mix&&sE&&sE.p!==by)log.push(`rozgrywający nie zdążył`);
-  if(R()<(0.006+(1-rzM)*0.01)*kc(setter,m)){cfHit(setter,m,0.8);log.push(`błąd rozegrania (${nm(setter)})`);seq.push({k:'out',s:1-A});return {done:true,winner:1-A,type:'setErr'};}
+  if(R()<(0.006+(1-rzM)*0.01)*kc(setter,m)){cfHit(setter,m,0.8,'roz');log.push(`błąd rozegrania (${nm(setter)})`);seq.push({k:'out',s:1-A});return {done:true,winner:1-A,type:'setErr'};}
   const tac=side.tactics.dist;
   const cands=cA.filter(x=>x.p!==setter&&x.role!=='L');
   // strefa, w którą trafiła piłka po przyjęciu/obronie: 0 = za 3. metrem, 4 = lewa, 3 = środek (punkt 0), 2 = prawa
@@ -398,11 +400,11 @@ function attackPhase(m,A,q,by,log,act,pd){
     d.st.dig++;cfUp(d,m,0.2);act.push(d.id);seq.push({k:'dig',id:d.id,s:1-A,tip:1});log.push(setTxt,`kiwka, podbija ${nm(d)}${cover?' (asekuracja za blokiem)':''}`);rec('tip','dig');
     return {done:false,next:1-A,q:R()<0.45+dc*0.35?2:1,by:d};
   }
-  const an=0.1+eff(a,'ata')/20*0.4+eff(a,'sil')/20*0.08+eff(a,'sko')/20*0.22+(a.h-197)/100+sq*0.42+bn(side)-(fr?0:0.06)+(quick&&sq>0.7?(0.05+(a.szy-12)/20*0.08)*(0.4+ch):0)+mb(a,m,A)+(AT===1?0.035:AT===2?-0.015:0)-(swp?SWP:0)-(fb&&fb.rp&&a.id===fb.rec?0.03:0)+(behind?((typeof pairChem==='function'&&real?pairChem(setter,a):ch)-0.6)*0.18:0);
+  const an=0.1+eff(a,'ata')/20*0.4+eff(a,'sil')/20*0.08+eff(a,'sko')/20*0.22+(a.h-197)/100+sq*0.42+bn(side)-(fr?0:0.06)+(quick&&sq>0.7?(0.05+(a.szy-12)/20*0.08)*(0.4+ch):0)+mb(a,m,A)+(!fr&&side.tactics.shield&&side.libero?-0.03:0)+(AT===1?0.035:AT===2?-0.015:0)-(swp?SWP:0)-(fb&&fb.rp&&a.id===fb.rec?0.03:0)+(behind?((typeof pairChem==='function'&&real?pairChem(setter,a):ch)-0.6)*0.18:0);
   const nb=solo?1.3:quick?(mCom?2.0:midLate?0.9:1.4):triple?3.0:sq<0.4?2.8:2.2;
   const bs=blockers.reduce((s,x)=>s+(eff(x.p,'blo')*0.55+eff(x.p,'czy')*0.2+eff(x.p,'sko')*0.15+eff(x.p,'szy')*0.1)/20+(x.p.h-197)/120,0)/blockers.length*(0.75+nb*0.12)+bn(opp);
   const errP=(0.075+(1-sq)*0.08+(0.75-eff(a,'ata')/20)*0.08)*kc(a,m)*(AT===1?1.15:AT===2?0.92:1)*(tool?1.1:1);
-  if(R()<errP){a.st.attErr++;cfHit(a,m,0.8);const net=R()<0.5;seq.push({k:net?'net':'out',s:1-A});log.push(setTxt,`atak ${net?'w siatkę':'w aut'}${nerves(a,m)}`);rec(dir,'err');return {done:true,winner:1-A,type:'attErr'};}
+  if(R()<errP){a.st.attErr++;cfHit(a,m,0.8,'ata');const net=R()<0.5;seq.push({k:net?'net':'out',s:1-A});log.push(setTxt,`atak ${net?'w siatkę':'w aut'}${nerves(a,m)}`);rec(dir,'err');return {done:true,winner:1-A,type:'attErr'};}
   // zawodnik drugiej linii odbija się z linii 3 m albo przed nią (w strefie ataku) — błąd
   if(!fr&&!quick){const p3=(0.012+(sq<0.5?0.022:0)+(sq<0.3?0.02:0))*kc(a,m)*(1.25-czA*0.5);
     if(R()<p3){a.st.attErr++;a.st.e3=(a.st.e3||0)+1;seq.push({k:'whistle',s:1-A,why:'3m',id:a.id,src:A});log.push(setTxt,`${nm(a)} wybił się przed linią 3 m — błąd ataku z drugiej linii!`);rec(dir,'err');return {done:true,winner:1-A,type:'f3m'};}}
@@ -428,7 +430,7 @@ function attackPhase(m,A,q,by,log,act,pd){
       const cv=pickW(cA.filter(x=>x.p!==a),x=>(x.p===late?3:x.role==='L'?1.5:x.role==='R'?1.2:isFront(x.zone)?0.8:1)*(0.5+eff(x.p,'czy')/20)).p;
       const sv=clamp(CVB+(eff(cv,'czy')*0.5+eff(cv,'zwi')*0.3+eff(cv,'obr')*0.2-11)/20*0.25+(cv===late?0.05:0)+(tool?-0.05:0),0.06,0.42);
       if(R()<sv){cv.st.dig++;act.push(cv.id);seq.push({k:'dig',id:cv.id,s:A,cov:1});log.push(setTxt,`blok ${nm(b)}, asekuruje ${nm(cv)}`);rec(dir,'wyb');return {done:false,next:A,q:1,by:cv};}
-      a.st.blocked++;b.st.blk++;cfHit(a,m,0.7);cfUp(b,m,0.4);seq.push({k:'floor',s:A,blk:1});log.push(setTxt,`BLOK ${nm(b)}!`);rec(dir,'blk');return {done:true,winner:1-A,type:'block'};}
+      a.st.blocked++;b.st.blk++;cfHit(a,m,0.7,'ata');cfUp(b,m,0.4);seq.push({k:'floor',s:A,blk:1});log.push(setTxt,`BLOK ${nm(b)}!`);rec(dir,'blk');return {done:true,winner:1-A,type:'block'};}
     log.push(setTxt,`wybloka ${nm(b)}`);rec(dir,'wyb');return {done:false,next:1-A,q:2,by:b};
   }
   const tz=dir==='line'?lineZ:dir==='cross'?crossZ:dir==='midL'?5:dir==='midR'?1:6;
@@ -498,7 +500,7 @@ function stepRally(m){
    const pt=m.pt||(m.pt=[{},{}]);pt[r.winner][r.type]=(pt[r.winner][r.type]||0)+1;
    const tu=m.tu||(m.tu=[{},{}]);for(const i of [0,1]){const t=m.sides[i].tactics;for(const k of TFK){const key=k+':'+tfV(t,k);tu[i][key]=(tu[i][key]||0)+1;}}}
   fatigue(m,ex.n);
-  if(MENT)for(const sd of m.sides)for(const p of sd.pl)if(p.cf)p.cf=Math.abs(p.cf)<0.05?0:p.cf*(p.cf<0?0.9+clamp(cfK(p)-1,0,1)*0.04:0.85);
+  if(MENT)for(const sd of m.sides)for(const p of sd.pl)if(p.cf)p.cf=Math.abs(p.cf)<0.05?0:p.cf*(p.cf<0?(sd.cfLid?0.86:0.9)+clamp(cfK(p)-1,0,1)*0.04:0.85);
   const w=r.winner;m.score[w]++;(m.hist=m.hist||[]).push([m.setNo,m.score[0],m.score[1]]);
   if(m.run.t===w)m.run.n++;else m.run={t:w,n:1};
   const ws=m.sides[w],ls=m.sides[1-w];ws.mom=Math.min(3,Math.max(0,ws.mom)+1);ls.mom=0;
@@ -528,7 +530,7 @@ function moraleAfter(m,r,w){const seq=r.seq||[];const last=k=>{for(let i=seq.len
   if(r.type==='setErr')addMor(last('set'),-4);
   if(r.type==='mix'){const mx=(r.seq||[]).find(x=>x.k==='mix');if(mx)for(const id of mx.ids){const p=findPl(m,id);if(p)addMor(p,-3);}}
   for(let i=0;i<2;i++){const oc=onCourt(m.sides[i],m.serving===i);for(const e of oc){const p=e.p;if(i===w)addMor(p,1);else{addMor(p,-1);if(m.run.t===w&&m.run.n>=3&&p.opa<11)addMor(p,-1);}}}}
-function callTimeout(m,i){const s=m.sides[i];if(s.to<=0)return false;s.to--;if(i===0&&m.ctx&&typeof achEv==='function')achEv('to');for(const e of onCourt(s,m.serving===i)){addMor(e.p,2);if(MENT&&(e.p.cf||0)<0)e.p.cf*=0.3;}m.sides[1-i].mom=0;s.mom=Math.max(0,s.mom);m.run.n=0;return true;}
+function callTimeout(m,i){const s=m.sides[i];if(s.to<=0)return false;s.to--;if(i===0&&m.ctx&&typeof achEv==='function')achEv('to');for(const e of onCourt(s,m.serving===i)){addMor(e.p,2);if(MENT&&(e.p.cf||0)<0)e.p.cf*=0.3;e.p.cfN=0;}m.sides[1-i].mom=0;s.mom=Math.max(0,s.mom);m.run.n=0;return true;}
 // ---- okrzyki trenera w trakcie meczu ----
 const SHOUTS=[['go','Dawać, gramy!','🔥','Nakręca zespół: impet i lepsza gra przez kilka akcji. Najlepiej działa przy wyrównanym wyniku.'],
  ['calm','Spokojnie!','🧘','Uspokaja: pomaga w końcówkach i nerwowym zawodnikom.'],

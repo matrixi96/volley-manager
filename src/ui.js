@@ -110,6 +110,7 @@ function optGroup(name,opts,cur,fn){return `<div class="opts">${opts.map(([l,d],
 function tacticsView(){const tc=myTac();const tt=ui.tacT||'set';const tabs=`<div class="ptabs"><button class="tabb ${tt==='set'?'on':''}" onclick="ui.tacT='set';render()">Ustawienia</button><button class="tabb ${tt==='eff'?'on':''}" onclick="ui.tacT='eff';render()">Efektywność taktyczna <small class="mut">${tacEff(SAVE.team).score}</small></button></div>`;
   if(tt==='eff')return tabs+tacEffView();
   return tabs+`<div class="card"><h2>Zagrywka</h2>${optGroup('serve',SERVE_OPT,tc.serve,'setServe')}${srvTacRows(tc,myTeam().players)}</div>
+  <div class="card"><h2>Przyjęcie</h2>${shieldTacHtml(tc,myTeam().players)}</div>
   <div class="card"><h2>Rozegranie</h2>${optGroup('dist',DIST_OPT,tc.dist,'setDist')}</div>
   <div class="card"><h2>Ustawienia</h2>${p1TacHtml(tc)}</div>
   <div class="card"><h2>Atak</h2>${atkTacHtml(tc)}</div>
