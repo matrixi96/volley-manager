@@ -115,7 +115,7 @@ function finishSeason(){
   s.final=[seriesWinner(F),seriesLoser(F),seriesWinner(B),seriesLoser(B)].concat(qfL,s.seed.slice(8));
   s.phase='end';s.endDate=addDays(s.podates[Math.max(0,s.po.day-1)],3);
   bgFinishAll();s.lgFinal={};s.lgFinal[myLg()]=s.final;if(s.oth)for(const k in s.oth)if(s.oth[k].final)s.lgFinal[k]=s.oth[k].final;
-  for(const k in s.lgFinal){const [b0,st]=LG_REP[k];s.lgFinal[k].forEach((ti,pl)=>{const a=SAVE.ai[ti];a.rep=Math.round(clamp(a.rep*0.75+(b0-pl*st)*0.25,5,100));});
+  for(const k in s.lgFinal){const [b0,st]=LG_REP[k];s.lgFinal[k].forEach((ti,pl)=>{const a=SAVE.ai[ti];const kw=BAL2?0.15:0.25;a.rep=Math.round(clamp(a.rep*(1-kw)+(b0-pl*st)*kw,5,100));});
     if(+k!==myLg())news(`🏆 ${TEAMS[s.lgFinal[k][0]].name} wygrywa ${LG_N[k]} w sezonie ${sLabel(s.n)}.`);}
   s.moves=leagueMoves(s.lgFinal);
   for(const mv of s.moves)news(mv.up?`⬆️ ${TEAMS[mv.i].name} awansuje do ${LG_N[mv.to]==='Ekstraliga'?'Ekstraligi':LG_N[mv.to]==='1. Liga'?'1. Ligi':LG_N[mv.to]}${mv.i===SAVE.team?' — to nasz awans!':''}.`:`⬇️ ${TEAMS[mv.i].name} spada do ${LG_N[mv.to]==='1. Liga'?'1. Ligi':'2. Ligi'}${mv.i===SAVE.team?' — to nasz spadek.':''}.`);

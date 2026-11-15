@@ -49,7 +49,19 @@ function monthly(d){if(!SAVE.fin||SAVE.team==null)return;const m=+d.slice(5,7);c
   const stp=staffPay()/12,mnt=maintenance();const shm=shopMonth(myInfra().sklep,false);const shp=shm.tot;SAVE.eco.shopLast={m:(m+10)%12+1,rows:shm.rows,tot:shm.tot,rev:shm.rev};
   const spd=typeof sponsorsMonth==='function'?sponsorsMonth(d):null;const spm=spd?spd.inc:sp;
   money(-pay,'Pensje');money(spm,'Sponsor');money(-stp,'Sztab');money(-mnt,'Utrzymanie');money(shp,'Sklep');const f=SAVE.fin;f.log.unshift({d,t:`${MON_NOM[m-1]}: pensje zawodników (−${fmt(pay)}) i sztabu (−${fmt(stp)}), utrzymanie (−${fmt(mnt)}), sponsorzy (+${fmt(spm)}), sklep (+${fmt(shp)})`,a:spm+shp-pay-stp-mnt});f.log=f.log.slice(0,80);
+  try{debtCheck(d);}catch(e){console.error(e);}
   if(typeof sendMail==='function'){const pm=MON_NOM[(m+10)%12];const rows=[['Sponsorzy',spm],['Sklep kibica',shp],['Pensje zawodników',-pay],['Pensje sztabu',-stp],['Utrzymanie obiektów',-mnt]];sendMail({cat:'fin',from:'Księgowość klubu',t:`Rozliczenie miesiąca: ${MON_NOM[m-1]}`,s:`Bilans: ${fmt(spm+shp-pay-stp-mnt)} · saldo ${fmt(f.bal)}`,b:{type:'fin',rows,tot:spm+shp-pay-stp-mnt,bal:f.bal},lab:'Miesięczne zestawienie'});}}
+// zarząd reaguje na dług: poniżej −1 mln zł przymusowa sprzedaż najdroższego zawodnika (raz w miesiącu)
+function debtCheck(d){if(!BAL2||!SAVE.fin||SAVE.fin.bal>-500000)return;
+  if(SAVE.fin.bal>-1000000){if(typeof sendMail==='function')sendMail({cat:'fin',from:'Zarząd klubu',t:'Ostrzeżenie: dług klubu',s:`Saldo ${fmt(SAVE.fin.bal)}. Poniżej −1 mln zł zarząd zacznie sprzedawać zawodników.`,lab:'Finanse'});return;}
+  const t=myTeam();if(!t)return;
+  const p=t.players.filter(x=>!x.jr).sort((a,b)=>pValue(b)-pValue(a))[0];if(!p)return;const bs=findBuyers(p.id);const b=bs[0]||null;
+  const fee=round5k(b?Math.max(b.fee*0.85,pValue(p)*0.7):pValue(p)*0.6);const dest=b?TEAMS[b.tm].name:'klubu zagranicznego';
+  if(b){SAVE.ai[b.tm].bud-=Math.min(SAVE.ai[b.tm].bud,fee);movePlayer(p,b.tm);p.wage=wageDemand(p);}else{W().players=W().players.filter(x=>x.id!==p.id);syncTeams();}
+  if(myTeam().players.length<SQUAD_MIN)aiSign(myTeam(),p.pos);syncTeams();
+  money(fee,'Transfery');finLog(`Przymusowa sprzedaż (dług klubu): ${p.first} ${p.last} do ${dest}`,fee);
+  SAVE.debtSales=(SAVE.debtSales||0)+1;news(`🏦 Zarząd sprzedał ${p.first} ${p.last} do ${dest} za ${fmt(fee)}, żeby ratować finanse klubu.`);
+  if(typeof sendMail==='function')sendMail({cat:'fin',from:'Zarząd klubu',t:'Przymusowa sprzedaż zawodnika',s:`Dług przekroczył 1 mln zł. Sprzedaliśmy ${p.first} ${p.last} do ${dest} za ${fmt(fee)}.`,lab:'Finanse'});}
 function advanceTo(t){
   let d=today();const born=[];const mine=SAVE.team!=null&&SAVE.world?myTeam().players:[];const tdays=[];
   while(d<t){d=addDays(d,1);tdays.push(d);SAVE._now=d;if(d.endsWith('-01'))monthly(d);checkBuild(d);const md=d.slice(5);for(const p of mine)if(p.dob&&p.dob.slice(5)===md)born.push(p);}

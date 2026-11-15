@@ -89,7 +89,7 @@ const JR_PLAN=['R','R','A','A','P','P','P','S','S','S','L','L'];
 function genJunior(ti,age,pos){const t=TEAMS[ti];const inf=infraOf(ti);const mine=ti===SAVE.team;
   const jq=teamQ(t)-2.5-4.5+0.4*inf.akad+((mine?staffSkill('jr'):aiStaff(ti))-10)*0.06+(mine&&SAVE.coach?(cA('mlo')-10)*0.04:0)+(age-16)*0.6;
   const p=genPlayer(pos||randPos(),jq+R()*1.2,age);p.tm=ti;p.jr=true;p.inj=0;p.xp={};p.wage=0;p.ce=0;
-  p.pot=Math.min(92,Math.round(rating(p)+4+R()*12+inf.akad));p.base=snap(p);assignNum(p,ti);return p;}
+  p.pot=Math.min(92,Math.round(rating(p)+(BAL2?3+R()*9:4+R()*12)+inf.akad));p.base=snap(p);assignNum(p,ti);return p;}
 function initClub(){
   if(!SAVE.ai)return;
   for(const t of TEAMS)infraOf(t.idx);
