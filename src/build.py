@@ -15,5 +15,8 @@ html = html.replace('<title>Volley Manager — prototyp</title>', '''<title>Voll
 <meta name="apple-mobile-web-app-title" content="Volley Manager">''', 1)
 html = html.replace('</body></html>', '''<script>if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
 </body></html>''', 1)
+import re
+_v = re.search(r"volley-manager-v(\d+)", (root / 'sw.js').read_text(encoding='utf-8'))
+html = html.replace('__APPV__', _v.group(1) if _v else '0')
 (root / 'index.html').write_text(html, encoding='utf-8')
 print('index.html zbudowany')
