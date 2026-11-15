@@ -427,7 +427,6 @@ function attackPhase(m,A,q,by,log,act,pd){
   let mult=1;const MD={midS:0,midL:2,midR:3};
   if(wing!=='M'){if(bset===1){const cz=blockers.reduce((s,x)=>s+eff(x.p,'czy'),0)/blockers.length;mult=1+(cz-10)/10*0.12;}else mult=((bset===0)===(dir==='cross'))?1.55:0.5;}
   else if(dir in MD){if(bset===1){const cz=blockers.reduce((s,x)=>s+eff(x.p,'czy'),0)/blockers.length;mult=1+(cz-10)/10*0.1;}else mult=MD[dir]===bset?1.8:0.55;if(opp.tactics.blk3===2)mult*=0.6;}
-  {const bk=wing==='M'?'blkM':(wing==='L4'?'blkR':'blkL');mult=1+(mult-1)*famF(opp,bk);}
   if(triple)mult*=1.28;
   if(mCom&&quick)mult*=2.0;// środkowy w ciemno: krótka wpada prosto w blok
   if(late||swp)mult*=LTB;// mniej opcji ataku albo atak poza pozycją: blok rywala ma łatwiej
