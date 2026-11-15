@@ -47,7 +47,7 @@ const WEIGHTS={
   S:{blo:4.5,ata:2.5,sko:1.5,szy:1,zag:1,sil:0.5,kon:0.5,czy:1.5,kiw:0.3},
   L:{prz:4.5,obr:4.5,tod:2,zwi:1.5,szy:1,roz:0.5,kon:0.5,czy:1.5}
 };
-for(const k in WEIGHTS)Object.assign(WEIGHTS[k],{kcj:0.6,opa:0.5,zaa:0.4,wal:0.4,kom:0.4});
+for(const k in WEIGHTS)Object.assign(WEIGHTS[k],{kcj:1.1,opa:0.9,zaa:0.7,wal:0.7,kom:0.4});// mentalność waży w meczu podobnie jak fizyczność
 const POS_OFF={};
 function posOff(pos){if(POS_OFF[pos]==null){const w=WEIGHTS[pos];let s=0,t=0;for(const k in w){s+=(TEMPL[pos][k]||0)*w[k];t+=w[k];}POS_OFF[pos]=s/t;}return POS_OFF[pos];}
 function rating(p,pos){pos=pos||p.pos;if(p.czy==null||p.kiw==null||p.kom==null)ensAttrs(p);const w=WEIGHTS[pos];let s=0,t=0;for(const k in w){s+=p[k]*w[k];t+=w[k];}let r=s/t-posOff(pos)+2.5;if(pos!=='L')r+=(p.h-HEIGHT[pos][0]-6)*0.05;return Math.round(clamp(r*5,1,100));}

@@ -9,7 +9,20 @@ function W(){return SAVE.world;}
 function fmt(n){n=Math.round(n);const a=Math.abs(n);let s;if(a>=1e6)s=(n/1e6).toFixed(2).replace('.',',')+' mln';else if(a>=1e3)s=Math.round(n/1e3)+' tys.';else s=String(n);return s+' zł';}
 function fmtFull(n){return Math.round(n).toLocaleString('pl-PL')+' zł';}
 function round5k(x){return Math.max(5000,Math.round(x/5000)*5000);}
-function pValue(p){const r=rating(p);const af=p.age<=22?1.35:p.age<=28?1.1:p.age<=31?0.85:p.age<=33?0.55:0.3;const pf=1+Math.max(0,(p.pot||r)-r)/35;return Math.max(10000,Math.round(Math.pow(Math.max(0,r-50)/40,2.5)*1500000*af*pf/10000)*10000);}
+// forma sezonu: średnia ocena z meczów względem oczekiwanej dla zawodnika o tej ocenie i pozycji
+// (obecny sezon od 3 meczów, wcześniej poprzedni sezon)
+function formRef(){const s=S();if(!s||!s.ps)return null;const key=today()+':'+Object.keys(s.ps).length;if(SAVE._fr&&SAVE._fr.k===key)return SAVE._fr.v;
+  const acc={};for(const p of W().players){const r=s.ps[p.id];if(!r||!(r.rn>=3))continue;const a=acc[p.pos]||(acc[p.pos]={n:0,sx:0,sy:0,sxx:0,sxy:0});const x=rating(p),y=r.rs/r.rn;a.n++;a.sx+=x;a.sy+=y;a.sxx+=x*x;a.sxy+=x*y;}
+  const v={};for(const k in acc){const a=acc[k];const mx=a.sx/a.n,my=a.sy/a.n,vx=a.sxx/a.n-mx*mx;const b=a.n>=8&&vx>1?(a.sxy/a.n-mx*my)/vx:0;v[k]={a:my-b*mx,b};}
+  Object.defineProperty(SAVE,'_fr',{value:{k:key,v},writable:true,configurable:true,enumerable:false});return v;}
+function formDelta(p){const s=S();const r=s&&s.ps?s.ps[p.id]:null;if(!r||!(r.rn>=3))return null;const ref=formRef();const f=ref&&ref[p.pos];if(!f)return null;return {d:r.rs/r.rn-(f.a+f.b*rating(p)),avg:r.rs/r.rn,n:r.rn};}
+function seasonForm(p){let x=formDelta(p);if(!x&&p.lsR)x={d:p.lsR[0],avg:p.lsR[2],n:p.lsR[1]};if(!x)return {f:0,avg:null,n:0};
+  const w=Math.min(1,x.n/10);return {f:clamp(x.d*0.16,-0.15,0.2)*w,d:x.d,avg:x.avg!=null?Math.round(x.avg*100)/100:null,n:x.n};}
+const TR_VAL={pro:1.5,lid:1.5,spo:1,pra:1,zde:1,amb:0,ind:-1,len:-1.5,kap:-1.5,ner:-1.5};
+function traitVal(p){if(!p.tr)ensTraits(p);return clamp(p.tr.reduce((s,k)=>s+(TR_VAL[k]||0),0),-1.5,1.5)/100;}
+function pValueBase(p){const r=rating(p);const af=p.age<=22?1.35:p.age<=28?1.1:p.age<=31?0.85:p.age<=33?0.55:0.3;const pf=1+Math.max(0,(p.pot||r)-r)/35;return Math.pow(Math.max(0,r-50)/40,2.5)*1500000*af*pf;}
+function pValue(p){return Math.max(10000,Math.round(pValueBase(p)*(1+seasonForm(p).f)*(1+traitVal(p))/10000)*10000);}
+function valTip(p){const sf=seasonForm(p),tv=traitVal(p);const a=[];if(sf.n)a.push(`forma sezonu ${sf.f>=0?'+':''}${String(Math.round(sf.f*1000)/10).replace('.',',')}% (śr. ocena ${sf.avg!=null?String(sf.avg).replace('.',','):'?'} w ${sf.n} meczach)`);if(tv)a.push(`charakter ${tv>0?'+':''}${String(Math.round(tv*1000)/10).replace('.',',')}%`);return a.join(' · ');}
 function wageDemand(p){const r=rating(p);return round5k(Math.max(40000,Math.pow(Math.max(0,r-45)/45,2)*700000)*(p.age>=33?0.8:1));}
 function snap(p){const o={};for(const k of ALL_KEYS)o[k]=p[k];return o;}
 function baseRating(p){return p.base?rating(Object.assign({},p,p.base)):rating(p);}
@@ -183,6 +196,7 @@ function offseason(){
   const old=S(),n=old.n+1;
   advanceTo(`${2026+old.n}-06-01`);
   // starzenie, spadek formy, emerytury
+  for(const p of W().players){const x=formDelta(p);p.lsR=x?[Math.round(x.d*100)/100,x.n,Math.round(x.avg*100)/100]:null;}
   const keep=[];
   for(const p of W().players){
     if(p.age>=28)for(const [k] of PHYS)if(R()<(p.age-27)*0.14*(hasT(p,'pro')?0.6:1)&&p[k]>1)p[k]--;
@@ -238,7 +252,7 @@ function cardModal(){
    <div class="row"><span class="cface">${pFace(p,84)}</span><div><div class="mut small">${p.tm>=0?tDot(p.tm)+esc(TEAMS[p.tm].name)+(p.jr?' · juniorzy U20':''):'Wolny zawodnik'}</div><h2>${p.num&&p.tm>=0?p.num+'. ':''}${esc(p.first)} ${esc(p.last)}${p.star?' <span title="Gwiazda zespołu">⭐</span>':''}</h2></div><span class="sp"></span><button class="ghost" onclick="ui.card=null;ui.offers=null;render()">✕</button></div>
    ${ui.tmsg?`<div class="tmsg ${ui.tmsg.ok?'ok':'no'}">${esc(ui.tmsg.t)}</div>`:''}
    <div class="cinfo"><div><span class="mut small">Pozycja</span><b>${POS_NAMES[p.pos]}</b></div><div><span class="mut small">Wiek</span><b>${p.age} <small class="mut">(ur. ${p.dob?fmtDMY(p.dob):'?'})</small></b></div><div><span class="mut small">Wzrost</span><b>${p.h} cm</b></div>
-   <div><span class="mut small">Ocena${mine?'':' (wiedza '+knowOf(p)+'%)'}</span><b>${mine?r:rTxt(p)}${mine&&r!==br?` <small class="${r>br?'good':'bad'}">${r>br?'+':''}${r-br}</small>`:''}</b></div><div><span class="mut small">Potencjał${p.tm!==SAVE.team?' (wg skauta)':''}</span><b class="stars">${potStars(p)}</b></div><div><span class="mut small">Wartość</span><b>${fmt(pValue(p))}</b></div>
+   <div><span class="mut small">Ocena${mine?'':' (wiedza '+knowOf(p)+'%)'}</span><b>${mine?r:rTxt(p)}${mine&&r!==br?` <small class="${r>br?'good':'bad'}">${r>br?'+':''}${r-br}</small>`:''}</b></div><div><span class="mut small">Potencjał${p.tm!==SAVE.team?' (wg skauta)':''}</span><b class="stars">${potStars(p)}</b></div><div><span class="mut small">Wartość</span><b>${fmt(pValue(p))}</b>${valTip(p)?`<small class="mut" style="display:block;font-size:10.5px">${esc(valTip(p))}</small>`:''}</div>
    <div><span class="mut small">Pensja</span><b>${p.tm>=0?fmt(p.wage)+'/rok':'—'}</b></div><div><span class="mut small">Kontrakt do</span><b>${p.tm>=0?ceDate(p.ce):'—'}</b></div><div><span class="mut small">Forma</span><b>${formChip(p,true)} <small class="fmhs">${fmHist(p)}</small></b></div>${mine?`<div><span class="mut small">Świeżość</span><b style="color:${frCol(frOf(p))}">${Math.round(frOf(p))}%</b></div>`:''}<div><span class="mut small">Zdrowie</span><b>${p.inj?`🚑 do ${p.injUntil?fmtDMY(p.injUntil):'?'} (${p.inj} dni)`:'✅ zdrowy'}</b></div></div>
    <div class="ptr" style="margin:8px 0">${(ensTraits(p),p.tr).map(k=>`<div>${trChip(k,true)}<span class="small mut">${esc(TRAITS[k][2])}</span></div>`).join('')}${mine&&!p.jr?(isCap(p)?'<div><span class="capb">C</span> <span class="small">Kapitan drużyny</span></div>':`<div><button class="link" onclick="setCaptain('${p.id}')">©️ Mianuj kapitanem</button></div>`):''}</div><div class="cgrid">${grp('Techniczne',ATTRS)}${grp('Fizyczne',PHYS)}${grp('Mentalne',MENTAL)}</div>
    <p class="mut small">${mine?'Małe liczby przy atrybutach to zmiana od początku sezonu.':`Zakresy (np. 12–15) to szacunek skautów — wiedza o zawodniku ${knowOf(p)}%. ${SC().tasks.some(t=>t.pid===p.id)?'Skaut właśnie go obserwuje.':`<button class="link" onclick="ui.card=null;observe('${p.id}')">Zleć obserwację</button>`} · <button class="link" onclick="toggleShort('${p.id}')">${isShort(p.id)?'★ obserwowany':'☆ dodaj do obserwowanych'}</button>`}</p>
