@@ -26,7 +26,7 @@ function valTip(p){const sf=seasonForm(p),tv=traitVal(p);const a=[];if(sf.n)a.pu
 function wageDemand(p){const r=rating(p);return round5k(Math.max(40000,Math.pow(Math.max(0,r-45)/45,2)*700000)*(p.age>=33?0.8:1));}
 function snap(p){const o={};for(const k of ALL_KEYS)o[k]=p[k];return o;}
 function baseRating(p){return p.base?rating(Object.assign({},p,p.base)):rating(p);}
-function potBonus(age,r){const k=r>=85?0.5:r>=80?0.75:1;return k*(age<=21?3+R()*12:age<=24?2+R()*7:age<=27?R()*3:0);}
+function potBonus(age,r){const k=r>=85?0.5:r>=80?0.75:1;return BAL2?k*(age<=21?2+R()*9:age<=24?1+R()*5:age<=27?R()*2:0):k*(age<=21?3+R()*12:age<=24?2+R()*7:age<=27?R()*3:0);}
 function initRep(t){const s=teamStrength(t),l=lgOf(t.idx);return Math.round(l===0?clamp((s-65)*3.5,45,90):l===1?clamp(25+(s-65)*3,22,50):clamp(10+(s-54)*2,8,30));}
 function teamQ(t){return teamStrength(t)/5;}
 function restoreDefs(){TEAMS.forEach((t,i)=>{const d=TEAM_DEFS[i];t.name=d.name;t.short=d.short;t.color=d.color;t.city='';});applyCustom();}
@@ -84,7 +84,7 @@ function develop(p,focus,intI,played,mods,jr,km){
   const r=rating(p);const gap=(p.pot||r)-r;if(gap<=0)return;
   const af=p.age<=20?1:p.age<=23?0.75:p.age<=26?0.45:p.age<=29?0.2:0.05;
   const tm=(hasT(p,'amb')?1.15:1)*(hasT(p,'pra')?1.2:1)*(hasT(p,'len')?0.78:1)*(hasT(p,'pro')?1.05:1);
-  const pts=tm*af*TRAIN_INT[intI][1]*(played?1.25:1)*Math.min(1.5,0.5+gap/20)*0.17*(mods?(jr?mods.jr:mods.all):1)*(km==null?1:km);
+  const pts=tm*af*TRAIN_INT[intI][1]*(played?1.25:1)*Math.min(1.5,0.5+gap/20)*0.17*(mods?(jr?mods.jr:mods.all):1)*(km==null?1:km)*(BAL2&&p.tm!==SAVE.team?0.55:1);
   const fk=(TRAIN_FOCUS.find(f=>f[0]===focus)||TRAIN_FOCUS[0])[3];const pw=WEIGHTS[p.pos];
   const w={};let tot=0;for(const k of ALL_KEYS){let x=0.3;if(pw[k])x+=1.5;if(fk.includes(k))x+=3;w[k]=x;tot+=x;}
   p.xp=p.xp||{};
@@ -184,6 +184,7 @@ function aiOffseason(){
       const cur=t.players.filter(x=>x.pos===pos).map(x=>rating(x)).sort((a,b)=>b-a);
       const c=pr?W().players.filter(p=>p.tm>=0&&p.tm!==t.idx&&p.tm!==SAVE.team&&p.pos===pos&&canSellAI(p)&&(!isStarter(p)||lgOf(p.tm)>lgOf(t.idx))&&rating(p)>(cur[0]||0)-2&&askingPrice(p)<=SAVE.ai[t.idx].bud*0.6).sort((a,b)=>rating(b)-rating(a))[0]
         :W().players.filter(p=>p.tm>=0&&p.tm!==t.idx&&p.tm!==SAVE.team&&p.pos===pos&&!isStarter(p)&&canSellAI(p)&&rating(p)>(cur[1]||0)).sort((a,b)=>rating(b)-rating(a))[0];
+      if(c&&BAL2&&teamWages(t.idx)+wageDemand(c)>wageCap(t.idx))continue;
       if(c){const fee=askingPrice(c);if(SAVE.ai[t.idx].bud>=fee){const from=c.tm;SAVE.ai[t.idx].bud-=fee;SAVE.ai[from].bud+=fee;movePlayer(c,t.idx);c.wage=wageDemand(c);c.ce=n+1+Math.floor(R()*2);
         news(`🔁 Transfer: ${c.first} ${c.last} przechodzi z ${TEAMS[from].name} do ${t.name} za ${fmt(fee)}.`);}}}
     for(const pos of ['R','A','P','S','L'])while(posCount(t,pos)<POS_STD[pos]&&t.players.length<16)aiSign(t,pos);
@@ -192,6 +193,15 @@ function aiOffseason(){
   }
   syncTeams();
 }
+// limit płac klubu (zależny od ligi) – bogaty klub nie skupuje wszystkich gwiazd
+const WAGE_CAP=[5000000,2300000,1000000];
+function teamWages(ti){return TEAMS[ti].players.reduce((a,p)=>a+(p.wage||0),0);}
+function wageCap(ti){return WAGE_CAP[lgOf(ti)]||WAGE_CAP[2];}
+// gwiazdy komputera odchodzą do lig zagranicznych (klub dostaje odstępne)
+function starsAbroad(){const n=S().n;const out=[];for(const p of W().players){if(p.tm<0||p.tm===SAVE.team||p.jr)continue;const r=rating(p);if(r<82||p.age>31)continue;
+    const ch=0.12+(r-82)*0.03;if(R()<ch){const ti=p.tm;const fee=round5k(pValue(p)*0.8);SAVE.ai[ti].bud+=fee;out.push(p.id);news(`✈️ ${p.first} ${p.last} (${TEAMS[ti].name}) przechodzi do ligi zagranicznej za ${fmt(fee)}.`);}}
+  if(out.length){const s=new Set(out);W().players=W().players.filter(p=>!s.has(p.id));syncTeams();
+    for(const t of TEAMS){if(t.idx===SAVE.team)continue;for(const pos of ['R','A','P','S','L'])while(posCount(t,pos)<POS_STD[pos]&&t.players.length<16)aiSign(t,pos);}syncTeams();}}
 function offseason(){
   const old=S(),n=old.n+1;
   advanceTo(`${2026+old.n}-06-01`);
@@ -199,8 +209,10 @@ function offseason(){
   for(const p of W().players){const x=formDelta(p);p.lsR=x?[Math.round(x.d*100)/100,x.n,Math.round(x.avg*100)/100]:null;}
   const keep=[];
   for(const p of W().players){
-    if(p.age>=28)for(const [k] of PHYS)if(R()<(p.age-27)*0.14*(hasT(p,'pro')?0.6:1)&&p[k]>1)p[k]--;
-    if(p.age>=31)for(const [k] of ATTRS)if(k!=='czy'&&R()<(p.age-30)*0.1*(hasT(p,'pro')?0.6:1)&&p[k]>1)p[k]--;
+    if(BAL2){if(p.age>=27)for(const [k] of PHYS)if(R()<(p.age-26)*0.18*(hasT(p,'pro')?0.6:1)&&p[k]>1)p[k]--;
+      if(p.age>=30)for(const [k] of ATTRS)if(k!=='czy'&&R()<(p.age-29)*0.14*(hasT(p,'pro')?0.6:1)&&p[k]>1)p[k]--;}
+    else{if(p.age>=28)for(const [k] of PHYS)if(R()<(p.age-27)*0.14*(hasT(p,'pro')?0.6:1)&&p[k]>1)p[k]--;
+    if(p.age>=31)for(const [k] of ATTRS)if(k!=='czy'&&R()<(p.age-30)*0.1*(hasT(p,'pro')?0.6:1)&&p[k]>1)p[k]--;}
     const r=rating(p);if(p.pot<r)p.pot=r;
     const retire=p.age>=37||(p.age>=35&&R()<0.5)||(p.tm<0&&p.age>=33&&R()<0.5);
     if(retire){if(p.tm===SAVE.team)news(`👋 ${p.first} ${p.last} (${p.age} l.) kończy karierę.`);continue;}
@@ -216,7 +228,8 @@ function offseason(){
   let fa=W().players.filter(p=>p.tm<0).sort((a,b)=>rating(b)-rating(a));
   if(fa.length>30){const drop=new Set(fa.slice(30).map(p=>p.id));W().players=W().players.filter(p=>!drop.has(p.id));}
   while(W().players.filter(p=>p.tm<0).length<20){const p=genPlayer(randPos(),10+R()*3,20+Math.floor(R()*12));p.tm=-1;initPlayerMeta(p,n,true);W().players.push(p);}
-  for(const a of SAVE.ai)a.bud=round5k(a.bud*0.5+200000+a.rep*15000+R()*300000);
+  for(const a of SAVE.ai)a.bud=round5k(BAL2?a.bud*0.35+150000+a.rep*12000+R()*250000:a.bud*0.5+200000+a.rep*15000+R()*300000);
+  if(BAL2)starsAbroad();
   for(const p of W().players){p.base=snap(p);}
   // oferty za zawodników użytkownika
   SAVE.inbox=[];
