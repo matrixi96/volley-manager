@@ -38,6 +38,7 @@ function talkState(){return ui.talkSt||(ui.talkSt={tone:null,hint:null});}
 function talkPlayers(m){const s=m.sides[0];return onCourt(s,m.serving===0).map(e=>e.p);}
 function applyTone(k){const m=ui.match;if(!m)return;const st=talkState();if(st.tone)return;const T=TALK_TONE.find(x=>x[0]===k);const s=m.sides[0];const oc=talkPlayers(m);
   const behind=m.score[1]-m.score[0];const mot=cA('mot'),aut=cA('aut');const cp=myCaptain();const amp=(0.8+aut/50)*(cp&&oc.some(x=>x.id===cp.id)?1+Math.max(0,capBonus(cp))*3:1);const del={};
+  if(k==='calm'&&typeof cfNote==='function'&&oc.some(p=>(p.cf||0)<=-1))cfNote(m,{k:'calm',i:0});
   for(const p of oc){const mor=p.mor==null?60:p.mor;let d=0;if(k==='calm'&&(p.cf||0)<0){p.cf=0;p.cfN=0;}
     if(k==='enc')d=2+(mot-10)*0.5+(behind>=3?3:0)+(mor<50?2:0);
     else if(k==='dem')d=((p.zaa+(hasT(p,'amb')?16:p.wal))/2-10)*0.8+(mot-10)*0.3-(p.opa<9?2:0)-(mor<45?2:0);

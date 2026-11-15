@@ -26,7 +26,17 @@ function mailMatch(m,c){try{const me=m.sides[0],op=m.sides[1];const won=m.winner
   const s=S();let pos=null;if(c.kind==='liga'||c.kind==='po'){const tb=leagueTable();pos=tb.findIndex(x=>x.i===SAVE.team)+1;}
   const kind=c.kind==='spar'?'Sparing':c.kind==='po'?'Play-off':`${s.round}. kolejka`;const sc=`${m.setsWon[0]}:${m.setsWon[1]}`;
   sendMail({cat:'mecz',from:c.kind==='spar'?'Sekretariat klubu':'Biuro ligi',t:`${kind}: ${won?'wygrana':'porażka'} ${sc} z ${op.team.name}`,s:`${won?'Wygrywamy':'Przegrywamy'} ${sc}. Zawodnik meczu: ${best?best[1]:'—'}.${pos?` Jesteśmy na ${pos}. miejscu.`:''}`,
-    b:{type:'match',me:me.team.idx,op:op.team.idx,home:c.h===SAVE.team,sets:m.sets.map(x=>x.slice()),sw:m.setsWon.slice(),won:won?1:0,pos,best,mine:mine.slice(0,8),T:[T.kill,T.att,T.blk,T.ace,T.recPos,T.rec,T.attErr+T.srvErr],O:[O.kill,O.att,O.blk,O.ace,O.recPos,O.rec,O.attErr+O.srvErr],kind}});}catch(e){console.error(e);}}
+    b:{type:'match',me:me.team.idx,op:op.team.idx,home:c.h===SAVE.team,sets:m.sets.map(x=>x.slice()),sw:m.setsWon.slice(),won:won?1:0,pos,best,mine:mine.slice(0,8),T:[T.kill,T.att,T.blk,T.ace,T.recPos,T.rec,T.attErr+T.srvErr],O:[O.kill,O.att,O.blk,O.ace,O.recPos,O.rec,O.attErr+O.srvErr],kind,psy:psyLines(m)}});}catch(e){console.error(e);}}
+// psychologia meczu: kto się załamał, kto zagrał mądrze, kto walczył
+function psyLines(m){const ev=m.cfEv||[],L=[];const W={prz:'w przyjęciu',zag:'na zagrywce',ata:'w ataku',roz:'w rozegraniu','':''};
+  const tl=ev.filter(e=>e.k==='tilt'&&e.i===0);const by={};for(const e of tl){(by[e.id]=by[e.id]||[]).push(e);}
+  for(const id in by){const xs=by[id];const ws=[...new Set(xs.map(x=>W[x.w]).filter(Boolean))];L.push(`🔻 ${xs[0].n} załamał się ${ws.join(' i ')||'po błędach'} (set ${[...new Set(xs.map(x=>x.set))].join(', ')}${xs.length>1?`, ${xs.length} razy`:''}).`);}
+  const cm=ev.filter(e=>e.k==='calm'&&e.i===0);if(cm.length)L.push(`🧘 Przerwa z uspokojeniem (set ${[...new Set(cm.map(x=>x.set))].join(', ')}) postawiła zespół na nogi.`);
+  const sf={};for(const e of ev)if(e.k==='safe'&&e.i===0)sf[e.n]=(sf[e.n]||0)+1;{const ks=Object.keys(sf);if(ks.length)L.push(`🧠 Po zepsutej zagrywce bezpiecznie zagrali: ${ks.map(n=>n+(sf[n]>1?` (${sf[n]}×)`:'')).join(', ')}.`);}
+  for(const p of m.sides[0].pl)if((p.st.sav||0)>=2)L.push(`💪 ${p.last} uratował ${p.st.sav} piłki „nie do obrony”.`);
+  const ot=[...new Set(ev.filter(e=>e.k==='tilt'&&e.i===1).map(e=>e.n))];if(ot.length)L.push(`Rywal: załamali się ${ot.join(', ')}.`);
+  if(ev.some(e=>e.k==='calm'&&e.i===1))L.push('Rywal brał przerwę, żeby uspokoić zespół.');
+  return L.slice(0,7);}
 function trSumm(days){const t=myTeam();const ag=t.players.map(p=>{const a=repAgg(days,p.id);return [p.id,p.last,a.n,a.avg==null?null:Math.round(a.avg*10)/10,Math.round(a.tot*100)/100,a.f0==null?0:a.f1-a.f0,a.fr,a.inj||0,Object.keys(a.up)];}).filter(x=>x[2]||x[7]);
   const cnt={};for(const d of days)for(const u of d.u)cnt[u]=(cnt[u]||0)+1;return {ag,cnt,from:days.length?days[days.length-1].d:null,to:days.length?days[0].d:null,n:days.length};}
 function asyName(){const a=SAVE.staff&&SAVE.staff.asy;return a?`${a.first[0]}. ${a.last} (asystent)`:'Sztab szkoleniowy';}
@@ -132,6 +142,7 @@ function matchMailHtml(b){const T=i=>TEAMS[i];const h=b.home?b.me:b.op,a=b.home?
     <div class="msets">${sets.map((s,i)=>`<div><span>Set ${i+1}</span><b>${s[0]}–${s[1]}</b></div>`).join('')}</div></div>
    ${b.best?`<h3>Zawodnik meczu</h3><div class="mpotm">${PLAYERS[b.best[0]]?pFace(PLAYERS[b.best[0]].p,56):''}<div><b class="mpn">${esc(PLAYERS[b.best[0]]?PLAYERS[b.best[0]].p.first+' '+b.best[1]:b.best[1])}</b><div class="mut">${POS_NAMES[b.best[2]]||''} · ${PLAYERS[b.best[0]]&&PLAYERS[b.best[0]].p.tm>=0?esc(TEAMS[PLAYERS[b.best[0]].p.tm].name):''}</div></div><span class="sp"></span><span class="mrt">${fx1(b.best[3])}</span></div>
      <div class="mkpi"><div><span>Punkty</span><b>${b.best[4]}</b></div><div><span>Skuteczność ataku</span><b>${b.best[5]==null?'–':b.best[5]+'%'}</b></div><div><span>Przyjęcie pozytywne</span><b>${b.best[6]==null?'–':b.best[6]+'%'}</b></div></div>`:''}
+   ${b.psy&&b.psy.length?`<h3>Psychologia meczu</h3><div class="mpsy">${b.psy.map(x=>`<div>${esc(x)}</div>`).join('')}</div>`:''}
    <h3>Statystyki drużyn</h3><div class="tw"><table class="cmp"><thead><tr><th class="l"></th><th>${esc(T(b.me).short)}</th><th>${esc(T(b.op).short)}</th></tr></thead><tbody>
     ${st('Atak',`${b.T[0]}/${b.T[1]} (${pc2(b.T[0],b.T[1])})`,`${b.O[0]}/${b.O[1]} (${pc2(b.O[0],b.O[1])})`)}${st('Bloki',b.T[2],b.O[2])}${st('Asy',b.T[3],b.O[3])}${st('Przyjęcie pozytywne',pc2(b.T[4],b.T[5]),pc2(b.O[4],b.O[5]))}${st('Błędy własne (atak + zagrywka)',b.T[6],b.O[6])}</tbody></table></div>
    <h3>Oceny naszych zawodników</h3><div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th>Ocena</th><th>Pkt</th><th>Atak</th><th>Przyj.+</th></tr></thead><tbody>${b.mine.map(x=>`<tr><td class="l"><b>${esc(x[1])}</b> <small class="mut">${x[2]?pTag(x[2]):''}</small></td><td class="${x[3]>=7?'good':x[3]<=5.4?'bad':''}"><b>${fx1(x[3])}</b></td><td>${x[4]}</td><td>${x[5]==null?'–':x[5]+'%'}</td><td>${x[6]==null?'–':x[6]+'%'}</td></tr>`).join('')}</tbody></table></div>

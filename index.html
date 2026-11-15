@@ -231,6 +231,7 @@ button.sm{padding:5px 10px;font-size:12px}
 .fmrt.up{background:#22c55e;color:#06210f}.fmrt.dn{background:#ef4444;color:#2a0606}
 .fmz .fmrt{position:absolute;top:3px;right:3px}
 .fmps,.fmps2{font-size:9px;font-weight:800;color:var(--mut);letter-spacing:.04em}.fmz .fmps{position:absolute;top:4px;left:5px}
+.mpsy{display:flex;flex-direction:column;gap:5px;font-size:13px;margin:4px 0 8px}.mpsy div{padding:6px 10px;background:#ffffff08;border-radius:8px}
 .cfi{font-size:10px;margin-left:2px}
 .fmnm{font-size:11px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fmen{width:80%;height:3px;border-radius:2px;background:#ffffff14;overflow:hidden}.fmen i{display:block;height:100%}
@@ -861,7 +862,7 @@ function mb(p,m,i){let b=(p.mor==null?0:(p.mor-60)/40*0.045)+formB(p)+cfB(p)+(p.
 function kc(p,m){let k=1.25-p.kcj/20*0.5;{const sd=m.sides&&m.sides.find(x=>x.pl.includes(p));if(sd&&sd.sh&&sd.sh.u>m.rallies&&sd.sh.e)k*=1-sd.sh.e;if(sd&&sd.tfE)k*=sd.tfE;}if(pressure(m))k*=1.15-p.opa/20*0.3;if(p.tr){if(hasT(p,'pro'))k*=0.9;if(hasT(p,'ner')&&pressure(m))k*=1.1;if(hasT(p,'ind'))k*=1.04;}if(MENT&&p.cf)k*=1-p.cf*0.08;return k;}
 function nerves(p,m){return pressure(m)&&p.opa<10?' Nerwy w końcówce!':'';}
 // ---- pewność siebie w meczu (cf: -3 roztrzęsiony … +2 w gazie) ----
-var MENT=1;
+var MENT=1,AIM=1;
 function cfK(p){const o=p.opa||10;let k=(1+(11-o)/20*(o>11?2.4:2.2))*(p.age>=28?0.8:p.age<=21?1.15:1);if(p.tr){if(hasT(p,'ner'))k*=1.45;if(hasT(p,'spo'))k*=0.45;if(hasT(p,'pro'))k*=0.3;if(hasT(p,'zde'))k*=0.6;}return clamp(k,0.05,3);}
 // posłuszeństwo wobec poleceń trenera (indywidualista robi po swojemu)
 function obeyF(p){if(!MENT||!p||!p.tr)return 1;let k=1;if(hasT(p,'ind'))k*=0.55;if(hasT(p,'kap')&&(p.unh||0)>=3)k*=0.75;if(hasT(p,'pro'))k*=1.1;return k;}
@@ -869,7 +870,9 @@ function obeyF(p){if(!MENT||!p||!p.tr)return 1;let k=1;if(hasT(p,'ind'))k*=0.55;
 function readF(p){return clamp(((p.czy||10)-8)/8,0,1.2)*(p.tr&&hasT(p,'ind')?0.7:1);}
 // technika amortyzuje nerwy: atrybut 18+ = połowa załamania; po 2 błędach z rzędu dalej już nie spada
 function cfDamp(p,sk){if(!sk)return 1;const v=sk==='prz'?(p.prz||10)*0.7+(p.tod||10)*0.3:(p[sk]||10);return 1-clamp((v-14)/4,0,1)*0.75;}
-function cfHit(p,m,x,sk){if(!MENT||!p)return;p.cfN=(p.cfN||0)+1;if(p.cfN>2)return;p.cf=clamp((p.cf||0)-x*cfK(p)*cfDamp(p,sk)*(pressure(m)?1.5:1),-3,2);}
+function cfHit(p,m,x,sk){if(!MENT||!p)return;p.cfN=(p.cfN||0)+1;if(p.cfN>2)return;const o=p.cf||0;p.cf=clamp(o-x*cfK(p)*cfDamp(p,sk)*(pressure(m)?1.5:1),-3,2);
+  if(o>-1.5&&p.cf<=-1.5&&m.sides){const i=m.sides.findIndex(sd=>sd.pl.includes(p));(m.cfEv=m.cfEv||[]).push({k:'tilt',i,id:p.id,n:p.last,set:m.setNo,w:sk||''});}}
+function cfNote(m,e){if(m)(m.cfEv=m.cfEv||[]).push(Object.assign({set:m.setNo},e));}
 function cfUp(p,m,x){if(!MENT||!p)return;const sd=m.sides.find(s=>s.pl.includes(p));const k=1+((p.wal||10)-10)/20+(sd&&sd.cfLid?0.5:0);p.cfN=0;p.cf=clamp((p.cf||0)+x*k,-3,2);}
 function cfB(p){return MENT?(p.cf||0)*0.035:0;}
 function mentQ(p,m){return ((p.kcj||10)*0.6+(pressure(m)?(p.opa||10):(p.kcj||10))*0.4)/20;}
@@ -899,7 +902,7 @@ function rally(m,ex){
   const n=(MENT?((eff(server,'zag')*0.8+eff(server,'sil')*0.2)/20*0.8+mentQ(server,m)*0.2):(eff(server,'zag')*0.8+eff(server,'sil')*0.2)/20)+bn(sS)+mb(server,m,S);
   // pamięć błędu zagrywki aż do następnej własnej zagrywki: mądry gra bezpiecznie, reszta traci pewność
   let sT=0,sSafe=0;if(MENT&&server.sT){sT=server.sT;server.sT=0;const smart=(eff(server,'czy')*0.6+eff(server,'opa')*0.4);const pS=clamp((smart-11)/5,0,0.8)*(hasT(server,'ind')?0.5:1)*(hasT(server,'pro')?1.15:1);
-    if(st>0&&!(tc.srvRisk||[]).includes(server.id)&&R()<pS){st=0;sSafe=1;sT=0;}}
+    if(st>0&&!(tc.srvRisk||[]).includes(server.id)&&R()<pS){st=0;sSafe=1;sT=0;cfNote(m,{k:'safe',i:S,id:server.id,n:server.last});}}
   server.st.srv++;
   const aim=(tc.tgt&&cD.some(x=>x.p.id===tc.tgt&&(x.role==='L'||x.role==='P')))||zt>0;const aimS=MENT&&tc.shk&&!aim&&cD.some(x=>(x.p.cf||0)<-0.7);
   const errP=[0.075,0.15,0.25][st]*(1.45-0.9*n)*kc(server,m)*(sS.tmp&&sS.tmp.n>0&&sS.tmp.k==='srv'?1.25:1)*(aim?1+Math.max(0,13-server.zag)*(zt>0?0.015:0.025):aimS?1.03+Math.max(0,13-server.zag)*0.01:1)*SRV_ERR[ty]*ZERR[zt]*(sT?1+sT*0.045:1);
@@ -1273,6 +1276,11 @@ function aiTurn(m,i){
     if(xs.length>=6){const c=xs.filter(d=>d.d==='cross').length/xs.length;t[key]=c>0.6?0:c<0.4?2:1;}}
     const ms=m.dirStats.filter(d=>d.i===1-i&&d.w==='M'&&/^mid/.test(d.d));if(ms.length>=6){const cnt={midS:0,midL:0,midR:0};for(const d of ms)cnt[d.d]++;const best=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];t.blkM=best[1]/ms.length>0.5?{midS:0,midL:2,midR:3}[best[0]]:1;}
     const own=m.dirStats.filter(d=>d.i===i&&d.d!=='free').slice(-30);if(own.length>=12){const bl=own.filter(d=>d.r==='blk').length/own.length,dg=own.filter(d=>d.r==='dig'||d.r==='wyb').length/own.length;t.adir=bl>0.13?4:0;t.atk=bl>0.13?0:dg>0.45?1:0;}}
+  // AI dba o psychikę swoich zawodników: przerwa z uspokojeniem i osłona roztrzęsionego przyjmującego
+  if(MENT&&AIM&&!isUser){const oc=onCourt(s,m.serving===i);const worst=oc.slice().sort((x,y)=>(x.p.cf||0)-(y.p.cf||0))[0];
+    if(worst&&(worst.p.cf||0)<=-1.5&&s.to>0&&R()<0.5){callTimeout(m,i);for(const e of oc)if((e.p.cf||0)<0){e.p.cf=0;e.p.cfN=0;}cfNote(m,{k:'calm',i});msgs.push(`Czas dla ${s.team.name}: trener uspokaja zespół.`);return msgs;}
+    const pr=oc.filter(e=>e.role==='P').sort((x,y)=>(x.p.cf||0)-(y.p.cf||0))[0];
+    if(pr&&(pr.p.cf||0)<=-1)s.tactics.shield=pr.p.id;else if(s.tactics.shield&&(!pr||(pr.p.cf||0)>-0.3))s.tactics.shield=null;}
   if(m.run.t===1-i&&m.run.n>=3&&s.to>0&&(m.score[1-i]>=8||m.run.n>=4)){callTimeout(m,i);msgs.push(`Czas dla ${s.team.name}.`);}
   else if(!isUser&&R()<0.035){const behind=m.score[1-i]-m.score[i];const k=pressure(m)?'calm':behind>=3?(R()<0.5?'fight':'wake'):m.run.t===i&&m.run.n>=2?'bravo':R()<0.5?'go':'focus';
     if(applyShout(m,i,k,0.9)){const t=SHOUTS.find(x=>x[0]===k);msgs.push(`🗣️ Trener ${s.team.short}: „${t[1]}”`);}}
@@ -2120,7 +2128,7 @@ function offseason(){
   applyLeagueMoves(old);
   newSeason(n,'off');
   aiOffseason();juniorsOffseason();aiInfraOffseason();refreshStaffPool();
-  {const ps=staffSkill('psy');const t=TEAMS[SAVE.team];if(t&&ps>10)for(const p of t.players){if(p.tr&&p.tr.includes('ner')&&R()<(ps-10)*0.04){p.tr=p.tr.filter(x=>x!=='ner');news(`🧠 Praca z psychologiem: ${p.first} ${p.last} nie jest już nerwowy.`);}}}
+  {const ps=staffSkill('psy');const t=TEAMS[SAVE.team];if(t&&ps>10)for(const p of t.players){if(p.tr&&p.tr.includes('ner')&&R()<(ps-10)*0.02){p.tr=p.tr.filter(x=>x!=='ner');news(`🧠 Praca z psychologiem: ${p.first} ${p.last} nie jest już nerwowy.`);}}}
   for(const r in SAVE.staff){const st=SAVE.staff[r];if(st){st.age++;if(st.age<50&&R()<0.4&&st.skill<20)st.skill++;}}
   // wolni zawodnicy: porządki i uzupełnienie
   let fa=W().players.filter(p=>p.tm<0).sort((a,b)=>rating(b)-rating(a));
@@ -3071,6 +3079,7 @@ function talkState(){return ui.talkSt||(ui.talkSt={tone:null,hint:null});}
 function talkPlayers(m){const s=m.sides[0];return onCourt(s,m.serving===0).map(e=>e.p);}
 function applyTone(k){const m=ui.match;if(!m)return;const st=talkState();if(st.tone)return;const T=TALK_TONE.find(x=>x[0]===k);const s=m.sides[0];const oc=talkPlayers(m);
   const behind=m.score[1]-m.score[0];const mot=cA('mot'),aut=cA('aut');const cp=myCaptain();const amp=(0.8+aut/50)*(cp&&oc.some(x=>x.id===cp.id)?1+Math.max(0,capBonus(cp))*3:1);const del={};
+  if(k==='calm'&&typeof cfNote==='function'&&oc.some(p=>(p.cf||0)<=-1))cfNote(m,{k:'calm',i:0});
   for(const p of oc){const mor=p.mor==null?60:p.mor;let d=0;if(k==='calm'&&(p.cf||0)<0){p.cf=0;p.cfN=0;}
     if(k==='enc')d=2+(mot-10)*0.5+(behind>=3?3:0)+(mor<50?2:0);
     else if(k==='dem')d=((p.zaa+(hasT(p,'amb')?16:p.wal))/2-10)*0.8+(mot-10)*0.3-(p.opa<9?2:0)-(mor<45?2:0);
@@ -3335,7 +3344,7 @@ function srvRiskTacHtml(t,pl){const sel=t.srvRisk||[];const ps=pl.filter(p=>p.po
   return `<div class="tacrow"><div class="tacl"><b>Mogą ryzykować</b><small class="mut">maks. 2 zawodników</small></div><div class="seg">${ps.map(p=>{const on=sel.includes(p.id);return `<button class="${on?'on':''}" title="${esc(POS_NAMES[p.pos]||'')}" onclick="toggleRisk('${p.id}')">${on?'✓ ':''}${p.num?p.num+' ':''}${esc(p.last)} · ${SRV_T[srvType(p)]}</button>`;}).join('')}</div><div class="small mut tacd">${sel.length?'Wybrani zawsze zagrywają ryzykownie (więcej asów i błędów), reszta według ustawienia ryzyka.':'Nikt nie jest wyznaczony: wszyscy zagrywają według ustawienia ryzyka.'} Przy nazwisku: naturalny typ zagrywki.</div></div>`;}
 function toggleRisk(id){const t=myTac();let a=(t.srvRisk||[]).slice();if(a.includes(id))a=a.filter(x=>x!==id);else{a.push(id);if(a.length>2)a.shift();}tacSet('srvRisk',a);}
 function srvSafeTacHtml(t){const v=t.srvSafe?1:0;return `<div class="tacrow"><div class="tacl"><b>Po asie lub błędzie zagrywki</b><small class="mut">następna zagrywka tej drużyny</small></div><div class="seg"><button class="${v?'':'on'}" onclick="tacSet('srvSafe',0)">Bez zmian</button><button class="${v?'on':''}" onclick="tacSet('srvSafe',1)">Bezpieczna</button></div><div class="small mut tacd">${v?'Po asie: bezpieczna zagrywka znów w tego samego przyjmującego. Po błędzie: następna zagrywka bezpieczna. Mniej serii błędów, ale też mniej serii asów.':'Każdy zagrywa według ustawień, niezależnie od poprzedniej zagrywki.'}</div></div>`;}
-function srvShkTacHtml(t){const v=t.shk?1:0;return `<div class="tacrow"><div class="tacl"><b>Roztrzęsiony przyjmujący</b><small class="mut">po jego błędzie w przyjęciu</small></div><div class="seg"><button class="${v?'':'on'}" onclick="tacSet('shk',0)">Wg zawodnika</button><button class="${v?'on':''}" onclick="tacSet('shk',1)">Celuj w niego</button></div><div class="small mut tacd">${v?'Polecenie: zagrywamy w przyjmującego, który właśnie się pomylił. Mocniej go łamie, ale celowana zagrywka to trochę więcej błędów. Indywidualiści nie zawsze słuchają.':'Zagrywający sam decyduje: im lepsze Czytanie gry, tym częściej wyczuje, że rywal się posypał.'}</div></div>`;}
+function srvShkTacHtml(t){const v=t.shk?1:0;return `<div class="tacrow"><div class="tacl"><b>Roztrzęsiony przyjmujący</b><small class="mut">po jego błędzie w przyjęciu</small></div><div class="seg"><button class="${v?'':'on'}" onclick="tacSet('shk',0)">Wg zawodnika</button><button class="${v?'on':''}" onclick="tacSet('shk',1)">Celuj w niego</button></div><div class="small mut tacd">${v?'Polecenie: zagrywamy w przyjmującego, który właśnie się pomylił. Opłaca się głównie przeciw rywalom z nerwowymi przyjmującymi (sprawdź charakter przyjmujących w ich kartach); przeciw spokojnym daje niewiele, a celowana zagrywka to trochę więcej błędów. Indywidualiści nie zawsze słuchają.':'Zagrywający sam decyduje: im lepsze Czytanie gry, tym częściej wyczuje, że rywal się posypał.'}</div></div>`;}
 function shieldTacHtml(t,pl){const ps=pl.filter(p=>p.pos==='P');const v=t.shield||null;
   return `<div class="tacrow"><div class="tacl"><b>Osłoń przyjmującego</b><small class="mut">libero bierze więcej zagrywek</small></div><div class="seg"><button class="${v?'':'on'}" onclick="tacSet('shield',null)">Nikt</button>${ps.map(p=>`<button class="${v===p.id?'on':''}" title="Opanowanie ${p.opa}${p.tr&&p.tr.includes('ner')?' · nerwowy':''}" onclick="tacSet('shield','${p.id}')">${v===p.id?'✓ ':''}${p.num?p.num+' ':''}${esc(p.last)}${p.tr&&p.tr.includes('ner')?' 😰':''}</button>`).join('')}</div><div class="small mut tacd">${v?'Wybrany przyjmujący dostaje ok. 25% mniej zagrywek, bo libero i drugi przyjmujący biorą większy obszar. Koszt: trochę słabszy atak z drugiej linii.':'Zagrywki rozkładają się normalnie. Osłoń nerwowego albo słabo przyjmującego, gdy rywal w niego celuje.'}</div></div>`;}
 function srvTacRows(t,pl){return srvZTacHtml(t)+srvRiskTacHtml(t,pl)+srvSafeTacHtml(t)+srvShkTacHtml(t);}
@@ -3796,7 +3805,17 @@ function mailMatch(m,c){try{const me=m.sides[0],op=m.sides[1];const won=m.winner
   const s=S();let pos=null;if(c.kind==='liga'||c.kind==='po'){const tb=leagueTable();pos=tb.findIndex(x=>x.i===SAVE.team)+1;}
   const kind=c.kind==='spar'?'Sparing':c.kind==='po'?'Play-off':`${s.round}. kolejka`;const sc=`${m.setsWon[0]}:${m.setsWon[1]}`;
   sendMail({cat:'mecz',from:c.kind==='spar'?'Sekretariat klubu':'Biuro ligi',t:`${kind}: ${won?'wygrana':'porażka'} ${sc} z ${op.team.name}`,s:`${won?'Wygrywamy':'Przegrywamy'} ${sc}. Zawodnik meczu: ${best?best[1]:'—'}.${pos?` Jesteśmy na ${pos}. miejscu.`:''}`,
-    b:{type:'match',me:me.team.idx,op:op.team.idx,home:c.h===SAVE.team,sets:m.sets.map(x=>x.slice()),sw:m.setsWon.slice(),won:won?1:0,pos,best,mine:mine.slice(0,8),T:[T.kill,T.att,T.blk,T.ace,T.recPos,T.rec,T.attErr+T.srvErr],O:[O.kill,O.att,O.blk,O.ace,O.recPos,O.rec,O.attErr+O.srvErr],kind}});}catch(e){console.error(e);}}
+    b:{type:'match',me:me.team.idx,op:op.team.idx,home:c.h===SAVE.team,sets:m.sets.map(x=>x.slice()),sw:m.setsWon.slice(),won:won?1:0,pos,best,mine:mine.slice(0,8),T:[T.kill,T.att,T.blk,T.ace,T.recPos,T.rec,T.attErr+T.srvErr],O:[O.kill,O.att,O.blk,O.ace,O.recPos,O.rec,O.attErr+O.srvErr],kind,psy:psyLines(m)}});}catch(e){console.error(e);}}
+// psychologia meczu: kto się załamał, kto zagrał mądrze, kto walczył
+function psyLines(m){const ev=m.cfEv||[],L=[];const W={prz:'w przyjęciu',zag:'na zagrywce',ata:'w ataku',roz:'w rozegraniu','':''};
+  const tl=ev.filter(e=>e.k==='tilt'&&e.i===0);const by={};for(const e of tl){(by[e.id]=by[e.id]||[]).push(e);}
+  for(const id in by){const xs=by[id];const ws=[...new Set(xs.map(x=>W[x.w]).filter(Boolean))];L.push(`🔻 ${xs[0].n} załamał się ${ws.join(' i ')||'po błędach'} (set ${[...new Set(xs.map(x=>x.set))].join(', ')}${xs.length>1?`, ${xs.length} razy`:''}).`);}
+  const cm=ev.filter(e=>e.k==='calm'&&e.i===0);if(cm.length)L.push(`🧘 Przerwa z uspokojeniem (set ${[...new Set(cm.map(x=>x.set))].join(', ')}) postawiła zespół na nogi.`);
+  const sf={};for(const e of ev)if(e.k==='safe'&&e.i===0)sf[e.n]=(sf[e.n]||0)+1;{const ks=Object.keys(sf);if(ks.length)L.push(`🧠 Po zepsutej zagrywce bezpiecznie zagrali: ${ks.map(n=>n+(sf[n]>1?` (${sf[n]}×)`:'')).join(', ')}.`);}
+  for(const p of m.sides[0].pl)if((p.st.sav||0)>=2)L.push(`💪 ${p.last} uratował ${p.st.sav} piłki „nie do obrony”.`);
+  const ot=[...new Set(ev.filter(e=>e.k==='tilt'&&e.i===1).map(e=>e.n))];if(ot.length)L.push(`Rywal: załamali się ${ot.join(', ')}.`);
+  if(ev.some(e=>e.k==='calm'&&e.i===1))L.push('Rywal brał przerwę, żeby uspokoić zespół.');
+  return L.slice(0,7);}
 function trSumm(days){const t=myTeam();const ag=t.players.map(p=>{const a=repAgg(days,p.id);return [p.id,p.last,a.n,a.avg==null?null:Math.round(a.avg*10)/10,Math.round(a.tot*100)/100,a.f0==null?0:a.f1-a.f0,a.fr,a.inj||0,Object.keys(a.up)];}).filter(x=>x[2]||x[7]);
   const cnt={};for(const d of days)for(const u of d.u)cnt[u]=(cnt[u]||0)+1;return {ag,cnt,from:days.length?days[days.length-1].d:null,to:days.length?days[0].d:null,n:days.length};}
 function asyName(){const a=SAVE.staff&&SAVE.staff.asy;return a?`${a.first[0]}. ${a.last} (asystent)`:'Sztab szkoleniowy';}
@@ -3902,6 +3921,7 @@ function matchMailHtml(b){const T=i=>TEAMS[i];const h=b.home?b.me:b.op,a=b.home?
     <div class="msets">${sets.map((s,i)=>`<div><span>Set ${i+1}</span><b>${s[0]}–${s[1]}</b></div>`).join('')}</div></div>
    ${b.best?`<h3>Zawodnik meczu</h3><div class="mpotm">${PLAYERS[b.best[0]]?pFace(PLAYERS[b.best[0]].p,56):''}<div><b class="mpn">${esc(PLAYERS[b.best[0]]?PLAYERS[b.best[0]].p.first+' '+b.best[1]:b.best[1])}</b><div class="mut">${POS_NAMES[b.best[2]]||''} · ${PLAYERS[b.best[0]]&&PLAYERS[b.best[0]].p.tm>=0?esc(TEAMS[PLAYERS[b.best[0]].p.tm].name):''}</div></div><span class="sp"></span><span class="mrt">${fx1(b.best[3])}</span></div>
      <div class="mkpi"><div><span>Punkty</span><b>${b.best[4]}</b></div><div><span>Skuteczność ataku</span><b>${b.best[5]==null?'–':b.best[5]+'%'}</b></div><div><span>Przyjęcie pozytywne</span><b>${b.best[6]==null?'–':b.best[6]+'%'}</b></div></div>`:''}
+   ${b.psy&&b.psy.length?`<h3>Psychologia meczu</h3><div class="mpsy">${b.psy.map(x=>`<div>${esc(x)}</div>`).join('')}</div>`:''}
    <h3>Statystyki drużyn</h3><div class="tw"><table class="cmp"><thead><tr><th class="l"></th><th>${esc(T(b.me).short)}</th><th>${esc(T(b.op).short)}</th></tr></thead><tbody>
     ${st('Atak',`${b.T[0]}/${b.T[1]} (${pc2(b.T[0],b.T[1])})`,`${b.O[0]}/${b.O[1]} (${pc2(b.O[0],b.O[1])})`)}${st('Bloki',b.T[2],b.O[2])}${st('Asy',b.T[3],b.O[3])}${st('Przyjęcie pozytywne',pc2(b.T[4],b.T[5]),pc2(b.O[4],b.O[5]))}${st('Błędy własne (atak + zagrywka)',b.T[6],b.O[6])}</tbody></table></div>
    <h3>Oceny naszych zawodników</h3><div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th>Ocena</th><th>Pkt</th><th>Atak</th><th>Przyj.+</th></tr></thead><tbody>${b.mine.map(x=>`<tr><td class="l"><b>${esc(x[1])}</b> <small class="mut">${x[2]?pTag(x[2]):''}</small></td><td class="${x[3]>=7?'good':x[3]<=5.4?'bad':''}"><b>${fx1(x[3])}</b></td><td>${x[4]}</td><td>${x[5]==null?'–':x[5]+'%'}</td><td>${x[6]==null?'–':x[6]+'%'}</td></tr>`).join('')}</tbody></table></div>

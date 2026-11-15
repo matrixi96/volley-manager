@@ -180,7 +180,7 @@ function mb(p,m,i){let b=(p.mor==null?0:(p.mor-60)/40*0.045)+formB(p)+cfB(p)+(p.
 function kc(p,m){let k=1.25-p.kcj/20*0.5;{const sd=m.sides&&m.sides.find(x=>x.pl.includes(p));if(sd&&sd.sh&&sd.sh.u>m.rallies&&sd.sh.e)k*=1-sd.sh.e;if(sd&&sd.tfE)k*=sd.tfE;}if(pressure(m))k*=1.15-p.opa/20*0.3;if(p.tr){if(hasT(p,'pro'))k*=0.9;if(hasT(p,'ner')&&pressure(m))k*=1.1;if(hasT(p,'ind'))k*=1.04;}if(MENT&&p.cf)k*=1-p.cf*0.08;return k;}
 function nerves(p,m){return pressure(m)&&p.opa<10?' Nerwy w końcówce!':'';}
 // ---- pewność siebie w meczu (cf: -3 roztrzęsiony … +2 w gazie) ----
-var MENT=1;
+var MENT=1,AIM=1;
 function cfK(p){const o=p.opa||10;let k=(1+(11-o)/20*(o>11?2.4:2.2))*(p.age>=28?0.8:p.age<=21?1.15:1);if(p.tr){if(hasT(p,'ner'))k*=1.45;if(hasT(p,'spo'))k*=0.45;if(hasT(p,'pro'))k*=0.3;if(hasT(p,'zde'))k*=0.6;}return clamp(k,0.05,3);}
 // posłuszeństwo wobec poleceń trenera (indywidualista robi po swojemu)
 function obeyF(p){if(!MENT||!p||!p.tr)return 1;let k=1;if(hasT(p,'ind'))k*=0.55;if(hasT(p,'kap')&&(p.unh||0)>=3)k*=0.75;if(hasT(p,'pro'))k*=1.1;return k;}
@@ -188,7 +188,9 @@ function obeyF(p){if(!MENT||!p||!p.tr)return 1;let k=1;if(hasT(p,'ind'))k*=0.55;
 function readF(p){return clamp(((p.czy||10)-8)/8,0,1.2)*(p.tr&&hasT(p,'ind')?0.7:1);}
 // technika amortyzuje nerwy: atrybut 18+ = połowa załamania; po 2 błędach z rzędu dalej już nie spada
 function cfDamp(p,sk){if(!sk)return 1;const v=sk==='prz'?(p.prz||10)*0.7+(p.tod||10)*0.3:(p[sk]||10);return 1-clamp((v-14)/4,0,1)*0.75;}
-function cfHit(p,m,x,sk){if(!MENT||!p)return;p.cfN=(p.cfN||0)+1;if(p.cfN>2)return;p.cf=clamp((p.cf||0)-x*cfK(p)*cfDamp(p,sk)*(pressure(m)?1.5:1),-3,2);}
+function cfHit(p,m,x,sk){if(!MENT||!p)return;p.cfN=(p.cfN||0)+1;if(p.cfN>2)return;const o=p.cf||0;p.cf=clamp(o-x*cfK(p)*cfDamp(p,sk)*(pressure(m)?1.5:1),-3,2);
+  if(o>-1.5&&p.cf<=-1.5&&m.sides){const i=m.sides.findIndex(sd=>sd.pl.includes(p));(m.cfEv=m.cfEv||[]).push({k:'tilt',i,id:p.id,n:p.last,set:m.setNo,w:sk||''});}}
+function cfNote(m,e){if(m)(m.cfEv=m.cfEv||[]).push(Object.assign({set:m.setNo},e));}
 function cfUp(p,m,x){if(!MENT||!p)return;const sd=m.sides.find(s=>s.pl.includes(p));const k=1+((p.wal||10)-10)/20+(sd&&sd.cfLid?0.5:0);p.cfN=0;p.cf=clamp((p.cf||0)+x*k,-3,2);}
 function cfB(p){return MENT?(p.cf||0)*0.035:0;}
 function mentQ(p,m){return ((p.kcj||10)*0.6+(pressure(m)?(p.opa||10):(p.kcj||10))*0.4)/20;}
@@ -218,7 +220,7 @@ function rally(m,ex){
   const n=(MENT?((eff(server,'zag')*0.8+eff(server,'sil')*0.2)/20*0.8+mentQ(server,m)*0.2):(eff(server,'zag')*0.8+eff(server,'sil')*0.2)/20)+bn(sS)+mb(server,m,S);
   // pamięć błędu zagrywki aż do następnej własnej zagrywki: mądry gra bezpiecznie, reszta traci pewność
   let sT=0,sSafe=0;if(MENT&&server.sT){sT=server.sT;server.sT=0;const smart=(eff(server,'czy')*0.6+eff(server,'opa')*0.4);const pS=clamp((smart-11)/5,0,0.8)*(hasT(server,'ind')?0.5:1)*(hasT(server,'pro')?1.15:1);
-    if(st>0&&!(tc.srvRisk||[]).includes(server.id)&&R()<pS){st=0;sSafe=1;sT=0;}}
+    if(st>0&&!(tc.srvRisk||[]).includes(server.id)&&R()<pS){st=0;sSafe=1;sT=0;cfNote(m,{k:'safe',i:S,id:server.id,n:server.last});}}
   server.st.srv++;
   const aim=(tc.tgt&&cD.some(x=>x.p.id===tc.tgt&&(x.role==='L'||x.role==='P')))||zt>0;const aimS=MENT&&tc.shk&&!aim&&cD.some(x=>(x.p.cf||0)<-0.7);
   const errP=[0.075,0.15,0.25][st]*(1.45-0.9*n)*kc(server,m)*(sS.tmp&&sS.tmp.n>0&&sS.tmp.k==='srv'?1.25:1)*(aim?1+Math.max(0,13-server.zag)*(zt>0?0.015:0.025):aimS?1.03+Math.max(0,13-server.zag)*0.01:1)*SRV_ERR[ty]*ZERR[zt]*(sT?1+sT*0.045:1);
@@ -592,6 +594,11 @@ function aiTurn(m,i){
     if(xs.length>=6){const c=xs.filter(d=>d.d==='cross').length/xs.length;t[key]=c>0.6?0:c<0.4?2:1;}}
     const ms=m.dirStats.filter(d=>d.i===1-i&&d.w==='M'&&/^mid/.test(d.d));if(ms.length>=6){const cnt={midS:0,midL:0,midR:0};for(const d of ms)cnt[d.d]++;const best=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];t.blkM=best[1]/ms.length>0.5?{midS:0,midL:2,midR:3}[best[0]]:1;}
     const own=m.dirStats.filter(d=>d.i===i&&d.d!=='free').slice(-30);if(own.length>=12){const bl=own.filter(d=>d.r==='blk').length/own.length,dg=own.filter(d=>d.r==='dig'||d.r==='wyb').length/own.length;t.adir=bl>0.13?4:0;t.atk=bl>0.13?0:dg>0.45?1:0;}}
+  // AI dba o psychikę swoich zawodników: przerwa z uspokojeniem i osłona roztrzęsionego przyjmującego
+  if(MENT&&AIM&&!isUser){const oc=onCourt(s,m.serving===i);const worst=oc.slice().sort((x,y)=>(x.p.cf||0)-(y.p.cf||0))[0];
+    if(worst&&(worst.p.cf||0)<=-1.5&&s.to>0&&R()<0.5){callTimeout(m,i);for(const e of oc)if((e.p.cf||0)<0){e.p.cf=0;e.p.cfN=0;}cfNote(m,{k:'calm',i});msgs.push(`Czas dla ${s.team.name}: trener uspokaja zespół.`);return msgs;}
+    const pr=oc.filter(e=>e.role==='P').sort((x,y)=>(x.p.cf||0)-(y.p.cf||0))[0];
+    if(pr&&(pr.p.cf||0)<=-1)s.tactics.shield=pr.p.id;else if(s.tactics.shield&&(!pr||(pr.p.cf||0)>-0.3))s.tactics.shield=null;}
   if(m.run.t===1-i&&m.run.n>=3&&s.to>0&&(m.score[1-i]>=8||m.run.n>=4)){callTimeout(m,i);msgs.push(`Czas dla ${s.team.name}.`);}
   else if(!isUser&&R()<0.035){const behind=m.score[1-i]-m.score[i];const k=pressure(m)?'calm':behind>=3?(R()<0.5?'fight':'wake'):m.run.t===i&&m.run.n>=2?'bravo':R()<0.5?'go':'focus';
     if(applyShout(m,i,k,0.9)){const t=SHOUTS.find(x=>x[0]===k);msgs.push(`🗣️ Trener ${s.team.short}: „${t[1]}”`);}}
