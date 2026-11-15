@@ -1,0 +1,6 @@
+Widok meczu 3D — źródła zasobów
+- Modele zawodników: MakeHuman (CC0), wygenerowane biblioteką Dramatis
+- Animacje: Quaternius — Universal Animation Library 1 i 2 (CC0)
+- Odcienie skóry: Monk Skin Tone Scale, Google (CC BY 4.0) — https://skintone.google
+- Silnik: three.js (MIT)
+Szczegóły licencji poszczególnych elementów: licences.json
