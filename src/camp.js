@@ -26,12 +26,12 @@ function campDay(d){const c=campOf();if(!c||c.done||!c.until||d<c.until)return;c
   const k=0.9+staffSkill('fiz')/40;// trener przygotowania fizycznego wzmacnia efekt
   for(const p of t.players){if(p.inj)continue;p.xp=p.xp||{};const ups=[];
     for(const a of ['kon','szy','sil','sko']){if(p[a]>=20)continue;const v=(p.xp[a]||0)+fx.kon*0.28*k*(0.7+R()*0.6)*(p.age>=31?0.7:1);if(v>=1){p[a]++;p.xp[a]=Math.round((v-1)*100)/100;ups.push(a);}else p.xp[a]=Math.round(v*1000)/1000;}
+    for(const a of ['czy','kom']){if(p[a]>=20)continue;const v=(p.xp[a]||0)+fx.tak*0.22*(0.7+R()*0.6);if(v>=1){p[a]++;p.xp[a]=Math.round((v-1)*100)/100;ups.push(a);}else p.xp[a]=Math.round(v*1000)/1000;}
     addMor(p,fx.mor*5);p.fr=Math.round(clamp(72+fx.reg*8+(R()*6-3),40,100));
     if(R()<0.025*fx.inj*(1.25-p.kon/20*0.5)){const days=Math.max(3,Math.round(4+R()*10));p.inj=days;p.injUntil=addDays(d,days);p.injN=injName(days);p.injD=days;rows.push([p.id,p.last,ups,days]);continue;}
     rows.push([p.id,p.last,ups,0]);}
-  // zgranie par i znajomość taktyki
+  // zgranie par
   const P=SAVE.pairs||(SAVE.pairs={});const ps=t.players;for(let i=0;i<ps.length;i++)for(let j=i+1;j<ps.length;j++){const key=pairKey(ps[i].id,ps[j].id);P[key]=(P[key]!=null?P[key]:pairN(ps[i],ps[j]))+Math.round(fx.zgr*3);}
-  try{const tc=myTac();for(const [el] of TF_EL)famAdd(SAVE.team,el+':'+tfVal(tc,el),fx.tak*5);}catch(e){}
   const up=rows.filter(r=>r[2].length).length,inj=rows.filter(r=>r[3]);
   sendMail({cat:'trening',from:asyName(),t:`Obóz w ${C[1]} zakończony`,s:`${up} zawodników poprawiło cechy fizyczne${inj.length?`, kontuzje: ${inj.length}`:''}.`,b:{type:'camp',k:c.k,rows,cost:c.cost},lab:'Obóz'});
   news(`🏕️ Koniec obozu w ${C[1]}. Drużyna wraca do klubu.`);}
@@ -39,7 +39,7 @@ function campMailHtml(b){const C=CAMPS.find(x=>x[0]===b.k);const fx=C[6];
   return `<p class="mtext">Wróciliśmy z obozu w ${esc(C[1])} (${C[3]} ${esc(C[2])}, ${C[4]} dni, koszt ${fmt(b.cost)}). Podsumowanie:</p>
    <div class="mxbox" style="max-width:420px">${campFx(fx)}</div>
    <div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th class="l">Podniesione cechy</th><th>Uraz</th></tr></thead><tbody>${b.rows.map(r=>`<tr><td class="l"><button class="link pn" onclick="openPop('${r[0]}')">${esc(r[1])}</button></td><td class="l">${r[2].map(a=>`<span class="trt tu-up">${attrSh(a)} +1</span>`).join('')||'<span class="mut">—</span>'}</td><td>${r[3]?`<span class="bad">🚑 ${r[3]} dni</span>`:'<span class="mut">—</span>'}</td></tr>`).join('')}</tbody></table></div>
-   <p class="small mut">Zgranie par i znajomość taktyki wzrosły — sprawdzisz to w Centrum danych i w zakładce Taktyka → Skuteczność.</p>`;}
+   <p class="small mut">Zgranie par wzrosło (Centrum danych), a zajęcia taktyczne poprawiły czytanie gry i komunikację.</p>`;}
 function campLvl(v,k){if(k==='inj')return v>=1.2?'wysokie':v>=1?'normalne':'niskie';if(v<0)return 'spadek';return v<=0?'brak':v<=1?'mały':v<=2?'średni':v<=3?'duży':'bardzo duży';}
 function campRow(k,n,v){if(k==='inj'){const c=v>=1.2?'bad':v>=1?'mid':'good';return `<div class="cfx"><span class="cfn">${n}</span><span class="cfpill ${c}">${campLvl(v,k)}</span></div>`;}
   const seg=v<0?1:Math.max(0,Math.min(5,Math.round(v/3.5*5)));const c=v<0?'bad':'good';
