@@ -2,7 +2,7 @@
 const TEAMS=TEAM_DEFS.map(genTeam);
 const KEY='vm_save_v2';
 let SAVE={};try{SAVE=JSON.parse(localStorage.getItem(KEY))||null;if(!SAVE){const old=JSON.parse(localStorage.getItem('vm_proto_v1'));SAVE=old&&old.team!=null?{team:old.team,lineup:old.lineup,tactics:old.tactics}:{};}}catch(e){SAVE={};}
-const ui={confirmReset:false,confirm:null,msg:null,code:null,tab:'home',sort:'pos',match:null,view:'log',subSel:null,speed:800,test:null,testA:1,testB:0,testN:200};
+const ui={confirmReset:false,confirm:null,msg:null,code:null,tab:'home',sort:'pos',match:null,view:'log',subSel:null,speed:1600,test:null,testA:1,testB:0,testN:200};
 let timer=null;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -129,7 +129,9 @@ function matchView(){
 }
 function schedule(ms){clearTimeout(timer);const m=ui.match;if(!m||m.over||m.paused)return;timer=setTimeout(tick,ms==null?ui.speed:ms);}
 function animOn(){return ui.anim!==false&&ui.speed>=800&&typeof requestAnimationFrame!=='undefined';}
-function tick(){const m=ui.match;if(!m||m.over||m.paused||m.animating||ui.to)return;if(ui.tab!=='mecz'){m.paused=true;persistLive();return;}
+function tick(){const m=ui.match;if(!m||m.over||m.paused||m.animating||ui.to)return;
+  // powitanie drużyn w hali 3D: pierwsza akcja dopiero po jego zakończeniu
+  if(!m.rallies&&typeof v3dOn==='function'&&v3dOn()&&typeof V3D!=='undefined'&&(m._grW=(m._grW||0)+1)<150&&(!V3D.mod||ui.v3dGr!==m||V3D.mod.busy())){timer=setTimeout(tick,400);return;}if(ui.tab!=='mecz'){m.paused=true;persistLive();return;}
   // decyzje rywala (czas, zmiany) zapadają po zakończonej akcji, przed kolejną zagrywką
   const to1=m.sides[1].to;for(const s of aiTurn(m,1))m.log.push({t:esc(s),c:'sys'});
   if(m.sides[1].to<to1&&ui.speed>=800){m.comm={t:`Czas dla ${m.sides[1].team.short}. Trener rywala chce przerwać serię.`,w:1};startTimeout(1);return;}

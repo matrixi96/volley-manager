@@ -88,10 +88,10 @@ function staticBall(m,scene){const s=scene.find(o=>o.i===m.serving&&o.zone===0);
 // ================= WIDOK 3D (tylko PC) =================
 // Moduł 3D (Three.js + modele zawodników) wczytuje się dopiero po włączeniu widoku 3D, z folderu 3d/.
 const V3D={mod:null,p:null,err:null};
-if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d')!=='0';}catch(e){ui.v3d=true;}}
+if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v3d=true;}}
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
-function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d',ui.v3d?'1':'0');}catch(e){}render();}
+function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
 function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
