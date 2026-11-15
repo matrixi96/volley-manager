@@ -842,11 +842,11 @@ function makeSide(team,lu,tac,home,x){
   {let d=0;if(st7.some(p=>p&&hasT(p,'lid')))d+=3;if(cap&&hasT(cap,'lid'))d+=2;if(pl.some(p=>hasT(p,'kap')&&(p.unh||0)>=3))d-=3;
    for(const p of pl){let e=d;if(hasT(p,'amb'))e+=2;if(hasT(p,'kap')&&(p.unh||0)>=3)e-=8;if(e)p.mor=Math.round(clamp(p.mor+e,5,100));}}
   if(typeof pairBonusSide==='function'){try{pairBonusSide(team,lu,pl);}catch(e){}}
-  return {cfLid:st7.some(p=>p&&hasT(p,'lid')),chem,cap:cap?cap.id:null,team,pl,slots,libero:g(lu.L),rot:baseRot(tac),tactics:Object.assign({},tac),mom:0,home:!!home,fatMul:(x&&x.fat)||1,momMul:(x&&x.momMul)||1,prB:(x&&x.prB)||0,trB:(x&&x.trB)||0,form:nz()*0.09+(home?(x&&x.hb!=null?x.hb:0.015):0)+((x&&x.sb)||0),to:2,subs:6,fam:(x&&x.fam)||null,tfE:(x&&x.tfE)||1};
+  return {cfLid:st7.some(p=>p&&hasT(p,'lid')),chem,cap:cap?cap.id:null,team,pl,slots,libero:g(lu.L),rot:baseRot(tac),tactics:Object.assign({},tac),mom:0,home:!!home,fatMul:(x&&x.fat)||1,momMul:(x&&x.momMul)||1,prB:(x&&x.prB)||0,trB:(x&&x.trB)||0,prep0:PREPV?((x&&x.sb)||0):0,form:nz()*0.09+(home?(x&&x.hb!=null?x.hb:0.015):0)+(PREPV?0:((x&&x.sb)||0)),to:2,subs:6,fam:(x&&x.fam)||null,tfE:(x&&x.tfE)||1};
 }
 function newMatch(a,b){
   const m={sides:[makeSide(a.team,a.lineup,a.tactics,a.home,a.x),makeSide(b.team,b.lineup,b.tactics,b.home,b.x)],setNo:1,score:[0,0],setsWon:[0,0],sets:[],firstServe:R()<0.5?0:1,run:{t:-1,n:0},over:false,rallies:0,sideout:[0,0]};
-  m.serving=m.firstServe;return m;
+  m.serving=m.firstServe;if(PREPV)prepInit(m);return m;
 }
 function onCourt(side,serving){
   return side.rot.map((si,z)=>{const s=side.slots[si];
@@ -876,13 +876,21 @@ function cfNote(m,e){if(m)(m.cfEv=m.cfEv||[]).push(Object.assign({set:m.setNo},e
 function cfUp(p,m,x){if(!MENT||!p)return;const sd=m.sides.find(s=>s.pl.includes(p));const k=1+((p.wal||10)-10)/20+(sd&&sd.cfLid?0.5:0);p.cfN=0;p.cf=clamp((p.cf||0)+x*k,-3,2);}
 function cfB(p){return MENT?(p.cf||0)*0.035:0;}
 function mentQ(p,m){return ((p.kcj||10)*0.6+(pressure(m)?(p.opa||10):(p.kcj||10))*0.4)/20;}
-function bn(s){return s.mom*0.01*(s.momMul||1)+s.form;}
+var DAYV=0,SETV=0.06;
+var PREPV=1,PREP_AMP=0.8,PREP_K=0.5;
+// przygotowanie (taktyka, sztab, trener, analiza rywala) działa przez cały mecz; słabszy, lepiej przygotowany zespół wyciska z niego więcej
+function prepInit(m){if(m._prep)return;m._prep=1;const st=i=>{const sd=m.sides[i];const ps=sd.slots.map(x=>x.p).concat([sd.libero]).filter(Boolean);return ps.reduce((a,p)=>a+rating(p),0)/Math.max(1,ps.length);};
+  const r=[st(0),st(1)];for(let i=0;i<2;i++){const s=m.sides[i];s.prep=(s.prep0||0)*PREP_K;}
+  const u=r[0]<r[1]?0:1,f=1-u,gap=Math.abs(r[0]-r[1]);const e=m.sides[u].prep-m.sides[f].prep;
+  m.sides[u].prepX=e>0?e*PREP_AMP*Math.min(1.5,gap/6):0;m.sides[f].prepX=0;m.prepGap=gap;}
+function bn(s){if(s.day==null)s.day=nz()*DAYV;return s.mom*0.01*(s.momMul||1)+s.form+s.day+(PREPV?(s.prep||0)+(s.prepX||0):0);}
 function ensAttrs(p){if(!p||p.czy!=null&&p.kiw!=null&&p.kom!=null)return p;const t=TEMPL[p.pos]||TEMPL.P;
   const h=(()=>{let x=0;for(const c of String(p.id))x=(x*31+c.charCodeAt(0))>>>0;return x;})();const j=k=>((h>>>k)%7-3)*0.5;
   if(p.czy==null)p.czy=Math.round(clamp(((p.blo||10)-(t.blo||0)+(p.obr||10)-(t.obr||0))/2+t.czy+((p.age||25)-25)*0.18+j(3),1,20));
   if(p.kom==null)p.kom=Math.round(clamp(((p.kcj||10)+(p.opa||10))/2+((p.age||25)-25)*0.12+(p.pos==='R'||p.pos==='L'?1:0)+j(5),1,20));
   if(p.kiw==null)p.kiw=Math.round(clamp(((p.tpa||10)-(t.tpa||0)+(p.ata||10)-(t.ata||0))/2+t.kiw+j(7),1,20));return p;}
-function eff(p,k){const v=p[k];if(v==null){ensAttrs(p);return (p[k]||10)*(0.82+0.18*p.en/100);}return v*(0.82+0.18*p.en/100);}
+var CMP_M=14,CMP_K=0.75;// ściśnięcie różnic umiejętności wokół średniej (więcej niespodzianek)
+function eff(p,k){let v=p[k];if(v==null){ensAttrs(p);v=p[k]||10;}if(CMP_K!==1)v=CMP_M+(v-CMP_M)*CMP_K;return v*(0.82+0.18*p.en/100);}
 function nm(p){return p.last;}
 const isFront=z=>z>=1&&z<=3;
 function pickW(arr,wf){let tot=0;const ws=arr.map(x=>{const w=Math.max(0,wf(x));tot+=w;return w;});if(tot<=0)return arr[Math.floor(R()*arr.length)];let r=R()*tot;for(let i=0;i<arr.length;i++){r-=ws[i];if(r<=0)return arr[i];}return arr[arr.length-1];}
@@ -908,7 +916,7 @@ function rally(m,ex){
   const errP=[0.075,0.15,0.25][st]*(1.45-0.9*n)*kc(server,m)*(sS.tmp&&sS.tmp.n>0&&sS.tmp.k==='srv'?1.25:1)*(aim?1+Math.max(0,13-server.zag)*(zt>0?0.015:0.025):aimS?1.03+Math.max(0,13-server.zag)*0.01:1)*SRV_ERR[ty]*ZERR[zt]*(sT?1+sT*0.045:1);
   if(R()<errP){server.st.srvErr++;cfHit(server,m,0.6,'zag');if(MENT)server.sT=clamp(cfK(server),0.2,1.5)*cfDamp(server,'zag')*(pressure(m)?1.5:1);sS.lastSrv={k:'err'};const r2=R();const how=r2<0.42?'net':r2<0.75?'long':'wide';seq.push({k:how==='net'?'net':'out',s:D,how,srv:1});return {winner:D,type:'serr',act,seq,text:`${nm(server)} psuje zagrywkę (${how==='net'?'siatka':how==='long'?'aut za linią końcową':'aut obok boiska'}).${nerves(server,m)}`};}
   const tS0=sS.tmp&&sS.tmp.n>0?sS.tmp.k:null,tD0=sD.tmp&&sD.tmp.n>0?sD.tmp.k:null;
-  const pow=n+(MENT?-(server.cf||0)*0.018:0)+(MENT?0.026:0)+[-0.14,0,0.13][st]+(tS0==='srv'?0.05:0)+SRV_POW[ty]+(zt===4?-0.05:0);
+  const pow=n+(MENT?-(server.cf||0)*0.018:0)+(MENT?0.0:0)+[-0.14,0,0.13][st]+(tS0==='srv'?0.05:0)+SRV_POW[ty]+(zt===4?-0.05:0);
   let recs=cD.filter(x=>x.role==='L'||x.role==='P');if(!recs.length)recs=cD.filter(x=>x.role!=='R');
   const tgt=tc.tgt;
   // ustawienie przyjęcia (te same pozycje co w animacji): y = 0 lewa strona (strefa 5), 9 prawa (strefa 1)
@@ -1127,7 +1135,7 @@ function attackPhase(m,A,q,by,log,act,pd){
   if(tipOn)adj+=0.012;
   if(z6c&&z6c!=='rot')adj+=z6c===dir?-0.015:0.01;
   if(tool)adj-=0.06;
-  const killP=clamp(KB+(MENT?0.015:0)+(an-0.95)*0.6-(dn-0.7)*0.3-(bs-0.8)*0.2+adj,0.15,0.86);
+  const killP=clamp(KB+(MENT?0.034:0)+(an-0.95)*0.6-(dn-0.7)*0.3-(bs-0.8)*0.2+adj,0.15,0.86);
   // część skończonych ataków to piłki po bloku (ręce blokującego → aut)
   const kr=R();if(kr<killP&&blockers.length&&!quick&&R()<clamp(0.05+toolSk*0.05,0.04,0.13)*bf)return blockOut(m,A,a,blockers,log,seq,setTxt,rec,dir);
   if(kr<killP&&MENT){const fg=((d.wal||10)*0.6+(d.zaa||10)*0.4-11)/20;if(R()<clamp(0.025+fg*0.08,0.005,0.06)){d.st.dig++;d.st.sav++;cfUp(d,m,0.5);act.push(d.id);seq.push({k:'dig',id:d.id,s:1-A});log.push(setTxt,`${nm(d)} ratuje piłkę nie do obrony!`);rec(dir,'dig');return {done:false,next:1-A,q:1,by:d};}}
@@ -1172,7 +1180,7 @@ function fatigue(m,n){
 function startSet(m){
   m.setNo++;m.score=[0,0];m.run={t:-1,n:0};
   for(const i of [0,1])undoSpecialSubs(m,i,true);
-  for(const s of m.sides){s.rot=baseRot(s.tactics);s.to=2;s.subs=6;s.mom=0;s.form=s.form*0.5+nz()*0.06+(s.home?0.0075:0);for(const p of s.pl)p.en=Math.min(100,p.en+12);}
+  for(const s of m.sides){s.rot=baseRot(s.tactics);s.to=2;s.subs=6;s.mom=0;s.form=s.form*0.5+nz()*SETV+(s.home?0.0075:0);for(const p of s.pl)p.en=Math.min(100,p.en+12);}
   m.serving=m.setNo===5?(R()<0.5?0:1):(m.firstServe+m.setNo-1)%2;
 }
 function stepRally(m){
@@ -2414,7 +2422,7 @@ function clubMods(ti){
   return {all:(1+0.08*(inf.tren-1))*(ct?0.85+cA('tre')/66:1),tech:0.8+st('asy')/50,phys:0.8+st('fiz')/50,ment:(0.8+st('psy')/50)*(ct?0.9+cA('aut')/100:1),
     jr:(1+0.1*(inf.akad-1))*(0.7+st('jr')/33)*(ct?0.85+cA('mlo')/66:1),
     injChance:(1.05-0.05*(inf.med-1))*(1.2-st('fiz')/50)*(mine&&typeof techBonus==='function'&&SAVE.spons?1-techBonus():1),injDur:(1-0.07*(inf.med-1))*(1.3-st('med')/40),
-    fat:1-0.04*(inf.odn-1),hb:0.012+0.003*inf.hala-0.0015*(inf.gosc||0),sb:mine?(st('sta')-10)*0.0015:0};}
+    fat:1-0.04*(inf.odn-1),hb:0.012+0.003*inf.hala-0.0015*(inf.gosc||0),sb:(st('sta')-10)*0.0015};}
 // potencjał widziany przez skauta
 function hashId(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return ((h>>>0)%2001)/1000-1;}
 
