@@ -21,7 +21,7 @@ function campBook(k){const c=CAMPS.find(x=>x[0]===k);if(!c||!campCanBook())retur
   money(-cost,'Obóz');finLog(`Obóz przygotowawczy: ${c[1]} (${c[2]})`,-cost);const s=S();
   SAVE.camp={k,season:s.n,cost,start:s.phase==='off'?null:addDays(today(),1),until:s.phase==='off'?null:addDays(today(),c[4]),done:0};
   news(`🏕️ Zarezerwowano obóz przygotowawczy: ${c[1]} (${c[2]}), ${c[4]} dni.${s.phase==='off'?' Ruszy razem z przygotowaniami do sezonu.':''}`);save();tradeMsg(true,`Obóz w ${c[1]} zarezerwowany.`);}
-function campStart(){const c=campOf();if(!c||c.start)return;const d=CAMPS.find(x=>x[0]===c.k);c.start=today();c.until=addDays(today(),d[4]);news(`🚌 Drużyna wyjeżdża na obóz: ${d[1]} (${d[2]}). Powrót ${fmtDMY(c.until)}.`);}
+function campStart(){const c=campOf();if(!c||c.start)return;const d=CAMPS.find(x=>x[0]===c.k);c.start=today();achEv('camp');c.until=addDays(today(),d[4]);news(`🚌 Drużyna wyjeżdża na obóz: ${d[1]} (${d[2]}). Powrót ${fmtDMY(c.until)}.`);}
 function campDay(d){const c=campOf();if(!c||c.done||!c.until||d<c.until)return;const C=CAMPS.find(x=>x[0]===c.k);const fx=C[6];c.done=1;const t=myTeam();const rows=[];
   const k=0.9+staffSkill('fiz')/40;// trener przygotowania fizycznego wzmacnia efekt
   for(const p of t.players){if(p.inj)continue;p.xp=p.xp||{};const ups=[];

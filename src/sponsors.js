@@ -23,7 +23,7 @@ function sponsorAmt(){return spMonthly()*12;}
 function techBonus(){const c=SPN().act.find(x=>x.cat==='tech');return c?clamp(0.02+c.m/(SP_BASE*0.09)*0.03,0,0.07):0;}
 function signSponsor(cat,id){const s=SPN();const o=(s.off[cat]||[]).find(x=>x.id===id);if(!o)return;const el=document.getElementById('spd'+id);const mo=clamp(+(el?el.value:12)||12,1,o.maxM||12);
   if(spUsed(cat)>=spSlots()[cat]){ui.spMsg={ok:false,t:`Brak wolnego miejsca dla sponsora: ${SP_CAT.find(x=>x[0]===cat)[1].toLowerCase()}. ${cat==='tit'?'Sponsor tytularny może być tylko jeden.':'Więcej miejsc daje rozbudowa siedziby klubu i wyższa renoma.'}`};render();return;}
-  const m=Math.round(o.m*spDurMul(mo)/1000)*1000;const c={id:o.id,cat,n:o.n,col:o.col,m,left:mo-1,months:mo,start:today()};s.act.push(c);s.off[cat]=s.off[cat].filter(x=>x.id!==id);
+  const m=Math.round(o.m*spDurMul(mo)/1000)*1000;const c={id:o.id,cat,n:o.n,col:o.col,m,left:mo-1,months:mo,start:today()};s.act.push(c);achEv('sp');s.off[cat]=s.off[cat].filter(x=>x.id!==id);
   money(m,'Sponsor');finLog(`Sponsor ${o.n}: pierwsza rata`,m);news(`🤝 Nowy sponsor (${SP_CAT.find(x=>x[0]===cat)[1].toLowerCase()}): ${o.n} — ${fmt(m)} miesięcznie przez ${mo} mies.`);
   ui.spMsg={ok:true,t:`Podpisano umowę z ${o.n}: ${fmt(m)}/miesiąc, ${mo} mies.`};save();render();}
 function addMonths(d,n){const [y,m]=d.split('-').map(Number);const t=new Date(Date.UTC(y,m-1+n,1));return t.getUTCFullYear()+'-'+String(t.getUTCMonth()+1).padStart(2,'0')+'-01';}

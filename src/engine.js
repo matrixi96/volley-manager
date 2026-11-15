@@ -509,7 +509,7 @@ function moraleAfter(m,r,w){const seq=r.seq||[];const last=k=>{for(let i=seq.len
   if(r.type==='setErr')addMor(last('set'),-4);
   if(r.type==='mix'){const mx=(r.seq||[]).find(x=>x.k==='mix');if(mx)for(const id of mx.ids){const p=findPl(m,id);if(p)addMor(p,-3);}}
   for(let i=0;i<2;i++){const oc=onCourt(m.sides[i],m.serving===i);for(const e of oc){const p=e.p;if(i===w)addMor(p,1);else{addMor(p,-1);if(m.run.t===w&&m.run.n>=3&&p.opa<11)addMor(p,-1);}}}}
-function callTimeout(m,i){const s=m.sides[i];if(s.to<=0)return false;s.to--;for(const e of onCourt(s,m.serving===i))addMor(e.p,2);m.sides[1-i].mom=0;s.mom=Math.max(0,s.mom);m.run.n=0;return true;}
+function callTimeout(m,i){const s=m.sides[i];if(s.to<=0)return false;s.to--;if(i===0&&m.ctx&&typeof achEv==='function')achEv('to');for(const e of onCourt(s,m.serving===i))addMor(e.p,2);m.sides[1-i].mom=0;s.mom=Math.max(0,s.mom);m.run.n=0;return true;}
 // ---- okrzyki trenera w trakcie meczu ----
 const SHOUTS=[['go','Dawać, gramy!','🔥','Nakręca zespół: impet i lepsza gra przez kilka akcji. Najlepiej działa przy wyrównanym wyniku.'],
  ['calm','Spokojnie!','🧘','Uspokaja: pomaga w końcówkach i nerwowym zawodnikom.'],

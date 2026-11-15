@@ -63,7 +63,7 @@ function hireStaff(id){const c=SAVE.staffPool.find(x=>x.id===id);if(!c)return;co
   {const e=staffCheck(c.wage-(cur?cur.wage:0));if(e)return tradeMsg(false,e);}
   if(cur&&ui.confirm!=='h'+id){ui.confirm='h'+id;render();return;}ui.confirm=null;
   if(cur){const sev=round5k(cur.wage/4);money(-sev,'Sztab');finLog(`Odprawa: ${cur.first} ${cur.last} (${ROLE_N[cur.role]})`,-sev);SAVE.staffPool.push(cur);}
-  SAVE.staff[c.role]=c;SAVE.staffPool=SAVE.staffPool.filter(x=>x.id!==id);news(`🧑‍🏫 Zatrudniono: ${c.first} ${c.last} — ${ROLE_N[c.role]} (jakość ${c.skill}/20).`);save();tradeMsg(true,`${c.first} ${c.last} dołącza do sztabu.`);}
+  achEv('staff');SAVE.staff[c.role]=c;SAVE.staffPool=SAVE.staffPool.filter(x=>x.id!==id);news(`🧑‍🏫 Zatrudniono: ${c.first} ${c.last} — ${ROLE_N[c.role]} (jakość ${c.skill}/20).`);save();tradeMsg(true,`${c.first} ${c.last} dołącza do sztabu.`);}
 function fireStaff(r){const cur=SAVE.staff[r];if(!cur)return;if(ui.confirm!=='f'+r){ui.confirm='f'+r;render();return;}ui.confirm=null;
   const sev=round5k(cur.wage/4);money(-sev,'Sztab');finLog(`Odprawa: ${cur.first} ${cur.last} (${ROLE_N[r]})`,-sev);SAVE.staff[r]=null;news(`📄 Zwolniono: ${cur.first} ${cur.last} (${ROLE_N[r]}).`);save();tradeMsg(true,`Zwolniono. Odprawa: ${fmt(sev)}.`);}
 function hireScoutExtra(id){const c=SAVE.staffPool.find(x=>x.id===id);if(!c)return;SAVE.scouts=SAVE.scouts||[];
@@ -110,7 +110,7 @@ function simJrRound(r){const s=S();s.jres=s.jres||[];s.jps=s.jps||{};const rd=[]
   s.jres.push(rd);
   if(s.jres.length===s.rounds.length){const ch=tableFrom(s.jres)[0].i;news(`🏆 Mistrzem ligi juniorów sezonu ${sLabel(s.n)} zostaje ${TEAMS[ch].name} U20${ch===SAVE.team?' — to Twoi juniorzy!':''}.`);s.jchamp=ch;}}
 function promote(pid){const p=PLAYERS[pid].p;if(myTeam().players.length>=SQUAD_MAX)return tradeMsg(false,`Pierwsza drużyna jest pełna (maks. ${SQUAD_MAX}).`);
-  p.jr=false;p.wage=Math.max(40000,wageDemand(p));p.ce=contractEndFor(3);syncTeams();news(`⬆️ ${p.first} ${p.last} awansuje z juniorów do pierwszej drużyny (kontrakt do ${ceDate(p.ce)}).`);save();tradeMsg(true,`${p.first} ${p.last} jest w pierwszej drużynie!`);}
+  p.jr=false;p.acad=1;achEv('jrPromo');p.wage=Math.max(40000,wageDemand(p));p.ce=contractEndFor(3);syncTeams();news(`⬆️ ${p.first} ${p.last} awansuje z juniorów do pierwszej drużyny (kontrakt do ${ceDate(p.ce)}).`);save();tradeMsg(true,`${p.first} ${p.last} jest w pierwszej drużynie!`);}
 function demote(pid){const p=PLAYERS[pid].p;if(p.age>19)return tradeMsg(false,'Do juniorów można przesunąć tylko zawodnika do 19 lat.');if(myTeam().players.length-1<SQUAD_MIN)return tradeMsg(false,`Pierwsza drużyna musi mieć min. ${SQUAD_MIN} zawodników.`);
   p.jr=true;p.wage=0;syncTeams();news(`⬇️ ${p.first} ${p.last} przesunięty do drużyny juniorów.`);save();tradeMsg(true,`${p.last} gra teraz w juniorach.`);}
 function releaseJunior(pid){const p=PLAYERS[pid].p;if(ui.confirm!=='rj'+pid){ui.confirm='rj'+pid;render();return;}ui.confirm=null;p.tm=-1;p.jr=false;p.wage=0;p.ce=0;syncTeams();news(`📄 Junior ${p.first} ${p.last} odchodzi z klubu.`);save();tradeMsg(true,`${p.last} opuścił akademię.`);}

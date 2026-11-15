@@ -657,5 +657,17 @@ small .pt,.mut .pt{font-size:9px;padding:2px 5px;min-width:26px}
 .cfbar{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}.cfbar i{height:8px;border-radius:2px;background:#ffffff14}.cfbar.good i.on{background:#22c55e}.cfbar.bad i.on{background:#ef4444}
 .cfv{text-align:right;font-size:12.5px;color:var(--txt)}.cfv.bad{color:var(--bad)}.cfv.mut{color:var(--mut)}
 .cfpill{grid-column:2/4;justify-self:start;font-size:12px;font-weight:600;padding:2px 10px;border-radius:999px}.cfpill.good{background:#22c55e1f;color:#4ade80}.cfpill.mid{background:#eab3081f;color:#facc15}.cfpill.bad{background:#ef44441f;color:#f87171}
+.achgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px}
+.achc{position:relative;display:flex;gap:10px;align-items:flex-start;background:var(--panel2);border:1px solid var(--line);border-left:4px solid color-mix(in srgb,var(--tc) 45%,transparent);border-radius:10px;padding:10px 10px 10px 12px;opacity:.78}
+.achc.ok{opacity:1;border-left-color:var(--tc);background:linear-gradient(90deg,color-mix(in srgb,var(--tc) 14%,var(--panel2)),var(--panel2) 60%)}
+.achi{font-size:22px;line-height:1;filter:grayscale(1);opacity:.55}.achc.ok .achi{filter:none;opacity:1}
+.achb{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}.achb b{font-size:14px}
+.achtier{position:absolute;top:8px;right:10px;font-size:10px;font-weight:700;color:var(--tc);text-transform:uppercase;letter-spacing:.04em}
+.achp{height:5px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:3px}.achp i{display:block;height:100%;background:var(--acc)}.achp.big{height:9px;margin-top:12px}
+.achsum{display:flex;flex-direction:column;align-items:flex-end}.achsum b{font-size:24px;color:var(--acc)}.achsum span{font-size:12px;color:var(--mut)}
+.achtoast{position:fixed;right:18px;bottom:18px;z-index:60;background:var(--panel);border:1px solid var(--acc);border-radius:12px;padding:10px 14px;box-shadow:0 10px 30px #0008;max-width:340px;cursor:pointer;animation:achin .35s ease,achout .6s 6.5s forwards}
+.achtoast>div{display:grid;grid-template-columns:auto 1fr;column-gap:8px;padding:3px 0}.achtoast span{grid-row:span 2;font-size:20px}.achtoast small{color:var(--mut)}
+@keyframes achout{to{opacity:0;visibility:hidden}}
+@keyframes achin{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
 </style></head><body><div id="app"></div>
 <script>
