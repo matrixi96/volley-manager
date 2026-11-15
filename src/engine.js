@@ -371,7 +371,7 @@ function attackPhase(m,A,q,by,log,act,pd){
   const AT=side.tactics.atk||0,AD=side.tactics.adir||0;
   let tipP=quick?0.02:sq<0.42?0.1+kiwN*0.3:0.025+kiwN*0.05;
   if(!quick){if(AT===1)tipP*=0.3;else if(AT===2)tipP=Math.min(0.55,tipP*2.4+0.04);if(AD===3)tipP=Math.min(0.6,tipP+0.07);}
-  const comply=(MENT?clamp(0.1+czA*0.65+eff(a,'kcj')/20*0.15+(sq-0.5)*0.35,0.15,0.97):(0.5+czA*0.35))*(AD?famF(side,'adir')*obeyF(a):1);// na ile zawodnik wykona polecenie trenera co do kierunku
+  const comply=(MENT?clamp(0.1+czA*0.65+eff(a,'kcj')/20*0.15+(sq-0.5)*0.35,0.15,0.97):(0.5+czA*0.35))*(AD?obeyF(a):1);// na ile zawodnik wykona polecenie trenera co do kierunku
   let dir;
   if(R()<tipP)dir='tip';else if(wing==='M'){const t=midTend(a);let pS=t[0],pL=t[1];const sh=clamp((eff(a,'czy')-8)/12,0,1)*0.1;
     if(bset===0){pS-=sh;pL+=sh/2;}else if(bset===2){pL-=sh;pS+=sh/2;}else if(bset===3){pS+=sh/2;}

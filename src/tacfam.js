@@ -4,8 +4,8 @@ const TF_EL=[['serve','zag','Zagrywka',()=>SERVE_OPT],['dist','roz','Rozegranie'
   ['blkL','blk','Blok — lewa strona',()=>BLK_OPT],['blkR','blk','Blok — prawa strona',()=>BLK_OPT],['blkM','blk','Blok — środek',()=>MID_OPT],['blk3','blk','Liczba blokujących',()=>B3_OPT],
   ['dsys','obr','System obrony',()=>[['Klasyczna'],['Rotacyjna']]],['tip','obr','Asekuracja kiwki',()=>null],['free','obr','Piłki sytuacyjne',()=>FREE_OPT]];
 const TF_GRP=[['','Wszystko po trochu'],['roz','Rozegranie'],['atk','Atak'],['obr','Obrona i piłki sytuacyjne']];
-// zagrywka i blok ustawia się pod konkretnego rywala, więc nie wymagają „znajomości” i nie liczą się do złożoności
-const TF_OPP=new Set(['serve','blkL','blkR','blkM','blk3']);
+// zagrywkę, kierunek ataku i blok ustawia się pod konkretnego rywala, więc nie wymagają „znajomości” i nie liczą się do złożoności
+const TF_OPP=new Set(['serve','adir','blkL','blkR','blkM','blk3']);
 const TF_DEF={serve:1,dist:0,atk:0,adir:0,blkL:1,blkR:1,blkM:1,blk3:0,dsys:0,tip:0,free:0};
 function tfVal(t,k){t=t||{};if(k==='tip')return (t.tipL?1:0)+(t.tipR?2:0)+(t.tipM?4:0);return t[k]==null?TF_DEF[k]:t[k];}
 function tfOptName(k,v){if(k==='tip'){const a=[];if(v&1)a.push('lewa');if(v&2)a.push('prawa');if(v&4)a.push('środek');return a.length?'asekuracja: '+a.join(', '):'bez asekuracji';}const o=TF_EL.find(x=>x[0]===k)[3]();return o&&o[v]?o[v][0]:String(v);}
@@ -69,7 +69,7 @@ function tacEffView(){const ti=SAVE.team;const e=tacEff(ti);const k=e.k,s=e.s,c=
     ${rs.map(r=>{const others=Object.entries(TFM(ti)).filter(([key])=>key.startsWith(r.k+':')&&key!==r.k+':'+r.v).sort((a,b)=>b[1]-a[1]).slice(0,2);return `<div class="tfopt"><span>${esc(r.l)}: <b>${esc(tfOptName(r.k,r.v))}</b></span><span class="kbar wide"><i style="width:${r.f}%;background:${r.f>=70?'var(--good)':r.f>=45?'var(--acc)':'var(--bad)'}"></i></span><b>${r.f}%</b>${others.length?`<small class="mut">inne: ${others.map(([key,v])=>esc(tfOptName(r.k,+key.split(':')[1]))+' '+Math.round(v)+'%').join(', ')}</small>`:''}</div>`;}).join('')}</div>`;}).join('');
   return `<div class="card"><div class="row wrap"><h2 style="margin:0">Efektywność taktyczna</h2><span class="sp"></span><span class="small mut">Ogólna efektywność</span>${tbar(e.score)}<b class="tfbig">${e.score}</b></div>
    <p class="small mut">Jak dobrze każdy zawodnik i cały zespół rozumie i potrafi zagrać Twoją taktykę w dniu meczu. Wpływa na całą grę (do ±2%) i na to, jak skutecznie działają poszczególne ustawienia.</p>
-   <div class="tfgrid">${col('Znajomość taktyki',k.score,'Ile razy graliśmy tymi ustawieniami i ile ćwiczyliśmy je na treningu.',fr(k.rows.map(r=>[r.l,r.f]).concat([['Złożoność taktyki ('+k.nonDef+' niestandardowych ustawień)',k.cx]]))+'<div class="small mut" style="margin-top:6px">Zagrywka i blok nie liczą się do znajomości: ustawiasz je pod konkretnego rywala.</div>',kNote)}
+   <div class="tfgrid">${col('Znajomość taktyki',k.score,'Ile razy graliśmy tymi ustawieniami i ile ćwiczyliśmy je na treningu.',fr(k.rows.map(r=>[r.l,r.f]).concat([['Złożoność taktyki ('+k.nonDef+' niestandardowych ustawień)',k.cx]]))+'<div class="small mut" style="margin-top:6px">Zagrywka, kierunek ataku i blok nie liczą się do znajomości: ustawiasz je pod konkretnego rywala.</div>',kNote)}
     ${col('Umiejętności zawodników',s.score,'Czy wybrane ustawienia pasują do umiejętności zawodników w składzie.',fr(s.f),sNote)}
     ${col('Przekonanie zawodników',c.score,'Czy zawodnicy chcą realizować Twój plan.',fr(c.f),cNote)}
     ${col('Wiedza o rywalu',i.score,'Jak dobrze znamy najbliższego rywala.',fr(i.f),iNote)}</div></div>
