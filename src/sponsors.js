@@ -15,7 +15,7 @@ function spQuality(){const rep=SAVE.ai[SAVE.team].rep;const s=S();let pb=0;try{i
 function spName(cat){if(cat==='tech')return SP_T1[Math.floor(R()*SP_T1.length)]+' '+SP_T2[Math.floor(R()*SP_T2.length)];return SP_A[Math.floor(R()*SP_A.length)]+' '+SP_B[Math.floor(R()*SP_B.length)];}
 function spDurMul(mo){return 1.05-0.01*(mo-1);}
 function genSpOffers(){const s=SPN();const q=spQuality();const n={tit:3,main:3,tech:2,mid:4,small:5};s.off={};
-  for(const [k,,sh] of SP_CAT){s.off[k]=[];for(let i=0;i<n[k];i++){const m=Math.round(SP_BASE*sh*q*(0.8+R()*0.4)/1000)*1000;s.off[k].push({id:'sp'+(s.nid++),n:spName(k),col:SP_COL[Math.floor(R()*SP_COL.length)],m,maxM:R()<0.3?6:12});}s.off[k].sort((a,b)=>b.m-a.m);}
+  for(const [k,,sh] of SP_CAT){s.off[k]=[];for(let i=0;i<n[k];i++){const m=Math.round(SP_BASE*sh*q*LG_ECO[myLg()]*(0.8+R()*0.4)/1000)*1000;s.off[k].push({id:'sp'+(s.nid++),n:spName(k),col:SP_COL[Math.floor(R()*SP_COL.length)],m,maxM:R()<0.3?6:12});}s.off[k].sort((a,b)=>b.m-a.m);}
   s.ref=(SAVE._now||today()).slice(0,7);}
 function spUsed(cat){return SPN().act.filter(c=>c.cat===cat).length;}
 function spMonthly(){return SPN().act.reduce((a,c)=>a+c.m,0);}

@@ -9,6 +9,7 @@ function newSeason(n,phase){
   const ids=lgIds(myLg());const first=makeFixtures(ids.length).map(rd=>rd.map(([h,a])=>[ids[h],ids[a]]));const second=first.map(rd=>rd.map(([h,a])=>[a,h]));
   const others=ids.filter(i=>i!==SAVE.team).sort(()=>R()-0.5).slice(0,N_SPAR);
   SAVE.season={n:n||1,phase:phase||'spar',spar:{opps:others,res:[]},rounds:first.concat(second),round:0,results:[],po:null,final:null,ps:{}};
+  bgInit(SAVE.season);
   if(SAVE.world)for(const p of SAVE.world.players)p.base=snap(p);
   ensureDates(SAVE.season);
   if(SAVE.team!=null&&SAVE.world)SAVE.season.goal=goalFor(SAVE.team);
@@ -66,7 +67,7 @@ function finishMatch(m){
   const res=resultOf(m,c.h,c.a);res.me=true;res.d=today();
   if(c.kind==='spar'){addTogether(m);s.spar.res.push(res);injuryCheck(m,0.5);roundTick('spar',false);}
   else if(c.kind==='liga'){const psB=psSnap(),tbB=leagueTable();recordStats(m);boardAfterMatch(res);const rd=[];for(const f of s.rounds[s.round]){if(f[0]===c.h&&f[1]===c.a)rd.push(res);else rd.push(simFixture(f[0],f[1],true));}
-    s.results.push(rd);simJrRound(s.round);s.round++;leagueNews(psB,tbB,rd,s.round);roundTick('liga',c.h===SAVE.team,m.att,c.a);if(s.round>=s.rounds.length)startPlayoff();}
+    s.results.push(rd);bgRound(s.round);simJrRound(s.round);s.round++;leagueNews(psB,tbB,rd,s.round);roundTick('liga',c.h===SAVE.team,m.att,c.a);if(s.round>=s.rounds.length)startPlayoff();}
   else if(c.kind==='po'){recordStats(m);boardAfterMatch(res);playPoDay(c.sid,res);roundTick('po',c.h===SAVE.team,m.att,c.a);}
   try{fatigueAfterMatch(m);}catch(e){}storeLast(m,c);mailMatch(m,c);try{dcRecord(m,c);}catch(e){console.error(e);}try{for(const p of m.sides[1].pl)if(p.st.srv+p.st.rec+p.st.att+p.st.dig+p.st.blk>0)addKnow(p.id,12);if(SAVE.tactics)delete SAVE.tactics.tgt;}catch(e){}SAVE.live=null;save();
 }
@@ -93,7 +94,7 @@ function addGame(sr,res){sr.games.push(res);const hiWon=(res.h===sr.hi)===(res.s
 function playPoDay(mySid,myRes){
   const s=S();
   for(const sr of activeSeries()){if(sr.id===mySid){addGame(sr,myRes);continue;}const h=seriesHome(sr);const g=simFixture(h,h===sr.hi?sr.lo:sr.hi,true);g.d=today();addGame(sr,g);}
-  s.po.day++;advanceStage();
+  s.po.day++;bgPoDay();advanceStage();
 }
 function advanceStage(){
   const s=S(),po=s.po;if(activeSeries().length)return;
@@ -113,11 +114,47 @@ function finishSeason(){
   const qfL=ser('QF').map(seriesLoser).sort((a,b)=>s.seed.indexOf(a)-s.seed.indexOf(b));
   s.final=[seriesWinner(F),seriesLoser(F),seriesWinner(B),seriesLoser(B)].concat(qfL,s.seed.slice(8));
   s.phase='end';s.endDate=addDays(s.podates[Math.max(0,s.po.day-1)],3);
-  s.final.forEach((ti,pl)=>{const a=SAVE.ai[ti];a.rep=Math.round(clamp(a.rep*0.75+(95-pl*7)*0.25,10,100));});
-  const myPl=s.final.indexOf(SAVE.team);money(PRIZE[myPl],'Nagrody');finLog(`Nagroda za ${myPl+1}. miejsce w sezonie ${sLabel(s.n)}`,PRIZE[myPl]);
-  SAVE.history=SAVE.history||[];SAVE.history.push({n:s.n,team:SAVE.team,place:s.final.indexOf(SAVE.team)+1,champ:s.final[0],league:s.seed.indexOf(SAVE.team)+1});
+  bgFinishAll();s.lgFinal={};s.lgFinal[myLg()]=s.final;if(s.oth)for(const k in s.oth)if(s.oth[k].final)s.lgFinal[k]=s.oth[k].final;
+  for(const k in s.lgFinal){const [b0,st]=LG_REP[k];s.lgFinal[k].forEach((ti,pl)=>{const a=SAVE.ai[ti];a.rep=Math.round(clamp(a.rep*0.75+(b0-pl*st)*0.25,5,100));});
+    if(+k!==myLg())news(`🏆 ${TEAMS[s.lgFinal[k][0]].name} wygrywa ${LG_N[k]} w sezonie ${sLabel(s.n)}.`);}
+  s.moves=leagueMoves(s.lgFinal);
+  for(const mv of s.moves)news(mv.up?`⬆️ ${TEAMS[mv.i].name} awansuje do ${LG_N[mv.to]==='Ekstra Liga'?'Ekstra Ligi':LG_N[mv.to]==='1. Liga'?'1. Ligi':LG_N[mv.to]}${mv.i===SAVE.team?' — to nasz awans!':''}.`:`⬇️ ${TEAMS[mv.i].name} spada do ${LG_N[mv.to]==='1. Liga'?'1. Ligi':'2. Ligi'}${mv.i===SAVE.team?' — to nasz spadek.':''}.`);
+  const myPl=s.final.indexOf(SAVE.team);const pz=Math.round(PRIZE[myPl]*LG_PRIZE[myLg()]/5000)*5000;money(pz,'Nagrody');finLog(`Nagroda za ${myPl+1}. miejsce (${LG_N[myLg()]}) w sezonie ${sLabel(s.n)}`,pz);
+  SAVE.history=SAVE.history||[];SAVE.history.push({n:s.n,team:SAVE.team,lg:myLg(),place:s.final.indexOf(SAVE.team)+1,champ:s.final[0],league:s.seed.indexOf(SAVE.team)+1,mv:(s.moves.find(x=>x.i===SAVE.team)||{}).up});
   seasonEvaluation();
 }
+// ---- pozostałe ligi (rozgrywane w tle, w tych samych kolejkach i dniach play-off) ----
+function bgInit(s){s.oth={};for(const l of [0,1,2]){if(l===myLg())continue;const ids=lgIds(l);if(ids.length<4)continue;const first=makeFixtures(ids.length).map(rd=>rd.map(([h,a])=>[ids[h],ids[a]]));
+  s.oth[l]={ids,rounds:first.concat(first.map(rd=>rd.map(([h,a])=>[a,h]))),results:[],po:null,seed:null,final:null};}}
+function bgTable(L){return tableFrom(L.results,L.ids);}
+function bgRound(r){const s=S();if(!s.oth)return;for(const k in s.oth){const L=s.oth[k];if(L.results.length>r||!L.rounds[r])continue;
+  L.results.push(L.rounds[r].map(([h,a])=>{const g=simFixture(h,a,true);g.d=today();return g;}));if(L.results.length===L.rounds.length&&!L.po)bgStartPo(L);}}
+function bgSer(L,st,a,b,need){const hi=L.seed.indexOf(a)<L.seed.indexOf(b)?a:b,lo=hi===a?b:a;return {id:st+'-'+hi+'-'+lo,st,hi,lo,need,w:[0,0],games:[]};}
+function bgStartPo(L){const t=bgTable(L).map(x=>x.i);L.seed=t;L.po={stage:'QF',day:0,series:[bgSer(L,'QF',t[0],t[7],2),bgSer(L,'QF',t[3],t[4],2),bgSer(L,'QF',t[1],t[6],2),bgSer(L,'QF',t[2],t[5],2)]};}
+function bgActive(L){if(!L.po)return [];const st=L.po.stage;return L.po.series.filter(x=>(st==='FB'?(x.st==='F'||x.st==='B'):x.st===st)&&!seriesDone(x));}
+function bgAdvance(L){if(bgActive(L).length)return;const po=L.po,r=i=>L.seed.indexOf(i);
+  if(po.stage==='QF'){const w=po.series.filter(x=>x.st==='QF').map(seriesWinner).sort((a,b)=>r(a)-r(b));po.series.push(bgSer(L,'SF',w[0],w[3],2),bgSer(L,'SF',w[1],w[2],2));po.stage='SF';}
+  else if(po.stage==='SF'){const sf=po.series.filter(x=>x.st==='SF');po.series.push(bgSer(L,'F',seriesWinner(sf[0]),seriesWinner(sf[1]),3),bgSer(L,'B',seriesLoser(sf[0]),seriesLoser(sf[1]),2));po.stage='FB';}
+  else if(po.stage==='FB'){const g=st=>po.series.find(x=>x.st===st);const F=g('F'),B=g('B');const qfL=po.series.filter(x=>x.st==='QF').map(seriesLoser).sort((a,b)=>r(a)-r(b));
+    L.final=[seriesWinner(F),seriesLoser(F),seriesWinner(B),seriesLoser(B)].concat(qfL,L.seed.slice(8));po.stage='done';}}
+function bgPoDay(){const s=S();if(!s.oth)return;for(const k in s.oth){const L=s.oth[k];if(!L.po||L.final)continue;
+  for(const sr of bgActive(L)){const h=seriesHome(sr);const g=simFixture(h,h===sr.hi?sr.lo:sr.hi,true);g.d=today();addGame(sr,g);}L.po.day++;bgAdvance(L);}}
+function bgFinishAll(){const s=S();if(!s.oth)return;for(const k in s.oth){const L=s.oth[k];while(L.results.length<L.rounds.length)bgRound(L.results.length);if(!L.po)bgStartPo(L);}
+  for(let g=0;g<40&&Object.values(s.oth).some(L=>!L.final);g++)bgPoDay();}
+// awanse i spadki: 2 w górę (finaliści play-off niższej ligi), 2 w dół (miejsca 11–12 wyższej ligi)
+function leagueMoves(F){const mv=[];for(const l of [0,1]){const hi=F[l],lo=F[l+1];if(!hi||!lo)continue;
+  hi.slice(-2).forEach(i=>mv.push({i,from:l,to:l+1,up:false}));lo.slice(0,2).forEach(i=>mv.push({i,from:l+1,to:l,up:true}));}return mv;}
+function applyLeagueMoves(old){if(!old||!old.moves||!old.moves.length)return;SAVE.lg=SAVE.lg||TEAM_DEFS.map(d=>d.lg||0);
+  for(const mv of old.moves){SAVE.lg[mv.i]=mv.to;const a=SAVE.ai[mv.i];if(a)a.rep=Math.round(clamp(a.rep+(mv.up?8:-6),5,100));
+    if(mv.i===SAVE.team)continue;
+    // beniaminek: premia za awans na wzmocnienia (transfery w aiOffseason)
+    if(mv.up&&a){a.bud+=mv.to===0?900000:350000;a.promo=1;}
+    // spadkowicz: 1–2 najlepszych zawodników odchodzi do klubów wyższej ligi
+    if(!mv.up){const t=TEAMS[mv.i];const best=t.players.slice().sort((x,y)=>rating(y)-rating(x)).slice(0,1+(R()<0.5?1:0));
+      for(const p of best){const dest=lgIds(mv.from).filter(i=>i!==SAVE.team&&!old.moves.some(m=>m.i===i)).sort(()=>R()-0.5)[0];if(dest==null)continue;
+        const fee=Math.round(askingPrice(p)*0.7/5000)*5000;if(SAVE.ai[dest].bud<fee)continue;SAVE.ai[dest].bud-=fee;a.bud+=fee;movePlayer(p,dest);p.wage=wageDemand(p);p.ce=old.n+2+Math.floor(R()*2);
+        news(`🔁 Po spadku ${t.name}: ${p.first} ${p.last} przechodzi do ${TEAMS[dest].name} za ${fmt(fee)}.`);}}}
+  syncTeams();}
 function nextSeason(){if(SAVE.fired)return;offseason();coachOffseason();ui.tab='mecz';render();}
 
 // ---- widoki sezonu ----
@@ -132,7 +169,7 @@ function nextCard(c,title){
 function injWarn(){const h=healthyLineup(myTeam(),myLineup());return h.ch.length?`<p class="small bad">${h.ch.map(([o,n,l])=>`🚑 ${esc(o?o.last:'?')} (${l}) — zastąpi go ${esc(n.last)}`).join('<br>')}</p>`:'';}
 function tableHtml(highlightPo){const tb=leagueTable();
   return `<div class="card"><h2>Tabela</h2><div class="tw"><table><thead><tr><th>#</th><th class="l">Drużyna</th><th>M</th><th>Z</th><th>P</th><th>Pkt</th><th>Sety</th><th>Małe pkt</th></tr></thead><tbody>${tb.map((x,i)=>`<tr class="${x.i===SAVE.team?'starter':''} ${i===7?'cut':''}"><td>${i+1}</td><td class="l">${tDot(x.i)}${tName(x.i)}</td><td>${x.m}</td><td>${x.w}</td><td>${x.l}</td><td><b>${x.pts}</b></td><td>${x.sw}:${x.sl}</td><td>${x.pw}:${x.pl}</td></tr>`).join('')}</tbody></table></div>
-  <p class="mut small">Miejsca 1–8 grają w play-off. Punktacja: 3:0 i 3:1 to 3 pkt, 3:2 to 2 pkt dla zwycięzcy i 1 pkt dla przegranego.</p></div>`;}
+  <p class="mut small">${LG_N[myLg()]}: miejsca 1–8 grają w play-off${myLg()>0?' (dwaj finaliści awansują)':''}${myLg()<2?', miejsca 11–12 spadają':''}. Punktacja: 3:0 i 3:1 to 3 pkt, 3:2 to 2 pkt dla zwycięzcy i 1 pkt dla przegranego.</p></div>`;}
 function seasonView(){
   const s=S();let out='';
   if(SAVE.fired)return `<div class="phase">📅 <b>${fmtLong(today())}</b> · Sezon ${sLabel(s.n)}</div>`+firedView()+newsHtml();
@@ -163,10 +200,10 @@ function seasonView(){
   }
   // end
   const f=s.final,my=f.indexOf(SAVE.team)+1;
-  out+=`<div class="card post ${my===1?'won':''}"><h2>${my===1?'🏆 MISTRZOSTWO POLSKI!':my<=3?'🥉 Medal!'.replace('🥉',my===2?'🥈':'🥉'):'Koniec sezonu'}</h2>
-   <p>${esc(myTeam().name)} kończy sezon ${sLabel(s.n)} na <b>${my}. miejscu</b>.${s.eval?` Cel zarządu (${GOAL_TXT[s.eval.goal]}): ${s.eval.met?'<b class="good">wykonany ✓</b>':'<b class="bad">niewykonany ✗</b>'} · reputacja trenera ${s.eval.dr>=0?'+':''}${s.eval.dr}.`:''}</p>${awardsHtml()}${SAVE.offers&&SAVE.offers.length?`<div class="card"><h3>📨 Oferty pracy dla Ciebie</h3>${offersList(false)}</div>`:''}<button class="btn" onclick="nextSeason()">Przejdź do okna transferowego (sezon ${sLabel(s.n+1)})</button></div>
-   <div class="card"><h2>Klasyfikacja końcowa</h2>${f.map((t,i)=>`<div class="res ${t===SAVE.team?'me':''}"><b>${i+1}.</b> ${i<3?['🥇','🥈','🥉'][i]:''} ${tDot(t)}${tName(t)}</div>`).join('')}</div>`;
-  if(SAVE.history&&SAVE.history.length>1)out+=`<div class="card"><h2>Historia</h2>${SAVE.history.map(h=>`<div class="res">Sezon ${sLabel(h.n)}: ${tName(h.team)} — ${h.place}. miejsce (po fazie zasadniczej ${h.league}.) · mistrz: ${tName(h.champ)}</div>`).join('')}</div>`;
+  out+=`<div class="card post ${my===1?'won':''}"><h2>${my===1?(myLg()===0?'🏆 MISTRZOSTWO POLSKI!':'🏆 Mistrzostwo '+LG_N[myLg()].replace('Liga','Ligi')+'!'):my<=3?'🥉 Medal!'.replace('🥉',my===2?'🥈':'🥉'):'Koniec sezonu'}</h2>${(()=>{const mv=(s.moves||[]).find(x=>x.i===SAVE.team);return mv?`<p class="${mv.up?'good':'bad'}" style="font-size:18px"><b>${mv.up?'⬆️ AWANS do '+(mv.to===0?'Ekstra Ligi':'1. Ligi')+'!':'⬇️ Spadek do '+(mv.to===1?'1. Ligi':'2. Ligi')}</b></p>`:'';})()}
+   <p>${esc(myTeam().name)} kończy sezon ${sLabel(s.n)} na <b>${my}. miejscu</b>.${s.eval?` Cel zarządu (${goalTxt(s.eval.goal,myLg())}): ${s.eval.met?'<b class="good">wykonany ✓</b>':'<b class="bad">niewykonany ✗</b>'} · reputacja trenera ${s.eval.dr>=0?'+':''}${s.eval.dr}.`:''}</p>${awardsHtml()}${SAVE.offers&&SAVE.offers.length?`<div class="card"><h3>📨 Oferty pracy dla Ciebie</h3>${offersList(false)}</div>`:''}<button class="btn" onclick="nextSeason()">Przejdź do okna transferowego (sezon ${sLabel(s.n+1)})</button></div>
+   <div class="card"><h2>Klasyfikacja końcowa · ${LG_N[myLg()]}</h2>${f.map((t,i)=>`<div class="res ${t===SAVE.team?'me':''}"><b>${i+1}.</b> ${i<3?['🥇','🥈','🥉'][i]:''} ${tDot(t)}${tName(t)}${(myLg()>0&&i<2)?' <span class="good small">awans ⬆</span>':''}${(myLg()<2&&i>=10)?' <span class="bad small">spadek ⬇</span>':''}</div>`).join('')}</div>`;
+  if(SAVE.history&&SAVE.history.length>1)out+=`<div class="card"><h2>Historia</h2>${SAVE.history.map(h=>`<div class="res">Sezon ${sLabel(h.n)}: ${tName(h.team)}${h.lg!=null?' ('+LG_N[h.lg]+')':''} — ${h.place}. miejsce${h.mv===true?' · awans ⬆':h.mv===false?' · spadek ⬇':''} (po fazie zasadniczej ${h.league}.) · mistrz: ${tName(h.champ)}</div>`).join('')}</div>`;
   return headB+out+bracketHtml();
 }
 const STAGE={QF:'Ćwierćfinał',SF:'Półfinał',F:'Finał',B:'Mecz o 3. miejsce'};
@@ -248,17 +285,17 @@ function teamStatsHtml(){const ts=S().ts;if(!ts)return '';
 // ---- zakładka Tabela ----
 function formOf(results,ti){const f=[];for(const rd of results)for(const g of rd){if(g.h!==ti&&g.a!==ti)continue;const my=g.h===ti?g.sw[0]:g.sw[1];const op=g.h===ti?g.sw[1]:g.sw[0];f.push({w:my>op,s:my+':'+op,op:g.h===ti?g.a:g.h,home:g.h===ti});}return f.slice(-5);}
 function tablesView(){
-  const s=S();const which=ui.tabSel||'sen';const jr=which==='jr';
-  const res=jr?(s.jres||[]):s.results;const tb=tableFrom(res);const played=res.length;
+  const s=S();const which=ui.tabSel||'sen';const jr=which==='jr';const vl=ui.lgSel!=null?ui.lgSel:myLg();const L=!jr&&vl!==myLg()&&s.oth?s.oth[vl]:null;
+  const res=jr?(s.jres||[]):L?L.results:s.results;const tb=L?bgTable(L):tableFrom(res);const played=res.length;const dz=!jr&&vl<2,uz=!jr&&vl>0;
   const ratio=(a,b)=>b?(a/b).toFixed(3).replace('.',','):(a?'MAX':'–');
   const rows=tb.map((x,i)=>{const f=formOf(res,x.i);
-    return `<tr class="${x.i===SAVE.team?'starter':''} ${!jr&&i===7?'cut':''}"><td>${i+1}</td><td class="l">${tDot(x.i)}${tName(x.i)}${jr?' U20':''}</td><td>${x.m}</td><td>${x.w}</td><td>${x.l}</td><td><b>${x.pts}</b></td><td>${x.sw}:${x.sl}</td><td class="mut">${ratio(x.sw,x.sl)}</td><td>${x.pw}:${x.pl}</td><td class="mut">${ratio(x.pw,x.pl)}</td>
+    return `<tr class="${x.i===SAVE.team?'starter':''} ${!jr&&i===7?'cut':''} ${dz&&i>=10?'relz':''}"><td>${i+1}</td><td class="l">${tDot(x.i)}${tName(x.i)}${jr?' U20':''}</td><td>${x.m}</td><td>${x.w}</td><td>${x.l}</td><td><b>${x.pts}</b></td><td>${x.sw}:${x.sl}</td><td class="mut">${ratio(x.sw,x.sl)}</td><td>${x.pw}:${x.pl}</td><td class="mut">${ratio(x.pw,x.pl)}</td>
     <td class="l"><span class="form">${f.map(r=>`<i class="${r.w?'fw':'fl'}" title="${r.home?'dom':'wyjazd'} vs ${esc(TEAMS[r.op].name)}: ${r.s}">${r.w?'Z':'P'}</i>`).join('')}</span></td></tr>`;}).join('');
   const info=jr?`Liga juniorów U20 · ${played}/${s.rounds.length} kolejek${s.jchamp!=null?` · 🏆 mistrz: ${tName(s.jchamp)} U20`:''}`
-    :`Faza zasadnicza · ${played}/${s.rounds.length} kolejek · miejsca 1–8 grają w play-off${s.final?` · 🏆 mistrz Polski: ${tName(s.final[0])}`:''}`;
-  return `<div class="card"><div class="row wrap"><button class="tabb ${!jr?'on':''}" onclick="ui.tabSel='sen';render()">Seniorzy</button><button class="tabb ${jr?'on':''}" onclick="ui.tabSel='jr';render()">Juniorzy U20</button><span class="sp"></span><span class="small mut">Sezon ${sLabel(s.n)}</span></div>
+    :`${LG_N[vl]} · faza zasadnicza · ${played}/${s.rounds.length} kolejek · miejsca 1–8 grają w play-off${uz?' (dwaj finaliści awansują)':''}${dz?' · miejsca 11–12 spadają':''}${(L?L.final:s.final)?` · 🏆 ${vl===0?'mistrz Polski':'mistrz '+LG_N[vl].replace('Liga','Ligi')}: ${tName((L?L.final:s.final)[0])}`:''}`;
+  return `<div class="card"><div class="row wrap"><button class="tabb ${!jr?'on':''}" onclick="ui.tabSel='sen';render()">Seniorzy</button><button class="tabb ${jr?'on':''}" onclick="ui.tabSel='jr';render()">Juniorzy U20</button>${!jr?`<span style="width:14px"></span>${[0,1,2].map(l=>`<button class="tabb ${vl===l?'on':''}" onclick="ui.lgSel=${l};render()">${LG_N[l]}${l===myLg()?' ★':''}</button>`).join('')}`:''}<span class="sp"></span><span class="small mut">Sezon ${sLabel(s.n)}</span></div>
   <p class="small mut">${info}</p>
   ${played?`<div class="tw"><table class="ltable"><thead><tr><th>#</th><th class="l">Drużyna</th><th title="Mecze">M</th><th title="Zwycięstwa">Z</th><th title="Porażki">P</th><th>Pkt</th><th>Sety</th><th title="Stosunek setów">Ratio</th><th>Małe pkt</th><th title="Stosunek małych punktów">Ratio</th><th class="l">Forma</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<p class="mut">Tabela pojawi się po pierwszej kolejce fazy zasadniczej.</p>'}
   <p class="mut small">Punktacja: 3:0 i 3:1 to 3 pkt, 3:2 to 2 pkt dla zwycięzcy i 1 pkt dla przegranego. Kolejność: punkty, zwycięstwa, stosunek setów, stosunek małych punktów. Forma: ostatnie 5 meczów (Z = zwycięstwo, P = porażka), najnowszy po prawej.</p></div>
-  ${!jr&&s.po?bracketHtml():''}`;
+  ${!jr&&!L&&s.po?bracketHtml():''}${L&&L.final?`<div class="card"><h3>Klasyfikacja końcowa · ${LG_N[vl]}</h3>${L.final.map((t,i)=>`<div class="res ${t===SAVE.team?'me':''}"><b>${i+1}.</b> ${tDot(t)}${tName(t)}${(vl>0&&i<2)?' <span class="good small">awans ⬆</span>':''}${(vl<2&&i>=10)?' <span class="bad small">spadek ⬇</span>':''}</div>`).join('')}</div>`:L&&L.po?`<p class="small mut">${LG_N[vl]}: trwa play-off.</p>`:''}`;
 }
