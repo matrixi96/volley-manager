@@ -1,0 +1,182 @@
+[
+ {
+  "asset": "makehuman:base/hm08",
+  "title": "MakeHuman hm08 base mesh, its macro and detail targets, joint helpers and skeleton",
+  "kind": "base",
+  "source": "https://github.com/makehumancommunity/makehuman/tree/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data",
+  "author": "MakeHuman (makehumancommunity.org)",
+  "modified": true,
+  "licence": "CC0-1.0",
+  "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+ },
+ {
+  "asset": "makehuman:expression/face-poseunits",
+  "title": "MakeHuman face pose units (baked into the 59 face units)",
+  "kind": "other",
+  "source": "https://github.com/makehumancommunity/makehuman/tree/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/poseunits",
+  "author": "MakeHuman (makehumancommunity.org)",
+  "modified": true,
+  "licence": "CC0-1.0",
+  "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+ },
+ {
+  "asset": "makehuman:part/eyes",
+  "title": "MakeHuman low-poly eyes",
+  "kind": "eyes",
+  "source": "https://github.com/makehumancommunity/makehuman/tree/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/eyes/low-poly",
+  "author": "MakeHuman (makehumancommunity.org)",
+  "modified": true,
+  "licence": "CC0-1.0",
+  "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+ },
+ {
+  "asset": "makehuman:part/eyelashes",
+  "title": "MakeHuman eyelashes (the base mesh's eyelash helpers)",
+  "kind": "eyelashes",
+  "source": "https://github.com/makehumancommunity/makehuman/tree/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/3dobjs",
+  "author": "MakeHuman (makehumancommunity.org)",
+  "modified": true,
+  "licence": "CC0-1.0",
+  "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+ },
+ {
+  "asset": "makehuman:proxy/teeth_base",
+  "title": "MakeHuman teeth_base (teeth)",
+  "kind": "teeth",
+  "source": "https://files.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip",
+  "author": "MakeHuman (makehumancommunity.org)",
+  "modified": true,
+  "licence": "CC0-1.0",
+  "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+ },
+ {
+  "asset": "makehuman:proxy/tongue01",
+  "title": "MakeHuman tongue01 (tongue)",
+  "kind": "tongue",
+  "source": "https://files.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip",
+  "author": "MakeHuman (makehumancommunity.org)",
+  "modified": true,
+  "licence": "CC0-1.0",
+  "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+ },
+ {
+  "asset": "monk:skin-tone/monk-skin-tone-scale",
+  "title": "Monk Skin Tone Scale (the ten tones the skin dial runs through)",
+  "kind": "skin-tone",
+  "licence": "CC-BY-4.0",
+  "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "source": "https://skintone.google",
+  "author": "Dr. Ellis Monk and Google",
+  "attribution": "Monk Skin Tone Scale by Dr. Ellis Monk and Google (https://skintone.google), licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Dramatis interpolates between its ten tones.",
+  "modified": true
+ },
+ {
+  "asset": "tonio:eye/basic",
+  "title": "Eye texture, basic (the iris recoloured to the character's)",
+  "kind": "texture",
+  "licence": "CC0-1.0",
+  "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "source": "https://cdn.tosijs.net/tonio/eyes/basic-eye.svg",
+  "author": "Tonio Loewald",
+  "modified": true
+ },
+ {
+  "asset": "quaternius:skeleton/ual",
+  "title": "Universal Animation Library's 65-joint skeleton: names, hierarchy and joint frames (every export's skeleton)",
+  "kind": "other",
+  "source": "https://quaternius.com/packs/universalanimationlibrary.html",
+  "author": "Quaternius",
+  "licence": "CC0-1.0",
+  "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+ },
+ {
+  "asset": "makehuman:proxy/eyebrow003",
+  "title": "MakeHuman eyebrow003 (eyebrows)",
+  "kind": "brows",
+  "source": "https://files.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip",
+  "author": "MakeHuman (makehumancommunity.org)",
+  "modified": true,
+  "licence": "CC0-1.0",
+  "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+ },
+ {
+  "asset": "makehuman:proxy/elvs_crude_t-shirt_male",
+  "title": "elvs_crude_t-shirt_male by Elvaerwyn (top), from MakeHuman's shirts01 asset pack",
+  "kind": "garment",
+  "source": "https://static.makehumancommunity.org/assets/assetpacks/shirts01.html",
+  "author": "Elvaerwyn",
+  "modified": true,
+  "licence": "CC0-1.0",
+  "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+ },
+ {
+  "asset": "makehuman:proxy/cortu_jeans_shorts",
+  "title": "cortu_jeans_shorts by Cortu (bottom), from MakeHuman's pants01 asset pack",
+  "kind": "garment",
+  "source": "https://static.makehumancommunity.org/assets/assetpacks/pants01.html",
+  "author": "Cortu",
+  "modified": true,
+  "licence": "CC0-1.0",
+  "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+ },
+ {
+  "asset": "makehuman:proxy/shoes06",
+  "title": "MakeHuman shoes06 (clothes)",
+  "kind": "garment",
+  "source": "https://files.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip",
+  "author": "MakeHuman (makehumancommunity.org)",
+  "modified": true,
+  "licence": "CC0-1.0",
+  "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+ },
+ {
+  "asset": "makehuman:proxy/eyebrow005",
+  "title": "MakeHuman eyebrow005 (eyebrows)",
+  "kind": "brows",
+  "source": "https://files.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip",
+  "author": "MakeHuman (makehumancommunity.org)",
+  "modified": true,
+  "licence": "CC0-1.0",
+  "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+ },
+ {
+  "asset": "makehuman:proxy/eyebrow008",
+  "title": "MakeHuman eyebrow008 (eyebrows)",
+  "kind": "brows",
+  "source": "https://files.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip",
+  "author": "MakeHuman (makehumancommunity.org)",
+  "modified": true,
+  "licence": "CC0-1.0",
+  "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+ },
+ {
+  "asset": "makehuman:proxy/eyebrow002",
+  "title": "MakeHuman eyebrow002 (eyebrows)",
+  "kind": "brows",
+  "source": "https://files.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip",
+  "author": "MakeHuman (makehumancommunity.org)",
+  "modified": true,
+  "licence": "CC0-1.0",
+  "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+ },
+ {
+  "asset": "makehuman:proxy/eyebrow010",
+  "title": "MakeHuman eyebrow010 (eyebrows)",
+  "kind": "brows",
+  "source": "https://files.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip",
+  "author": "MakeHuman (makehumancommunity.org)",
+  "modified": true,
+  "licence": "CC0-1.0",
+  "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+ },
+ {
+  "asset": "makehuman:proxy/eyebrow006",
+  "title": "MakeHuman eyebrow006 (eyebrows)",
+  "kind": "brows",
+  "source": "https://files.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip",
+  "author": "MakeHuman (makehumancommunity.org)",
+  "modified": true,
+  "licence": "CC0-1.0",
+  "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
+ }
+]

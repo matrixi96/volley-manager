@@ -122,7 +122,7 @@ function fmPanel(m){const a=m.sides[0];
     <div class="tacgrid">${tgtTacHtml(m)}${srvTacRows(a.tactics,a.pl)}${shieldTacHtml(a.tactics,a.pl)}${freeTacHtml(a.tactics)}${p1TacHtml(a.tactics)}</div><div class="tacgrid wide">${blockTacHtml(a.tactics)}</div>${rotCard(m)}</div>`;
   if(ui.fmPanel==='more')return `<div class="card fmpanel"><div class="row wrap" style="gap:6px">
     <button class="ghost sm" onclick="ui.fmPanel=null;simToSetEnd()">⏭ Do końca seta</button><button class="ghost sm" onclick="ui.fmPanel=null;simToEnd()">⏭⏭ Do końca meczu</button>
-    <button class="ghost sm" onclick="ui.mview=ui.mview==='klasyczny'?'hala':'klasyczny';ui.fmPanel=null;render()">${ui.mview==='klasyczny'?'🏟️ Widok hali':'▦ Widok klasyczny'}</button>
+    <button class="ghost sm" onclick="ui.mview=ui.mview==='klasyczny'?'hala':'klasyczny';ui.fmPanel=null;render()">${ui.mview==='klasyczny'?'🏟️ Widok hali':'▦ Widok klasyczny'}</button>${v3dCan()&&ui.mview!=='klasyczny'?`<button class="ghost sm" onclick="v3dToggle()" title="Przełącz widok hali: 3D / 2D">${ui.v3d?'🏐 Hala 2D':'🎮 Hala 3D'}</button>`:''}
     <button class="ghost sm ${ui.anim!==false?'on':''}" onclick="ui.anim=ui.anim===false;render()">🏐 Animacja: ${ui.anim!==false?'wł.':'wył.'}</button>
     <span class="small mut">Libero: <b style="color:var(--txt)">${esc(a.libero.last)}</b> <button class="link" onclick="selSub('L')">zmień</button></span></div></div>`;
   if(ui.fmPanel==='asst')return asstPanel(m);
@@ -137,7 +137,7 @@ function fmLiveView(subPanel){const m=ui.match;
    <div class="fml">${fmFormation(m,0)}${fmAssistant(m)}${fmAnalyst(m)}</div>
    <div class="fmc">
     <div class="card fmcourt">${fmTeamStats(m,0)}<div class="fmcv">
-      ${ui.mview==='klasyczny'?courtHtml(m):`<div class="hallbar small mut">🏟️ ${tName(m.homeIdx!=null?m.homeIdx:m.sides[0].team.idx)} · <b style="color:var(--txt)">${(m.att||0).toLocaleString('pl-PL')}</b> / ${(m.cap||0).toLocaleString('pl-PL')} widzów · <span class="mcom ${m.comm&&m.comm.w!=null?(m.comm.w===0?'me':'op'):''}">${m.comm?esc(m.comm.t):''}</span><span id="mph" class="mph">${ui.to?'Czas':m.over?'Koniec meczu':'Przed zagrywką'}</span></div>${toBanner(m)}<canvas id="mcv" class="mcv"></canvas>`}
+      ${ui.mview==='klasyczny'?courtHtml(m):`<div class="hallbar small mut">🏟️ ${tName(m.homeIdx!=null?m.homeIdx:m.sides[0].team.idx)} · <b style="color:var(--txt)">${(m.att||0).toLocaleString('pl-PL')}</b> / ${(m.cap||0).toLocaleString('pl-PL')} widzów · <span class="mcom ${m.comm&&m.comm.w!=null?(m.comm.w===0?'me':'op'):''}">${m.comm?esc(m.comm.t):''}</span><span id="mph" class="mph">${ui.to?'Czas':m.over?'Koniec meczu':'Przed zagrywką'}</span></div>${toBanner(m)}<canvas id="mcv" class="mcv"></canvas>${v3dOn()?'<div id="m3d" class="m3d"><span class="m3dload">Wczytywanie widoku 3D…</span></div>':''}`}
       ${m.over?'':`<div class="fmctl">${ui.to?`<button class="btn fmbig go" onclick="endTimeout()">↩ Wracamy na boisko</button>`:`<button class="btn ppbtn fmbig ${m.paused?'go':''}" onclick="togglePause()">${m.paused?'▶ Graj':'⏸ Pauza'}</button>`}<button class="ghost sm tobtn ${ui.toReq?'on':''}" ${m.sides[0].to<=0||ui.to?'disabled':''} onclick="myTimeout()">${ui.toReq?'⏱ Czas po akcji…':`⏱ Czas (${m.sides[0].to})`}</button><span class="small mut">Spacja = pauza</span></div>${shoutBar(m)}`}</div>${fmTeamStats(m,1)}</div>
     <div class="fmws one">${fmMomentum(m)}</div>
    </div>

@@ -85,7 +85,28 @@ function drawHall(m,scene,ball,flash){
   if(flash){g.font='800 30px system-ui,sans-serif';g.textAlign='center';g.textBaseline='middle';const w=g.measureText(flash.t).width+40;g.fillStyle=flash.w===0?'#16a34ae6':'#dc2626e6';g.fillRect(MV.CX-w/2,MV.CY-26,w,52);g.fillStyle='#fff';g.fillText(flash.t,MV.CX,MV.CY+1);}
 }
 function staticBall(m,scene){const s=scene.find(o=>o.i===m.serving&&o.zone===0);return s?{x:s.x+(m.serving===0?0.35:-0.35),y:s.y,h:2.2}:null;}
+// ================= WIDOK 3D (tylko PC) =================
+// Moduł 3D (Three.js + modele zawodników) wczytuje się dopiero po włączeniu widoku 3D, z folderu 3d/.
+const V3D={mod:null,p:null,err:null};
+if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d')!=='0';}catch(e){ui.v3d=true;}}
+function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
+function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
+function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d',ui.v3d?'1':'0');}catch(e){}render();}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
+function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
+function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,kit:K[o.i]}));}
+function v3dSb(m){const T=m.sides.map(x=>x.team);const kc=kitColors(m);const w0=m.sets.filter(x=>x[0]>x[1]).length,w1=m.sets.length-w0;return {n0:T[0].short,n1:T[1].short,c0:kc[0],c1:kc[1],p0:m.score[0],p1:m.score[1],set:m.setNo||m.sets.length+1,s0:w0,s1:w1};}
+function v3dJump(o){if(!o||o.role==='S'||o.role==='L')return false;let h=0;for(const c of String(o.id))h=(h*31+c.charCodeAt(0))>>>0;return h%10<7;}
+function v3dPlay(m,pre,ev,steps,label,sf,done){const M=V3D.mod;const srv=ev.seq[0]&&ev.seq[0].k==='srv'?String(ev.seq[0].id):null;const so=pre.find(o=>String(o.id)===srv);
+  const kc=kitColors(m);
+  M.play({pre:v3dList(m,pre),srv,jump:v3dJump(so),steps:steps.map(x=>Object.assign({},x,{id:x.id!=null?String(x.id):null,moves:x.moves.map(v=>Object.assign({},v,{id:String(v.id)}))})),winner:ev.winner,label,wcol:kc[ev.winner],short:ui.speed<1600,sb:v3dSb(m),
+    onPh:t=>{const e=document.getElementById('mph');if(e&&t)e.textContent=t;},paused:()=>!!m.paused,done});}
+function v3dStatic(m){const el=document.getElementById('m3d');if(!el)return;
+  v3dLoad().then(M=>{if(!M||!document.getElementById('m3d'))return;const box=document.getElementById('m3d');box.classList.add('on');M.mount(box);const cv=document.getElementById('mcv');if(cv)cv.style.display='none';
+    if(!m.animating&&!M.busy()){const sc=ui.to&&ui.to.scene?ui.to.scene:formation(m);const sv=sc.find(o=>o.zone===0&&o.i===m.serving);M.idle({pre:v3dList(m,sc),srv:sv&&!m.over?String(sv.id):null,sb:v3dSb(m)});}});}
 function drawHallStatic(){const m=ui.match;if(!m||ui.mview==='klasyczny'||!document.getElementById('mcv'))return;
+  if(v3dOn())v3dStatic(m);
   if(ui.to&&ui.to.scene){drawHall(m,ui.to.scene,null,null);return;}
   const sc=formation(m);ui._scene=sc;drawHall(m,sc,m.over?null:staticBall(m,sc),null);
   const cv=document.getElementById('mcv');cv.onclick=e=>{const r=cv.getBoundingClientRect();const v=mvView(cv);const x=v.x+(e.clientX-r.left)*v.w/r.width,y=v.y+(e.clientY-r.top)*v.h/r.height;
@@ -178,10 +199,11 @@ function hallAnim(m,pre,ev,done){
     else continue;
     for(const mv of moves)cur[mv.id]=[mv.x,mv.y];
     let touch=null;if((['rec','dig','set','att','free'].includes(s.k)||(s.k==='ace'&&s.sh))&&s.id){if(s.s!==tSide){tSide=s.s;tCnt=0;}tCnt++;touch={id:s.id,n:tCnt};}else if(s.k==='blk'&&s.id){touch={id:s.id,n:'B'};tSide=s.s;tCnt=0;}
-    steps.push({to,peak,dur:dur*sf,moves,ph,touch});lastK=s.k;
+    steps.push({to,peak,dur:dur*sf,moves,ph,touch,k:s.k,id:s.id,s});lastK=s.k;
     if(s.k==='net')steps.push({to:{x:to.x+(to.x<9?-0.5:0.5),y:to.y,h:0},peak:0,dur:320*sf,moves:[],ph});
     if(s.k==='ace'&&s.sh){const rs=s.s;const lx=R()<0.5?-1.2:2+R()*5,ly=lx<0?2+R()*5:(cy(o)<4.5?-1:10);const [X,Y]=gl(rs,lx,ly);steps.push({to:{x:X,y:Y,h:0},peak:2.2,dur:700*sf,moves:[],ph:'Przyjęcie poza boisko — as!'});}}
   const sErr=(ev.seq||[]).find(x=>x.srv);const label={ace:'AS!',block:'BLOK!',kill:'PUNKT',serr:sErr?(sErr.how==='net'?'ZAGRYWKA W SIATKĘ':'ZAGRYWKA W AUT'):'BŁĄD ZAGRYWKI',attErr:'BŁĄD ATAKU',setErr:'BŁĄD',mix:'NIEPOROZUMIENIE',blockout:'PO BLOKU!',netTouch:'SIATKA W BLOKU!',f3m:'BŁĄD 3 M'}[ev.type]||'PUNKT';
+  if(v3dOn()&&V3D.mod){v3dPlay(m,pre,ev,steps,label,sf,done);return;}
   let k=0;const phEl=()=>document.getElementById('mph');
   const run=()=>{if(!document.getElementById('mcv')){done();return;}
     if(k>=steps.length){drawHall(m,scene,ball,{t:label,w:ev.winner});const wEnd=()=>m.paused?setTimeout(wEnd,100):done();setTimeout(wEnd,ui.speed>=1600?750:560);return;}
