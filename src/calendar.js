@@ -52,8 +52,11 @@ function monthly(d){if(!SAVE.fin||SAVE.team==null)return;const m=+d.slice(5,7);c
   try{debtCheck(d);}catch(e){console.error(e);}
   if(typeof sendMail==='function'){const pm=MON_NOM[(m+10)%12];const rows=[['Sponsorzy',spm],['Sklep kibica',shp],['Pensje zawodników',-pay],['Pensje sztabu',-stp],['Utrzymanie obiektów',-mnt]];sendMail({cat:'fin',from:'Księgowość klubu',t:`Rozliczenie miesiąca: ${MON_NOM[m-1]}`,s:`Bilans: ${fmt(spm+shp-pay-stp-mnt)} · saldo ${fmt(f.bal)}`,b:{type:'fin',rows,tot:spm+shp-pay-stp-mnt,bal:f.bal},lab:'Miesięczne zestawienie'});}}
 // zarząd reaguje na dług: poniżej −1 mln zł przymusowa sprzedaż najdroższego zawodnika (raz w miesiącu)
-function debtCheck(d){if(!BAL2||!SAVE.fin||SAVE.fin.bal>-500000)return;
+function debtCheck(d){if(SAVE.fin&&SAVE.fin.bal>-1000000){SAVE.debtNote=null;if(SAVE.fin.bal>-500000)SAVE.trBan=false;}if(!BAL2||!SAVE.fin||SAVE.fin.bal>-500000)return;
   if(SAVE.fin.bal>-1000000){if(typeof sendMail==='function')sendMail({cat:'fin',from:'Zarząd klubu',t:'Ostrzeżenie: dług klubu',s:`Saldo ${fmt(SAVE.fin.bal)}. Poniżej −1 mln zł zarząd zacznie sprzedawać zawodników.`,lab:'Finanse'});return;}
+  if(BAL3){const dn=SAVE.debtNote;if(!dn){SAVE.debtNote=addDays(d,30);const top=myTeam().players.filter(x=>!x.jr).sort((a,b)=>pValue(b)-pValue(a)).slice(0,3);
+      if(typeof sendMail==='function')sendMail({cat:'fin',from:'Zarząd klubu',t:'Dług ponad 1 mln zł: 30 dni na reakcję',s:`Sprzedaj zawodnika albo ogranicz koszty do ${fmtShort(SAVE.debtNote)}. Propozycje: ${top.map(x=>`${x.first} ${x.last} (${fmt(pValue(x))})`).join(', ')}. Potem zarząd sprzeda sam i zablokuje zakupy.`,lab:'Finanse'});return;}
+    if(d<dn)return;SAVE.trBan=true;}
   const t=myTeam();if(!t)return;
   const p=t.players.filter(x=>!x.jr).sort((a,b)=>pValue(b)-pValue(a))[0];if(!p)return;const bs=findBuyers(p.id);const b=bs[0]||null;
   const fee=round5k(b?Math.max(b.fee*0.85,pValue(p)*0.7):pValue(p)*0.6);const dest=b?TEAMS[b.tm].name:'klubu zagranicznego';

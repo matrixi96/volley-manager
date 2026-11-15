@@ -243,6 +243,7 @@ button.sm{padding:5px 10px;font-size:12px}
 .fmz .dlt.good{background:#22c55e26;color:#4ade80}.fmz .dlt.bad{background:#ef444426;color:#f87171}
 .fmnr{display:flex;align-items:center;justify-content:center;gap:2px;max-width:100%;min-width:0}
 .fmnr .fmnm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.azg{display:grid;grid-template-columns:minmax(150px,1.2fr) 1fr 1fr;gap:6px 10px;align-items:center}.azh{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);font-weight:700}.azn{display:flex;flex-direction:column}.azn small{font-size:11px}.azg select{width:100%}.tacgrid .atkz,.atkz{grid-column:1/-1}@media(max-width:700px){.azg{grid-template-columns:1fr 1fr}.azg .azh:first-child{display:none}.azn{grid-column:1/-1}}
 .fmnr .cfi{flex:0 0 auto;margin:0;font-size:10px}
 .cfi{font-size:10px;margin-left:2px}
 .fmnm{font-size:11px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -876,7 +877,7 @@ function nerves(p,m){return pressure(m)&&p.opa<10?' Nerwy w końcówce!':'';}
 // ---- pewność siebie w meczu (cf: -3 roztrzęsiony … +2 w gazie) ----
 var MENT=1,AIM=1;
 // BAL2: balans długoterminowy (inflacja umiejętności, dynastie, długi)
-var BAL2=1;
+var BAL2=1,BAL3=0;
 function cfK(p){const o=p.opa||10;let k=(1+(11-o)/20*(o>11?2.4:2.2))*(p.age>=28?0.8:p.age<=21?1.15:1);if(p.tr){if(hasT(p,'ner'))k*=1.45;if(hasT(p,'spo'))k*=0.45;if(hasT(p,'pro'))k*=0.3;if(hasT(p,'zde'))k*=0.6;}return clamp(k,0.05,3);}
 // posłuszeństwo wobec poleceń trenera (indywidualista robi po swojemu)
 function obeyF(p){if(!MENT||!p||!p.tr)return 1;let k=1;if(hasT(p,'ind'))k*=0.55;if(hasT(p,'kap')&&(p.unh||0)>=3)k*=0.75;if(hasT(p,'pro'))k*=1.1;return k;}
@@ -1064,7 +1065,9 @@ function attackPhase(m,A,q,by,log,act,pd){
   if(!quick&&sq<0.3&&R()<(0.75-eff(a,'kiw')/20*0.3)*(hasT(a,'ind')?0.55:1))return freeBall(m,A,a,log,act,seq,setTxt);
   const kiwN=eff(a,'kiw')/20,czA=eff(a,'czy')/20;
   // taktyka ataku: AT 0 = mieszany, 1 = mocny atak, 2 = więcej kiwek; AD 0 = wg zawodnika, 1 = skos, 2 = prosta, 3 = za blok, 4 = obijanie bloku
-  const AT=side.tactics.atk||0,AD=side.tactics.adir||0;
+  // ustawienia strefy (lewe skrzydło / środek / prawe skrzydło / druga linia) nadpisują ogólne
+  const ZK=!fr?'B':wing==='M'?'M':wing==='L4'?'L':'R';const TZ=(side.tactics.atkZ&&side.tactics.atkZ[ZK])||{};
+  const AT=TZ.atk!=null?TZ.atk:(side.tactics.atk||0),AD=TZ.adir!=null?TZ.adir:(side.tactics.adir||0);
   let tipP=quick?0.02:sq<0.42?0.1+kiwN*0.3:0.025+kiwN*0.05;
   if(!quick){if(AT===1)tipP*=0.3;else if(AT===2)tipP=Math.min(0.55,tipP*2.4+0.04);if(AD===3)tipP=Math.min(0.6,tipP+0.07);}
   const comply=(MENT?clamp(0.1+czA*0.65+eff(a,'kcj')/20*0.15+(sq-0.5)*0.35,0.15,0.97):(0.5+czA*0.35))*(AD?obeyF(a):1);// na ile zawodnik wykona polecenie trenera co do kierunku
@@ -1433,8 +1436,14 @@ const SERVE_OPT=[['Bezpieczna','Mniej błędów, ale łatwiejsze przyjęcie dla 
 const DIST_OPT=[['Zrównoważone','Rozgrywający gra do wszystkich.'],['Skrzydła','Więcej piłek do przyjmujących i atakującego.'],['Środek','Więcej szybkich piłek do środkowych (wymaga dobrego przyjęcia).'],['Na atakującego','Główna opcja: atakujący.']];
 const ATK_OPT=[['Mieszany','Zawodnicy sami wybierają między mocnym atakiem a kiwką.'],['Mocny atak','Prawie bez kiwek: mocniejsze uderzenia, ale więcej błędów i trochę więcej bloków.'],['Więcej kiwek','Częste kiwki i plasy: mniej błędów, ale rywal z asekuracją kiwki łatwo je broni.']];
 const ADIR_OPT=[['Wg zawodnika','Każdy atakuje w swoim ulubionym kierunku.'],['Po skosie','Atak po przekątnej boiska. Groźny, gdy blok rywala zamyka prostą.'],['Po prostej','Atak wzdłuż linii. Groźny, gdy blok zamyka skos.'],['Za blok','Plasy i kiwki tuż za blok. Dobre na wysoki blok bez asekuracji.'],['Atak po bloku','Celowe uderzenie w ręce blokujących (obijanie bloku), żeby piłka po bloku wyszła w aut. Najlepsze na wysoki, silny blok; przeciw niskiemu blokowi łatwiej o aut bez dotknięcia.']];
-function atkTacHtml(t){return `<div class="tacrow"><div class="tacl"><b>Rodzaj ataku</b><small class="mut">siła czy technika</small></div><div class="seg">${ATK_OPT.map((o,i)=>`<button class="${(t.atk||0)===i?'on':''}" onclick="tacSet('atk',${i})" title="${esc(o[1])} Znajomość: ${typeof famOf==='function'&&SAVE.team!=null?Math.round(famOf(SAVE.team,'atk',i)):'?'}%">${o[0]}</button>`).join('')}</div><div class="small mut tacd">${esc(ATK_OPT[t.atk||0][1])} ${famTag('atk',t.atk||0)}</div></div>
-  <div class="tacrow"><div class="tacl"><b>Kierunek ataku</b><small class="mut">polecenie dla atakujących</small></div><div class="seg">${ADIR_OPT.map((o,i)=>`<button class="${(t.adir||0)===i?'on':''}" onclick="tacSet('adir',${i})" title="${esc(o[1])} Znajomość: ${typeof famOf==='function'&&SAVE.team!=null?Math.round(famOf(SAVE.team,'adir',i)):'?'}%">${o[0]}</button>`).join('')}</div><div class="small mut tacd">${famTag('adir',t.adir||0)} ${esc(ADIR_OPT[t.adir||0][1])} Im lepsze czytanie gry zawodnika, tym dokładniej wykonuje polecenie.</div></div>`;}
+function atkTacHtml(t){return `<div class="tacrow"><div class="tacl"><b>Rodzaj ataku</b><small class="mut">siła czy technika</small></div><div class="seg">${ATK_OPT.map((o,i)=>`<button class="${(t.atk||0)===i?'on':''}" onclick="tacSet('atk',${i})" title="${esc(o[1])}">${o[0]}</button>`).join('')}</div><div class="small mut tacd">${esc(ATK_OPT[t.atk||0][1])} ${famTag('atk',t.atk||0)}</div></div>
+  <div class="tacrow"><div class="tacl"><b>Kierunek ataku</b><small class="mut">polecenie dla atakujących</small></div><div class="seg">${ADIR_OPT.map((o,i)=>`<button class="${(t.adir||0)===i?'on':''}" onclick="tacSet('adir',${i})" title="${esc(o[1])}">${o[0]}</button>`).join('')}</div><div class="small mut tacd">${famTag('adir',t.adir||0)} ${esc(ADIR_OPT[t.adir||0][1])} Im lepsze czytanie gry zawodnika, tym dokładniej wykonuje polecenie.</div></div>${atkZoneHtml(t)}`;}
+const ATK_ZONES=[['L','Lewe skrzydło','strefa 4: przyjmujący'],['M','Środek','strefa 3: środkowy, szybka piłka'],['R','Prawe skrzydło','strefa 2: atakujący'],['B','Druga linia','pipe ze strefy 6, atak ze strefy 1']];
+function atkZoneHtml(t){const Z=t.atkZ||{};const sel=(z,k,opts,cur)=>`<select onchange="tacSetZ('${z}','${k}',this.value)"><option value="" ${cur==null?'selected':''}>Jak ogólnie (${esc(opts[(k==='atk'?t.atk:t.adir)||0][0])})</option>${opts.map((o,i)=>`<option value="${i}" ${cur===i?'selected':''}>${esc(o[0])}</option>`).join('')}</select>`;
+  return `<div class="tacrow atkz"><div class="tacl"><b>Atak w poszczególnych strefach</b><small class="mut">styl i kierunek osobno dla każdej strefy</small></div>
+   <div class="azg"><div class="azh"></div><div class="azh">Styl ataku</div><div class="azh">Kierunek</div>${ATK_ZONES.map(([z,n,d])=>{const c=Z[z]||{};const set=c.atk!=null||c.adir!=null;return `<div class="azn"><b>${n}</b>${set?' <span class="good">●</span>':''}<small class="mut">${d}</small></div><div>${sel(z,'atk',ATK_OPT,c.atk)}</div><div>${sel(z,'adir',ADIR_OPT,c.adir)}</div>`;}).join('')}</div>
+   <div class="small mut tacd">Domyślnie każda strefa gra według ustawień ogólnych powyżej. Ustaw strefę osobno, gdy rywal ma słaby blok albo dziurę w obronie po jednej stronie, np. lewe skrzydło po prostej, a środek z kiwką. Kierunek „po skosie / po prostej” na środku oznacza skos lub prosto przez środek.</div></div>`;}
+function tacSetZ(z,k,v){const t=myTac();t.atkZ=t.atkZ||{};const c=Object.assign({},t.atkZ[z]);if(v===''||v==null)delete c[k];else c[k]=+v;if(Object.keys(c).length)t.atkZ[z]=c;else delete t.atkZ[z];save();if(ui.match&&!ui.match.over)ui.match.sides[0].tactics.atkZ=JSON.parse(JSON.stringify(t.atkZ));render();}
 function famTag(k,i){return '';}
 function famTagOld(k,i){if(SAVE.team==null||typeof famOf!=='function'||(typeof TF_OPP!=='undefined'&&TF_OPP.has(k))||!TF_EL.some(x=>x[0]===k))return '';const v=Math.round(famOf(SAVE.team,k,i));return `<span class="famt" style="color:${v>=70?'var(--good)':v>=45?'var(--acc)':'var(--bad)'}" title="Znajomość tej opcji przez zespół">znajomość ${v}%</span>`;}
 function optGroup(name,opts,cur,fn){return `<div class="opts">${opts.map(([l,d],i)=>`<button class="opt ${cur===i?'on':''}" onclick="${fn}(${i})"><b>${l}</b><small>${d}</small>${famTag(name,i)}</button>`).join('')}</div>`;}
@@ -1779,6 +1788,9 @@ function finishSeason(){
   bgFinishAll();s.lgFinal={};s.lgFinal[myLg()]=s.final;if(s.oth)for(const k in s.oth)if(s.oth[k].final)s.lgFinal[k]=s.oth[k].final;
   for(const k in s.lgFinal){const [b0,st]=LG_REP[k];s.lgFinal[k].forEach((ti,pl)=>{const a=SAVE.ai[ti];const kw=BAL2?0.15:0.25;a.rep=Math.round(clamp(a.rep*(1-kw)+(b0-pl*st)*kw,5,100));});
     if(+k!==myLg())news(`🏆 ${TEAMS[s.lgFinal[k][0]].name} wygrywa ${LG_N[k]} w sezonie ${sLabel(s.n)}.`);}
+  if(BAL3)for(const k in s.lgFinal){const ch=s.lgFinal[k][0];for(const p of TEAMS[ch].players){if(rating(p)<78)continue;const up=0.03+R()*0.07;
+      if(ch===SAVE.team){p.raiseReq=Math.round(up*100)/100;}else p.wage=round5k(p.wage*(1+up));}
+    if(ch===SAVE.team&&typeof sendMail==='function')sendMail({cat:'trans',from:'Agenci zawodników',t:'Mistrzowie oczekują podwyżek',s:'Po tytule najlepsi zawodnicy będą chcieli 3–10% więcej przy przedłużaniu kontraktów.',lab:'Kontrakty'});}
   s.moves=leagueMoves(s.lgFinal);
   for(const mv of s.moves)news(mv.up?`⬆️ ${TEAMS[mv.i].name} awansuje do ${LG_N[mv.to]==='Ekstraliga'?'Ekstraligi':LG_N[mv.to]==='1. Liga'?'1. Ligi':LG_N[mv.to]}${mv.i===SAVE.team?' — to nasz awans!':''}.`:`⬇️ ${TEAMS[mv.i].name} spada do ${LG_N[mv.to]==='1. Liga'?'1. Ligi':'2. Ligi'}${mv.i===SAVE.team?' — to nasz spadek.':''}.`);
   const myPl=s.final.indexOf(SAVE.team);const pz=Math.round(PRIZE[myPl]*LG_PRIZE[myLg()]/5000)*5000;money(pz,'Nagrody');finLog(`Nagroda za ${myPl+1}. miejsce (${LG_N[myLg()]}) w sezonie ${sLabel(s.n)}`,pz);
@@ -2019,6 +2031,38 @@ function ensureLeagues(){if(!SAVE.world)return false;const have=new Set(W().play
     if(SAVE.jrInit&&typeof genJunior==='function')for(const t of TEAMS)if(!W().players.some(p=>p.tm===t.idx&&p.jr))JR_PLAN.forEach((pos,i)=>{W().players.push(genJunior(t.idx,16+(i%4),pos));});
     syncTeams();}
   return added>0;}
+// ---- rynek wolnych zawodników: poziom liczony względem lig, żeby nie wracała inflacja ----
+// poziom odniesienia lig zapamiętany przy starcie świata (rynek nie może podbijać sam siebie)
+function lgRef(l){if(!SAVE.lgRef)SAVE.lgRef=[0,1,2].map(x=>Math.round(lgAvg(x)*10)/10);return SAVE.lgRef[l];}
+function lgAvg(l){const ids=lgIds(l);let s=0,n=0;for(const i of ids){const t=TEAMS[i];if(!t||!t.players.length)continue;s+=teamStrength(t);n++;}return n?s/n:[80,67,58][l];}
+function genAt(pos,target,age){let q=target/5;let p=null;for(let it=0;it<4;it++){if(p)W().nextId--;p=genPlayer(pos,q,age);const r=rating(p);if(Math.abs(r-target)<=1)break;q+=(target-r)/5;}return p;}
+const FA_MIX=[['vet',10],['spor',5],['tal',8],['sol',32]];
+function faMarket(){if(!BAL3)return;const n=S()?S().n:1;const E=lgRef(0),L1=lgRef(1),L2=lgRef(2);
+  const fa=W().players.filter(p=>p.tm<0&&!p.jr);const have={};for(const p of fa)have[p.fk||'sol']=(have[p.fk||'sol']||0)+1;
+  for(const [k,cnt] of FA_MIX){for(let i=have[k]||0;i<cnt;i++){const pos=randPos();let p;
+    if(k==='vet')p=genAt(pos,E-6+R()*8,31+Math.floor(R()*4));
+    else if(k==='spor'){p=genAt(pos,E-4+R()*8,25+Math.floor(R()*5));if(R()<0.6)p.tr=[R()<0.5?'kap':'ind'];}
+    else if(k==='tal')p=genAt(pos,L2-3+R()*13,18+Math.floor(R()*4));
+    else{const lv=[E,L1,L2][Math.floor(R()*3)];p=genAt(pos,lv-8+R()*12,22+Math.floor(R()*9));}
+    p.tm=-1;initPlayerMeta(p,n,true);if(k==='tal')p.pot=Math.min(90,rating(p)+10+Math.round(R()*8));p.fk=k;W().players.push(p);}}
+  // za dużo wolnych: odchodzą najsłabsi i najstarsi
+  const all=W().players.filter(p=>p.tm<0&&!p.jr).sort((a,b)=>rating(b)-rating(a));if(all.length>75){const drop=new Set(all.slice(75).map(p=>p.id));W().players=W().players.filter(p=>!drop.has(p.id));}}
+// kluby komputera podpisują wolnych zawodników: zawodnik idzie tam, gdzie dostanie najwięcej (budżet i renoma), w granicach limitu płac
+function faSignAI(){if(!BAL3)return;const LA=[0,1,2].map(lgRef);const fa=W().players.filter(p=>p.tm<0&&!p.jr&&!p.inj).sort((a,b)=>rating(b)-rating(a));let k=0;const per={};
+  for(const p of fa){const r=rating(p);let wd=wageDemand(p)*(p.fk==='spor'?1.3:1);const bids=[];
+    for(const t of TEAMS){if(t.idx===SAVE.team||t.players.length>=16||(per[t.idx]||0)>=2)continue;const best=t.players.filter(x=>x.pos===p.pos).map(x=>rating(x)).sort((a,b)=>b-a);
+      const need=best.length<POS_STD[p.pos]||r>(best[Math.min(best.length-1,p.pos==='P'||p.pos==='S'?1:0)]||0)+1;if(!need)continue;if(teamWages(t.idx)+wd>wageCap(t.idx))continue;if(r>LA[lgOf(t.idx)]+(lgOf(t.idx)===0?6:4)&&p.fk!=='tal')continue;// za dobry na tę ligę: czeka na lepszą ofertę
+      const a=SAVE.ai[t.idx];if(a.bud<wd*0.5)continue;bids.push({t,v:a.bud+a.rep*20000+R()*200000});}
+    if(!bids.length)continue;bids.sort((a,b)=>b.v-a.v);const t=bids[0].t;SAVE.ai[t.idx].bud-=round5k(wd*0.5);
+    per[t.idx]=(per[t.idx]||0)+1;movePlayer(p,t.idx);p.wage=round5k(wd);p.ce=S().n+(p.age>=31?0:1)+Math.floor(R()*2);delete p.fk;k++;SAVE.faSigned=(SAVE.faSigned||0)+1;
+    if(k<=6)news(`✍️ Wolny zawodnik ${p.first} ${p.last} (${POS_NAMES[p.pos]}, ${r}) podpisuje kontrakt z ${t.name}.`);
+    while(t.players.length>16){const ex=t.players.filter(x=>posCount(t,x.pos)>POS_STD[x.pos]).sort((a,b)=>rating(a)-rating(b))[0]||t.players.slice().sort((a,b)=>rating(a)-rating(b))[0];ex.tm=-1;ex.wage=0;ex.ce=0;t.players=W().players.filter(x=>x.tm===t.idx&&!x.jr);}}}
+// gwiazda dłużej w jednym klubie chce nowego wyzwania: klub komputera ją sprzedaje temu, kto zapłaci (albo za granicę)
+function starsMove(){if(!BAL3)return;const n=S().n;for(const p of W().players.slice()){if(p.tm<0||p.tm===SAVE.team||p.jr)continue;const r=rating(p);if(r<80||p.age>31)continue;if(n-(p.jn||1)<3||R()>=0.15)continue;
+    const from=p.tm;const fee=askingPrice(p);const bids=TEAMS.filter(t=>t.idx!==from&&t.idx!==SAVE.team&&t.players.length<16&&SAVE.ai[t.idx].bud>=fee&&teamWages(t.idx)+wageDemand(p)<=wageCap(t.idx)).map(t=>({t,v:SAVE.ai[t.idx].bud+R()*200000})).sort((a,b)=>b.v-a.v);
+    if(bids.length){const t=bids[0].t;SAVE.ai[t.idx].bud-=fee;SAVE.ai[from].bud+=fee;movePlayer(p,t.idx);p.wage=wageDemand(p);news(`🔁 ${p.first} ${p.last} chciał nowego wyzwania: przechodzi z ${TEAMS[from].name} do ${t.name} za ${fmt(fee)}.`);}
+    else{const fe=round5k(pValue(p)*0.8);SAVE.ai[from].bud+=fe;W().players=W().players.filter(x=>x.id!==p.id);news(`✈️ ${p.first} ${p.last} (${TEAMS[from].name}) szuka nowego wyzwania za granicą (${fmt(fe)}).`);}}
+  syncTeams();}
 function initWorld(){
   SAVE.lg=TEAM_DEFS.map(d=>d.lg||0);
   resetTeams();
@@ -2027,12 +2071,12 @@ function initWorld(){
   for(const t of TEAMS)for(const p0 of t.players){const p=Object.assign({},p0,{tm:t.idx});initPlayerMeta(p,sn,false);setDob(p);W().players.push(p);}
   SAVE.ai=TEAMS.map(t=>({rep:initRep(t),bud:0}));
   for(const a of SAVE.ai)a.bud=round5k(200000+a.rep*15000+R()*300000);
-  for(let i=0;i<20;i++){const age=20+Math.floor(R()*13);const p=genPlayer(randPos(),10+R()*3,age);p.tm=-1;initPlayerMeta(p,1,true);W().players.push(p);}
+  if(!BAL3)for(let i=0;i<20;i++){const age=20+Math.floor(R()*13);const p=genPlayer(randPos(),10+R()*3,age);p.tm=-1;initPlayerMeta(p,1,true);W().players.push(p);}
   const rep=SAVE.ai[SAVE.team].rep;
   SAVE.fin={bal:round5k(1000000+rep*15000),log:[],sea:{},prev:null};
   SAVE.training={focus:'bal',int:1};
   SAVE.news=[];SAVE.inbox=[];
-  syncTeams();initClub();
+  syncTeams();initClub();if(BAL3){faMarket();syncTeams();}
 }
 function news(t){SAVE.news=SAVE.news||[];SAVE.news.unshift({d:SAVE._now||today(),t});SAVE.news=SAVE.news.slice(0,40);try{if(typeof mailFromNews==='function')mailFromNews(t);}catch(e){}}
 function money(amt,cat){const f=SAVE.fin;f.bal+=amt;f.sea[cat]=(f.sea[cat]||0)+amt;}
@@ -2085,11 +2129,11 @@ function posCount(t,pos){return t.players.filter(p=>p.pos===pos).length;}
 function isStarter(p){if(p.tm<0)return false;const lu=autoLineup(TEAMS[p.tm]);return Object.values(lu).includes(p.id);}
 function askingPrice(p){return Math.round(pValue(p)*(isStarter(p)?1.35:1.05)/10000)*10000;}
 function canSellAI(p){const t=TEAMS[p.tm];return posCount(t,p.pos)-1>=POS_MIN[p.pos]&&t.players.length-1>=SQUAD_MIN;}
-function wageNeeded(p){if(p.tm===SAVE.team)return round5k(wageDemand(p)*negF());const my=SAVE.ai[SAVE.team].rep;const cur=p.tm>=0?SAVE.ai[p.tm].rep:0;const ld=p.tm>=0?Math.max(0,myLg()-lgOf(p.tm)):0;return round5k(wageDemand(p)*(p.tm<0?0.9:cur>my+10?1.15:1)*(1+0.35*ld)*negF());}
+function wageNeeded(p){if(p.tm===SAVE.team)return round5k(wageDemand(p)*negF()*(1+(p.raiseReq||0)));const my=SAVE.ai[SAVE.team].rep;const cur=p.tm>=0?SAVE.ai[p.tm].rep:0;const ld=p.tm>=0?Math.max(0,myLg()-lgOf(p.tm)):0;return round5k(wageDemand(p)*(p.tm<0?0.9:cur>my+10?1.15:1)*(1+0.35*ld)*negF());}
 function contractEndFor(years){const s=S();return (s.phase==='off'?s.n-1:s.n)+years;}
-function movePlayer(p,tm){p.tm=tm;if(tm>=0)assignNum(p,tm);syncTeams();}
+function movePlayer(p,tm){p.tm=tm;if(tm>=0&&typeof S==='function'&&S())p.jn=S().n;if(tm>=0)assignNum(p,tm);syncTeams();}
 function tradeMsg(ok,t){ui.tmsg={ok,t};render();}
-function makeOffer(pid,fee,wage,years){
+function makeOffer(pid,fee,wage,years){if(SAVE.trBan)return tradeMsg(false,'Zarząd zablokował zakupy, dopóki dług klubu nie spadnie poniżej 500 tys. zł.');
   const P=PLAYERS[pid];if(!P)return;const p=P.p;const me=myTeam();
   if(!windowOpen())return tradeMsg(false,'Okno transferowe jest zamknięte (otwarte przed sezonem i w trakcie sparingów).');
   if(me.players.length>=SQUAD_MAX)return tradeMsg(false,`Kadra jest pełna (maks. ${SQUAD_MAX}). Najpierw kogoś sprzedaj albo zwolnij.`);
@@ -2126,7 +2170,7 @@ function releasePlayer(pid){const p=PLAYERS[pid].p;
   if(myTeam().players.length-1<SQUAD_MIN)return tradeMsg(false,`Nie możesz zejść poniżej ${SQUAD_MIN} zawodników w kadrze.`);
   const c=releaseCost(p);money(-c,'Odprawy');finLog(`Rozwiązanie kontraktu: ${p.first} ${p.last}`,-c);
   movePlayer(p,-1);p.wage=0;p.ce=0;news(`📄 Rozwiązano kontrakt z ${p.first} ${p.last} (odprawa ${fmt(c)}).`);ui.card=null;save();tradeMsg(true,`Rozwiązano kontrakt. Odprawa: ${fmt(c)}.`);}
-function renew(pid,wage,years){const p=PLAYERS[pid].p;const need=wageNeeded(p);
+function renew(pid,wage,years){const p=PLAYERS[pid].p;delete p.raiseReq;const need=wageNeeded(p);
   if(wage<need)return tradeMsg(false,`${p.last} nie zgadza się. Chce co najmniej ${fmt(need)} rocznie.`);
   p.wage=round5k(wage);p.ce=contractEndFor(years);achEv('renew');news(`✍️ ${p.first} ${p.last} przedłużył kontrakt do ${ceDate(p.ce)}.`);save();tradeMsg(true,`${p.last} przedłużył kontrakt do ${ceDate(p.ce)}.`);}
 
@@ -2138,10 +2182,11 @@ function aiSign(t,pos){
   p.tm=t.idx;assignNum(p,t.idx);p.wage=wageDemand(p);p.ce=S().n+Math.floor(R()*2);
   t.players=W().players.filter(x=>x.tm===t.idx&&!x.jr);return p;}
 function aiOffseason(){
-  const n=S().n;
+  const n=S().n;if(BAL3)starsMove();
   for(const t of TEAMS){if(t.idx===SAVE.team)continue;
     for(const p of t.players){if(p.ce<n){const keep=R()<(isStarter(p)?0.85:0.55)&&p.age<34;if(keep){p.wage=wageDemand(p);p.ce=n+Math.floor(R()*3);}else{p.tm=-1;p.wage=0;p.ce=0;}}}}
   syncTeams();
+  if(BAL3)faSignAI();
   const order=TEAMS.filter(t=>t.idx!==SAVE.team).sort(()=>R()-0.5);
   for(const t of order){
     const pr=SAVE.ai[t.idx].promo;delete SAVE.ai[t.idx].promo;
@@ -2190,9 +2235,9 @@ function offseason(){
   {const ps=staffSkill('psy');const t=TEAMS[SAVE.team];if(t&&ps>10)for(const p of t.players){if(p.tr&&p.tr.includes('ner')&&R()<(ps-10)*0.02){p.tr=p.tr.filter(x=>x!=='ner');news(`🧠 Praca z psychologiem: ${p.first} ${p.last} nie jest już nerwowy.`);}}}
   for(const r in SAVE.staff){const st=SAVE.staff[r];if(st){st.age++;if(st.age<50&&R()<0.4&&st.skill<20)st.skill++;}}
   // wolni zawodnicy: porządki i uzupełnienie
-  let fa=W().players.filter(p=>p.tm<0).sort((a,b)=>rating(b)-rating(a));
+  if(BAL3){faMarket();}else{let fa=W().players.filter(p=>p.tm<0).sort((a,b)=>rating(b)-rating(a));
   if(fa.length>30){const drop=new Set(fa.slice(30).map(p=>p.id));W().players=W().players.filter(p=>!drop.has(p.id));}
-  while(W().players.filter(p=>p.tm<0).length<20){const p=genPlayer(randPos(),10+R()*3,20+Math.floor(R()*12));p.tm=-1;initPlayerMeta(p,n,true);W().players.push(p);}
+  while(W().players.filter(p=>p.tm<0).length<20){const p=genPlayer(randPos(),10+R()*3,20+Math.floor(R()*12));p.tm=-1;initPlayerMeta(p,n,true);W().players.push(p);}}
   for(const a of SAVE.ai)a.bud=round5k(BAL2?a.bud*0.35+150000+a.rep*12000+R()*250000:a.bud*0.5+200000+a.rep*15000+R()*300000);
   if(BAL2)starsAbroad();
   for(const p of W().players){p.base=snap(p);}
@@ -2332,8 +2377,11 @@ function monthly(d){if(!SAVE.fin||SAVE.team==null)return;const m=+d.slice(5,7);c
   try{debtCheck(d);}catch(e){console.error(e);}
   if(typeof sendMail==='function'){const pm=MON_NOM[(m+10)%12];const rows=[['Sponsorzy',spm],['Sklep kibica',shp],['Pensje zawodników',-pay],['Pensje sztabu',-stp],['Utrzymanie obiektów',-mnt]];sendMail({cat:'fin',from:'Księgowość klubu',t:`Rozliczenie miesiąca: ${MON_NOM[m-1]}`,s:`Bilans: ${fmt(spm+shp-pay-stp-mnt)} · saldo ${fmt(f.bal)}`,b:{type:'fin',rows,tot:spm+shp-pay-stp-mnt,bal:f.bal},lab:'Miesięczne zestawienie'});}}
 // zarząd reaguje na dług: poniżej −1 mln zł przymusowa sprzedaż najdroższego zawodnika (raz w miesiącu)
-function debtCheck(d){if(!BAL2||!SAVE.fin||SAVE.fin.bal>-500000)return;
+function debtCheck(d){if(SAVE.fin&&SAVE.fin.bal>-1000000){SAVE.debtNote=null;if(SAVE.fin.bal>-500000)SAVE.trBan=false;}if(!BAL2||!SAVE.fin||SAVE.fin.bal>-500000)return;
   if(SAVE.fin.bal>-1000000){if(typeof sendMail==='function')sendMail({cat:'fin',from:'Zarząd klubu',t:'Ostrzeżenie: dług klubu',s:`Saldo ${fmt(SAVE.fin.bal)}. Poniżej −1 mln zł zarząd zacznie sprzedawać zawodników.`,lab:'Finanse'});return;}
+  if(BAL3){const dn=SAVE.debtNote;if(!dn){SAVE.debtNote=addDays(d,30);const top=myTeam().players.filter(x=>!x.jr).sort((a,b)=>pValue(b)-pValue(a)).slice(0,3);
+      if(typeof sendMail==='function')sendMail({cat:'fin',from:'Zarząd klubu',t:'Dług ponad 1 mln zł: 30 dni na reakcję',s:`Sprzedaj zawodnika albo ogranicz koszty do ${fmtShort(SAVE.debtNote)}. Propozycje: ${top.map(x=>`${x.first} ${x.last} (${fmt(pValue(x))})`).join(', ')}. Potem zarząd sprzeda sam i zablokuje zakupy.`,lab:'Finanse'});return;}
+    if(d<dn)return;SAVE.trBan=true;}
   const t=myTeam();if(!t)return;
   const p=t.players.filter(x=>!x.jr).sort((a,b)=>pValue(b)-pValue(a))[0];if(!p)return;const bs=findBuyers(p.id);const b=bs[0]||null;
   const fee=round5k(b?Math.max(b.fee*0.85,pValue(p)*0.7):pValue(p)*0.6);const dest=b?TEAMS[b.tm].name:'klubu zagranicznego';
@@ -3009,7 +3057,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=102').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=103').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
@@ -4148,7 +4196,7 @@ function negLocked(p){return p.negLock&&p.negLock>today()?p.negLock:null;}
 function NG(){return ui.neg;}
 function negLog(who,t){NG().log.push({who,t});}
 // ---- otwarcie negocjacji ----
-function negOpen(pid,kind){const P=PLAYERS[pid];if(!P)return;const p=P.p;const lk=negLocked(p);
+function negOpen(pid,kind){const P=PLAYERS[pid];if(!P)return;const p=P.p;if(SAVE.trBan&&kind!=='renew'){tradeMsg(false,'Zarząd zablokował zakupy, dopóki dług klubu nie spadnie poniżej 500 tys. zł.');return;}const lk=negLocked(p);
   if(lk)return tradeMsg(false,`Rozmowy zerwane — ${p.tm===SAVE.team||p.tm<0?'agent':'klub'} nie chce rozmawiać do ${fmtDMY(lk)}.`);
   if(kind!=='renew'){if(!windowOpen())return tradeMsg(false,'Okno transferowe jest zamknięte (otwarte przed sezonem i w trakcie sparingów).');
     if(myTeam().players.length>=SQUAD_MAX)return tradeMsg(false,`Kadra jest pełna (maks. ${SQUAD_MAX}). Najpierw kogoś sprzedaj albo zwolnij.`);
