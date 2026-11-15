@@ -131,7 +131,7 @@ function schedule(ms){clearTimeout(timer);const m=ui.match;if(!m||m.over||m.paus
 function animOn(){return ui.anim!==false&&ui.speed>=800&&typeof requestAnimationFrame!=='undefined';}
 function tick(){const m=ui.match;if(!m||m.over||m.paused||m.animating||ui.to)return;
   // powitanie drużyn w hali 3D: pierwsza akcja dopiero po jego zakończeniu
-  if(!m.rallies&&typeof v3dOn==='function'&&v3dOn()&&typeof V3D!=='undefined'&&(m._grW=(m._grW||0)+1)<150&&(!V3D.mod||ui.v3dGr!==m||V3D.mod.busy())){timer=setTimeout(tick,400);return;}if(ui.tab!=='mecz'){m.paused=true;persistLive();return;}
+  if(!m.rallies&&typeof v3dOn==='function'&&v3dOn()&&typeof V3D!=='undefined'&&(m._grW=(m._grW||0)+1)<150&&(!V3D.mod||(ui.v3dGr!==m&&typeof V3D.mod.greet==='function')||V3D.mod.busy())){timer=setTimeout(tick,400);return;}if(ui.tab!=='mecz'){m.paused=true;persistLive();return;}
   // decyzje rywala (czas, zmiany) zapadają po zakończonej akcji, przed kolejną zagrywką
   const to1=m.sides[1].to;for(const s of aiTurn(m,1))m.log.push({t:esc(s),c:'sys'});
   if(m.sides[1].to<to1&&ui.speed>=800){m.comm={t:`Czas dla ${m.sides[1].team.short}. Trener rywala chce przerwać serię.`,w:1};startTimeout(1);return;}
