@@ -104,7 +104,8 @@ function v3dPlay(m,pre,ev,steps,label,sf,done){const M=V3D.mod;const srv=ev.seq[
     onPh:t=>{const e=document.getElementById('mph');if(e&&t)e.textContent=t;},paused:()=>!!m.paused,done});}
 function v3dStatic(m){const el=document.getElementById('m3d');if(!el)return;
   v3dLoad().then(M=>{if(!M||!document.getElementById('m3d'))return;const box=document.getElementById('m3d');box.classList.add('on');M.mount(box);const cv=document.getElementById('mcv');if(cv)cv.style.display='none';
-    if(!m.animating&&!M.busy()){const sc=ui.to&&ui.to.scene?ui.to.scene:formation(m);const sv=sc.find(o=>o.zone===0&&o.i===m.serving);M.idle({pre:v3dList(m,sc),srv:sv&&!m.over?String(sv.id):null,sb:v3dSb(m)});}});}
+    if(ui.to&&!M.busy()){const back=ui.to.returning||!ui.to.end;const sc=back?formation(m):benchScene(m,formation(m));M.idle({pre:v3dList(m,sc),srv:null,huddle:!back,sb:v3dSb(m)});return;}
+    if(!m.animating&&!M.busy()){const sc=formation(m);const sv=sc.find(o=>o.zone===0&&o.i===m.serving);M.idle({pre:v3dList(m,sc),srv:sv&&!m.over?String(sv.id):null,sb:v3dSb(m)});}});}
 function drawHallStatic(){const m=ui.match;if(!m||ui.mview==='klasyczny'||!document.getElementById('mcv'))return;
   if(v3dOn())v3dStatic(m);
   if(ui.to&&ui.to.scene){drawHall(m,ui.to.scene,null,null);return;}
