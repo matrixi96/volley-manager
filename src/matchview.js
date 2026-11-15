@@ -110,7 +110,8 @@ function v3dStatic(m){const el=document.getElementById('m3d');if(!el)return;
   v3dLoad().then(M=>{if(!M||!document.getElementById('m3d'))return;const box=document.getElementById('m3d');box.classList.add('on');M.mount(box);const cv=document.getElementById('mcv');if(cv)cv.style.display='none';
     if(ui.to&&!M.busy()){const back=ui.to.returning||!ui.to.end;const sc=back?formation(m):benchScene(m,formation(m));M.idle({pre:v3dList(m,sc),srv:null,huddle:!back,sb:v3dSb(m)});return;}
     M.bench(v3dBench(m,formation(m)));
-    if(!m.animating&&!M.busy()){const sc=formation(m);const sv=sc.find(o=>o.zone===0&&o.i===m.serving);M.idle({pre:v3dList(m,sc),srv:sv&&!m.over?String(sv.id):null,sb:v3dSb(m)});}});}
+    if(!m.animating&&!M.busy()){const sc=formation(m);const sv=sc.find(o=>o.zone===0&&o.i===m.serving);M.idle({pre:v3dList(m,sc),srv:sv&&!m.over?String(sv.id):null,sb:v3dSb(m)});
+      if(!m.rallies&&!m.over&&!m.score[0]&&!m.score[1]&&(m.setNo||1)===1&&ui.v3dGr!==m){ui.v3dGr=m;M.greet({pre:v3dList(m,sc),sb:v3dSb(m)});}}});}
 function drawHallStatic(){const m=ui.match;if(!m||ui.mview==='klasyczny'||!document.getElementById('mcv'))return;
   if(v3dOn())v3dStatic(m);
   if(ui.to&&ui.to.scene){drawHall(m,ui.to.scene,null,null);return;}
