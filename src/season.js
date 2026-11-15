@@ -109,7 +109,7 @@ function mkSeriesSeed(st,a,b,need){const s=S();const hi=s.seed.indexOf(a)<s.seed
 function simPoDay(){if(S().phase!=='po')return;const mine=myNext();if(mine)return;playPoDay(null,null);roundTick('po',false);syncDate();save();render();}
 function simPoAll(){while(S().phase==='po'&&!myNext()){playPoDay(null,null);roundTick('po',false);syncDate();}save();render();}
 function finishSeason(){
-  const s=S(),po=s.po,ser=st=>po.series.filter(x=>x.st===st);
+  ensureBg();const s=S(),po=s.po,ser=st=>po.series.filter(x=>x.st===st);
   const F=ser('F')[0],B=ser('B')[0];
   const qfL=ser('QF').map(seriesLoser).sort((a,b)=>s.seed.indexOf(a)-s.seed.indexOf(b));
   s.final=[seriesWinner(F),seriesLoser(F),seriesWinner(B),seriesLoser(B)].concat(qfL,s.seed.slice(8));
@@ -126,6 +126,8 @@ function finishSeason(){
 // ---- pozostałe ligi (rozgrywane w tle, w tych samych kolejkach i dniach play-off) ----
 function bgInit(s){s.oth={};for(const l of [0,1,2]){if(l===myLg())continue;const ids=lgIds(l);if(ids.length<4)continue;const first=makeFixtures(ids.length).map(rd=>rd.map(([h,a])=>[ids[h],ids[a]]));
   s.oth[l]={ids,rounds:first.concat(first.map(rd=>rd.map(([h,a])=>[a,h]))),results:[],po:null,seed:null,final:null};}}
+// stary zapis przeniesiony w trakcie sezonu: zbuduj pozostałe ligi i nadrób rozegrane kolejki i dni play-off
+function ensureBg(){const s=SAVE&&SAVE.season;if(!s||s.oth||!SAVE.lg||!s.rounds||s.phase==='end')return;bgInit(s);const n=Math.min((s.results||[]).length,s.rounds.length);for(let r=0;r<n;r++)bgRound(r);if(s.po)for(let d=0;d<(s.po.day||0);d++)bgPoDay();}
 function bgTable(L){return tableFrom(L.results,L.ids);}
 function bgRound(r){const s=S();if(!s.oth)return;for(const k in s.oth){const L=s.oth[k];if(L.results.length>r||!L.rounds[r])continue;
   L.results.push(L.rounds[r].map(([h,a])=>{const g=simFixture(h,a,true);g.d=today();return g;}));if(L.results.length===L.rounds.length&&!L.po)bgStartPo(L);}}
@@ -254,7 +256,7 @@ function slotKey(i){return KEY+'_slot'+i;}
 function slotInfo(i){try{const o=JSON.parse(localStorage.getItem(slotKey(i)));return o;}catch(e){return null;}}
 function descSave(o){if(!o||o.team==null)return 'pusty';const s=o.season;return `${esc(TEAMS[o.team].name)} · sezon ${s?sLabel(s.n):''} · ${s?PHASE_NAMES[s.phase]:''}${s&&s.phase==='liga'?' (kolejka '+(s.round+1)+')':''}${o.savedAt?' · '+esc(o.savedAt):''}`;}
 function saveSlot(i){persistLive();const o=Object.assign({},SAVE,{savedAt:new Date().toLocaleString('pl-PL')});try{localStorage.setItem(slotKey(i),JSON.stringify(o));ui.msg=`Zapisano w slocie ${i}.`;}catch(e){ui.msg='Nie udało się zapisać — przeglądarka blokuje pamięć. Użyj kodu zapisu.';}render();}
-function loadObj(o){clearTimeout(timer);SAVE=o;delete SAVE.savedAt;restoreDefs();if(!SAVE.world)initWorld();else{syncTeams();ensureLeagues();}migrateDates();initClub();ui.match=SAVE.live?deserMatch(SAVE.live):null;ui.confirm=null;ui.card=null;save();}
+function loadObj(o){clearTimeout(timer);SAVE=o;delete SAVE.savedAt;restoreDefs();if(!SAVE.world)initWorld();else{syncTeams();ensureLeagues();}migrateDates();initClub();try{ensureBg();}catch(e){console.error(e);}ui.match=SAVE.live?deserMatch(SAVE.live):null;ui.confirm=null;ui.card=null;save();}
 function loadSlot(i){const o=slotInfo(i);if(!o)return;loadObj(o);ui.msg=`Wczytano slot ${i}.`;ui.tab='mecz';render();}
 function delSlot(i){if(ui.confirm!=='del'+i){ui.confirm='del'+i;render();return;}try{localStorage.removeItem(slotKey(i));}catch(e){}ui.confirm=null;ui.msg=`Usunięto slot ${i}.`;render();}
 function exportCode(){persistLive();ui.code=btoa(unescape(encodeURIComponent(JSON.stringify(SAVE))));render();}
@@ -285,11 +287,11 @@ function teamStatsHtml(){const ts=S().ts;if(!ts)return '';
 // ---- zakładka Tabela ----
 function formOf(results,ti){const f=[];for(const rd of results)for(const g of rd){if(g.h!==ti&&g.a!==ti)continue;const my=g.h===ti?g.sw[0]:g.sw[1];const op=g.h===ti?g.sw[1]:g.sw[0];f.push({w:my>op,s:my+':'+op,op:g.h===ti?g.a:g.h,home:g.h===ti});}return f.slice(-5);}
 function tablesView(){
-  const s=S();const which=ui.tabSel||'sen';const jr=which==='jr';const vl=ui.lgSel!=null?ui.lgSel:myLg();const L=!jr&&vl!==myLg()&&s.oth?s.oth[vl]:null;
+  ensureBg();const s=S();const which=ui.tabSel||'sen';const jr=which==='jr';const vl=ui.lgSel!=null?ui.lgSel:myLg();const L=!jr&&vl!==myLg()&&s.oth?s.oth[vl]:null;
   const res=jr?(s.jres||[]):L?L.results:s.results;const tb=L?bgTable(L):tableFrom(res);const played=res.length;const dz=!jr&&vl<2,uz=!jr&&vl>0;
   const ratio=(a,b)=>b?(a/b).toFixed(3).replace('.',','):(a?'MAX':'–');
   const rows=tb.map((x,i)=>{const f=formOf(res,x.i);
-    return `<tr class="${x.i===SAVE.team?'starter':''} ${!jr&&i===7?'cut':''} ${dz&&i>=10?'relz':''}"><td>${i+1}</td><td class="l">${tDot(x.i)}${tName(x.i)}${jr?' U20':''}</td><td>${x.m}</td><td>${x.w}</td><td>${x.l}</td><td><b>${x.pts}</b></td><td>${x.sw}:${x.sl}</td><td class="mut">${ratio(x.sw,x.sl)}</td><td>${x.pw}:${x.pl}</td><td class="mut">${ratio(x.pw,x.pl)}</td>
+    return `<tr class="${x.i===SAVE.team?'starter':''} ${!jr&&i===7?'cut':''} ${dz&&i>=10?'relz':''}"><td>${i+1}</td><td class="l"${jr?'':` style="cursor:pointer" title="Pokaż drużynę" onclick="openTeam(${x.i})"`}>${tDot(x.i)}${jr?tName(x.i):`<u style="text-decoration-color:var(--line);text-underline-offset:3px">${tName(x.i)}</u>`}${jr?' U20':''}</td><td>${x.m}</td><td>${x.w}</td><td>${x.l}</td><td><b>${x.pts}</b></td><td>${x.sw}:${x.sl}</td><td class="mut">${ratio(x.sw,x.sl)}</td><td>${x.pw}:${x.pl}</td><td class="mut">${ratio(x.pw,x.pl)}</td>
     <td class="l"><span class="form">${f.map(r=>`<i class="${r.w?'fw':'fl'}" title="${r.home?'dom':'wyjazd'} vs ${esc(TEAMS[r.op].name)}: ${r.s}">${r.w?'Z':'P'}</i>`).join('')}</span></td></tr>`;}).join('');
   const info=jr?`Liga juniorów U20 · ${played}/${s.rounds.length} kolejek${s.jchamp!=null?` · 🏆 mistrz: ${tName(s.jchamp)} U20`:''}`
     :`${LG_N[vl]} · faza zasadnicza · ${played}/${s.rounds.length} kolejek · miejsca 1–8 grają w play-off${uz?' (dwaj finaliści awansują)':''}${dz?' · miejsca 11–12 spadają':''}${(L?L.final:s.final)?` · 🏆 ${vl===0?'mistrz Polski':'mistrz '+LG_N[vl].replace('Liga','Ligi')}: ${tName((L?L.final:s.final)[0])}`:''}`;

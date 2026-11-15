@@ -69,12 +69,12 @@ function hLeague(){const s=S();const tabs=[['k','Kolejka'],['d','Drużyna kolejk
 
 // ---- profil klubu (kliknięcie w tabeli) ----
 function openTeam(i){ui.teamPop=i;render();}
-function teamModal(){const i=ui.teamPop;const t=TEAMS[i];if(!t){ui.teamPop=null;return '';}const s=S();const lu=autoLineup(t);const tb=(s.phase==='liga'||s.phase==='po'||s.phase==='end')?leagueTable():null;
-  const pos=tb?tb.findIndex(x=>x.i===i)+1:0;const row=tb?tb[pos-1]:null;const st=tb?streakOf(i):{n:0};const best=t.players.slice().sort((a,b)=>rating(b)-rating(a))[0];
+function teamModal(){const i=ui.teamPop;const t=TEAMS[i];if(!t){ui.teamPop=null;return '';}const s=S();const lu=autoLineup(t);const tl=lgOf(i),sameL=tl===myLg(),oL=!sameL&&s.oth?s.oth[tl]:null;const tb=(s.phase==='liga'||s.phase==='po'||s.phase==='end')?(sameL?leagueTable():oL&&oL.results.length?bgTable(oL):null):null;
+  const pos=tb?tb.findIndex(x=>x.i===i)+1:0;const row=tb?tb[pos-1]:null;const st=tb&&sameL?streakOf(i):{n:0};const best=t.players.slice().sort((a,b)=>rating(b)-rating(a))[0];
   const inf=infraOf(i);const inj=t.players.filter(p=>p.inj);const ts=(s.ts||{})[i];const ai=SAVE.ai[i]||{};
   const st7=LINEUP_KEYS.map(([k,l,ps])=>({k,p:t.players.find(p=>p.id===lu[k]),ps}));
   return `<div class="modal" onclick="if(event.target===this){ui.teamPop=null;render()}"><div class="mcard">
-   <div class="row" style="gap:12px">${teamCrest(i,64)}<div><h2 style="margin:0">${esc(t.name)}</h2><div class="small mut">${pos?pos+'. miejsce · '+row.pts+' pkt · '+row.w+'–'+row.l:'Przed sezonem'} · siła składu ${teamStrength(t)}</div><div style="margin-top:4px">${typeof formDots==='function'?formDots(i):''}</div></div><span class="sp"></span><button class="ghost" onclick="ui.teamPop=null;render()">✕</button></div>
+   <div class="row" style="gap:12px">${teamCrest(i,64)}<div><h2 style="margin:0">${esc(t.name)}</h2><div class="small mut">${LG_N[tl]} · ${pos?pos+'. miejsce · '+row.pts+' pkt · '+row.w+'–'+row.l:'Przed sezonem'} · siła składu ${teamStrength(t)}</div><div style="margin-top:4px">${typeof formDots==='function'?formDots(i):''}</div></div><span class="sp"></span><button class="ghost" onclick="ui.teamPop=null;render()">✕</button></div>
    <div class="pmeta" style="margin-top:10px"><div><small>Seria</small><b>${st.n?st.n+' '+(st.w?'wygr.':'por.'):'—'}</b></div><div><small>Gwiazda</small><b>${best?esc(best.last)+' ('+rating(best)+')':'—'}</b></div><div><small>Hala</small><b>poziom ${inf.hala}</b></div><div><small>Renoma</small><b>${ai.rep!=null?ai.rep:'—'}</b></div>${ts?`<div><small>Atak</small><b>${ts.att?Math.round(ts.kill/ts.att*100):0}%</b></div><div><small>Bloki/mecz</small><b>${(ts.blk/Math.max(1,ts.m)).toFixed(1)}</b></div>`:''}</div>
    <div class="small mut" style="margin:10px 0 4px">Podstawowy skład</div><div class="totr">${st7.filter(x=>x.p).map(({p,ps})=>`<div onclick="openPop('${p.id}')">${pFace(p,40)}<b>${esc(p.last)}</b><small>${pTag(ps)} · ${rating(p,ps)}</small><em>${trChips(p)}</em></div>`).join('')}</div>
    ${inj.length?`<div class="small" style="margin-top:8px">🚑 Kontuzje: ${inj.map(p=>esc(p.last)+' ('+p.inj+' dni)').join(', ')}</div>`:''}</div></div>`;}
