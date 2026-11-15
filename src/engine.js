@@ -182,7 +182,7 @@ function nerves(p,m){return pressure(m)&&p.opa<10?' Nerwy w końcówce!':'';}
 // ---- pewność siebie w meczu (cf: -3 roztrzęsiony … +2 w gazie) ----
 var MENT=1,AIM=1;
 // BAL2: balans długoterminowy (inflacja umiejętności, dynastie, długi)
-var BAL2=1;
+var BAL2=1,BAL3=0;
 function cfK(p){const o=p.opa||10;let k=(1+(11-o)/20*(o>11?2.4:2.2))*(p.age>=28?0.8:p.age<=21?1.15:1);if(p.tr){if(hasT(p,'ner'))k*=1.45;if(hasT(p,'spo'))k*=0.45;if(hasT(p,'pro'))k*=0.3;if(hasT(p,'zde'))k*=0.6;}return clamp(k,0.05,3);}
 // posłuszeństwo wobec poleceń trenera (indywidualista robi po swojemu)
 function obeyF(p){if(!MENT||!p||!p.tr)return 1;let k=1;if(hasT(p,'ind'))k*=0.55;if(hasT(p,'kap')&&(p.unh||0)>=3)k*=0.75;if(hasT(p,'pro'))k*=1.1;return k;}
@@ -370,7 +370,9 @@ function attackPhase(m,A,q,by,log,act,pd){
   if(!quick&&sq<0.3&&R()<(0.75-eff(a,'kiw')/20*0.3)*(hasT(a,'ind')?0.55:1))return freeBall(m,A,a,log,act,seq,setTxt);
   const kiwN=eff(a,'kiw')/20,czA=eff(a,'czy')/20;
   // taktyka ataku: AT 0 = mieszany, 1 = mocny atak, 2 = więcej kiwek; AD 0 = wg zawodnika, 1 = skos, 2 = prosta, 3 = za blok, 4 = obijanie bloku
-  const AT=side.tactics.atk||0,AD=side.tactics.adir||0;
+  // ustawienia strefy (lewe skrzydło / środek / prawe skrzydło / druga linia) nadpisują ogólne
+  const ZK=!fr?'B':wing==='M'?'M':wing==='L4'?'L':'R';const TZ=(side.tactics.atkZ&&side.tactics.atkZ[ZK])||{};
+  const AT=TZ.atk!=null?TZ.atk:(side.tactics.atk||0),AD=TZ.adir!=null?TZ.adir:(side.tactics.adir||0);
   let tipP=quick?0.02:sq<0.42?0.1+kiwN*0.3:0.025+kiwN*0.05;
   if(!quick){if(AT===1)tipP*=0.3;else if(AT===2)tipP=Math.min(0.55,tipP*2.4+0.04);if(AD===3)tipP=Math.min(0.6,tipP+0.07);}
   const comply=(MENT?clamp(0.1+czA*0.65+eff(a,'kcj')/20*0.15+(sq-0.5)*0.35,0.15,0.97):(0.5+czA*0.35))*(AD?obeyF(a):1);// na ile zawodnik wykona polecenie trenera co do kierunku

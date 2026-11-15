@@ -13,7 +13,7 @@ function negLocked(p){return p.negLock&&p.negLock>today()?p.negLock:null;}
 function NG(){return ui.neg;}
 function negLog(who,t){NG().log.push({who,t});}
 // ---- otwarcie negocjacji ----
-function negOpen(pid,kind){const P=PLAYERS[pid];if(!P)return;const p=P.p;const lk=negLocked(p);
+function negOpen(pid,kind){const P=PLAYERS[pid];if(!P)return;const p=P.p;if(SAVE.trBan&&kind!=='renew'){tradeMsg(false,'Zarząd zablokował zakupy, dopóki dług klubu nie spadnie poniżej 500 tys. zł.');return;}const lk=negLocked(p);
   if(lk)return tradeMsg(false,`Rozmowy zerwane — ${p.tm===SAVE.team||p.tm<0?'agent':'klub'} nie chce rozmawiać do ${fmtDMY(lk)}.`);
   if(kind!=='renew'){if(!windowOpen())return tradeMsg(false,'Okno transferowe jest zamknięte (otwarte przed sezonem i w trakcie sparingów).');
     if(myTeam().players.length>=SQUAD_MAX)return tradeMsg(false,`Kadra jest pełna (maks. ${SQUAD_MAX}). Najpierw kogoś sprzedaj albo zwolnij.`);

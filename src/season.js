@@ -117,6 +117,9 @@ function finishSeason(){
   bgFinishAll();s.lgFinal={};s.lgFinal[myLg()]=s.final;if(s.oth)for(const k in s.oth)if(s.oth[k].final)s.lgFinal[k]=s.oth[k].final;
   for(const k in s.lgFinal){const [b0,st]=LG_REP[k];s.lgFinal[k].forEach((ti,pl)=>{const a=SAVE.ai[ti];const kw=BAL2?0.15:0.25;a.rep=Math.round(clamp(a.rep*(1-kw)+(b0-pl*st)*kw,5,100));});
     if(+k!==myLg())news(`🏆 ${TEAMS[s.lgFinal[k][0]].name} wygrywa ${LG_N[k]} w sezonie ${sLabel(s.n)}.`);}
+  if(BAL3)for(const k in s.lgFinal){const ch=s.lgFinal[k][0];for(const p of TEAMS[ch].players){if(rating(p)<78)continue;const up=0.03+R()*0.07;
+      if(ch===SAVE.team){p.raiseReq=Math.round(up*100)/100;}else p.wage=round5k(p.wage*(1+up));}
+    if(ch===SAVE.team&&typeof sendMail==='function')sendMail({cat:'trans',from:'Agenci zawodników',t:'Mistrzowie oczekują podwyżek',s:'Po tytule najlepsi zawodnicy będą chcieli 3–10% więcej przy przedłużaniu kontraktów.',lab:'Kontrakty'});}
   s.moves=leagueMoves(s.lgFinal);
   for(const mv of s.moves)news(mv.up?`⬆️ ${TEAMS[mv.i].name} awansuje do ${LG_N[mv.to]==='Ekstraliga'?'Ekstraligi':LG_N[mv.to]==='1. Liga'?'1. Ligi':LG_N[mv.to]}${mv.i===SAVE.team?' — to nasz awans!':''}.`:`⬇️ ${TEAMS[mv.i].name} spada do ${LG_N[mv.to]==='1. Liga'?'1. Ligi':'2. Ligi'}${mv.i===SAVE.team?' — to nasz spadek.':''}.`);
   const myPl=s.final.indexOf(SAVE.team);const pz=Math.round(PRIZE[myPl]*LG_PRIZE[myLg()]/5000)*5000;money(pz,'Nagrody');finLog(`Nagroda za ${myPl+1}. miejsce (${LG_N[myLg()]}) w sezonie ${sLabel(s.n)}`,pz);
