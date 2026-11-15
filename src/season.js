@@ -16,7 +16,7 @@ function newSeason(n,phase){
 }
 const PHASE_NAMES={off:'Okno transferowe',spar:'Okres przygotowawczy',liga:'Faza zasadnicza',po:'Play-off',end:'Koniec sezonu'};
 function tName(i){return esc(TEAMS[i].name);}
-function tDot(i){if(SAVE.custom&&SAVE.custom.idx===i&&typeof crestSvg==='function')return `<span class="tcrest">${crestSvg(TEAMS[i].name,TEAMS[i].short,TEAMS[i].color,14,SAVE.custom.crest)}</span>`;return `<span class="dot" style="background:${TEAMS[i].color}"></span>`;}
+function tDot(i){const t=TEAMS[i];if(!t)return '';return `<span class="tcrest">${teamCrest(i,16)}</span>`;}
 
 // ---- tabela ----
 function leagueTable(){return tableFrom(S().results);}
