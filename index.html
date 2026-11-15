@@ -234,6 +234,7 @@ button.sm{padding:5px 10px;font-size:12px}
 .fmps,.fmps2{font-size:9px;font-weight:800;color:var(--mut);letter-spacing:.04em}.fmz .fmps{position:absolute;top:4px;left:5px}
 .mpsy{display:flex;flex-direction:column;gap:5px;font-size:13px;margin:4px 0 8px}.mpsy div{padding:6px 10px;background:#ffffff08;border-radius:8px}
 .asin .asr{padding:6px 0;border-top:1px solid #ffffff10;font-size:12.5px}.asin .asr .asg{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--acc)}.asin .asr .ast{margin:2px 0 4px}.asin .asr button{margin-top:2px}
+.setsum{margin:8px 0 10px;padding:10px 12px;border:1px solid #ffffff14;border-radius:10px;background:#ffffff06}.ssh{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}.ssg{display:grid;grid-template-columns:minmax(220px,1fr) 2fr;gap:14px}.sst{width:100%;border-collapse:collapse;font-size:12.5px}.sst th{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);text-align:left;padding:3px 6px;font-weight:600}.sst td{padding:3px 6px;border-top:1px solid #ffffff0d;text-align:left}.sst td:first-child{white-space:nowrap}@media(max-width:800px){.ssg{grid-template-columns:1fr}}
 .cfi{font-size:10px;margin-left:2px}
 .fmnm{font-size:11px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fmen{width:80%;height:3px;border-radius:2px;background:#ffffff14;overflow:hidden}.fmen i{display:block;height:100%}
@@ -1455,7 +1456,7 @@ function tick(){const m=ui.match;if(!m||m.over||m.paused||m.animating||ui.to)ret
   const hall=ui.mview!=='klasyczny'&&document.getElementById('mcv');const pre=animOn()&&hall?formation(m):null;
   const sl=m.sets.length,sc=m.score.slice();
   const ev=doRally(m,true);if(!m.over)persistLive();const cm=rallyComment(m,ev,m.sets.length>sl,sc);
-  const after=()=>{m.comm=cm;if(ui.toReq&&!m.over){ui.toReq=false;startTimeout(0);return true;}return false;};
+  const after=()=>{m.comm=cm;if(ev.setEnd&&!m.over){ui.toReq=false;startSetBreak();return true;}if(ui.toReq&&!m.over){ui.toReq=false;startTimeout(0);return true;}return false;};
   if(animOn()){m.animating=true;const fin=()=>{m.animating=false;if(after())return;render();schedule(ui.speed>=1600?650:380);};if(hall)hallAnim(m,pre,ev,fin);else animateRally(ev,fin);}
   else{if(after())return;render();schedule();}}
 function animateRally(ev,done){
@@ -1489,11 +1490,19 @@ function animateRally(ev,done){
   seg();
 }
 function flashLabel(t,w){const f=document.getElementById('cflash');if(!f)return;f.textContent=t;f.className='cflash show '+(w===0?'fw':'fl');}
-function doRally(m,skipAI){let ret;ui.talkRes=null;
+// zrzut statystyk na początku seta, żeby po secie pokazać tylko jego liczby
+const SS_K=['kill','att','ace','blk','srvErr','attErr','recErr','rec','recPos','dig'];
+function setSnap(m){m._snap=m.sides.map(sd=>{const o={};for(const p of sd.pl){o[p.id]={};for(const k of SS_K)o[p.id][k]=p.st[k]||0;}return o;});m._snapSet=m.setNo;}
+function setDelta(m,no,score){const teams=[],players=[];m.sides.forEach((sd,i)=>{const t={err:0};for(const k of SS_K)t[k]=0;const L=[];
+  for(const p of sd.pl){const b=(m._snap&&m._snap[i][p.id])||{};const d={};for(const k of SS_K){d[k]=(p.st[k]||0)-(b[k]||0);t[k]+=d[k];}const err=d.attErr+d.srvErr+d.recErr;t.err+=err;
+    L.push({id:p.id,last:p.last,pos:p.pos,pts:d.kill+d.blk+d.ace,kill:d.kill,att:d.att,rec:d.rec,recPos:d.recPos,dig:d.dig,err,inv:d.att+d.rec+d.dig+d.blk+d.ace+err>0});}
+  teams.push(t);players.push(L);});m.lastSet={no,score,teams,players};}
+function doRally(m,skipAI){let ret;ui.talkRes=null;if(!m.quick&&m._snapSet!==m.setNo)setSnap(m);
   if(!skipAI)for(const s of aiTurn(m,1))m.log.push({t:esc(s),c:'sys'});
   const ev=stepRally(m);m.hl=ev.act;ret=ev;
   m.log.push({t:`<b class="sc">${ev.score[0]}:${ev.score[1]}</b> ${esc(ev.text)}`,c:ev.winner===0?'w':'l'});
   for(const n of ev.notes||[])m.log.push({t:esc(n),c:'sys'});
+  if(ev.setEnd&&!m.quick){setDelta(m,ev.setNo,ev.score);setSnap(m);}
   if(ev.setEnd){m.log.push({t:`Koniec ${ev.setNo}. seta — ${ev.score[0]}:${ev.score[1]} dla <b>${esc(m.sides[ev.setWinner].team.name)}</b>. Stan meczu ${m.setsWon[0]}:${m.setsWon[1]}.`,c:'set'});
     if(!ev.matchEnd)m.log.push({t:`Set ${m.setNo}${m.setNo===5?' (tie-break do 15)':''}: zagrywa ${esc(m.sides[m.serving].team.name)}.`,c:'sys'});}
   if(ev.matchEnd){finishMatch(m);m.log.push({t:`KONIEC MECZU! <b>${esc(m.sides[m.winner].team.name)}</b> wygrywa ${Math.max(...m.setsWon)}:${Math.min(...m.setsWon)}.`,c:'set'});}
@@ -3153,7 +3162,9 @@ function applyTalk(k){if(TALK_TONE.some(x=>x[0]===k))return applyTone(k);if(k===
 function talkCard(m){const to=ui.to;const st=talkState();const opp=onCourt(m.sides[1],m.serving===1).map(e=>({p:e.p,role:e.role})).sort((a,b)=>(a.p.prz+a.p.tod)-(b.p.prz+b.p.tod));
   const tone=TALK_TONE.map(([k,n,q,d])=>`<button class="opt ${st.tone===k?'on':''}" ${st.tone?'disabled':''} onclick="applyTone('${k}')"><b>${n}</b><small><i>${esc(q)}</i><br>${esc(d)}</small></button>`).join('');
   const dur=5+Math.floor(cA('tak')/4);
-  return `<div class="card talk"><div class="row"><h3 style="margin:0">⏱ ${to&&to.side===1?`Czas dla ${esc(m.sides[1].team.short)} — możesz porozmawiać ze swoimi`:'Czas — co mówisz zawodnikom?'}</h3>${to?`<span class="tobar" style="width:140px;margin-left:10px"><i style="width:${Math.max(0,(to.end-Date.now())/150)}%"></i></span><b class="tocount" style="margin-left:6px">${Math.max(0,Math.ceil((to.end-Date.now())/1000))} s</b>`:''}<span class="sp"></span><button class="ghost" onclick="ui.talk=false;render()">${st.tone||st.hint?'Zamknij':'Bez przemowy'}</button>${to?'<button class="btn" onclick="endTimeout()">↩ Wracamy na boisko</button>':''}</div>
+  const isSet=to&&to.kind==='set';
+  return `<div class="card talk"><div class="row"><h3 style="margin:0">${isSet?`🔄 Przerwa po ${to.setNo}. secie — zmiana stron`:`⏱ ${to&&to.side===1?`Czas dla ${esc(m.sides[1].team.short)} — możesz porozmawiać ze swoimi`:'Czas — co mówisz zawodnikom?'}`}</h3>${to?`<span class="tobar" style="width:140px;margin-left:10px"><i style="width:${Math.max(0,(to.end-Date.now())/(10*(to.dur||15)))}%"></i></span><b class="tocount" style="margin-left:6px">${Math.max(0,Math.ceil((to.end-Date.now())/1000))} s</b>`:''}<span class="sp"></span><button class="ghost" onclick="ui.talk=false;render()">${st.tone||st.hint?'Zamknij':'Bez przemowy'}</button>${to?`<button class="btn" onclick="endTimeout()">${isSet?`⏩ Zaczynamy ${m.setNo}. seta`:'↩ Wracamy na boisko'}</button>`:''}</div>
+  ${isSet?setSummary(m):''}
   <p class="small mut">Wybierz <b>ton przemowy</b> i <b>wskazówkę do gry</b> (po jednej na przerwę). Każdy zawodnik reaguje inaczej — zależy od jego charakteru i Twoich atrybutów trenera. Reakcje zobaczysz przy nazwiskach w panelu.</p>
   <div class="tsec">1. Ton przemowy${st.tone?` <span class="good">✓ ${TALK_TONE.find(x=>x[0]===st.tone)[1]}</span>`:''}</div><div class="opts tone4">${tone}</div>
   <div class="tsec">2. Wskazówka do gry <small class="mut">(działa ${dur} akcji)</small>${st.hint?' <span class="good">✓ wydana</span>':''}</div>
@@ -3313,7 +3324,7 @@ function fmPanel(m){const a=m.sides[0];
   return '';}
 function fmLiveView(subPanel){const m=ui.match;
   return `${fmTop(m)}${fmPanel(m)}
-  ${ui.talk&&!m.over?talkCard(m):''}
+  ${ui.talk&&!m.over?talkCard(m):ui.to&&ui.to.kind==='set'&&!m.over?`<div class="card talk"><div class="row"><h3 style="margin:0">🔄 Przerwa po ${ui.to.setNo}. secie</h3><span class="sp"></span><button class="ghost" onclick="ui.talk=true;render()">🗣️ Przemowa</button><button class="btn" onclick="endTimeout()">⏩ Zaczynamy ${m.setNo}. seta</button></div>${setSummary(m)}</div>`:''}
   ${m.over?`<div class="card row"><b>Mecz zakończony: ${esc(m.sides[m.winner].team.name)} wygrywa ${Math.max(...m.setsWon)}:${Math.min(...m.setsWon)}</b><span class="sp"></span><button class="btn" onclick="ui.view='post';render()">Podsumowanie</button><button class="ghost" onclick="ui.match=null;render()">Dalej</button></div>`:''}
   <div class="fmwrap"><div class="fmlay">
    <div class="fml">${fmFormation(m,0)}${fmAssistant(m)}${fmAnalyst(m)}</div>
@@ -3474,14 +3485,32 @@ function startTimeout(i){const m=ui.match;if(!m||m.over||ui.to)return;
   const base=formation(m);ui.to={side:i,end:Date.now()+TO_SEC*1000,wasPlaying,scene:base,said:null};persistLive();render();
   const cvOk=document.getElementById('mcv');if(cvOk)animScene(m,base,benchScene(m,base),1400,()=>{});
   clearInterval(ui.toTimer);ui.toTimer=setInterval(()=>{if(!ui.to){clearInterval(ui.toTimer);return;}const left=Math.max(0,Math.ceil((ui.to.end-Date.now())/1000));
-    document.querySelectorAll('.tocount').forEach(e=>e.textContent=left+' s');document.querySelectorAll('.tobar i').forEach(e=>e.style.width=(left/TO_SEC*100)+'%');
+    document.querySelectorAll('.tocount').forEach(e=>e.textContent=left+' s');document.querySelectorAll('.tobar i').forEach(e=>e.style.width=(left/(ui.to.dur||TO_SEC)*100)+'%');
     if(left<=0)endTimeout();},250);}
+// przerwa między setami: 30 s na przemowę i zmianę stron, statystyki seta; można przewinąć jak czas
+const SET_SEC=30;
+function startSetBreak(){const m=ui.match;if(!m||m.over||ui.to)return;const ls=m.lastSet;
+  m.paused=true;clearTimeout(timer);ui.talk=true;ui.talkRes=null;ui.talkSt=null;ui.toReq=false;
+  const base=formation(m);ui.to={side:0,kind:'set',setNo:ls?ls.no:m.setNo-1,dur:SET_SEC,end:Date.now()+SET_SEC*1000,wasPlaying:true,scene:base,said:null};
+  m.comm={t:`Koniec ${ui.to.setNo}. seta. Zmiana stron, trenerzy rozmawiają z zespołami.`,w:null};persistLive();render();
+  const cvOk=document.getElementById('mcv');if(cvOk)animScene(m,base,benchScene(m,base),1400,()=>{});
+  clearInterval(ui.toTimer);ui.toTimer=setInterval(()=>{if(!ui.to){clearInterval(ui.toTimer);return;}const left=Math.max(0,Math.ceil((ui.to.end-Date.now())/1000));
+    document.querySelectorAll('.tocount').forEach(e=>e.textContent=left+' s');document.querySelectorAll('.tobar i').forEach(e=>e.style.width=(left/SET_SEC*100)+'%');
+    if(left<=0)endTimeout();},250);}
+function setSummary(m){const ls=m.lastSet;if(!ls)return '';const T=ls.teams;const pc=(a,b)=>b?Math.round(100*a/b)+'%':'–';
+  const row=(l,f)=>`<tr><td>${l}</td><td><b>${f(T[0])}</b></td><td><b>${f(T[1])}</b></td></tr>`;
+  const pl=ls.players[0].filter(x=>x.inv).sort((a,b)=>b.pts-a.pts||b.kill-a.kill);
+  return `<div class="setsum"><div class="ssh"><b>Set ${ls.no}: ${esc(m.sides[0].team.short)} ${ls.score[0]}:${ls.score[1]} ${esc(m.sides[1].team.short)}</b><span class="small mut">stan meczu ${m.setsWon[0]}:${m.setsWon[1]}</span></div>
+   <div class="ssg"><table class="sst"><thead><tr><th>W secie</th><th>${esc(m.sides[0].team.short)}</th><th>${esc(m.sides[1].team.short)}</th></tr></thead><tbody>
+   ${row('Atak',t=>pc(t.kill,t.att)+` <small class="mut">${t.kill}/${t.att}</small>`)}${row('Przyjęcie+',t=>pc(t.recPos,t.rec))}${row('Asy · bloki',t=>t.ace+' · '+t.blk)}${row('Obrony',t=>t.dig)}${row('Błędy',t=>t.err)}</tbody></table>
+   <table class="sst"><thead><tr><th>Twoi zawodnicy</th><th>Pkt</th><th>Atak</th><th>Prz+</th><th>Obr</th><th>Bł.</th></tr></thead><tbody>
+   ${pl.map(x=>`<tr><td>${pTag(x.pos)} ${esc(x.last)}</td><td><b>${x.pts}</b></td><td>${x.att?x.kill+'/'+x.att:'–'}</td><td>${x.rec?pc(x.recPos,x.rec):'–'}</td><td>${x.dig||'–'}</td><td class="${x.err?'bad':''}">${x.err||'–'}</td></tr>`).join('')}</tbody></table></div></div>`;}
 function endTimeout(){const m=ui.match;const to=ui.to;if(!to)return;clearInterval(ui.toTimer);ui.talk=false;
   const from=to.scene||formation(m);const back=formation(m);to.end=0;
-  const finish=()=>{ui.to=null;if(m&&!m.over){m.comm={t:'Zawodnicy wracają na boisko.',w:null};if(to.wasPlaying||to.side===1){m.paused=false;}}persistLive();render();schedule(500);};
+  const finish=()=>{ui.to=null;if(m&&!m.over){m.comm={t:to.kind==='set'?`Set ${m.setNo}${m.setNo===5?' (tie-break)':''} — zespoły wracają na boisko.`:'Zawodnicy wracają na boisko.',w:null};if(to.wasPlaying||to.side===1){m.paused=false;}}persistLive();render();schedule(500);};
   if(document.getElementById('mcv')){ui.to.returning=true;render();animScene(m,from,back,1200,finish);}else finish();}
 function toBanner(m){const to=ui.to;if(!to)return '';const left=Math.max(0,Math.ceil((to.end-Date.now())/1000));
-  return `<div class="tobanner"><b>⏱ Czas dla ${esc(m.sides[to.side].team.short)}</b><span class="tobar"><i style="width:${left/TO_SEC*100}%"></i></span><span class="tocount">${left} s</span>${to.said?`<span class="small mut">Powiedziałeś: „${esc(to.said)}”</span>`:''}</div>`;}
+  return `<div class="tobanner"><b>${to.kind==='set'?`🔄 Przerwa po ${to.setNo}. secie · zmiana stron`:`⏱ Czas dla ${esc(m.sides[to.side].team.short)}`}</b><span class="tobar"><i style="width:${left/(to.dur||TO_SEC)*100}%"></i></span><span class="tocount">${left} s</span>${to.said?`<span class="small mut">Powiedziałeś: „${esc(to.said)}”</span>`:''}</div>`;}
 // ================= KOMENTARZ NA ŻYWO =================
 const pickT=a=>a[Math.floor(Math.random()*a.length)];
 function rallyComment(m,ev,setEnded,pre){const seq=ev.seq||[];const N=id=>{const p=findPl(m,id);return p?p.last:'?';};

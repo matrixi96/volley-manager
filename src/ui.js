@@ -137,7 +137,7 @@ function tick(){const m=ui.match;if(!m||m.over||m.paused||m.animating||ui.to)ret
   const hall=ui.mview!=='klasyczny'&&document.getElementById('mcv');const pre=animOn()&&hall?formation(m):null;
   const sl=m.sets.length,sc=m.score.slice();
   const ev=doRally(m,true);if(!m.over)persistLive();const cm=rallyComment(m,ev,m.sets.length>sl,sc);
-  const after=()=>{m.comm=cm;if(ui.toReq&&!m.over){ui.toReq=false;startTimeout(0);return true;}return false;};
+  const after=()=>{m.comm=cm;if(ev.setEnd&&!m.over){ui.toReq=false;startSetBreak();return true;}if(ui.toReq&&!m.over){ui.toReq=false;startTimeout(0);return true;}return false;};
   if(animOn()){m.animating=true;const fin=()=>{m.animating=false;if(after())return;render();schedule(ui.speed>=1600?650:380);};if(hall)hallAnim(m,pre,ev,fin);else animateRally(ev,fin);}
   else{if(after())return;render();schedule();}}
 function animateRally(ev,done){
@@ -171,11 +171,19 @@ function animateRally(ev,done){
   seg();
 }
 function flashLabel(t,w){const f=document.getElementById('cflash');if(!f)return;f.textContent=t;f.className='cflash show '+(w===0?'fw':'fl');}
-function doRally(m,skipAI){let ret;ui.talkRes=null;
+// zrzut statystyk na początku seta, żeby po secie pokazać tylko jego liczby
+const SS_K=['kill','att','ace','blk','srvErr','attErr','recErr','rec','recPos','dig'];
+function setSnap(m){m._snap=m.sides.map(sd=>{const o={};for(const p of sd.pl){o[p.id]={};for(const k of SS_K)o[p.id][k]=p.st[k]||0;}return o;});m._snapSet=m.setNo;}
+function setDelta(m,no,score){const teams=[],players=[];m.sides.forEach((sd,i)=>{const t={err:0};for(const k of SS_K)t[k]=0;const L=[];
+  for(const p of sd.pl){const b=(m._snap&&m._snap[i][p.id])||{};const d={};for(const k of SS_K){d[k]=(p.st[k]||0)-(b[k]||0);t[k]+=d[k];}const err=d.attErr+d.srvErr+d.recErr;t.err+=err;
+    L.push({id:p.id,last:p.last,pos:p.pos,pts:d.kill+d.blk+d.ace,kill:d.kill,att:d.att,rec:d.rec,recPos:d.recPos,dig:d.dig,err,inv:d.att+d.rec+d.dig+d.blk+d.ace+err>0});}
+  teams.push(t);players.push(L);});m.lastSet={no,score,teams,players};}
+function doRally(m,skipAI){let ret;ui.talkRes=null;if(!m.quick&&m._snapSet!==m.setNo)setSnap(m);
   if(!skipAI)for(const s of aiTurn(m,1))m.log.push({t:esc(s),c:'sys'});
   const ev=stepRally(m);m.hl=ev.act;ret=ev;
   m.log.push({t:`<b class="sc">${ev.score[0]}:${ev.score[1]}</b> ${esc(ev.text)}`,c:ev.winner===0?'w':'l'});
   for(const n of ev.notes||[])m.log.push({t:esc(n),c:'sys'});
+  if(ev.setEnd&&!m.quick){setDelta(m,ev.setNo,ev.score);setSnap(m);}
   if(ev.setEnd){m.log.push({t:`Koniec ${ev.setNo}. seta — ${ev.score[0]}:${ev.score[1]} dla <b>${esc(m.sides[ev.setWinner].team.name)}</b>. Stan meczu ${m.setsWon[0]}:${m.setsWon[1]}.`,c:'set'});
     if(!ev.matchEnd)m.log.push({t:`Set ${m.setNo}${m.setNo===5?' (tie-break do 15)':''}: zagrywa ${esc(m.sides[m.serving].team.name)}.`,c:'sys'});}
   if(ev.matchEnd){finishMatch(m);m.log.push({t:`KONIEC MECZU! <b>${esc(m.sides[m.winner].team.name)}</b> wygrywa ${Math.max(...m.setsWon)}:${Math.min(...m.setsWon)}.`,c:'set'});}
