@@ -1,6 +1,6 @@
 applyCustom();
 // ================= START =================
-if(SAVE.team!=null){if(!SAVE.date&&!SAVE.world)SAVE.date=GAME_START;if(!SAVE.world)initWorld();else{syncTeams();ensureLeagues();}if(!SAVE.season)newSeason(1);migrateDates();initClub();}
+if(SAVE.team!=null){if(!SAVE.date&&!SAVE.world)SAVE.date=GAME_START;if(!SAVE.world)initWorld();else{syncTeams();ensureLeagues();}if(!SAVE.season)newSeason(1);migrateDates();initClub();try{ensureBg();}catch(e){console.error(e);}}
 if(SAVE.live){try{ui.match=deserMatch(SAVE.live);ui.match.log.push({t:'Wznowiono zapisany mecz — kliknij „Graj”, żeby kontynuować.',c:'sys'});}catch(e){SAVE.live=null;ui.match=null;}}
 render();
 if(document.addEventListener)document.addEventListener('click',e=>{const t=e.target;if(t&&t.closest&&!t.closest('.tsearch')){const d=document.getElementById('psd');if(d)d.classList.remove('on');}});
