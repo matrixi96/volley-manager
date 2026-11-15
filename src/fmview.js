@@ -16,7 +16,7 @@ function fmFormation(m,i){const sd=m.sides[i],mine=i===0,sv=m.serving===i;const 
     const d=ui.talkRes&&mine&&ui.talkRes.del?ui.talkRes.del[p.id]:null;
     return `<div class="fmz ${click?'clk':''} ${ui.subSel!=null&&mine&&(ui.subSel===e.slot)?'sel':''}" ${click} title="Strefa ${z}: ${esc(p.first+' '+p.last)} · ${POS_NAMES[e.role]} · energia ${Math.round(p.en)}%">
       ${fmJersey(m,i,e)}<span class="fmrt ${rCls(r)}">${fmtR(r)}</span><span class="fmps">${pTag(e.role)}</span>
-      <b class="fmnm">${esc(shortN(p))}${typeof MENT!=='undefined'&&MENT&&(p.cf||0)<=-1?' <span class="cfi" title="Roztrzęsiony po błędach: gra słabiej. Pomoże przerwa na żądanie.">🔻</span>':typeof MENT!=='undefined'&&MENT&&(p.cf||0)>=1?' <span class="cfi" title="W gazie: gra pewniej">🔥</span>':''}</b>${d?`<span class="dlt ${d>0?'good':'bad'}">${d>0?'+':''}${d}</span>`:''}
+      <div class="fmnr"><b class="fmnm">${esc(shortN(p))}</b>${typeof MENT!=='undefined'&&MENT&&(p.cf||0)<=-1?'<span class="cfi" title="Roztrzęsiony po błędach: gra słabiej. Pomoże przerwa na żądanie.">🔻</span>':typeof MENT!=='undefined'&&MENT&&(p.cf||0)>=1?'<span class="cfi" title="W gazie: gra pewniej">🔥</span>':''}</div>${d?`<span class="dlt ${d>0?'good':'bad'}" title="Reakcja na przemowę (morale)">${d>0?'+':''}${d}</span>`:''}
       <span class="fmen"><i style="width:${Math.round(p.en)}%;background:${energyCol(p.en)}"></i></span></div>`;};
   const back=oc.filter(e=>!isFrontZ(e.zone));
   return `<div class="card fmcard" style="border-top:3px solid ${kc}">
