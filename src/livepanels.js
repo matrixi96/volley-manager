@@ -29,7 +29,8 @@ function weakestReceiver(m){const oc=onCourt(m.sides[1],m.serving===1).filter(e=
 const TALK_TONE=[['enc','Zachęć','„Wierzę w was, dacie radę!”','Podnosi morale, najbardziej gdy przegrywacie i gdy morale jest niskie. Przez 7 akcji cała drużyna gra trochę pewniej.','tgo'],
   ['dem','Zażądaj więcej','„Stać was na dużo więcej!”','Ambitni i waleczni się nakręcą, wrażliwi mogą się spiąć. Przez 7 akcji drużyna mocniej walczy, zwłaszcza przy stracie punktów.','tfight'],
   ['calm','Uspokój','„Spokojnie, więcej koncentracji”','Pomaga nerwowym i zawodnikom z niskim morale. Kasuje załamanie po błędach (🔻). Przez 7 akcji mniej prostych błędów i pewniejsza końcówka.','tfocus'],
-  ['wake','Obudź','„Obudźcie się! Tak się nie gra!”','Ostra reprymenda: działa przy dużym autorytecie. Waleczni się nakręcą, nerwowi mogą się spiąć. Przez 7 akcji wyraźny impuls dla całej drużyny.','twake']];
+  ['wake','Obudź','„Obudźcie się! Tak się nie gra!”','Ostra reprymenda: działa przy dużym autorytecie. Waleczni się nakręcą, nerwowi mogą się spiąć. Przez 7 akcji wyraźny impuls dla całej drużyny.','twake'],
+  ['keep','Pochwal grę','„Gramy dobrze, tak trzymać!”','Najlepsze, gdy prowadzicie: podbija morale, podtrzymuje rozpęd i pewność siebie, a przez 7 akcji drużyna gra równo, z mniejszą liczbą prostych błędów. Przy wyraźnej stracie zawodnicy uznają to za mijanie się z rzeczywistością.','tkeep']];
 function talkList(m){return TALK_TONE.map(x=>[x[0],x[1]+': '+x[2],x[3]]).concat([['srv','Ryzykujcie na zagrywce!',''],['rec','Skupcie się na przyjęciu',''],['target','Zagrywka w wybranego zawodnika','']]);}
 function myTimeout(){const m=ui.match;if(!m||m.over||ui.to)return;if(m.sides[0].to<=0)return;
   if(m.animating){ui.toReq=!ui.toReq;document.querySelectorAll('.tobtn').forEach(b=>b.textContent=ui.toReq?'⏱ Czas po akcji…':`⏱ Czas (${m.sides[0].to})`);return;}
@@ -44,11 +45,13 @@ function applyTone(k){const m=ui.match;if(!m)return;const st=talkState();if(st.t
     else if(k==='dem')d=((p.zaa+(hasT(p,'amb')?16:p.wal))/2-10)*0.8+(mot-10)*0.3-(p.opa<9?2:0)-(mor<45?2:0);
     else if(k==='calm')d=1+(60-mor)*0.12+(12-p.opa)*0.45;
     else if(k==='wake')d=((p.wal+p.zaa)/2-10.5)*1.1+(aut-10)*0.5-(p.opa<9?3:0);
+    else if(k==='keep'){const lead=-behind;d=1.5+(lead>=3?3:lead>=0?1.5:lead>=-2?0:-2.5)+(mot-10)*0.2+((m.setsWon[0]>m.setsWon[1])?1:0);if(lead>=0&&(p.cf||0)<0.5)p.cf=Math.max(p.cf||0,0.5);}
     d=Math.round(d*amp+(R()-0.5)*2);addMor(p,d);del[p.id]=d;}
   // efekt na całą drużynę: siła zależy od motywacji/autorytetu trenera i średniej reakcji zawodników
   const avg=Object.values(del).reduce((a,b)=>a+b,0)/Math.max(1,oc.length);const f=clamp(shoutPow()*1.25*(0.75+avg/12),0.3,1.8);
   const F=SH_FX[T[4]]||{};const fx={};for(const x in F)fx[x]=F[x]*(x==='e'?Math.min(1.3,f):f);s.sh=Object.assign({k:T[4],u:m.rallies+7,n:T[2].replace(/[„”]/g,''),ic:'⏱'},fx);
   if(k==='enc'&&Math.abs(behind)<=3)s.mom=Math.min(3,Math.max(0,s.mom)+1);
+  if(k==='keep'&&behind<=0)s.mom=Math.min(3,Math.max(1,s.mom+1));
   const up=Object.values(del).filter(d=>d>0).length,dn=Object.values(del).filter(d=>d<0).length;
   m.log.push({t:`🗣️ ${esc(coach()?coach().last:'Trener')} (${T[1].toLowerCase()}): ${esc(T[2])} — ${up} zawodników podbudowanych${dn?`, ${dn} spiętych`:''}. Drużyna: ${esc(fxText(s.sh))} (7 akcji).`,c:'sys'});
   st.tone=k;ui.talkRes={k,del};if(ui.to)ui.to.said=T[1];if(st.hint)ui.talk=false;persistLive();render();}

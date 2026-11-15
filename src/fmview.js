@@ -62,7 +62,8 @@ function fmAdvice(m){if(m.over)return null;const a=m.sides[0],b=m.sides[1];const
   return {k:'ok',t:`Gramy swoje. Atak ${pc(A.kill,A.att)} wobec ${pc(B.kill,B.att)} rywala.`,btn:null};}
 function fmAssistant(m){const ad=fmAdvice(m);if(!ad)return `<div class="card fmw"><div class="fmh"><b>Asystent</b></div><div class="small">Mecz zakończony.</div></div>`;
   const hid=ui.asstHide===ad.k;
-  return `<div class="card fmw"><div class="fmh"><b>Asystent</b><button class="ghost sm" onclick="ui.fmPanel=ui.fmPanel==='asst'?null:'asst';render();window.scrollTo({top:0,behavior:'smooth'})">💬 Zapytaj</button></div>
+  if(ui.asstOpen)return asstInline(m);
+  return `<div class="card fmw"><div class="fmh"><b>Asystent</b><button class="ghost sm" onclick="ui.asstOpen=1;render()">💬 Zapytaj</button></div>
    <div class="small fmat">${hid?'<span class="mut">Brak nowych uwag.</span>':esc(ad.t)}</div>
    ${ad.btn&&!hid?`<div class="row" style="gap:6px;margin-top:6px"><button class="btn sm" onclick="${ad.act}">✓ ${esc(ad.btn)}</button><button class="ghost sm" onclick="ui.asstHide='${ad.k}';render()">✕</button></div>`:''}</div>`;}
 // ---- dynamika meczu ----
@@ -106,7 +107,7 @@ function fmTop(m){const [a,b]=m.sides;const kc=kitColors(m);const sp=[[1600,'0,5
    <div class="fmtl">${m.over?'':`<button class="ghost sm ${ui.fmPanel==='tac'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='tac'?null:'tac';render()">📋 Taktyka</button>
      <button class="ghost sm tobtn ${ui.toReq?'on':''}" ${a.to<=0||ui.to?'disabled':''} onclick="myTimeout()">${ui.toReq?'⏱ Czas po akcji…':`⏱ Czas (${a.to})`}</button>
      <button class="ghost sm ${ui.fmPanel==='stats'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='stats'?null:'stats';render()">📊 Statystyki</button>
-     <button class="ghost sm ${ui.fmPanel==='asst'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='asst'?null:'asst';render()">💬 Asystent</button>`}</div>
+     <button class="ghost sm ${ui.asstOpen?'on':''}" onclick="ui.asstOpen=ui.asstOpen?0:1;render()">💬 Asystent</button>`}</div>
    <div class="fmsc"><span class="fmset">${m.over?'KONIEC':'SET '+m.setNo}</span>${chip(0)}<b class="fmsw">${m.setsWon[0]}</b>
      <b class="fmpt ${m.serving===0&&!m.over?'srv':''}">${m.over?'–':m.score[0]}</b><span class="fmcol">:</span><b class="fmpt ${m.serving===1&&!m.over?'srv':''}">${m.over?'–':m.score[1]}</b>
      <b class="fmsw">${m.setsWon[1]}</b>${chip(1)}
@@ -125,7 +126,7 @@ function fmPanel(m){const a=m.sides[0];
     <button class="ghost sm" onclick="ui.mview=ui.mview==='klasyczny'?'hala':'klasyczny';ui.fmPanel=null;render()">${ui.mview==='klasyczny'?'🏟️ Widok hali':'▦ Widok klasyczny'}</button>${v3dCan()&&ui.mview!=='klasyczny'?`<button class="ghost sm" onclick="v3dToggle()" title="Przełącz widok hali: 3D / 2D">${ui.v3d?'🏐 Hala 2D':'🎮 Hala 3D'}</button>`:''}
     <button class="ghost sm ${ui.anim!==false?'on':''}" onclick="ui.anim=ui.anim===false;render()">🏐 Animacja: ${ui.anim!==false?'wł.':'wył.'}</button>
     <span class="small mut">Libero: <b style="color:var(--txt)">${esc(a.libero.last)}</b> <button class="link" onclick="selSub('L')">zmień</button></span></div></div>`;
-  if(ui.fmPanel==='asst')return asstPanel(m);
+  if(ui.fmPanel==='asst'){ui.fmPanel=null;ui.asstOpen=1;}
   if(ui.fmPanel==='stats')return `<div class="card fmpanel">${statsBlock(m)}</div>`;
   if(ui.fmPanel==='ana')return `<div class="card fmpanel"><h3 style="margin-top:0">Analityk: kierunki ataków zawodników</h3><div class="shares"><div><div class="mut small">${esc(m.sides[1].team.name)} (rywal)</div>${anaTable(m,1)}</div><div><div class="mut small">${esc(m.sides[0].team.name)}</div>${anaTable(m,0)}</div></div></div>`;
   return '';}
@@ -360,6 +361,11 @@ function asstAll(m){const a=m.sides[0],b=m.sides[1];const sk=staffSkill('asy');c
   if(!out.length)out.push({g:'Ogólnie',t:'Za wcześnie na wnioski. Zapytaj mnie po kilku akcjach.'});
   if(sk<6)out.splice(4);
   return out;}
+// pełne rady asystenta w jego własnym okienku (bez przewijania na górę strony)
+function asstInline(m){const sk=staffSkill('asy');const s=SAVE.staff&&SAVE.staff.asy;const L=asstAll(m);
+  return `<div class="card fmw asin"><div class="fmh"><b>Asystent</b><small class="mut" style="margin-left:6px">${s?esc(s.last||'')+' · '+sk+'/20':'brak'}</small><span class="sp"></span><button class="ghost sm" onclick="ui.asstOpen=0;render()">Zwiń</button></div>
+   ${L.map(x=>`<div class="asr"><span class="asg">${x.g}</span><div class="ast">${esc(x.t)}</div>${x.btn?`<button class="btn sm" onclick="${x.act};render()">✓ ${esc(x.btn)}</button>`:''}</div>`).join('')}
+   <div class="small mut" style="margin-top:4px">${sk<6?'Słaby asystent widzi tylko najważniejsze rzeczy.':sk<8?'Lepszy asystent (8+) podpowie też, na kogo rozgrywać.':'Rady odświeżają się po każdej akcji.'}</div></div>`;}
 function asstPanel(m){const sk=staffSkill('asy');const s=SAVE.staff&&SAVE.staff.asy;const L=asstAll(m);
   return `<div class="card fmpanel"><div class="row"><h3 style="margin:0">💬 Asystent: ${s?esc((s.first||'')+' '+(s.last||'')):'bez asystenta'} <small class="mut">${s?sk+'/20':''}</small></h3><span class="sp"></span><button class="ghost sm" onclick="render()">↻ Odśwież</button><button class="ghost sm" onclick="ui.fmPanel=null;render()">Zamknij</button></div>
    <div class="asl">${L.map(x=>`<div class="asi"><span class="asg">${x.g}</span><span class="ast">${esc(x.t)}</span>${x.btn?`<button class="btn sm" onclick="${x.act};ui.fmPanel='asst';render()">✓ ${esc(x.btn)}</button>`:''}</div>`).join('')}</div>

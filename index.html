@@ -233,6 +233,7 @@ button.sm{padding:5px 10px;font-size:12px}
 .fmz .fmrt{position:absolute;top:3px;right:3px}
 .fmps,.fmps2{font-size:9px;font-weight:800;color:var(--mut);letter-spacing:.04em}.fmz .fmps{position:absolute;top:4px;left:5px}
 .mpsy{display:flex;flex-direction:column;gap:5px;font-size:13px;margin:4px 0 8px}.mpsy div{padding:6px 10px;background:#ffffff08;border-radius:8px}
+.asin .asr{padding:6px 0;border-top:1px solid #ffffff10;font-size:12.5px}.asin .asr .asg{display:block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--acc)}.asin .asr .ast{margin:2px 0 4px}.asin .asr button{margin-top:2px}
 .cfi{font-size:10px;margin-left:2px}
 .fmnm{font-size:11px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fmen{width:80%;height:3px;border-radius:2px;background:#ffffff14;overflow:hidden}.fmen i{display:block;height:100%}
@@ -1232,7 +1233,7 @@ const SHOUTS=[['go','Dawać, gramy!','🔥','Nakręca zespół: impet i lepsza g
  ['wake','Obudźcie się!','📢','Ostro: waleczni się nakręcą, nerwowi mogą się spiąć.']];
 // efekt okrzyku na całą drużynę: p = lepsza gra we wszystkich elementach, pr = w końcówkach, b = gdy przegrywa, e = mniej prostych błędów (ułamek)
 const SH_FX={go:{p:0.014},calm:{pr:0.025,e:0.07},focus:{e:0.15},fight:{b:0.026,p:0.006},bravo:{p:0.009},wake:{p:0.012},
-  tfight:{b:0.03,p:0.01},tfocus:{pr:0.02,e:0.16},tgo:{p:0.016},twake:{p:0.02}};
+  tfight:{b:0.03,p:0.01},tfocus:{pr:0.02,e:0.16},tgo:{p:0.016},twake:{p:0.02},tkeep:{p:0.012,e:0.06}};
 const SH_TXT={p:'lepsza gra całej drużyny',pr:'pewniej w końcówce seta',b:'więcej walki przy stracie punktów',e:'mniej prostych błędów'};
 function fxText(fx){return Object.keys(SH_TXT).filter(k=>fx[k]).map(k=>SH_TXT[k]).join(', ');}
 // i = drużyna, k = okrzyk, pw = siła trenera (0,6–1,4), o = {dur, noCd, mult, ic, n}. Zwraca {up,dn,f,del} albo null, gdy za szybko po poprzednim.
@@ -3117,7 +3118,8 @@ function weakestReceiver(m){const oc=onCourt(m.sides[1],m.serving===1).filter(e=
 const TALK_TONE=[['enc','Zachęć','„Wierzę w was, dacie radę!”','Podnosi morale, najbardziej gdy przegrywacie i gdy morale jest niskie. Przez 7 akcji cała drużyna gra trochę pewniej.','tgo'],
   ['dem','Zażądaj więcej','„Stać was na dużo więcej!”','Ambitni i waleczni się nakręcą, wrażliwi mogą się spiąć. Przez 7 akcji drużyna mocniej walczy, zwłaszcza przy stracie punktów.','tfight'],
   ['calm','Uspokój','„Spokojnie, więcej koncentracji”','Pomaga nerwowym i zawodnikom z niskim morale. Kasuje załamanie po błędach (🔻). Przez 7 akcji mniej prostych błędów i pewniejsza końcówka.','tfocus'],
-  ['wake','Obudź','„Obudźcie się! Tak się nie gra!”','Ostra reprymenda: działa przy dużym autorytecie. Waleczni się nakręcą, nerwowi mogą się spiąć. Przez 7 akcji wyraźny impuls dla całej drużyny.','twake']];
+  ['wake','Obudź','„Obudźcie się! Tak się nie gra!”','Ostra reprymenda: działa przy dużym autorytecie. Waleczni się nakręcą, nerwowi mogą się spiąć. Przez 7 akcji wyraźny impuls dla całej drużyny.','twake'],
+  ['keep','Pochwal grę','„Gramy dobrze, tak trzymać!”','Najlepsze, gdy prowadzicie: podbija morale, podtrzymuje rozpęd i pewność siebie, a przez 7 akcji drużyna gra równo, z mniejszą liczbą prostych błędów. Przy wyraźnej stracie zawodnicy uznają to za mijanie się z rzeczywistością.','tkeep']];
 function talkList(m){return TALK_TONE.map(x=>[x[0],x[1]+': '+x[2],x[3]]).concat([['srv','Ryzykujcie na zagrywce!',''],['rec','Skupcie się na przyjęciu',''],['target','Zagrywka w wybranego zawodnika','']]);}
 function myTimeout(){const m=ui.match;if(!m||m.over||ui.to)return;if(m.sides[0].to<=0)return;
   if(m.animating){ui.toReq=!ui.toReq;document.querySelectorAll('.tobtn').forEach(b=>b.textContent=ui.toReq?'⏱ Czas po akcji…':`⏱ Czas (${m.sides[0].to})`);return;}
@@ -3132,11 +3134,13 @@ function applyTone(k){const m=ui.match;if(!m)return;const st=talkState();if(st.t
     else if(k==='dem')d=((p.zaa+(hasT(p,'amb')?16:p.wal))/2-10)*0.8+(mot-10)*0.3-(p.opa<9?2:0)-(mor<45?2:0);
     else if(k==='calm')d=1+(60-mor)*0.12+(12-p.opa)*0.45;
     else if(k==='wake')d=((p.wal+p.zaa)/2-10.5)*1.1+(aut-10)*0.5-(p.opa<9?3:0);
+    else if(k==='keep'){const lead=-behind;d=1.5+(lead>=3?3:lead>=0?1.5:lead>=-2?0:-2.5)+(mot-10)*0.2+((m.setsWon[0]>m.setsWon[1])?1:0);if(lead>=0&&(p.cf||0)<0.5)p.cf=Math.max(p.cf||0,0.5);}
     d=Math.round(d*amp+(R()-0.5)*2);addMor(p,d);del[p.id]=d;}
   // efekt na całą drużynę: siła zależy od motywacji/autorytetu trenera i średniej reakcji zawodników
   const avg=Object.values(del).reduce((a,b)=>a+b,0)/Math.max(1,oc.length);const f=clamp(shoutPow()*1.25*(0.75+avg/12),0.3,1.8);
   const F=SH_FX[T[4]]||{};const fx={};for(const x in F)fx[x]=F[x]*(x==='e'?Math.min(1.3,f):f);s.sh=Object.assign({k:T[4],u:m.rallies+7,n:T[2].replace(/[„”]/g,''),ic:'⏱'},fx);
   if(k==='enc'&&Math.abs(behind)<=3)s.mom=Math.min(3,Math.max(0,s.mom)+1);
+  if(k==='keep'&&behind<=0)s.mom=Math.min(3,Math.max(1,s.mom+1));
   const up=Object.values(del).filter(d=>d>0).length,dn=Object.values(del).filter(d=>d<0).length;
   m.log.push({t:`🗣️ ${esc(coach()?coach().last:'Trener')} (${T[1].toLowerCase()}): ${esc(T[2])} — ${up} zawodników podbudowanych${dn?`, ${dn} spiętych`:''}. Drużyna: ${esc(fxText(s.sh))} (7 akcji).`,c:'sys'});
   st.tone=k;ui.talkRes={k,del};if(ui.to)ui.to.said=T[1];if(st.hint)ui.talk=false;persistLive();render();}
@@ -3239,7 +3243,8 @@ function fmAdvice(m){if(m.over)return null;const a=m.sides[0],b=m.sides[1];const
   return {k:'ok',t:`Gramy swoje. Atak ${pc(A.kill,A.att)} wobec ${pc(B.kill,B.att)} rywala.`,btn:null};}
 function fmAssistant(m){const ad=fmAdvice(m);if(!ad)return `<div class="card fmw"><div class="fmh"><b>Asystent</b></div><div class="small">Mecz zakończony.</div></div>`;
   const hid=ui.asstHide===ad.k;
-  return `<div class="card fmw"><div class="fmh"><b>Asystent</b><button class="ghost sm" onclick="ui.fmPanel=ui.fmPanel==='asst'?null:'asst';render();window.scrollTo({top:0,behavior:'smooth'})">💬 Zapytaj</button></div>
+  if(ui.asstOpen)return asstInline(m);
+  return `<div class="card fmw"><div class="fmh"><b>Asystent</b><button class="ghost sm" onclick="ui.asstOpen=1;render()">💬 Zapytaj</button></div>
    <div class="small fmat">${hid?'<span class="mut">Brak nowych uwag.</span>':esc(ad.t)}</div>
    ${ad.btn&&!hid?`<div class="row" style="gap:6px;margin-top:6px"><button class="btn sm" onclick="${ad.act}">✓ ${esc(ad.btn)}</button><button class="ghost sm" onclick="ui.asstHide='${ad.k}';render()">✕</button></div>`:''}</div>`;}
 // ---- dynamika meczu ----
@@ -3283,7 +3288,7 @@ function fmTop(m){const [a,b]=m.sides;const kc=kitColors(m);const sp=[[1600,'0,5
    <div class="fmtl">${m.over?'':`<button class="ghost sm ${ui.fmPanel==='tac'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='tac'?null:'tac';render()">📋 Taktyka</button>
      <button class="ghost sm tobtn ${ui.toReq?'on':''}" ${a.to<=0||ui.to?'disabled':''} onclick="myTimeout()">${ui.toReq?'⏱ Czas po akcji…':`⏱ Czas (${a.to})`}</button>
      <button class="ghost sm ${ui.fmPanel==='stats'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='stats'?null:'stats';render()">📊 Statystyki</button>
-     <button class="ghost sm ${ui.fmPanel==='asst'?'on':''}" onclick="ui.fmPanel=ui.fmPanel==='asst'?null:'asst';render()">💬 Asystent</button>`}</div>
+     <button class="ghost sm ${ui.asstOpen?'on':''}" onclick="ui.asstOpen=ui.asstOpen?0:1;render()">💬 Asystent</button>`}</div>
    <div class="fmsc"><span class="fmset">${m.over?'KONIEC':'SET '+m.setNo}</span>${chip(0)}<b class="fmsw">${m.setsWon[0]}</b>
      <b class="fmpt ${m.serving===0&&!m.over?'srv':''}">${m.over?'–':m.score[0]}</b><span class="fmcol">:</span><b class="fmpt ${m.serving===1&&!m.over?'srv':''}">${m.over?'–':m.score[1]}</b>
      <b class="fmsw">${m.setsWon[1]}</b>${chip(1)}
@@ -3302,7 +3307,7 @@ function fmPanel(m){const a=m.sides[0];
     <button class="ghost sm" onclick="ui.mview=ui.mview==='klasyczny'?'hala':'klasyczny';ui.fmPanel=null;render()">${ui.mview==='klasyczny'?'🏟️ Widok hali':'▦ Widok klasyczny'}</button>${v3dCan()&&ui.mview!=='klasyczny'?`<button class="ghost sm" onclick="v3dToggle()" title="Przełącz widok hali: 3D / 2D">${ui.v3d?'🏐 Hala 2D':'🎮 Hala 3D'}</button>`:''}
     <button class="ghost sm ${ui.anim!==false?'on':''}" onclick="ui.anim=ui.anim===false;render()">🏐 Animacja: ${ui.anim!==false?'wł.':'wył.'}</button>
     <span class="small mut">Libero: <b style="color:var(--txt)">${esc(a.libero.last)}</b> <button class="link" onclick="selSub('L')">zmień</button></span></div></div>`;
-  if(ui.fmPanel==='asst')return asstPanel(m);
+  if(ui.fmPanel==='asst'){ui.fmPanel=null;ui.asstOpen=1;}
   if(ui.fmPanel==='stats')return `<div class="card fmpanel">${statsBlock(m)}</div>`;
   if(ui.fmPanel==='ana')return `<div class="card fmpanel"><h3 style="margin-top:0">Analityk: kierunki ataków zawodników</h3><div class="shares"><div><div class="mut small">${esc(m.sides[1].team.name)} (rywal)</div>${anaTable(m,1)}</div><div><div class="mut small">${esc(m.sides[0].team.name)}</div>${anaTable(m,0)}</div></div></div>`;
   return '';}
@@ -3537,6 +3542,11 @@ function asstAll(m){const a=m.sides[0],b=m.sides[1];const sk=staffSkill('asy');c
   if(!out.length)out.push({g:'Ogólnie',t:'Za wcześnie na wnioski. Zapytaj mnie po kilku akcjach.'});
   if(sk<6)out.splice(4);
   return out;}
+// pełne rady asystenta w jego własnym okienku (bez przewijania na górę strony)
+function asstInline(m){const sk=staffSkill('asy');const s=SAVE.staff&&SAVE.staff.asy;const L=asstAll(m);
+  return `<div class="card fmw asin"><div class="fmh"><b>Asystent</b><small class="mut" style="margin-left:6px">${s?esc(s.last||'')+' · '+sk+'/20':'brak'}</small><span class="sp"></span><button class="ghost sm" onclick="ui.asstOpen=0;render()">Zwiń</button></div>
+   ${L.map(x=>`<div class="asr"><span class="asg">${x.g}</span><div class="ast">${esc(x.t)}</div>${x.btn?`<button class="btn sm" onclick="${x.act};render()">✓ ${esc(x.btn)}</button>`:''}</div>`).join('')}
+   <div class="small mut" style="margin-top:4px">${sk<6?'Słaby asystent widzi tylko najważniejsze rzeczy.':sk<8?'Lepszy asystent (8+) podpowie też, na kogo rozgrywać.':'Rady odświeżają się po każdej akcji.'}</div></div>`;}
 function asstPanel(m){const sk=staffSkill('asy');const s=SAVE.staff&&SAVE.staff.asy;const L=asstAll(m);
   return `<div class="card fmpanel"><div class="row"><h3 style="margin:0">💬 Asystent: ${s?esc((s.first||'')+' '+(s.last||'')):'bez asystenta'} <small class="mut">${s?sk+'/20':''}</small></h3><span class="sp"></span><button class="ghost sm" onclick="render()">↻ Odśwież</button><button class="ghost sm" onclick="ui.fmPanel=null;render()">Zamknij</button></div>
    <div class="asl">${L.map(x=>`<div class="asi"><span class="asg">${x.g}</span><span class="ast">${esc(x.t)}</span>${x.btn?`<button class="btn sm" onclick="${x.act};ui.fmPanel='asst';render()">✓ ${esc(x.btn)}</button>`:''}</div>`).join('')}</div>
