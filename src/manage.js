@@ -61,6 +61,7 @@ function money(amt,cat){const f=SAVE.fin;f.bal+=amt;f.sea[cat]=(f.sea[cat]||0)+a
 function finLog(t,a){const f=SAVE.fin;f.log.unshift({d:today(),t,a});f.log=f.log.slice(0,80);}
 function payroll(){return myTeam().players.reduce((s,p)=>s+(p.wage||0),0);}
 const TV_ROUND=45000;
+function tvRound(){return Math.round(TV_ROUND*LG_ECO[myLg()]/1000)*1000;}
 
 // ---- trening / rozwój / kontuzje ----
 const TRAIN_FOCUS=[['bal','Zrównoważony','Rozwój wszystkich cech, z naciskiem na te ważne dla pozycji.',[]],['atk','Atak','Atak, siła, skoczność.',['ata','sil','sko']],['def','Przyjęcie i obrona','Przyjęcie, obrona, odbicie dołem, zwinność.',['prz','obr','tod','zwi']],['blk','Blok','Blok, skoczność, szybkość.',['blo','sko','szy']],['srv','Zagrywka','Zagrywka i siła.',['zag','sil']],['set','Rozegranie','Rozegranie i odbicie palcami.',['roz','tpa']],['phy','Przygotowanie fizyczne','Siła, szybkość, skoczność, zwinność, kondycja.',['sil','szy','sko','zwi','kon']],['men','Mentalny','Koncentracja, opanowanie, zaangażowanie, waleczność.',['kcj','opa','zaa','wal']]];
@@ -94,9 +95,9 @@ function roundTick(kind,home,att,opp){
     if(hasT(p,'amb')&&p.unh===4)news(`📢 ${p.first} ${p.last} (ambitny) chce więcej grać. Jeśli nadal będzie siedział na ławce, straci humor.`);}
   ROUND_PLAYED=new Set();
   const s=S();
-  if(kind==='liga'){money(TV_ROUND,'Prawa TV');
+  if(kind==='liga'){money(tvRound(),'Prawa TV');
     let t=null;if(home)t=payMatchday(1,att,opp);
-    finLog(`Kolejka ${s.round}: prawa TV${t?`, mecz u siebie (${t.att} widzów: bilety, jedzenie, parking)`:''}`,TV_ROUND+(t?t.tot:0));}
+    finLog(`Kolejka ${s.round}: prawa TV${t?`, mecz u siebie (${t.att} widzów: bilety, jedzenie, parking)`:''}`,tvRound()+(t?t.tot:0));}
   if(kind==='po'&&home){const t=payMatchday(1.5,att,opp);finLog(`Play-off: mecz u siebie (${t.att} widzów: bilety, jedzenie, parking)`,t.tot);}
 }
 
@@ -164,9 +165,11 @@ function aiOffseason(){
   syncTeams();
   const order=TEAMS.filter(t=>t.idx!==SAVE.team).sort(()=>R()-0.5);
   for(const t of order){
-    if(R()<0.4){const pos=['R','A','P','P','S','S','L'][Math.floor(R()*7)];
+    const pr=SAVE.ai[t.idx].promo;delete SAVE.ai[t.idx].promo;
+    for(let tr=0;tr<(pr?6:1);tr++)if(pr||R()<0.4){const pos=pr?['R','A','P','P','S','S','L'][tr%7]:['R','A','P','P','S','S','L'][Math.floor(R()*7)];
       const cur=t.players.filter(x=>x.pos===pos).map(x=>rating(x)).sort((a,b)=>b-a);
-      const c=W().players.filter(p=>p.tm>=0&&p.tm!==t.idx&&p.tm!==SAVE.team&&p.pos===pos&&!isStarter(p)&&canSellAI(p)&&rating(p)>(cur[1]||0)).sort((a,b)=>rating(b)-rating(a))[0];
+      const c=pr?W().players.filter(p=>p.tm>=0&&p.tm!==t.idx&&p.tm!==SAVE.team&&p.pos===pos&&canSellAI(p)&&(!isStarter(p)||lgOf(p.tm)>lgOf(t.idx))&&rating(p)>(cur[0]||0)-2&&askingPrice(p)<=SAVE.ai[t.idx].bud*0.6).sort((a,b)=>rating(b)-rating(a))[0]
+        :W().players.filter(p=>p.tm>=0&&p.tm!==t.idx&&p.tm!==SAVE.team&&p.pos===pos&&!isStarter(p)&&canSellAI(p)&&rating(p)>(cur[1]||0)).sort((a,b)=>rating(b)-rating(a))[0];
       if(c){const fee=askingPrice(c);if(SAVE.ai[t.idx].bud>=fee){const from=c.tm;SAVE.ai[t.idx].bud-=fee;SAVE.ai[from].bud+=fee;movePlayer(c,t.idx);c.wage=wageDemand(c);c.ce=n+1+Math.floor(R()*2);
         news(`🔁 Transfer: ${c.first} ${c.last} przechodzi z ${TEAMS[from].name} do ${t.name} za ${fmt(fee)}.`);}}}
     for(const pos of ['R','A','P','S','L'])while(posCount(t,pos)<POS_STD[pos]&&t.players.length<16)aiSign(t,pos);
@@ -188,7 +191,8 @@ function offseason(){
     if(retire){if(p.tm===SAVE.team)news(`👋 ${p.first} ${p.last} (${p.age} l.) kończy karierę.`);continue;}
     keep.push(p);}
   W().players=keep;syncTeams();
-  // nowy sezon (okno transferowe)
+  // awanse i spadki, potem nowy sezon (okno transferowe)
+  applyLeagueMoves(old);
   newSeason(n,'off');
   aiOffseason();juniorsOffseason();aiInfraOffseason();refreshStaffPool();
   for(const r in SAVE.staff){const st=SAVE.staff[r];if(st){st.age++;if(st.age<50&&R()<0.4&&st.skill<20)st.skill++;}}
@@ -243,7 +247,7 @@ function openCard(id){ui.card=id;ui.offers=null;ui.tmsg=null;ui.confirm=null;ren
 function financeView(){
   const f=SAVE.fin;const pay=payroll(),sp=sponsorAmt();const rep=SAVE.ai[SAVE.team].rep;
   const stp=staffPay(),mnt=maintenance()*12,shp=shopIncome(myInfra().sklep)*12;const md=matchday(1,null,null,true);const kh=ECO().karS.season===S().n?ECO().karS.inc:0;
-  const proj=sp+TV_ROUND*22+md.tot*11+shp+kh-pay-stp-mnt;
+  const proj=sp+tvRound()*22+md.tot*11+shp+kh-pay-stp-mnt;
   const cats=['Sponsor','Prawa TV','Bilety','Karnety','Gastronomia','Parking','Sklep','Obóz','Nagrody','Transfery','Pensje','Sztab','Utrzymanie','Infrastruktura','Odprawy'];
   const row=(o)=>cats.map(c=>`<tr><td class="l">${c}</td><td class="${(o[c]||0)<0?'bad':(o[c]||0)>0?'good':''}">${o[c]?fmt(o[c]):'—'}</td></tr>`).join('')+`<tr><td class="l"><b>Razem</b></td><td><b>${fmt(cats.reduce((s,c)=>s+(o[c]||0),0))}</b></td></tr>`;
   const spFree=typeof spSlots==='function'?Object.entries(spSlots()).reduce((a,[k,n])=>a+Math.max(0,n-spUsed(k)),0):0;
@@ -254,7 +258,7 @@ function financeView(){
    <tr><td class="l">Utrzymanie obiektów</td><td class="bad">−${fmt(mnt)}</td></tr>
    <tr><td class="l">Sklep kibica</td><td class="good">+${fmt(shp)}</td></tr>
    <tr><td class="l">Sponsorzy (podpisane umowy, renoma ${rep}/100)</td><td class="good">+${fmt(sp)}</td></tr>
-   <tr><td class="l">Prawa TV (${fmt(TV_ROUND)} za kolejkę)</td><td class="good">+${fmt(TV_ROUND*22)}</td></tr>
+   <tr><td class="l">Prawa TV (${fmt(tvRound())} za kolejkę, ${LG_N[myLg()]})</td><td class="good">+${fmt(tvRound()*22)}</td></tr>
    <tr><td class="l">Mecze u siebie: bilety, jedzenie, parking (ok. ${fmt(md.tot)} za mecz)</td><td class="good">~ +${fmt(md.tot*11)}</td></tr>${kh?`<tr><td class="l">Karnety (sprzedane w tym sezonie)</td><td class="good">+${fmt(kh)}</td></tr>`:''}
    <tr><td class="l"><b>Prognoza bilansu (bez transferów i nagród)</b></td><td class="${proj<0?'bad':'good'}"><b>${proj>=0?'+':''}${fmt(proj)}</b></td></tr></tbody></table>
    ${spFree?`<p class="small" style="color:var(--acc)">Masz ${spFree} wolnych miejsc dla sponsorów — podpisz umowy w zakładce <button class="link" onclick="go('sponsorzy')">Sponsorzy</button>, żeby poprawić bilans.</p>`:''}<p class="mut small">Pensje i sponsorzy rozliczają się co miesiąc (1. dnia), prawa TV co kolejkę ligową, bilety po każdym meczu u siebie. Nagrody za miejsce w sezonie: od 50 tys. do 1 mln zł. Lepsze wyniki podnoszą renomę, a ta podnosi sponsorów i frekwencję.</p></div>${pricesCard()}${mdTableCard()}

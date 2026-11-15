@@ -33,12 +33,12 @@ function sideNav(){const mini=ui.tab==='mecz'&&liveMatch();const newsN=typeof un
   </aside>${ui.navOpen?'<div class="navshade" onclick="ui.navOpen=false;render()"></div>':''}`;}
 // ---- pasek górny ----
 function myLineupPlayers(){const t=myTeam();const lu=SAVE.lineup||{};return Object.values(lu).map(id=>t.players.find(p=>p.id===id)).filter(Boolean);}
-function phaseName(s){return !s?'':s.phase==='spar'?'Sparingi':s.phase==='liga'?'Liga':s.phase==='po'?'Play-off':s.phase==='off'?'Przerwa':'Koniec sezonu';}
+function phaseName(s){return !s?'':s.phase==='spar'?'Sparingi':s.phase==='liga'?LG_N[myLg()]:s.phase==='po'?'Play-off':s.phase==='off'?'Przerwa':'Koniec sezonu';}
 function actLabel(){if(liveMatch())return 'WRÓĆ DO MECZU';const e=nextEvent();const c=myNext();if(e&&e.d<=today()&&c)return 'GRAJ MECZ';return 'DALEJ';}
 function topBar(){const t=myTeam();const s=S();const d=today();
   return `<div class="topbar">
    <button class="burger" onclick="ui.navOpen=!ui.navOpen;render()" aria-label="Menu">☰</button>
-   <div class="tclub" onclick="go('home')"><span class="tcr">${teamCrest(SAVE.team,36)}</span><span class="tcn"><b>${esc(t.name)}</b><small>${s?'Liga · '+sLabel(s.n):''}</small></span></div>
+   <div class="tclub" onclick="go('home')"><span class="tcr">${teamCrest(SAVE.team,36)}</span><span class="tcn"><b>${esc(t.name)}</b><small>${s?''+LG_N[myLg()]+' · '+sLabel(s.n):''}</small></span></div>
    <div class="tpage">${esc((NAV_L[ui.tab]||'').toUpperCase())}</div>
    <div class="tsearch">${ico('search',16)}<input id="psq" placeholder="Szukaj zawodnika…" value="${esc(ui.q||'')}" oninput="ui.q=this.value;searchDrop()" onfocus="searchDrop()" autocomplete="off"><kbd>Ctrl + K</kbd><div id="psd" class="psd"></div></div>
    <span class="sp"></span>
@@ -56,7 +56,7 @@ function ctxBar(){if(ui.tab==='mecz'&&liveMatch())return '';const t=myTeam();con
   const okLu=validLineup(t,SAVE.lineup)&&!myLineupPlayers().some(p=>p.inj);
   let pos='—';if(s&&(s.phase==='liga'||s.phase==='po'||s.phase==='end')){const tb=leagueTable();pos=(tb.findIndex(x=>x.i===SAVE.team)+1)+'.';}
   const c=s?myNext():null;const e=nextEvent();const op=c?(c.h===SAVE.team?c.a:c.h):null;
-  const comp=!s?'':s.phase==='spar'?`Sparing ${s.spar.res.length+1}/${N_SPAR}`:s.phase==='liga'?`Liga · ${s.round+1}. kolejka`:s.phase==='po'?'Play-off':phaseName(s);
+  const comp=!s?'':s.phase==='spar'?`Sparing ${s.spar.res.length+1}/${N_SPAR}`:s.phase==='liga'?`${LG_N[myLg()]} · ${s.round+1}. kolejka`:s.phase==='po'?'Play-off':phaseName(s);
   const st=(l,v,col,go)=>`<div class="cst" ${go?`onclick="go('${go}')"`:''}><span>${l}</span><b style="${col?'color:'+col:''}">${v}</b></div>`;
   const pc=v=>v>=70?'var(--good)':v>=45?'var(--acc)':'var(--bad)';
   return `<div class="ctx"><div class="cpair"><span class="clab">Rozgrywki</span><b>${esc(comp)}</b></div>
@@ -84,7 +84,7 @@ function hNext(){const s=S();
   const c=myNext();const e=nextEvent();
   if(!c)return `<div class="pan hnext"><div class="ttl">Następny mecz</div><div class="hvs"><b>Brak planowanych spotkań</b><div class="mut">Twoja drużyna nie gra w tej fazie.</div><button class="btn" onclick="go('mecz')">Pozostałe mecze</button></div></div>`;
   const home=c.h===SAVE.team,op=home?c.a:c.h;
-  const comp=s.phase==='spar'?`Sparing ${s.spar.res.length+1}/${N_SPAR}`:s.phase==='liga'?`Liga · ${s.round+1}. kolejka`:`Play-off · ${STAGE[s.po.series.find(x=>x.id===c.sid).st]}`;
+  const comp=s.phase==='spar'?`Sparing ${s.spar.res.length+1}/${N_SPAR}`:s.phase==='liga'?`${LG_N[myLg()]} · ${s.round+1}. kolejka`:`Play-off · ${STAGE[s.po.series.find(x=>x.id===c.sid).st]}`;
   const days=e?daysBetween(today(),e.d):0;const isDay=days<=0;
   return `<div class="pan hnext"><div class="ttl">Następny mecz</div><div class="hnx">
    <div class="hcr">${teamCrest(c.h,96)}${formDots(c.h)}</div>
