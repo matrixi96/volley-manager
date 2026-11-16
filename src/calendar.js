@@ -33,7 +33,7 @@ function poTime(d){return dow(d)===6?'17:30':'20:30';}
 function nextEvent(){const s=S();if(!s)return null;ensureDates(s);
   if(s.phase==='off')return {d:s.offDate};
   if(s.phase==='spar'){const k=s.spar.res.length;return k<N_SPAR?{d:s.sdates[k],t:'18:00'}:null;}
-  if(s.phase==='liga'){const f=s.rounds[s.round].find(f=>f[0]===SAVE.team||f[1]===SAVE.team);return fixtureWhen(s,s.round,f);}
+  if(s.phase==='liga'){const f=s.rounds[s.round].find(f=>f[0]===SAVE.team||f[1]===SAVE.team);const w=fixtureWhen(s,s.round,f);const cu=typeof cupEventFirst==='function'?cupEventFirst(w.d):null;return cu?{d:cu.d,t:'20:30',cup:1}:w;}
   if(s.phase==='po'){const d=s.podates[Math.min(s.po.day,s.podates.length-1)];return {d,t:poTime(d)};}
   if(s.phase==='end')return {d:s.endDate||addDays(s.podates[Math.max(0,(s.po?s.po.day:1)-1)],3)};
   return null;}
@@ -69,7 +69,7 @@ function debtCheck(d){if(SAVE.fin&&SAVE.fin.bal>-1000000){SAVE.debtNote=null;if(
   if(typeof sendMail==='function')sendMail({cat:'fin',from:'Zarząd klubu',t:'Przymusowa sprzedaż zawodnika',s:`Dług przekroczył 1 mln zł. Sprzedaliśmy ${p.first} ${p.last} do ${dest} za ${fmt(fee)}.`,lab:'Finanse'});}
 function advanceTo(t){
   let d=today();const born=[];const mine=SAVE.team!=null&&SAVE.world?myTeam().players:[];const tdays=[];
-  while(d<t){d=addDays(d,1);tdays.push(d);SAVE._now=d;if(d.endsWith('-01'))monthly(d);checkBuild(d);const md=d.slice(5);for(const p of mine)if(p.dob&&p.dob.slice(5)===md)born.push(p);}
+  while(d<t){d=addDays(d,1);tdays.push(d);SAVE._now=d;if(d.endsWith('-01'))monthly(d);checkBuild(d);try{if(typeof cupTick==='function')cupTick(d);}catch(e){console.error(e);}const md=d.slice(5);for(const p of mine)if(p.dob&&p.dob.slice(5)===md)born.push(p);}
   try{if(mine.length)for(const x of tdays){SAVE._now=x;if(typeof trainDays==='function')trainDays([x]);if(typeof mailDaily==='function')mailDaily(x);if(typeof scoutDay==='function')scoutDay(x);if(typeof karDay==='function')karDay(x);if(typeof tlDay==='function')tlDay(x);if(typeof campDay==='function')campDay(x);}}catch(e){console.error(e);}
   delete SAVE._now;
   SAVE.date=d;updateAges();updateInjuries();
@@ -87,6 +87,7 @@ function myEvents(){
   s.spar.opps.forEach((o,k)=>{const home=k%2===0;const r=s.spar.res[k];if(s.phase!=='spar'&&!r)return;add(s.sdates[k],{kind:'spar',op:o,home,t:'18:00',r});});
   s.rounds.forEach((rd,r)=>{const f=rd.find(x=>x[0]===SAVE.team||x[1]===SAVE.team);const w=fixtureWhen(s,r,f);const res=s.results[r]&&s.results[r].find(x=>x.me);add(w.d,{kind:'liga',op:f[0]===SAVE.team?f[1]:f[0],home:f[0]===SAVE.team,t:w.t,r:res,k:r+1});});
   if(s.po)for(const sr of s.po.series)for(const g of sr.games)if(g.me&&g.d)add(g.d,{kind:'po',op:g.h===SAVE.team?g.a:g.h,home:g.h===SAVE.team,r:g,st:sr.st});
+  if(s.cups&&s.cups[myCountry()]){const C=s.cups[myCountry()];C.rounds.forEach((rd,i)=>{const t=rd.ties.find(x=>x.h===SAVE.team||x.a===SAVE.team);if(t)add(C.dates[i],{kind:'cup',op:t.h===SAVE.team?t.a:t.h,home:t.h===SAVE.team&&!t.neutral,t:'20:30',r:t.res?Object.assign({me:1},t.res):null});});}
   if(s.phase==='po'){const c=myNext();if(c)add(s.podates[s.po.day],{kind:'po',op:c.h===SAVE.team?c.a:c.h,home:c.h===SAVE.team,t:poTime(s.podates[s.po.day]),st:s.po.series.find(x=>x.id===c.sid).st});}
   return ev;}
 function calView(){

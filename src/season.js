@@ -13,6 +13,7 @@ function newSeason(n,phase){
   bgInit(SAVE.season);
   if(SAVE.world)for(const p of SAVE.world.players)p.base=snap(p);
   ensureDates(SAVE.season);
+  try{if(SAVE.lg&&typeof cupInit==='function')cupInit(SAVE.season);}catch(e){console.error(e);}
   if(SAVE.team!=null&&SAVE.world)SAVE.season.goal=goalFor(SAVE.team);
   SAVE.live=null;save();
 }
@@ -52,15 +53,15 @@ function simFixture(h,a,stats){const m=simMatch(participant(h,true),participant(
 function myNext(){
   const s=S();
   if(s.phase==='spar'){const k=s.spar.res.length;if(k>=N_SPAR)return null;const o=s.spar.opps[k];return k%2===0?{kind:'spar',h:SAVE.team,a:o}:{kind:'spar',h:o,a:SAVE.team};}
-  if(s.phase==='liga'){const f=s.rounds[s.round].find(f=>f[0]===SAVE.team||f[1]===SAVE.team);return {kind:'liga',h:f[0],a:f[1]};}
+  if(s.phase==='liga'){const f=s.rounds[s.round].find(f=>f[0]===SAVE.team||f[1]===SAVE.team);const cu=typeof cupEventFirst==='function'?cupEventFirst(fixtureWhen(s,s.round,f).d):null;if(cu)return {kind:'cup',h:cu.t.h,a:cu.t.a,neutral:cu.t.neutral,left:cu.rd.left};return {kind:'liga',h:f[0],a:f[1]};}
   if(s.phase==='po'){const sr=activeSeries().find(x=>x.hi===SAVE.team||x.lo===SAVE.team);if(!sr)return null;const h=seriesHome(sr);return {kind:'po',sid:sr.id,h,a:h===sr.hi?sr.lo:sr.hi};}
   return null;
 }
 function buildMatch(ctx){
   const meHome=ctx.h===SAVE.team;const op=meHome?ctx.a:ctx.h;
-  const m=newMatch(participant(SAVE.team,meHome),participant(op,!meHome));
+  const neu=ctx.kind==='cup'&&ctx.neutral;const m=newMatch(participant(SAVE.team,meHome&&!neu),ctx.kind==='cup'?cupPart(op,!meHome&&!neu,cupRot(op,SAVE.team,ctx.left)):participant(op,!meHome));
   m.log=[];m.paused=false;m.hl=[];m.ctx=ctx;matchCrowd(m);if(meHome&&m.cap){m.sides[0].form+=(m.att/m.cap-0.75)*0.02;}
-  m.log.push({t:`${ctx.kind==='spar'?'Sparing':ctx.kind==='po'?'Play-off':'Liga'} · ${meHome?'mecz u siebie':'mecz wyjazdowy'}. Losowanie: seta zaczyna zagrywką <b>${esc(m.sides[m.serving].team.name)}</b>.`,c:'sys'});
+  m.log.push({t:`${ctx.kind==='spar'?'Sparing':ctx.kind==='po'?'Play-off':ctx.kind==='cup'?`${cupName(myCountry())} (${cupRoundName(0,ctx.left)})`:'Liga'} · ${ctx.neutral?'teren neutralny':meHome?'mecz u siebie':'mecz wyjazdowy'}. Losowanie: seta zaczyna zagrywką <b>${esc(m.sides[m.serving].team.name)}</b>.`,c:'sys'});
   return m;
 }
 function playNext(){if(SAVE.fired)return;syncDate();const c=myNext();if(!c)return;const m=buildMatch(c);ui.match=m;ui.view='log';ui.subSel=null;ui.tab='mecz';persistLive();render();schedule();}
@@ -71,12 +72,13 @@ function finishMatch(m){
   if(c.kind==='spar'){addTogether(m);s.spar.res.push(res);injuryCheck(m,0.5);roundTick('spar',false);}
   else if(c.kind==='liga'){const psB=psSnap(),tbB=leagueTable();recordStats(m);boardAfterMatch(res);const rd=[];for(const f of s.rounds[s.round]){if(f[0]===c.h&&f[1]===c.a)rd.push(res);else rd.push(simFixture(f[0],f[1],true));}
     s.results.push(rd);bgRound(s.round);simJrRound(s.round);s.round++;leagueNews(psB,tbB,rd,s.round);roundTick('liga',c.h===SAVE.team,m.att,c.a);if(s.round>=s.rounds.length)startPlayoff();}
+  else if(c.kind==='cup'){addTogether(m);injuryCheck(m,1);cupMyResult(res);roundTick('cup',c.h===SAVE.team&&!c.neutral,m.att,c.a);}
   else if(c.kind==='po'){recordStats(m);boardAfterMatch(res);playPoDay(c.sid,res);achPo(c);roundTick('po',c.h===SAVE.team,m.att,c.a);}
   try{fatigueAfterMatch(m);}catch(e){}storeLast(m,c);mailMatch(m,c);try{dcRecord(m,c);}catch(e){console.error(e);}try{for(const p of m.sides[1].pl)if(p.st.srv+p.st.rec+p.st.att+p.st.dig+p.st.blk>0)addKnow(p.id,12);if(SAVE.tactics)delete SAVE.tactics.tgt;}catch(e){}SAVE.live=null;save();
 }
 function storeLast(m,c){try{const me=m.sides[0];const T=teamTotals(me);const w=m.sides[m.winner];const mvp=w.pl.slice().sort((a,b)=>mvpScore(b)-mvpScore(a))[0];
   const r=resultOf(m,c.h,c.a);const won=m.winner===0;const sc=c.h===SAVE.team?r.sw[0]+':'+r.sw[1]:r.sw[1]+':'+r.sw[0];const op=TEAMS[c.h===SAVE.team?c.a:c.h];
-  news(`${won?'✅ Wygrana':'❌ Porażka'} ${sc} z ${op.short} (${c.kind==='spar'?'sparing':c.kind==='po'?'play-off':'liga'}) · MVP: ${mvp?mvp.first+' '+mvp.last:'—'}`);
+  news(`${won?'✅ Wygrana':'❌ Porażka'} ${sc} z ${op.short} (${c.kind==='spar'?'sparing':c.kind==='po'?'play-off':c.kind==='cup'?'puchar':'liga'}) · MVP: ${mvp?mvp.first+' '+mvp.last:'—'}`);
   if(c.kind==='liga'){const ld=leagueTable()[0].i;if(SAVE.lastLeader!==ld){SAVE.lastLeader=ld;news(`🏆 ${TEAMS[ld].name} ${ld===SAVE.team?'— jesteśmy liderem ligi!':'nowym liderem ligi'}`);}}
   let top=null;try{for(const p of me.pl){const lr=liveRating(p);if(lr!=null&&(!top||lr>top.r))top={n:p.last,r:Math.round(lr*10)/10};}}catch(e){}
   SAVE.lastMatch={h:c.h,a:c.a,sets:r.sets,sw:r.sw,d:today(),home:c.h===SAVE.team,att:m.att||0,mvp:mvp?mvp.last:'',top,kind:c.kind,k:c.kind==='liga'?S().round:null,atk:T.att?Math.round(T.kill/T.att*100):0,blk:T.blk,ace:T.ace};}catch(e){}}
@@ -117,7 +119,7 @@ function finishSeason(){
   ensureBg();const s=S(),po=s.po,ser=st=>po.series.filter(x=>x.st===st);
   s.final=poFinal(po,s.seed,lgCfg(myLg()));if(lgCfg(myLg()).playout)playout(s.final,myLg());
   s.phase='end';s.endDate=addDays(s.podates[Math.max(0,s.po.day-1)],3);
-  bgFinishAll();try{jrOtherFinish();}catch(e){}s.lgFinal={};s.lgFinal[myLg()]=s.final;if(s.oth)for(const k in s.oth)if(s.oth[k].final)s.lgFinal[k]=s.oth[k].final;
+  bgFinishAll();try{jrOtherFinish();}catch(e){}try{cupFinishAll();}catch(e){console.error(e);}s.lgFinal={};s.lgFinal[myLg()]=s.final;if(s.oth)for(const k in s.oth)if(s.oth[k].final)s.lgFinal[k]=s.oth[k].final;
   for(const k in s.lgFinal){const [b0,st]=LG_REP[k];s.lgFinal[k].forEach((ti,pl)=>{const a=SAVE.ai[ti];const kw=BAL2?0.15:0.25;a.rep=Math.round(clamp(a.rep*(1-kw)+(b0-pl*st)*kw,5,100));});
     if(+k!==myLg())news(`🏆 ${TEAMS[s.lgFinal[k][0]].name} wygrywa ${lgFull(+k)} w sezonie ${sLabel(s.n)}.`);}
   if(BAL3)for(const k in s.lgFinal){const ch=s.lgFinal[k][0];for(const p of TEAMS[ch].players){if(rating(p)<78)continue;const up=0.03+R()*0.07;
@@ -305,7 +307,7 @@ function teamStatsHtml(){const ts=S().ts;if(!ts)return '';
 // ---- zakładka Tabela ----
 function formOf(results,ti){const f=[];for(const rd of results)for(const g of rd){if(g.h!==ti&&g.a!==ti)continue;const my=g.h===ti?g.sw[0]:g.sw[1];const op=g.h===ti?g.sw[1]:g.sw[0];f.push({w:my>op,s:my+':'+op,op:g.h===ti?g.a:g.h,home:g.h===ti});}return f.slice(-5);}
 function tablesView(){
-  ensureBg();const s=S();const which=ui.tabSel||'sen';const jr=which==='jr';const vl=ui.lgSel!=null?ui.lgSel:myLg();const L=!jr&&vl!==myLg()&&s.oth?s.oth[vl]:null;if(!jr&&vl!==myLg()&&!L){ui.lgSel=null;return tablesView();}
+  ensureBg();const s=S();const which=ui.tabSel||'sen';if(which==='cup')return `<div class="card"><div class="row wrap"><button class="tabb" onclick="ui.tabSel='sen';render()">Seniorzy</button><button class="tabb" onclick="ui.tabSel='jr';render()">Juniorzy U20</button><button class="tabb on">🏆 Puchar</button></div></div>`+cupView();const jr=which==='jr';const vl=ui.lgSel!=null?ui.lgSel:myLg();const L=!jr&&vl!==myLg()&&s.oth?s.oth[vl]:null;if(!jr&&vl!==myLg()&&!L){ui.lgSel=null;return tablesView();}
   const jc=jr&&ui.jrC&&s.jo&&s.jo[ui.jrC]?s.jo[ui.jrC]:null;const res=jr?(jc?jc.res:(s.jres||[])):L?L.results:s.results;const tb=jc?tableFrom(jc.res,jc.ids):L?bgTable(L):tableFrom(res);const played=res.length;const dz=!jr&&lgDown(vl)!=null,uz=!jr&&lgUp(vl)!=null;const nT=tb.length;
   const ratio=(a,b)=>b?(a/b).toFixed(3).replace('.',','):(a?'MAX':'–');
   const rows=tb.map((x,i)=>{const f=formOf(res,x.i);
@@ -313,7 +315,7 @@ function tablesView(){
     <td class="l"><span class="form">${f.map(r=>`<i class="${r.w?'fw':'fl'}" title="${r.home?'dom':'wyjazd'} vs ${esc(TEAMS[r.op].name)}: ${r.s}">${r.w?'Z':'P'}</i>`).join('')}</span></td></tr>`;}).join('');
   const info=jr?(jc?`Liga juniorów U20 (${COUNTRIES[ui.jrC].n}) · ${played}/${jc.rounds.length} kolejek${jc.champ!=null?` · 🏆 mistrz: ${tName(jc.champ)} U20`:''}`:`Liga juniorów U20 (${COUNTRIES[tmCountry(SAVE.team)].n}) · ${played}/${s.rounds.length} kolejek${s.jchamp!=null?` · 🏆 mistrz: ${tName(s.jchamp)} U20`:''}`)
     :`${lgFull(vl)} · faza zasadnicza · ${played}/${(L?L.rounds:s.rounds).length} kolejek · miejsca 1–8 grają w play-off${uz?' (dwaj finaliści awansują)':''}${dz?' · dwa ostatnie miejsca spadają':''}${(L?L.final:s.final)?` · 🏆 ${LG_LV[vl]===0?'mistrz '+COUNTRIES[lgCountry(vl)].gen:'mistrz '+LG_GEN[vl]}: ${tName((L?L.final:s.final)[0])}`:''}`;
-  return `<div class="card"><div class="row wrap"><button class="tabb ${!jr?'on':''}" onclick="ui.tabSel='sen';render()">Seniorzy</button><button class="tabb ${jr?'on':''}" onclick="ui.tabSel='jr';render()">Juniorzy U20</button>${jr?`<span style="width:14px"></span><select onchange="ui.jrC=this.value||null;render()">${CTRY.map(k=>`<option value="${k===tmCountry(SAVE.team)?'':k}" ${(ui.jrC||tmCountry(SAVE.team))===k?'selected':''}>${COUNTRIES[k].fl} ${COUNTRIES[k].n}</option>`).join('')}</select>`:''}${!jr?`<span style="width:14px"></span><select onchange="ui.lgSel=+this.value;render()">${CTRY.map(k=>`<optgroup label="${COUNTRIES[k].n}">${COUNTRIES[k].lgs.map(l=>`<option value="${l}" ${vl===l?'selected':''}>${COUNTRIES[k].fl} ${LG_N[l]}${l===myLg()?' ★':''}</option>`).join('')}</optgroup>`).join('')}</select>`:''}<span class="sp"></span><span class="small mut">Sezon ${sLabel(s.n)}</span></div>
+  return `<div class="card"><div class="row wrap"><button class="tabb ${!jr?'on':''}" onclick="ui.tabSel='sen';render()">Seniorzy</button><button class="tabb ${jr?'on':''}" onclick="ui.tabSel='jr';render()">Juniorzy U20</button><button class="tabb" onclick="ui.tabSel='cup';render()">🏆 Puchar</button>${jr?`<span style="width:14px"></span><select onchange="ui.jrC=this.value||null;render()">${CTRY.map(k=>`<option value="${k===tmCountry(SAVE.team)?'':k}" ${(ui.jrC||tmCountry(SAVE.team))===k?'selected':''}>${COUNTRIES[k].fl} ${COUNTRIES[k].n}</option>`).join('')}</select>`:''}${!jr?`<span style="width:14px"></span><select onchange="ui.lgSel=+this.value;render()">${CTRY.map(k=>`<optgroup label="${COUNTRIES[k].n}">${COUNTRIES[k].lgs.map(l=>`<option value="${l}" ${vl===l?'selected':''}>${COUNTRIES[k].fl} ${LG_N[l]}${l===myLg()?' ★':''}</option>`).join('')}</optgroup>`).join('')}</select>`:''}<span class="sp"></span><span class="small mut">Sezon ${sLabel(s.n)}</span></div>
   <p class="small mut">${info}</p>
   ${played?`<div class="tw"><table class="ltable"><thead><tr><th>#</th><th class="l">Drużyna</th><th title="Mecze">M</th><th title="Zwycięstwa">Z</th><th title="Porażki">P</th><th>Pkt</th><th>Sety</th><th title="Stosunek setów">Ratio</th><th>Małe pkt</th><th title="Stosunek małych punktów">Ratio</th><th class="l">Forma</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<p class="mut">Tabela pojawi się po pierwszej kolejce fazy zasadniczej.</p>'}
   <p class="mut small">Punktacja: 3:0 i 3:1 to 3 pkt, 3:2 to 2 pkt dla zwycięzcy i 1 pkt dla przegranego. Kolejność: punkty, zwycięstwa, stosunek setów, stosunek małych punktów. Forma: ostatnie 5 meczów (Z = zwycięstwo, P = porażka), najnowszy po prawej.</p></div>
