@@ -57,7 +57,7 @@ const STAFF_ROLES=[
 ];
 const ROLE_N=Object.fromEntries(STAFF_ROLES.map(r=>[r[0],r[1]]));
 function staffWage(sk){return round5k(30000+sk*sk*350);}
-function genStaff(role,sk){const id='st'+(W().nextId++);return {id,first:FIRST[Math.floor(R()*FIRST.length)],last:LAST[Math.floor(R()*LAST.length)],role,skill:Math.round(clamp(sk,1,20)),age:30+Math.floor(R()*30),wage:0};}
+function genStaff(role,sk){const id='st'+(W().nextId++);const nm=natName(SAVE.team!=null?tmCountry(SAVE.team):'PL');return {id,first:nm[0],last:nm[1],role,skill:Math.round(clamp(sk,1,20)),age:30+Math.floor(R()*30),wage:0};}
 function refreshStaffPool(){SAVE.staffPool=[];for(const [r] of STAFF_ROLES)for(let i=0;i<3;i++){const s=genStaff(r,5+R()*14);s.wage=staffWage(s.skill);SAVE.staffPool.push(s);}}
 function staffSkill(r){if(r==='sk'){const a=allScouts();return a.length?Math.max(...a.map(x=>x.skill)):3;}const s=SAVE.staff&&SAVE.staff[r];return s?s.skill:3;}
 function staffPay(){return Object.values(SAVE.staff||{}).filter(Boolean).concat(SAVE.scouts||[]).reduce((a,s)=>a+s.wage,0);}
@@ -92,7 +92,7 @@ function hashId(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return ((
 const JR_PLAN=['R','R','A','A','P','P','P','S','S','S','L','L'];
 function genJunior(ti,age,pos){const t=TEAMS[ti];const inf=infraOf(ti);const mine=ti===SAVE.team;
   const jq=teamQ(t)-2.5-4.5+0.4*inf.akad+((mine?staffSkill('jr'):aiStaff(ti))-10)*0.06+(mine&&SAVE.coach?(cA('mlo')-10)*0.04:0)+(age-16)*0.6;
-  const p=genPlayer(pos||randPos(),jq+R()*1.2,age);p.tm=ti;p.jr=true;p.inj=0;p.xp={};p.wage=0;p.ce=0;
+  const hc=tmCountry(ti);const p=genPlayer(pos||randPos(),jq+R()*1.2,age,R()<0.88?hc:natPick(R,hc));p.tm=ti;p.jr=true;p.inj=0;p.xp={};p.wage=0;p.ce=0;
   p.pot=Math.min(92,Math.round(rating(p)+(BAL2?3+R()*9:4+R()*12)+inf.akad));p.base=snap(p);assignNum(p,ti);return p;}
 function initClub(){
   if(!SAVE.ai)return;
@@ -105,7 +105,7 @@ function initClub(){
 function juniorsOf(ti){return W().players.filter(p=>p.tm===ti&&p.jr);}
 function jTeam(ti){const t=TEAMS[ti];return {name:t.name+' U20',short:t.short+'·J',color:t.color,idx:ti,players:juniorsOf(ti)};}
 function ensureJuniors(ti){let j=juniorsOf(ti);while(j.length<10){W().players.push(genJunior(ti,16+Math.floor(R()*3)));j=juniorsOf(ti);}}
-function simJrRound(r){const s=S();s.jres=s.jres||[];s.jps=s.jps||{};const rd=[];
+function simJrRound(r){const s=S();s.jres=s.jres||[];s.jps=s.jps||{};const rd=[];try{jrOtherRound(r);}catch(e){console.error(e);}
   for(const [h,a] of s.rounds[r]){ensureJuniors(h);ensureJuniors(a);
     const P=(i,home)=>{const jt=jTeam(i);return {team:jt,lineup:autoLineup(jt),tactics:{serve:1,dist:0},home,x:{hb:0.015,fat:1,sb:0}};};
     const m=simMatch(P(h,true),P(a,false));

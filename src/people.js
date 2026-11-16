@@ -8,7 +8,8 @@ function capOk(id){return myTeam().players.some(p=>p.id===id);}
 function myCaptain(){if(SAVE.captain&&capOk(SAVE.captain))return PLAYERS[SAVE.captain].p;const lu=myLineup();const t=myTeam();const c=autoCaptain(Object.values(lu).map(id=>t.players.find(p=>p.id===id)));if(c)SAVE.captain=c.id;return c;}
 function setCaptain(id){const p=PLAYERS[id]&&PLAYERS[id].p;if(!p||p.tm!==SAVE.team)return;SAVE.captain=id;news(`©️ ${p.first} ${p.last} nowym kapitanem drużyny.`);save();render();}
 function isCap(p){const c=myCaptain();return c&&c.id===p.id;}
-function capBadge(p){return isCap(p)?'<span class="capb" title="Kapitan drużyny">C</span>':'';}
+function natTag(p){return `<span class="natf" title="${natN(pNat(p))}">${natFl(pNat(p))}</span>`;}
+function capBadge(p){return natTag(p)+(isCap(p)?'<span class="capb" title="Kapitan drużyny">C</span>':'');}
 function capInfo(c){if(!c)return '';const b=capBonus(c);const v=b>=0.05?['świetny','var(--good)']:b>=0.02?['dobry','#a3e635']:b>-0.01?['przeciętny','var(--acc)']:['słaby','var(--bad)'];
   return `<span style="color:${v[1]}"><b>${v[0]}</b></span> kapitan`;}
 function morEmo(m){m=m==null?60:m;return m>=62?'😀':m>=45?'😐':'😟';}
@@ -19,7 +20,7 @@ function popModal(){const P=PLAYERS[ui.pop];if(!P){ui.pop=null;return '';}const 
   const ks=KEY_ATTR[p.pos]||KEY_ATTR.P;const mor=p.mor==null?60:p.mor;
   return `<div class="modal" onclick="if(event.target===this){ui.pop=null;render()}"><div class="mcard ppop">
    <div class="row" style="gap:12px"><span class="cface">${pFace(p,72)}</span><div style="min-width:0"><div class="mut small">${p.tm>=0?tDot(p.tm)+esc(TEAMS[p.tm].name):'Wolny zawodnik'}</div>
-    <h2 style="margin:2px 0">${p.num&&p.tm>=0?p.num+'. ':''}${esc(p.first)} ${esc(p.last)} ${mine?capBadge(p):''}</h2>
+    <h2 style="margin:2px 0">${p.num&&p.tm>=0?p.num+'. ':''}${esc(p.first)} ${esc(p.last)} ${mine?capBadge(p):natTag(p)}</h2>
     <div class="small mut">${pTag(p.pos)} ${POS_NAMES[p.pos]} · ${p.age} l. · ${p.h} cm · ocena <b style="color:var(--acc)">${typeof rTxt==='function'?rTxt(p):rating(p)}</b>${p.inj?` · <span class="bad">🚑 ${p.inj} dni</span>`:''}</div></div><span class="sp"></span>${mine?talkBtn(p.id):''}<button class="ghost" onclick="ui.pop=null;render()">✕</button></div>
    <div class="pkey">${ks.map(k=>`<div title="${esc((ALL_ATTRS.find(x=>x[0]===k)||[])[3]||'')}"><span>${attrName(k)}</span><i><b style="width:${(typeof aEst==='function'?(aEst(p,k)[0]+aEst(p,k)[1])/2:p[k])*5}%;background:${attrCol(p[k])}"></b></i><em style="color:${attrCol(p[k])}">${typeof aTxt==='function'?aTxt(p,k):p[k]}</em></div>`).join('')}</div>
    <div class="pmeta"><div><small>Forma</small><b>${formChip(p,true)}</b></div>${mine?`<div><small>Świeżość</small><b style="color:${frCol(frOf(p))}">${Math.round(frOf(p))}%</b></div>`:''}<div><small>Zagrywka</small><b>${SRV_T[srvType(p)]}</b></div><div><small>Kondycja</small><b style="color:${attrCol(p.kon)}">${p.kon}</b></div>${mine?`<div><small>Morale</small><b>${morEmo(mor)}</b></div>`:''}<div><small>Potencjał</small><b class="stars">${potStars(p)}</b></div><div><small>Wartość</small><b>${fmt(pValue(p))}</b></div></div>

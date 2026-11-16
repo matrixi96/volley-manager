@@ -18,7 +18,7 @@ function negOpen(pid,kind){const P=PLAYERS[pid];if(!P)return;const p=P.p;if(SAVE
   if(kind!=='renew'){if(!windowOpen())return tradeMsg(false,'Okno transferowe jest zamknięte (otwarte przed sezonem i w trakcie sparingów).');
     if(myTeam().players.length>=SQUAD_MAX)return tradeMsg(false,`Kadra jest pełna (maks. ${SQUAD_MAX}). Najpierw kogoś sprzedaj albo zwolnij.`);
     if(p.tm>=0&&!canSellAI(p))return tradeMsg(false,`${TEAMS[p.tm].name} nie sprzeda zawodnika — nie ma go kim zastąpić.`);
-    if(p.tm>=0&&myLg()-lgOf(p.tm)>=2&&isStarter(p))return tradeMsg(false,`${p.first} ${p.last} gra w podstawie w ${LG_N[lgOf(p.tm)]==='Ekstraliga'?'Ekstralidze':LG_N[lgOf(p.tm)]} i nie zamierza schodzić do ${LG_N[myLg()].replace('Liga','Ligi')}.`);}
+    if(p.tm>=0&&lgRef(lgOf(p.tm))-lgRef(myLg())>=14&&isStarter(p))return tradeMsg(false,`${p.first} ${p.last} gra w podstawie w ${LG_LOC[lgOf(p.tm)]} i nie zamierza schodzić do ${LG_N[myLg()].replace('Liga','Ligi')}.`);}
   const ag=agentOf(p);const n={pid,kind,stage:p.tm>=0&&kind!=='renew'?'club':'agent',log:[],fee:0,ok:null};ui.neg=n;
   if(n.stage==='club'){const ask=Math.round(askingPrice(p)*(1.05-cA('neg')/200)/10000)*10000;const need=isStarter(p)?0.9:0.8;
     n.club={ask,min:Math.min(ask,Math.round(ask*(need+R()*0.06)/10000)*10000),pat:3+(isStarter(p)?0:1)+negBonusPat(),pat0:0};n.club.pat0=n.club.pat;

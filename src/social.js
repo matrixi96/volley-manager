@@ -1,5 +1,5 @@
 // ===== Social media klubu: obserwujący, feed, styl komunikacji, akcje, kryzysy, specjalista =====
-const SOC_LG_REF=[25000,9000,3500];// typowa liczba obserwujących klubu w lidze
+const SOC_LG_REF=[25000,9000,3500,14000,3000,32000,8000,30000,5000];// typowa liczba obserwujących klubu w lidze
 const SOC_STY={pro:['Profesjonalny','Rzeczowe komunikaty i zdjęcia z meczów. Bezpiecznie, ale wolniejszy wzrost.',1,0.4,0],
   luz:['Luźny / memy','Memy, żarty, wyzwania. Szybki wzrost, ale większe ryzyko wpadki.',1.5,1.7,0],
   kib:['Kibicowski','Klub blisko trybun: relacje kibiców, konkursy. Lepsza frekwencja i nastroje na trybunach.',1.15,0.8,0.02]};
@@ -7,7 +7,7 @@ const SOC_ACT=[['film','🎬 Filmik o drużynie','Profesjonalny materiał z tren
   ['konk','🎟️ Konkurs dla kibiców','Do wygrania karnety i koszulki z podpisami.',15000,0.012],
   ['kul','📸 Kulisy treningu','Seria zdjęć i krótkich filmów zza kulis.',10000,0.008],
   ['qa','🎤 Q&A z gwiazdą','Najlepszy zawodnik odpowiada na pytania kibiców.',8000,0.015]];
-function SOC(){if(SAVE.team==null)return null;if(!SAVE.soc){const rep=SAVE.ai[SAVE.team].rep;const lm=[1,0.4,0.18][myLg()]||0.2;
+function SOC(){if(SAVE.team==null)return null;if(!SAVE.soc){const rep=SAVE.ai[SAVE.team].rep;const lm=SOC_LG_REF[myLg()]/25000;
   SAVE.soc={fol:Math.round((3000+rep*rep*6)*lm*(0.85+R()*0.3)),style:'pro',feed:[],cr:null,cd:{},hist:[],m0:null,pid:1};}return SAVE.soc;}
 function socSk(){const s=SAVE.staff&&SAVE.staff.soc;return s?s.skill:0;}
 function socName(){const s=SAVE.staff&&SAVE.staff.soc;return s?`${s.first} ${s.last}`:null;}

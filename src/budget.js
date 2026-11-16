@@ -7,7 +7,7 @@ function finName(){const s=SAVE.staff&&SAVE.staff.fin;return s?`${s.first} ${s.l
 // sponsorzy: podpisane umowy albo (gdy są wolne miejsca) typowa wartość ofert, które klub może podpisać
 function spPotential(){try{const sl=spSlots();const q=spQuality();let t=0;for(const [k,,sh] of SP_CAT){const act=SPN().act.filter(c=>c.cat===k);const sig=act.reduce((a,c)=>a+c.m,0);const free=Math.max(0,sl[k]-act.length);t+=sig+free*SP_BASE*sh*q*LG_ECO[myLg()]*0.85;}return t*12;}catch(e){return sponsorAmt();}}
 function revForecast(){try{const md=matchday(1,null,null,true);const kh=ECO().karS&&ECO().karS.season===S().n?ECO().karS.inc:0;
-  return Math.max(sponsorAmt(),spPotential())+tvRound()*22+md.tot*11+shopIncome(myInfra().sklep)*12+kh;}catch(e){return 3000000;}}
+  return Math.max(sponsorAmt(),spPotential())+tvRound()*nRounds()+md.tot*Math.ceil(nRounds()/2)+shopIncome(myInfra().sklep)*12+kh;}catch(e){return 3000000;}}
 // bez dyrektora zarząd planuje ostrożnie (85% prognozy); dobry dyrektor do 100%
 function budAcc(){const fs=finSk();return fs?0.9+fs/20*0.1:0.85;}
 function budSplit(){return Object.assign({},BUD_DEF,SAVE.budSplit||{});}
@@ -75,9 +75,9 @@ function spBudAdd(m,mo,cat){const b=BUD();if(!b)return;const add=spBudDelta(cat,
 function spBudTxt(m,mo,cat){const sp=budSplit();const add=spBudDelta(cat,m,mo);const sg=v=>(v>=0?'+':'−')+fmt(Math.abs(round5k(v)));
   return `<span class="${add>=0?'good':'bad'}">${sg(add)}</span> <span class="mut">względem planu</span><br><span class="mut">transfery ${sg(add*sp.tr)} · pensje ${sg(add*sp.wg)}</span>`;}
 // ===== Kluby komputera: te same zasady — przychody, budżety (transferowy, płacowy, operacyjny), dyrektor finansowy, social media =====
-const AI_REV_LG=[5200000,2400000,1150000];
+const AI_REV_LG=[5200000,2400000,1150000,2900000,950000,6200000,2100000,5900000,1500000];
 function aiStaffSk(ti,k){const a=SAVE.ai[ti];if(!a.st)a.st={};if(a.st[k]==null)a.st[k]=R()<0.25+a.rep/200?Math.round(clamp(aiStaff(ti)+(R()*6-3),3,18)):0;return a.st[k];}
-function aiFol(ti){const a=SAVE.ai[ti];if(a.fol==null){const lm=[1,0.4,0.18][lgOf(ti)]||0.2;a.fol=Math.round((3000+a.rep*a.rep*6)*lm*(0.85+R()*0.3));a.sty=['pro','luz','kib'][Math.floor(R()*3)];}return a.fol;}
+function aiFol(ti){const a=SAVE.ai[ti];if(a.fol==null){const lm=SOC_LG_REF[lgOf(ti)]/25000;a.fol=Math.round((3000+a.rep*a.rep*6)*lm*(0.85+R()*0.3));a.sty=['pro','luz','kib'][Math.floor(R()*3)];}return a.fol;}
 function folRatio(ti){return ti===SAVE.team&&SAVE.soc?socRatio():aiFol(ti)/(SOC_LG_REF[lgOf(ti)]||5000);}
 function aiRev(ti){const a=SAVE.ai[ti];const inf=infraOf(ti);const r=folRatio(ti);
   return (AI_REV_LG[lgOf(ti)]||AI_REV_LG[2])*(0.6+a.rep/100*0.8)*(1+0.05*((inf.hala||1)-1)+0.04*((inf.sied||1)-1))*(1+clamp((r-1)*0.06,-0.04,0.08));}
@@ -95,3 +95,5 @@ function aiSocMonthly(){for(const t of TEAMS){const ti=t.idx;if(ti===SAVE.team)c
   a.fol=Math.max(200,Math.round(a.fol*(1+g)));if(folRatio(ti)>1.4&&R()<0.3)a.rep=Math.min(100,a.rep+1);}}
 function aiSocResult(ti,won,sweep){if(ti===SAVE.team||!SAVE.ai[ti])return;const a=SAVE.ai[ti];aiFol(ti);const sk=aiStaffSk(ti,'soc');const st=SOC_STY[a.sty]||SOC_STY.pro;
   let g=won?0.008+(sweep?0.004:0):-(0.005+(sweep?0.004:0));g=g>0?g*st[2]*(sk?0.6+sk/20*0.8:0.35):g*(sk?1-sk/20*0.4:1);a.fol=Math.max(200,Math.round(a.fol*(1+g)));}
+
+function nRounds(){const s=S();return s&&s.rounds?s.rounds.length:22;}

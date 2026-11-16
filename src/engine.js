@@ -102,9 +102,9 @@ function genTeam(def,idx){
   const plan=[['R',1.5],['R',-1.5],['A',1.5],['A',-1.5],['P',1.3],['P',1.0],['P',-1.2],['P',-1.8],['S',1.3],['S',1.0],['S',-1.2],['S',-1.8],['L',1.3],['L',-1.5]];
   const used=new Set(),nums=new Set();
   const players=plan.map(([pos,tier],i)=>{
-    let first,last;do{first=FIRST[Math.floor(rnd()*FIRST.length)];last=LAST[Math.floor(rnd()*LAST.length)];}while(used.has(last));used.add(last);
+    const nat=typeof natPick==='function'?natPick(rnd,LG_C?LG_C[def.lg||0]:'PL'):'PL';let first,last;do{[first,last]=typeof natName==='function'?natName(nat,rnd):[FIRST[Math.floor(rnd()*FIRST.length)],LAST[Math.floor(rnd()*LAST.length)]];}while(used.has(last));used.add(last);
     let num;do{num=1+Math.floor(rnd()*25);}while(nums.has(num));nums.add(num);
-    const p={id:'t'+idx+'p'+i,first,last,pos,num,age:19+Math.floor(rnd()*15)};
+    const p={id:'t'+idx+'p'+i,first,last,nat,pos,num,age:19+Math.floor(rnd()*15)};
     const hh=HEIGHT[pos];p.h=Math.round(hh[0]+rnd()*(hh[1]-hh[0]));
     for(const [k] of ATTRS.concat(PHYS))p[k]=Math.round(clamp(def.q+TEMPL[pos][k]+tier+g()*1.8,1,20));
     for(const [k] of MENTAL)p[k]=Math.round(clamp(def.q-1+tier*0.3+g()*4,1,20));
