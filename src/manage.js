@@ -220,6 +220,8 @@ function aiSign(t,pos){
   t.players=W().players.filter(x=>x.tm===t.idx&&!x.jr);return p;}
 function aiOffseason(){
   const n=S().n;if(BAL3)starsMove();
+  // kadra młodzieżowa: zawodnicy po 21. roku życia odchodzą z zespołu
+  for(const t of TEAMS)if(isYT(t.idx))for(const p of t.players)if(p.age>21){p.tm=-1;p.wage=0;p.ce=0;}
   for(const t of TEAMS){if(t.idx===SAVE.team)continue;
     for(const p of t.players){if(p.ce<n){const keep=R()<(isStarter(p)?0.85:0.55)&&p.age<34;if(keep){p.wage=wageDemand(p);p.ce=n+Math.floor(R()*3);}else{p.tm=-1;p.wage=0;p.ce=0;}}}}
   syncTeams();
