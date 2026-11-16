@@ -79,11 +79,11 @@ function trainDay(d,md){const t=myTeam();if(!t)return;const trn=ensTrn();const i
   const rp={};const rk=regenK();// raport dnia dla każdego zawodnika
   for(const p of t.players){let fr=frOf(p)+6*rk;const fm0=fmOf(p);
     if(p.inj&&(!p.injUntil||p.injUntil>d)){p.fr=Math.round(clamp(fr+6*rk,0,100));rp[p.id]={i:1,fr:p.fr,f:[Math.round(fm0),Math.round(fm0)]};continue;}
-    const a0={},x0={};for(const k of ALL_KEYS){a0[k]=p[k];x0[k]=(p.xp&&p.xp[k])||0;}const scs=[];let inj=0,n=0;
+    const a0={},x0={};for(const k of ALL_KEYS){a0[k]=p[k];x0[k]=(p.xp&&p.xp[k])||0;}const scs=[];let inj=0,n=0;const why={};
     for(const u of units){const U=TR_UNITS[u];
       if(U.load>0)fr-=U.load*lm*(1.25-p.kon/20*0.5);else fr-=U.load*rk;
       if(U.k.length)devSession(p,U,intI,mods);
-      if(U.load>0){n++;const sc=(p.trB&&p.trB.until>=d?p.trB.v*10:0)+58+nz()*(hasT(p,'pro')?10:18)+(hasT(p,'pra')?7:0)-(hasT(p,'len')?8:0)+(hasT(p,'amb')?3:0)+(fr<45?-12:0);scs.push(sc);formAdd(p,(sc-fmOf(p))*0.035);}
+      if(U.load>0){n++;const f=trFactors(p,U,fr,d);const sc=(p.trB&&p.trB.until>=d?p.trB.v*10:0)+60+nz()*(hasT(p,'pro')?6:10)+f.v;for(const k of f.w)why[k]=(why[k]||0)+1;scs.push(sc);formAdd(p,(sc-fmOf(p))*0.035);}
       if(u==='int'){if(p.tcTm!==SAVE.team){p.tcTm=SAVE.team;p.tc=0;}p.tc=Math.min(60,(p.tc||0)+0.3);formAdd(p,hasT(p,'kap')||hasT(p,'ind')?1.5:0.5);if(p.unh>0&&R()<0.3)p.unh--;}
       if(u==='off')formAdd(p,(60-fmOf(p))*0.02);
       if(U.load>3&&R()<0.0004*U.load/6*TRAIN_INT[intI][2]*mods.injChance*(fr<40?2.2:fr<60?1.4:1)*(1.3-p.kon/20*0.6)){
@@ -91,7 +91,7 @@ function trainDay(d,md){const t=myTeam();if(!t)return;const trn=ensTrn();const i
     p.fr=Math.round(clamp(fr,0,100));
     const g={},up=[];for(const k of ALL_KEYS){const dv=(p[k]-a0[k])+(((p.xp&&p.xp[k])||0)-x0[k]);if(dv>0.0005)g[k]=Math.round(dv*1000)/1000;if(p[k]>a0[k])up.push(k);}
     const r={fr:p.fr,f:[Math.round(fm0),Math.round(fmOf(p))],n};if(scs.length)r.s=Math.round(clamp((scs.reduce((a,b)=>a+b,0)/scs.length+7)/10,1,10)*10)/10;
-    if(Object.keys(g).length)r.g=g;if(up.length)r.up=up;if(inj)r.inj=inj;rp[p.id]=r;}
+    if(Object.keys(g).length)r.g=g;if(up.length)r.up=up;if(inj)r.inj=inj;if(Object.keys(why).length)r.w=Object.keys(why);rp[p.id]=r;}
   if(units.includes('tak')){trn.tak.push(d);trn.tak=trn.tak.slice(-8);}
   trn.log.unshift({d,u:units,m:isM?1:0});trn.log=trn.log.slice(0,14);
   trn.rep=trn.rep||[];trn.rep.unshift({d,u:units,m:isM?1:0,p:rp});trn.rep=trn.rep.slice(0,31);
@@ -150,10 +150,10 @@ function todayPlanTxt(d){if(!trainingActive(d))return null;const md=matchDays();
 // ================= RAPORTY Z TRENINGÓW (dzień / tydzień / miesiąc) =================
 const REP_P=[['day','Dzień'],['week','Tydzień'],['month','Miesiąc']];
 function repDays(){const r=(SAVE.trn&&SAVE.trn.rep)||[];const P=ui.trRepP||'week';if(P==='day')return r.slice(0,1);const lim=addDays(today(),P==='week'?-7:-30);return r.filter(x=>x.d>lim);}
-function repAgg(days,pid){let n=0,s=0,sn=0,inj=0,miss=0,f0=null,f1=null,fr=null,frS=0,frN=0;const g={},up={};
+function repAgg(days,pid){let n=0,s=0,sn=0,inj=0,miss=0,f0=null,f1=null,fr=null,frS=0,frN=0;const g={},up={},why={};
   for(const day of days.slice().reverse()){const r=day.p&&day.p[pid];if(!r)continue;if(f0==null)f0=r.f[0];f1=r.f[1];fr=r.fr;frS+=r.fr;frN++;
-    if(r.i){miss++;continue;}n+=r.n||0;if(r.s!=null){s+=r.s;sn++;}for(const k in r.g||{})g[k]=(g[k]||0)+r.g[k];for(const k of r.up||[])up[k]=(up[k]||0)+1;if(r.inj)inj=r.inj;}
-  return {n,avg:sn?s/sn:null,g,up,f0,f1,fr,frAvg:frN?frS/frN:null,inj,miss,tot:Object.values(g).reduce((a,b)=>a+b,0),seen:frN};}
+    if(r.i){miss++;continue;}n+=r.n||0;if(r.s!=null){s+=r.s;sn++;}for(const k of r.w||[])why[k]=(why[k]||0)+1;for(const k in r.g||{})g[k]=(g[k]||0)+r.g[k];for(const k of r.up||[])up[k]=(up[k]||0)+1;if(r.inj)inj=r.inj;}
+  return {n,avg:sn?s/sn:null,g,up,f0,f1,fr,frAvg:frN?frS/frN:null,inj,miss,tot:Object.values(g).reduce((a,b)=>a+b,0),seen:frN,why:Object.keys(why).sort((a,b)=>why[b]-why[a])};}
 const fx1=v=>v==null?'–':v.toFixed(1).replace('.',',');
 function scCls(v){return v==null?'':v>=7?'good':v<=5.5?'bad':'';}
 function fmDelta(a){if(a.f0==null)return '–';const d=a.f1-a.f0;return `<span class="${d>1?'good':d<-1?'bad':'mut'}">${d>1?'▲':d<-1?'▼':'►'} ${d>0?'+':''}${d}</span> <small class="mut">(${formLv(a.f1)[1]})</small>`;}
@@ -184,3 +184,18 @@ function trainReport(){const days=repDays();const t=myTeam();const P=ui.trRepP||
    <div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th title="Liczba jednostek treningowych">Jedn.</th><th title="Średnia ocena za trening (1–10)">Ocena</th><th title="Suma postępu w atrybutach (1 = jeden punkt atrybutu)">Postęp</th><th class="l">Podniesione</th><th class="l">Forma</th><th>Świeżość</th><th class="l">Uwagi</th></tr></thead><tbody>
    ${ag.map(({p,a})=>`<tr class="clickrow" onclick="ui.trRepPl='${p.id}';render()"><td class="l">${esc(p.first[0])}. <b>${esc(p.last)}</b> <small class="mut">${pTag(p.pos)}</small></td><td>${a.n}</td><td class="${scCls(a.avg)}"><b>${fx1(a.avg)}</b></td><td>+${a.tot.toFixed(2).replace('.',',')}</td><td class="l">${upChips(a.up)}</td><td class="l">${fmDelta(a)}</td><td><span style="color:${frCol(a.fr??100)}">${a.fr??'–'}%</span></td><td class="l small">${a.inj?`<span class="bad">🚑 uraz (${a.inj} dni)</span>`:a.miss?`<span class="mut">kontuzja: ${a.miss} dni bez treningu</span>`:''}</td></tr>`).join('')}</tbody></table></div>
    <p class="small mut">Kliknij zawodnika, żeby zobaczyć szczegółowy raport. Ocena za trening zależy od charakteru (pracowity, leniwy, ambitny, profesjonalista) i zmęczenia.</p></div>`;}
+
+// ocena treningu z konkretnych przyczyn (losowość mniejsza niż wcześniej); zwraca punkty i powody, które zauważy sztab
+const TR_WHY={prac:['pracowity','+'],len:['leniwy','-'],amb:['ambitny','+'],oby:['wzór na treningu','+'],wer:['pełen energii','+'],mor:['świetne morale','+'],morL:['słabe morale','-'],unh:['niezadowolony ze swojej roli','-'],
+  fr:['zmęczony','-'],fit:['ćwiczenia pod jego pozycję','+'],inj:['wraca po kontuzji — trenuje ostrożnie','-'],staff:['dobra praca sztabu','+'],staffL:['słaby sztab','-'],form:['w gazie po meczach','+'],formL:['bez formy','-']};
+function trFactors(p,U,fr,d){let v=0;const w=[];const add=(x,k)=>{v+=x;if(Math.abs(x)>=3)w.push(k);};
+  if(hasT(p,'pra'))add(7,'prac');if(hasT(p,'len'))add(-8,'len');if(hasT(p,'amb'))add(3,'amb');if(hasT(p,'oby'))add(3,'oby');if(hasT(p,'wer')&&fr>=55)add(3,'wer');
+  const mor=p.mor==null?60:p.mor;const mv=clamp((mor-60)*0.15,-6,5);add(mv,mv>0?'mor':'morL');
+  if((p.unh||0)>=3)add(hasT(p,'loj')?-3:-6,'unh');
+  if(fr<70)add(-(70-fr)*0.22,'fr');
+  if(U.k.length&&U.k.some(k=>WEIGHTS[p.pos]&&WEIGHTS[p.pos][k]>=0.12))add(3,'fit');
+  if(p.injLast&&p.injLast.back&&daysBetween(p.injLast.back,d)<=7)add(-4,'inj');
+  const sk=staffSkill('asy');const sv=(sk-10)*0.35;add(sv,sv>0?'staff':'staffL');
+  const fm=(typeof fmOf==='function'?fmOf(p):60);const fv=clamp((fm-60)*0.08,-3,3);add(fv,fv>0?'form':'formL');
+  return {v,w};}
+function trWhyTxt(keys,good){return keys.filter(k=>TR_WHY[k]&&(TR_WHY[k][1]==='+')===good).slice(0,2).map(k=>TR_WHY[k][0]).join(', ');}

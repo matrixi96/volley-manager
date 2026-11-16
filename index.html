@@ -890,7 +890,7 @@ function mb(p,m,i){let b=(p.mor==null?0:(p.mor-60)/40*0.045)+formB(p)+cfB(p)+(p.
 function kc(p,m){let k=1.25-p.kcj/20*0.5;{const sd=m.sides&&m.sides.find(x=>x.pl.includes(p));if(sd&&sd.sh&&sd.sh.u>m.rallies&&sd.sh.e)k*=1-sd.sh.e;if(sd&&sd.tfE)k*=sd.tfE;}if(pressure(m))k*=1.15-p.opa/20*0.3;if(p.tr){if(hasT(p,'pro'))k*=0.9;if(hasT(p,'ner')&&pressure(m))k*=1.1;if(hasT(p,'ind'))k*=1.04;}if(MENT&&p.cf)k*=1-p.cf*0.08;return k;}
 function nerves(p,m){return pressure(m)&&p.opa<10?' Nerwy w końcówce!':'';}
 // ---- pewność siebie w meczu (cf: -3 roztrzęsiony … +2 w gazie) ----
-var MENT=1,AIM=1;
+var MENT=1,AIM=1;var REC_PERF=0.64,MID_Q1=0.025,QUICK_B=0.09,MIX_PC=0.045;// próg idealnego przyjęcia, udział środka po złej piłce, premia szybkiej krótkiej, nieporozumienia
 // BAL2: balans długoterminowy (inflacja umiejętności, dynastie, długi)
 var BAL2=1,BAL3=1;
 function cfK(p){const o=p.opa||10;let k=(1+(11-o)/20*(o>11?2.4:2.2))*(p.age>=28?0.8:p.age<=21?1.15:1);if(p.tr){if(hasT(p,'ner'))k*=1.45;if(hasT(p,'spo'))k*=0.45;if(hasT(p,'pro'))k*=0.3;if(hasT(p,'zde'))k*=0.6;}return clamp(k,0.05,3);}
@@ -971,7 +971,7 @@ function rally(m,ex){
       return {winner:S,type:'ace',act,seq,text:`${nm(server)} — AS SERWISOWY! Zagrywka między ${nm(seam[0].p)} i ${nm(seam[1].p)}, nikt nie przyjął.`};}}
   rec.st.rec++;
   if(v<0.17){server.st.ace++;rec.st.recErr++;cfHit(rec,m,1.2,'prz');cfUp(server,m,0.7);sS.lastSrv={k:'ace',rec:rec.id};const sh=v>=0.09;seq.push(Object.assign({k:'ace',id:rec.id,s:D,sh},zt===4?{z:'short'}:{}));return {winner:S,type:'ace',act,seq,text:sh?`${nm(server)} — AS SERWISOWY! ${nm(rec)} odbija piłkę poza boisko.`:`${nm(server)} — AS SERWISOWY! ${nm(rec)} nie zdążył do piłki.`};}
-  const q=v<0.42?1:v<0.74?2:3;
+  const q=v<0.42?1:v<REC_PERF?2:3;
   seq.push(Object.assign({k:'rec',id:rec.id,s:D},zt===4?{z:'short'}:{}));
   if(q>=2)rec.st.recPos++;if(q===3)rec.st.recPerf++;if(q===1)cfHit(rec,m,0.5,'prz');else cfUp(rec,m,q===3?0.3:0.05);
   log.push(`zagrywa ${nm(server)}${zt===4?' (skrót)':''}`,`przyjmuje ${nm(rec)} (${['','słabo','dobrze','idealnie'][q]})`);
@@ -1018,7 +1018,7 @@ function attackPhase(m,A,q,by,log,act,pd){
     if(pd<=reach){setter=sE.p;run=pd>1.2?1:0;}else if(pd<=reach+1.2&&R()<0.5){setter=sE.p;run=2;}else alt=1;}
   else alt=1;
   if(alt||run===2){// piłka sporna: kto bierze? komunikacja i zgranie
-    const pc=clamp(0.09-(kom-10)/10*0.05-(ch-0.5)*0.08,0.004,0.16);
+    const pc=clamp(MIX_PC-(kom-10)/10*0.025-(ch-0.5)*0.04,0.002,0.08);
     if(R()<pc){const cand=cA.filter(x=>x.p!==by);const a1=pickW(cand,x=>x.role==='L'||x.role==='R'?2:1);const a2=pickW(cand.filter(x=>x!==a1),()=>1)||a1;
       act.push(a1.p.id);seq.push({k:'mix',ids:[a1.p.id,a2.p.id],s:A,px,py});(m.mixN=m.mixN||[0,0])[A]++;
       if(R()<0.55){seq.push({k:'floor',s:A,mix:1});log.push(`nieporozumienie: ${nm(a1.p)} i ${nm(a2.p)} — piłka spada!`);return {done:true,winner:1-A,type:'mix'};}
@@ -1049,7 +1049,7 @@ function attackPhase(m,A,q,by,log,act,pd){
     if(x.p===late)return 0;
     if(x.role==='A')w=(fr?AW[0]:AW[1])*(p1keep?0.7:1);
     else if(x.role==='P')w=fr?1.0:0.3;
-    else if(x.role==='S')w=(fr?(q>=3?0.95:q===2?0.6:0.12):0)*SW;
+    else if(x.role==='S')w=(fr?(q>=3?0.95:q===2?0.6:MID_Q1):0)*SW;
     else if(x.role==='R')w=fr?0.05:0;
     if(!fr&&sq<0.45)w*=0.3;
     if(tac===1&&(x.role==='A'||x.role==='P'))w*=1.3;
@@ -1124,7 +1124,7 @@ function attackPhase(m,A,q,by,log,act,pd){
     d.st.dig++;cfUp(d,m,0.2);act.push(d.id);seq.push({k:'dig',id:d.id,s:1-A,tip:1});log.push(setTxt,`kiwka, podbija ${nm(d)}${cover?' (asekuracja za blokiem)':''}`);rec('tip','dig');
     return {done:false,next:1-A,q:R()<0.45+dc*0.35?2:1,by:d};
   }
-  const an=0.1+eff(a,'ata')/20*0.4+eff(a,'sil')/20*0.08+eff(a,'sko')/20*0.22+(a.h-197)/100+sq*0.42+bn(side)-(fr?0:0.06)+(quick&&sq>0.7?(0.05+(a.szy-12)/20*0.08)*(0.4+ch):0)+mb(a,m,A)+(!fr&&side.tactics.shield&&side.libero?-0.03:0)+(AT===1?0.035:AT===2?-0.015:0)-(swp?SWP:0)-(fb&&fb.rp&&a.id===fb.rec?0.03:0)+(behind?((typeof pairChem==='function'&&real?pairChem(setter,a):ch)-0.6)*0.18:0);
+  const an=0.1+eff(a,'ata')/20*0.4+eff(a,'sil')/20*0.08+eff(a,'sko')/20*0.22+(a.h-197)/100+sq*0.42+bn(side)-(fr?0:0.06)+(quick&&sq>0.7?(QUICK_B+(a.szy-12)/20*0.08)*(0.4+ch):0)+mb(a,m,A)+(!fr&&side.tactics.shield&&side.libero?-0.03:0)+(AT===1?0.035:AT===2?-0.015:0)-(swp?SWP:0)-(fb&&fb.rp&&a.id===fb.rec?0.03:0)+(behind?((typeof pairChem==='function'&&real?pairChem(setter,a):ch)-0.6)*0.18:0);
   const nb=solo?1.3:quick?(mCom?2.0:midLate?0.9:1.4):triple?3.0:sq<0.4?2.8:2.2;
   const bs=blockers.reduce((s,x)=>s+(eff(x.p,'blo')*0.55+eff(x.p,'czy')*0.2+eff(x.p,'sko')*0.15+eff(x.p,'szy')*0.1)/20+(x.p.h-197)/120,0)/blockers.length*(0.75+nb*0.12)+bn(opp);
   const errP=(0.075+(1-sq)*0.08+(0.75-eff(a,'ata')/20)*0.08)*kc(a,m)*(AT===1?1.15:AT===2?0.92:1)*(tool?1.1:1);
@@ -3259,7 +3259,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=116').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=117').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
@@ -4058,11 +4058,11 @@ function trainDay(d,md){const t=myTeam();if(!t)return;const trn=ensTrn();const i
   const rp={};const rk=regenK();// raport dnia dla każdego zawodnika
   for(const p of t.players){let fr=frOf(p)+6*rk;const fm0=fmOf(p);
     if(p.inj&&(!p.injUntil||p.injUntil>d)){p.fr=Math.round(clamp(fr+6*rk,0,100));rp[p.id]={i:1,fr:p.fr,f:[Math.round(fm0),Math.round(fm0)]};continue;}
-    const a0={},x0={};for(const k of ALL_KEYS){a0[k]=p[k];x0[k]=(p.xp&&p.xp[k])||0;}const scs=[];let inj=0,n=0;
+    const a0={},x0={};for(const k of ALL_KEYS){a0[k]=p[k];x0[k]=(p.xp&&p.xp[k])||0;}const scs=[];let inj=0,n=0;const why={};
     for(const u of units){const U=TR_UNITS[u];
       if(U.load>0)fr-=U.load*lm*(1.25-p.kon/20*0.5);else fr-=U.load*rk;
       if(U.k.length)devSession(p,U,intI,mods);
-      if(U.load>0){n++;const sc=(p.trB&&p.trB.until>=d?p.trB.v*10:0)+58+nz()*(hasT(p,'pro')?10:18)+(hasT(p,'pra')?7:0)-(hasT(p,'len')?8:0)+(hasT(p,'amb')?3:0)+(fr<45?-12:0);scs.push(sc);formAdd(p,(sc-fmOf(p))*0.035);}
+      if(U.load>0){n++;const f=trFactors(p,U,fr,d);const sc=(p.trB&&p.trB.until>=d?p.trB.v*10:0)+60+nz()*(hasT(p,'pro')?6:10)+f.v;for(const k of f.w)why[k]=(why[k]||0)+1;scs.push(sc);formAdd(p,(sc-fmOf(p))*0.035);}
       if(u==='int'){if(p.tcTm!==SAVE.team){p.tcTm=SAVE.team;p.tc=0;}p.tc=Math.min(60,(p.tc||0)+0.3);formAdd(p,hasT(p,'kap')||hasT(p,'ind')?1.5:0.5);if(p.unh>0&&R()<0.3)p.unh--;}
       if(u==='off')formAdd(p,(60-fmOf(p))*0.02);
       if(U.load>3&&R()<0.0004*U.load/6*TRAIN_INT[intI][2]*mods.injChance*(fr<40?2.2:fr<60?1.4:1)*(1.3-p.kon/20*0.6)){
@@ -4070,7 +4070,7 @@ function trainDay(d,md){const t=myTeam();if(!t)return;const trn=ensTrn();const i
     p.fr=Math.round(clamp(fr,0,100));
     const g={},up=[];for(const k of ALL_KEYS){const dv=(p[k]-a0[k])+(((p.xp&&p.xp[k])||0)-x0[k]);if(dv>0.0005)g[k]=Math.round(dv*1000)/1000;if(p[k]>a0[k])up.push(k);}
     const r={fr:p.fr,f:[Math.round(fm0),Math.round(fmOf(p))],n};if(scs.length)r.s=Math.round(clamp((scs.reduce((a,b)=>a+b,0)/scs.length+7)/10,1,10)*10)/10;
-    if(Object.keys(g).length)r.g=g;if(up.length)r.up=up;if(inj)r.inj=inj;rp[p.id]=r;}
+    if(Object.keys(g).length)r.g=g;if(up.length)r.up=up;if(inj)r.inj=inj;if(Object.keys(why).length)r.w=Object.keys(why);rp[p.id]=r;}
   if(units.includes('tak')){trn.tak.push(d);trn.tak=trn.tak.slice(-8);}
   trn.log.unshift({d,u:units,m:isM?1:0});trn.log=trn.log.slice(0,14);
   trn.rep=trn.rep||[];trn.rep.unshift({d,u:units,m:isM?1:0,p:rp});trn.rep=trn.rep.slice(0,31);
@@ -4129,10 +4129,10 @@ function todayPlanTxt(d){if(!trainingActive(d))return null;const md=matchDays();
 // ================= RAPORTY Z TRENINGÓW (dzień / tydzień / miesiąc) =================
 const REP_P=[['day','Dzień'],['week','Tydzień'],['month','Miesiąc']];
 function repDays(){const r=(SAVE.trn&&SAVE.trn.rep)||[];const P=ui.trRepP||'week';if(P==='day')return r.slice(0,1);const lim=addDays(today(),P==='week'?-7:-30);return r.filter(x=>x.d>lim);}
-function repAgg(days,pid){let n=0,s=0,sn=0,inj=0,miss=0,f0=null,f1=null,fr=null,frS=0,frN=0;const g={},up={};
+function repAgg(days,pid){let n=0,s=0,sn=0,inj=0,miss=0,f0=null,f1=null,fr=null,frS=0,frN=0;const g={},up={},why={};
   for(const day of days.slice().reverse()){const r=day.p&&day.p[pid];if(!r)continue;if(f0==null)f0=r.f[0];f1=r.f[1];fr=r.fr;frS+=r.fr;frN++;
-    if(r.i){miss++;continue;}n+=r.n||0;if(r.s!=null){s+=r.s;sn++;}for(const k in r.g||{})g[k]=(g[k]||0)+r.g[k];for(const k of r.up||[])up[k]=(up[k]||0)+1;if(r.inj)inj=r.inj;}
-  return {n,avg:sn?s/sn:null,g,up,f0,f1,fr,frAvg:frN?frS/frN:null,inj,miss,tot:Object.values(g).reduce((a,b)=>a+b,0),seen:frN};}
+    if(r.i){miss++;continue;}n+=r.n||0;if(r.s!=null){s+=r.s;sn++;}for(const k of r.w||[])why[k]=(why[k]||0)+1;for(const k in r.g||{})g[k]=(g[k]||0)+r.g[k];for(const k of r.up||[])up[k]=(up[k]||0)+1;if(r.inj)inj=r.inj;}
+  return {n,avg:sn?s/sn:null,g,up,f0,f1,fr,frAvg:frN?frS/frN:null,inj,miss,tot:Object.values(g).reduce((a,b)=>a+b,0),seen:frN,why:Object.keys(why).sort((a,b)=>why[b]-why[a])};}
 const fx1=v=>v==null?'–':v.toFixed(1).replace('.',',');
 function scCls(v){return v==null?'':v>=7?'good':v<=5.5?'bad':'';}
 function fmDelta(a){if(a.f0==null)return '–';const d=a.f1-a.f0;return `<span class="${d>1?'good':d<-1?'bad':'mut'}">${d>1?'▲':d<-1?'▼':'►'} ${d>0?'+':''}${d}</span> <small class="mut">(${formLv(a.f1)[1]})</small>`;}
@@ -4163,6 +4163,21 @@ function trainReport(){const days=repDays();const t=myTeam();const P=ui.trRepP||
    <div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th title="Liczba jednostek treningowych">Jedn.</th><th title="Średnia ocena za trening (1–10)">Ocena</th><th title="Suma postępu w atrybutach (1 = jeden punkt atrybutu)">Postęp</th><th class="l">Podniesione</th><th class="l">Forma</th><th>Świeżość</th><th class="l">Uwagi</th></tr></thead><tbody>
    ${ag.map(({p,a})=>`<tr class="clickrow" onclick="ui.trRepPl='${p.id}';render()"><td class="l">${esc(p.first[0])}. <b>${esc(p.last)}</b> <small class="mut">${pTag(p.pos)}</small></td><td>${a.n}</td><td class="${scCls(a.avg)}"><b>${fx1(a.avg)}</b></td><td>+${a.tot.toFixed(2).replace('.',',')}</td><td class="l">${upChips(a.up)}</td><td class="l">${fmDelta(a)}</td><td><span style="color:${frCol(a.fr??100)}">${a.fr??'–'}%</span></td><td class="l small">${a.inj?`<span class="bad">🚑 uraz (${a.inj} dni)</span>`:a.miss?`<span class="mut">kontuzja: ${a.miss} dni bez treningu</span>`:''}</td></tr>`).join('')}</tbody></table></div>
    <p class="small mut">Kliknij zawodnika, żeby zobaczyć szczegółowy raport. Ocena za trening zależy od charakteru (pracowity, leniwy, ambitny, profesjonalista) i zmęczenia.</p></div>`;}
+
+// ocena treningu z konkretnych przyczyn (losowość mniejsza niż wcześniej); zwraca punkty i powody, które zauważy sztab
+const TR_WHY={prac:['pracowity','+'],len:['leniwy','-'],amb:['ambitny','+'],oby:['wzór na treningu','+'],wer:['pełen energii','+'],mor:['świetne morale','+'],morL:['słabe morale','-'],unh:['niezadowolony ze swojej roli','-'],
+  fr:['zmęczony','-'],fit:['ćwiczenia pod jego pozycję','+'],inj:['wraca po kontuzji — trenuje ostrożnie','-'],staff:['dobra praca sztabu','+'],staffL:['słaby sztab','-'],form:['w gazie po meczach','+'],formL:['bez formy','-']};
+function trFactors(p,U,fr,d){let v=0;const w=[];const add=(x,k)=>{v+=x;if(Math.abs(x)>=3)w.push(k);};
+  if(hasT(p,'pra'))add(7,'prac');if(hasT(p,'len'))add(-8,'len');if(hasT(p,'amb'))add(3,'amb');if(hasT(p,'oby'))add(3,'oby');if(hasT(p,'wer')&&fr>=55)add(3,'wer');
+  const mor=p.mor==null?60:p.mor;const mv=clamp((mor-60)*0.15,-6,5);add(mv,mv>0?'mor':'morL');
+  if((p.unh||0)>=3)add(hasT(p,'loj')?-3:-6,'unh');
+  if(fr<70)add(-(70-fr)*0.22,'fr');
+  if(U.k.length&&U.k.some(k=>WEIGHTS[p.pos]&&WEIGHTS[p.pos][k]>=0.12))add(3,'fit');
+  if(p.injLast&&p.injLast.back&&daysBetween(p.injLast.back,d)<=7)add(-4,'inj');
+  const sk=staffSkill('asy');const sv=(sk-10)*0.35;add(sv,sv>0?'staff':'staffL');
+  const fm=(typeof fmOf==='function'?fmOf(p):60);const fv=clamp((fm-60)*0.08,-3,3);add(fv,fv>0?'form':'formL');
+  return {v,w};}
+function trWhyTxt(keys,good){return keys.filter(k=>TR_WHY[k]&&(TR_WHY[k][1]==='+')===good).slice(0,2).map(k=>TR_WHY[k][0]).join(', ');}
 // ================= POCZTA (skrzynka wiadomości) =================
 // SAVE.mail: [{id,d,cat,from,t,s,b:{type,...},r:0/1,st:0/1,ar:0/1,act:0/1}]
 const MAIL_CAT={mecz:['Mecze','#e8b73a'],trening:['Trening','#38bdf8'],skaut:['Skauting','#a78bfa'],trans:['Transfery','#f97316'],med:['Medyczne','#ef6b5b'],
@@ -4202,15 +4217,15 @@ function psyLines(m){const ev=m.cfEv||[],L=[];const W={prz:'w przyjęciu',zag:'n
   const ot=[...new Set(ev.filter(e=>e.k==='tilt'&&e.i===1).map(e=>e.n))];if(ot.length)L.push(`Rywal: załamali się ${ot.join(', ')}.`);
   if(ev.some(e=>e.k==='calm'&&e.i===1))L.push('Rywal brał przerwę, żeby uspokoić zespół.');
   return L.slice(0,7);}
-function trSumm(days){const t=myTeam();const ag=t.players.map(p=>{const a=repAgg(days,p.id);return [p.id,p.last,a.n,a.avg==null?null:Math.round(a.avg*10)/10,Math.round(a.tot*100)/100,a.f0==null?0:a.f1-a.f0,a.fr,a.inj||0,Object.keys(a.up)];}).filter(x=>x[2]||x[7]);
+function trSumm(days){const t=myTeam();const ag=t.players.map(p=>{const a=repAgg(days,p.id);return [p.id,p.last,a.n,a.avg==null?null:Math.round(a.avg*10)/10,Math.round(a.tot*100)/100,a.f0==null?0:a.f1-a.f0,a.fr,a.inj||0,Object.keys(a.up),a.why||[]];}).filter(x=>x[2]||x[7]);
   const cnt={};for(const d of days)for(const u of d.u)cnt[u]=(cnt[u]||0)+1;return {ag,cnt,from:days.length?days[days.length-1].d:null,to:days.length?days[0].d:null,n:days.length};}
 function asyName(){const a=SAVE.staff&&SAVE.staff.asy;return a?`${a.first[0]}. ${a.last} (asystent)`:'Sztab szkoleniowy';}
 function mailTraining(kind,days){if(!days.length||kind==='D')return;const o=mailOpts();if(kind==='D'&&!o.trD||kind==='W'&&!o.trW||kind==='M'&&!o.trM)return;
   const sm=trSumm(days);const rated=sm.ag.filter(x=>x[3]!=null).sort((a,b)=>b[3]-a[3]);if(!rated.length&&kind==='D')return;
   const best=rated[0],worst=rated[rated.length-1];const tired=sm.ag.filter(x=>x[6]!=null&&x[6]<55).map(x=>x[1]);const ups=sm.ag.filter(x=>x[8].length);
   const ttl=kind==='D'?`Trening ${fmtShort(days[0].d)}: ${days[0].u.map(u=>TR_UNITS[u].n.toLowerCase()).join(', ')||'dzień wolny'}`:kind==='W'?`Raport tygodniowy z treningów (${fmtShort(sm.from)} – ${fmtShort(sm.to)})`:`Raport miesięczny z treningów: ${MON_NOM[+sm.to.slice(5,7)-1]||''}`;
-  const top=rated.filter(x=>x[3]>=7).slice(0,3),low=rated.filter(x=>x[3]<6.5).slice(-3).reverse();
-  const sn=`${top.length?`Wyróżnili się: ${top.map(x=>`${x[1]} (${fx1(x[3])})`).join(', ')}.`:'Nikt nie przekroczył oceny 7,0.'}${low.length?` Poniżej oczekiwań: ${low.map(x=>`${x[1]} (${fx1(x[3])})`).join(', ')}.`:''}${ups.length?` Podniesione atrybuty: ${ups.length} zawodn.`:''}${tired.length?` Zmęczeni: ${tired.length}.`:''}`;
+  const {top,low}=trStand(rated);
+  const sn=`${top.length?`Wyróżnili się: ${top.map(x=>trWho(x,true)).join(', ')}.`:'Nikt wyraźnie się nie wyróżnił.'}${low.length?` Poniżej oczekiwań: ${low.map(x=>trWho(x,false)).join(', ')}.`:''}${ups.length?` Podniesione atrybuty: ${ups.length} zawodn.`:''}${tired.length?` Zmęczeni: ${tired.length}.`:''}`;
   sendMail({cat:'trening',from:asyName(),t:ttl,s:sn,b:{type:'train',k:kind,sm},lab:kind==='D'?'Raport dzienny':kind==='W'?'Raport tygodniowy':'Raport miesięczny'});}
 // codziennie: raporty tygodniowe (poniedziałek) i miesięczne (1. dnia)
 function mailDaily(d){const rep=(SAVE.trn&&SAVE.trn.rep)||[];try{fitMail(d);}catch(e){console.error(e);}
@@ -4317,10 +4332,10 @@ function matchMailHtml(b){const T=i=>TEAMS[i];const h=b.home?b.me:b.op,a=b.home?
 function trainMailHtml(b){const sm=b.sm;const ag=sm.ag.slice().sort((x,y)=>(y[3]||0)-(x[3]||0));
   return `<p class="mtext">${b.k==='D'?'Podsumowanie dzisiejszych zajęć.':`Okres: ${fmtShort(sm.from)} – ${fmtShort(sm.to)} (${sm.n} dni treningowych).`}</p>
    <div class="trsum small">${TR_ORDER.filter(u=>sm.cnt[u]).map(u=>`<span class="trt tu-${u}">${TR_UNITS[u].ic} ${TR_UNITS[u].n}${b.k==='D'?'':' × '+sm.cnt[u]}</span>`).join('')}</div>
-   ${(()=>{const rt=ag.filter(x=>x[3]!=null);const top=rt.filter(x=>x[3]>=7).slice(0,3),low=rt.filter(x=>x[3]<6.5).slice(-3).reverse();const pp=x=>{const P=PLAYERS[x[0]];return P?P.p:null;};
-     const card=(x,good)=>{const p=pp(x);return `<div class="trhl ${good?'g':'b'}">${p?pFace(p,40):''}<div><button class="link pn" onclick="openPop('${x[0]}')"><b>${esc(x[1])}</b></button> ${p?pTag(p.pos):''}<div class="small mut">${x[2]} jedn. · postęp +${(x[4]||0).toFixed(2).replace('.',',')}${x[8].length?' · '+x[8].map(k=>attrSh(k)+' +1').join(', '):''}</div></div><b class="${scCls(x[3])} trhs">${fx1(x[3])}</b>${talkBtn(x[0],1)}</div>`;};
-     return `<div class="trhlw"><div><h3>Wyróżniający się <small class="mut">(ocena 7,0 i wyżej)</small></h3>${top.map(x=>card(x,1)).join('')||'<p class="small mut">Nikt nie przekroczył oceny 7,0.</p>'}</div>
-      <div><h3>Poniżej oczekiwań <small class="mut">(ocena poniżej 6,5)</small></h3>${low.map(x=>card(x,0)).join('')||'<p class="small mut">Nikt nie spadł poniżej 6,5.</p>'}</div></div><h3 style="margin-top:14px">Wszyscy zawodnicy</h3>`;})()}
+   ${(()=>{const rt=ag.filter(x=>x[3]!=null).sort((a,b)=>b[3]-a[3]);const {top,low}=trStand(rt);const pp=x=>{const P=PLAYERS[x[0]];return P?P.p:null;};
+     const card=(x,good)=>{const p=pp(x);return `<div class="trhl ${good?'g':'b'}">${p?pFace(p,40):''}<div><button class="link pn" onclick="openPop('${x[0]}')"><b>${esc(x[1])}</b></button> ${p?pTag(p.pos):''}<div class="small mut">${x[2]} jedn. · postęp +${(x[4]||0).toFixed(2).replace('.',',')}${x[8].length?' · '+x[8].map(k=>attrSh(k)+' +1').join(', '):''}</div>${trWhyTxt(x[9]||[],good)?`<div class="small ${good?'good':'bad'}">${trWhyTxt(x[9]||[],good)}</div>`:''}</div><b class="${scCls(x[3])} trhs">${fx1(x[3])}</b>${talkBtn(x[0],1)}</div>`;};
+     return `<div class="trhlw"><div><h3>Wyróżniający się <small class="mut">(wyraźnie powyżej średniej zespołu)</small></h3>${top.map(x=>card(x,1)).join('')||'<p class="small mut">Nikt wyraźnie się nie wyróżnił.</p>'}</div>
+      <div><h3>Poniżej oczekiwań <small class="mut">(wyraźnie poniżej średniej zespołu)</small></h3>${low.map(x=>card(x,0)).join('')||'<p class="small mut">Nikt wyraźnie nie odstawał.</p>'}</div></div><h3 style="margin-top:14px">Wszyscy zawodnicy</h3>`;})()}
    <div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th>Jedn.</th><th>Ocena</th><th>Postęp</th><th class="l">Podniesione</th><th>Forma</th><th>Świeżość</th></tr></thead><tbody>
    ${ag.map(x=>`<tr><td class="l"><b>${esc(x[1])}</b>${x[7]?' <span class="bad">🚑</span>':''}</td><td>${x[2]}</td><td class="${scCls(x[3])}"><b>${fx1(x[3])}</b></td><td>+${(x[4]||0).toFixed(2).replace('.',',')}</td><td class="l">${x[8].map(k=>`<span class="trt tu-up">${attrSh(k)} +1</span>`).join('')||'<span class="mut">—</span>'}</td><td class="${x[5]>1?'good':x[5]<-1?'bad':'mut'}">${x[5]>0?'+':''}${x[5]}</td><td><span style="color:${frCol(x[6]==null?100:x[6])}">${x[6]==null?'–':x[6]+'%'}</span></td></tr>`).join('')}</tbody></table></div>
    <div class="mact"><button class="btn" onclick="goTrainRep('${b.k}')">Pełny raport</button><button class="ghost" onclick="go('trening')">Plan treningowy</button></div>`;}
@@ -4328,6 +4343,11 @@ function finMailHtml(b){return `<div class="tw"><table class="cmp"><tbody>${b.ro
 function offerMailHtml(m){const b=m.b;const o=(SAVE.inbox||[]).find(x=>x.pid===b.pid&&x.tm===b.tm);const P=PLAYERS[b.pid];if(!P)return '<p class="mut">Zawodnik nie jest już dostępny.</p>';const p=P.p;
   return `<p class="mtext">${esc(TEAMS[b.tm].name)} chce kupić <b>${esc(p.first)} ${esc(p.last)}</b> (${POS_NAMES[p.pos]}, ${p.age} l., ocena ${rating(p)}) i oferuje <b>${fmt(b.fee)}</b>.</p>
    ${o&&p.tm===SAVE.team?`<div class="mact">${windowOpen()?`<button class="btn" onclick="mailDone('${m.id}');acceptBuy('${p.id}',${b.tm},${b.fee})">Akceptuj</button>`:''}<button class="ghost" onclick="mailDone('${m.id}');rejectInbox(SAVE.inbox.indexOf(SAVE.inbox.find(x=>x.pid==='${b.pid}'&&x.tm===${b.tm})))">Odrzuć</button><button class="ghost" onclick="openCard('${p.id}')">Karta zawodnika</button></div>`:'<p class="mut small">Oferta jest już nieaktualna.</p>'}`;}
+
+// kto odstaje od średniej zespołu w tym okresie (bez stałej liczby osób) i dlaczego
+function trStand(rated){if(!rated.length)return {top:[],low:[]};const avg=rated.reduce((s,x)=>s+x[3],0)/rated.length;
+  const top=rated.filter(x=>x[3]>=avg+0.5).slice(0,6),low=rated.filter(x=>x[3]<=avg-0.5).reverse().slice(0,6);return {top,low,avg};}
+function trWho(x,good){const w=typeof trWhyTxt==='function'?trWhyTxt(x[9]||[],good):'';return `${x[1]} ${fx1(x[3])}${w?` (${w})`:''}`;}
 // ================= ROZMOWY Z ZAWODNIKAMI (POCHWAŁA / KRYTYKA / MOTYWACJA) =================
 const TALK_K=[['praise','Pochwal za trening','Doceń jego pracę na treningach'],['crit','Skrytykuj trening','Powiedz, że oczekujesz więcej'],['motiv','Zmotywuj przed meczem','„Liczę na Ciebie w najbliższym meczu”']];
 const TALK_T=[['Łagodny',0.7],['Normalny',1],['Stanowczy',1.4]];
