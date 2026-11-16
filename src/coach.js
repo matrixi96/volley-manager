@@ -75,7 +75,7 @@ function seasonEvaluation(){const s=S(),c=coach();if(!c||!s.final)return;const p
   b.conf=clamp(b.conf+(met?15+Math.min(15,diff*4):-10*Math.min(4,1-diff)),0,100);
   let dr=diff*1.5+(place===1?8:place<=3?3:0)+(met?3:-3);if(dr>0)dr*=0.85+cA('aut')/66;c.rep=Math.round(clamp(c.rep+dr,0,100));
   c.seasons++;c.hist.push({n:s.n,team:SAVE.team,place,goal:g,met,league:s.seed.indexOf(SAVE.team)+1});
-  if(place===1)c.trophies.push(`🏆 Mistrzostwo Polski ${sLabel(s.n)} (${TEAMS[SAVE.team].name})`);
+  if(place===1)c.trophies.push(`🏆 ${LG_LV[myLg()]===0?'Mistrzostwo '+COUNTRIES[tmCountry(SAVE.team)].gen:'Mistrzostwo: '+LG_N[myLg()]} ${sLabel(s.n)} (${TEAMS[SAVE.team].name})`);
   if(place===2)c.trophies.push(`🥈 Wicemistrzostwo ${sLabel(s.n)} (${TEAMS[SAVE.team].name})`);
   if(place===3)c.trophies.push(`🥉 Brąz ${sLabel(s.n)} (${TEAMS[SAVE.team].name})`);
   if(s.jchamp===SAVE.team)c.trophies.push(`🏆 Mistrzostwo juniorów ${sLabel(s.n)} (${TEAMS[SAVE.team].name})`);

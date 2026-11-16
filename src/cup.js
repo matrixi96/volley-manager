@@ -40,7 +40,7 @@ function cupRoundDone(c,C){const rd=C.rounds[C.r];const mine=c===myCountry();
   cupNextRound(C);
   if(C.champ!=null){const ch=C.champ;SAVE.ai[ch].rep=Math.min(100,SAVE.ai[ch].rep+3);
     if(mine||ch===SAVE.team)news(`🏆 ${TEAMS[ch].name} zdobywa ${cupName(c)}!${ch===SAVE.team?' To nasze trofeum!':''}`);
-    if(ch===SAVE.team){money(500000,'Nagrody');finLog(`${cupName(c)}: zwycięstwo`,500000);const co=coach();if(co){co.trophies=co.trophies||[];co.trophies.push({n:S().n,t:cupName(c),team:SAVE.team});}if(SAVE.board)SAVE.board.conf=Math.min(100,SAVE.board.conf+10);try{achEv('cup');}catch(e){}}}
+    if(ch===SAVE.team){money(500000,'Nagrody');finLog(`${cupName(c)}: zwycięstwo`,500000);const co=coach();if(co){co.trophies=co.trophies||[];co.trophies.push(`🏆 ${cupName(c)} ${sLabel(S().n)} (${TEAMS[SAVE.team].name})`);}if(SAVE.board)SAVE.board.conf=Math.min(100,SAVE.board.conf+10);try{achEv('cup');}catch(e){}}}
   else if(mine){const nr=C.rounds[C.r];const my=nr.ties.find(t=>t.h===SAVE.team||t.a===SAVE.team);if(my){const op=my.h===SAVE.team?my.a:my.h;news(`🏆 ${cupName(c)} — losowanie (${cupRoundName(0,nr.left)}): zagramy z ${TEAMS[op].name}${my.neutral?' na neutralnym terenie':my.h===SAVE.team?' u siebie':' na wyjeździe'} (${fmtDMY(C.dates[C.r])}).`);}}}
 function cupMyResult(res){const x=myCupTie();if(!x)return;x.t.res=res;res.d=x.d;const C=x.C;const c=myCountry();if(C.rounds[C.r].ties.every(t=>t.res))cupRoundDone(c,C);else cupTick(x.d);}
 function cupFinishAll(){const s=S();if(!s||!s.cups)return;for(const c in s.cups){const C=s.cups[c];let g=10;while(C.champ==null&&g-->0){for(const t of C.rounds[C.r].ties)if(!t.res)t.res=cupSim(t,C.rounds[C.r].left);cupRoundDone(c,C);}}}
