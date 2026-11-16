@@ -74,3 +74,24 @@ function spBudDelta(cat,m,mo){return (m*spMonthsLeft(mo)-spExp(cat)*spMonthsLeft
 function spBudAdd(m,mo,cat){const b=BUD();if(!b)return;const add=spBudDelta(cat,m,mo);const sp=budSplit();b.pool+=round5k(add);b.wg+=round5k(add*sp.wg);b.op+=round5k(add*sp.op);b.tr=Math.max(0,b.tr+round5k(add*sp.tr));}
 function spBudTxt(m,mo,cat){const sp=budSplit();const add=spBudDelta(cat,m,mo);const sg=v=>(v>=0?'+':'−')+fmt(Math.abs(round5k(v)));
   return `<span class="${add>=0?'good':'bad'}">${sg(add)}</span> <span class="mut">względem planu</span><br><span class="mut">transfery ${sg(add*sp.tr)} · pensje ${sg(add*sp.wg)}</span>`;}
+// ===== Kluby komputera: te same zasady — przychody, budżety (transferowy, płacowy, operacyjny), dyrektor finansowy, social media =====
+const AI_REV_LG=[5200000,2400000,1150000];
+function aiStaffSk(ti,k){const a=SAVE.ai[ti];if(!a.st)a.st={};if(a.st[k]==null)a.st[k]=R()<0.25+a.rep/200?Math.round(clamp(aiStaff(ti)+(R()*6-3),3,18)):0;return a.st[k];}
+function aiFol(ti){const a=SAVE.ai[ti];if(a.fol==null){const lm=[1,0.4,0.18][lgOf(ti)]||0.2;a.fol=Math.round((3000+a.rep*a.rep*6)*lm*(0.85+R()*0.3));a.sty=['pro','luz','kib'][Math.floor(R()*3)];}return a.fol;}
+function folRatio(ti){return ti===SAVE.team&&SAVE.soc?socRatio():aiFol(ti)/(SOC_LG_REF[lgOf(ti)]||5000);}
+function aiRev(ti){const a=SAVE.ai[ti];const inf=infraOf(ti);const r=folRatio(ti);
+  return (AI_REV_LG[lgOf(ti)]||AI_REV_LG[2])*(0.6+a.rep/100*0.8)*(1+0.05*((inf.hala||1)-1)+0.04*((inf.sied||1)-1))*(1+clamp((r-1)*0.06,-0.04,0.08));}
+function aiLgAvgRev(lg){const t=TEAMS.filter(x=>lgOf(x.idx)===lg&&x.idx!==SAVE.team);return t.length?t.reduce((s,x)=>s+aiRev(x.idx),0)/t.length:AI_REV_LG[lg];}
+// budżety na sezon: płacowy jako limit pensji, transferowy jako pula na zakupy, operacyjny na obiekty
+function aiBudgets(){const avg={};for(const t of TEAMS){const ti=t.idx;if(ti===SAVE.team)continue;const a=SAVE.ai[ti];const lg=lgOf(ti);if(avg[lg]==null)avg[lg]=aiLgAvgRev(lg);
+  const fs=aiStaffSk(ti,'fin');const acc=(fs?0.9+fs/20*0.1:0.85)/0.93;const rel=clamp(aiRev(ti)/avg[lg],0.75,1.2);
+  a.wg=round5k((WAGE_CAP[lg]||WAGE_CAP[2])*rel*acc);
+  a.bud=round5k(a.bud*0.35+(150000+a.rep*12000+R()*250000)*rel*acc);
+  a.op=round5k(aiRev(ti)*0.18*acc);}}
+// co miesiąc: obserwujący klubów komputera rosną z renomą, specjalistą i stylem; czasem kryzys
+function aiSocMonthly(){for(const t of TEAMS){const ti=t.idx;if(ti===SAVE.team)continue;const a=SAVE.ai[ti];aiFol(ti);const sk=aiStaffSk(ti,'soc');const st=SOC_STY[a.sty]||SOC_STY.pro;
+  let g=0.004*(a.rep/50)+(R()-0.45)*0.012;g=g>0?g*st[2]*(sk?0.6+sk/20*0.8:0.35):g*(sk?1-sk/20*0.4:1);
+  if(R()<0.02*st[1]*(sk?1-sk/25:1))g-=0.02+R()*0.03;// kryzys
+  a.fol=Math.max(200,Math.round(a.fol*(1+g)));if(folRatio(ti)>1.4&&R()<0.3)a.rep=Math.min(100,a.rep+1);}}
+function aiSocResult(ti,won,sweep){if(ti===SAVE.team||!SAVE.ai[ti])return;const a=SAVE.ai[ti];aiFol(ti);const sk=aiStaffSk(ti,'soc');const st=SOC_STY[a.sty]||SOC_STY.pro;
+  let g=won?0.008+(sweep?0.004:0):-(0.005+(sweep?0.004:0));g=g>0?g*st[2]*(sk?0.6+sk/20*0.8:0.35):g*(sk?1-sk/20*0.4:1);a.fol=Math.max(200,Math.round(a.fol*(1+g)));}

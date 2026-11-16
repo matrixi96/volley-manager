@@ -1712,7 +1712,8 @@ function rankOf(i){return leagueTable().findIndex(x=>x.i===i)+1;}
 
 // ---- uczestnicy / symulacja ----
 function participant(i,home){const t=TEAMS[i];const mine=i===SAVE.team;const lu=mine?healthyLineup(t,myLineup()).lu:autoLineup(t);return {team:t,lineup:lu,tactics:mine?Object.assign({},myTac()):aiStyle(t,lu),home,x:(()=>{const md=clubMods(i);const o={hb:md.hb,fat:md.fat,sb:md.sb};if(mine){o.cap=SAVE.captain;const cx=coachMatchX();o.sb+=(cx.sb||0)+(typeof tacPrep==='function'?tacPrep()*0.006:0)+(typeof oppPrepBonus==='function'?oppPrepBonus():0);o.momMul=cx.momMul;o.prB=cx.prB;o.trB=cx.trB;}return o;})()};}
-function resultOf(m,h,a){const flip=m.sides[0].team.idx!==h;return {h,a,sets:m.sets.map(x=>flip?[x[1],x[0]]:x.slice()),sw:flip?[m.setsWon[1],m.setsWon[0]]:m.setsWon.slice()};}
+function resultOf(m,h,a){const flip=m.sides[0].team.idx!==h;const r={h,a,sets:m.sets.map(x=>flip?[x[1],x[0]]:x.slice()),sw:flip?[m.setsWon[1],m.setsWon[0]]:m.setsWon.slice()};
+  try{if(typeof aiSocResult==='function'){const hw=r.sw[0]>r.sw[1],sw=Math.min(r.sw[0],r.sw[1])===0;aiSocResult(h,hw,sw);aiSocResult(a,!hw,sw);}}catch(e){}return r;}
 function addTogether(m){try{formAfterMatch(m);}catch(e){console.error(e);}try{if(typeof pairsAfterMatch==='function')pairsAfterMatch(m);if(typeof famAfterMatch==='function')famAfterMatch(m);}catch(e){}for(const sd of m.sides)for(const p of sd.pl){const x=p.st;if(x.srv+x.rec+x.att+x.dig+x.blk===0&&!sd.slots.some(z=>z.p.id===p.id)&&sd.libero!==p)continue;
   const w=PLAYERS[p.id]&&PLAYERS[p.id].p;if(!w)continue;if(w.tcTm!==sd.team.idx){w.tcTm=sd.team.idx;w.tc=0;}w.tc=(w.tc||0)+1;}}
 function recordStats(m){addTogether(m);const s=S();const ps=s.ps;const ts=s.ts||(s.ts={});
@@ -2226,7 +2227,7 @@ function aiOffseason(){
 // limit płac klubu (zależny od ligi) – bogaty klub nie skupuje wszystkich gwiazd
 const WAGE_CAP=[5000000,1950000,850000];
 function teamWages(ti){return TEAMS[ti].players.reduce((a,p)=>a+(p.wage||0),0);}
-function wageCap(ti){return WAGE_CAP[lgOf(ti)]||WAGE_CAP[2];}
+function wageCap(ti){const a=SAVE.ai&&SAVE.ai[ti];if(a&&a.wg&&a.wgLg===lgOf(ti))return a.wg;return WAGE_CAP[lgOf(ti)]||WAGE_CAP[2];}
 // gwiazdy komputera odchodzą do lig zagranicznych (klub dostaje odstępne)
 function starsAbroad(){const n=S().n;const out=[];for(const p of W().players){if(p.tm<0||p.tm===SAVE.team||p.jr)continue;const r=rating(p);if(r<82||p.age>31)continue;
     const ch=0.12+(r-82)*0.03;if(R()<ch){const ti=p.tm;const fee=round5k(pValue(p)*0.8);SAVE.ai[ti].bud+=fee;out.push(p.id);news(`✈️ ${p.first} ${p.last} (${TEAMS[ti].name}) przechodzi do ligi zagranicznej za ${fmt(fee)}.`);}}
@@ -2258,7 +2259,8 @@ function offseason(){
   if(BAL3){faMarket();}else{let fa=W().players.filter(p=>p.tm<0).sort((a,b)=>rating(b)-rating(a));
   if(fa.length>30){const drop=new Set(fa.slice(30).map(p=>p.id));W().players=W().players.filter(p=>!drop.has(p.id));}
   while(W().players.filter(p=>p.tm<0).length<20){const p=genPlayer(randPos(),10+R()*3,20+Math.floor(R()*12));p.tm=-1;initPlayerMeta(p,n,true);W().players.push(p);}}
-  for(const a of SAVE.ai)a.bud=round5k(BAL2?a.bud*0.35+150000+a.rep*12000+R()*250000:a.bud*0.5+200000+a.rep*15000+R()*300000);
+  if(typeof aiBudgets==='function'){aiBudgets();for(const t of TEAMS)if(SAVE.ai[t.idx])SAVE.ai[t.idx].wgLg=lgOf(t.idx);}
+  else for(const a of SAVE.ai)a.bud=round5k(BAL2?a.bud*0.35+150000+a.rep*12000+R()*250000:a.bud*0.5+200000+a.rep*15000+R()*300000);
   if(BAL2)starsAbroad();
   for(const p of W().players){p.base=snap(p);}
   // oferty za zawodników użytkownika
@@ -2397,7 +2399,7 @@ function monthly(d){if(!SAVE.fin||SAVE.team==null)return;const m=+d.slice(5,7);c
   money(-pay,'Pensje');money(spm,'Sponsor');money(-stp,'Sztab');money(-mnt,'Utrzymanie');money(shp,'Sklep');const f=SAVE.fin;f.log.unshift({d,t:`${MON_NOM[m-1]}: pensje zawodników (−${fmt(pay)}) i sztabu (−${fmt(stp)}), utrzymanie (−${fmt(mnt)}), sponsorzy (+${fmt(spm)}), sklep (+${fmt(shp)})`,a:spm+shp-pay-stp-mnt});f.log=f.log.slice(0,80);
   try{debtCheck(d);}catch(e){console.error(e);}
   try{if(typeof budMonthly==='function')budMonthly();}catch(e){console.error(e);}
-  try{if(typeof socMonthly==='function')socMonthly();}catch(e){console.error(e);}
+  try{if(typeof socMonthly==='function')socMonthly();if(typeof aiSocMonthly==='function')aiSocMonthly();}catch(e){console.error(e);}
   if(typeof sendMail==='function'){const pm=MON_NOM[(m+10)%12];const rows=[['Sponsorzy',spm],['Sklep kibica',shp],['Pensje zawodników',-pay],['Pensje sztabu',-stp],['Utrzymanie obiektów',-mnt]];sendMail({cat:'fin',from:'Księgowość klubu',t:`Rozliczenie miesiąca: ${MON_NOM[m-1]}`,s:`Bilans: ${fmt(spm+shp-pay-stp-mnt)} · saldo ${fmt(f.bal)}`,b:{type:'fin',rows,tot:spm+shp-pay-stp-mnt,bal:f.bal},lab:'Miesięczne zestawienie'});}}
 // zarząd reaguje na dług: poniżej −1 mln zł przymusowa sprzedaż najdroższego zawodnika (raz w miesiącu)
 function debtCheck(d){if(SAVE.fin&&SAVE.fin.bal>-1000000){SAVE.debtNote=null;if(SAVE.fin.bal>-500000)SAVE.trBan=false;}if(!BAL2||!SAVE.fin||SAVE.fin.bal>-500000)return;
@@ -2502,7 +2504,7 @@ function startBuild(k){const f=INFRA.find(x=>x.k===k);const L=myInfra()[k];const
   const b={k,to:L+1,start:today(),until:addDays(today(),upgradeDays(f,L))};bs.push(b);
   news(`🏗️ Rusza ${L===0?'budowa':'rozbudowa'}: ${f.n} — poziom ${L+1}. Koniec planowany na ${fmtDMY(b.until)}.`);save();tradeMsg(true,`Budowa ruszyła! Koniec: ${fmtDMY(b.until)}.`);}
 function checkBuild(d){const bs=BLD();for(const b of bs.slice()){if(d<b.until)continue;myInfra()[b.k]=b.to;const f=INFRA.find(x=>x.k===b.k);news(`🎉 Zakończono budowę: ${f.n} — poziom ${b.to}!`);bs.splice(bs.indexOf(b),1);}}
-function aiInfraOffseason(){for(const t of TEAMS){if(t.idx===SAVE.team)continue;const inf=infraOf(t.idx);if(R()<0.15){const f=INFRA[Math.floor(R()*INFRA.length)];if(inf[f.k]<Math.min(4,fMax(f))){const c=upgradeCost(f,inf[f.k]);if(SAVE.ai[t.idx].bud>c*0.6){SAVE.ai[t.idx].bud-=c*0.6;inf[f.k]++;}}}}}
+function aiInfraOffseason(){for(const t of TEAMS){if(t.idx===SAVE.team)continue;const inf=infraOf(t.idx);const a=SAVE.ai[t.idx];const opF=a.op?clamp(a.op/(AI_REV_LG[lgOf(t.idx)]*0.18),0.6,1.6):1;if(R()<0.15*opF){const f=INFRA[Math.floor(R()*INFRA.length)];if(inf[f.k]<Math.min(4,fMax(f))){const c=upgradeCost(f,inf[f.k]);if(a.op?a.op>c*0.6:a.bud>c*0.6){if(a.op)a.op-=c*0.6;else a.bud-=c*0.6;inf[f.k]++;}}}}}
 
 // ---- sztab ----
 const STAFF_ROLES=[
@@ -3084,7 +3086,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=106').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=107').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
@@ -4854,6 +4856,27 @@ function spBudDelta(cat,m,mo){return (m*spMonthsLeft(mo)-spExp(cat)*spMonthsLeft
 function spBudAdd(m,mo,cat){const b=BUD();if(!b)return;const add=spBudDelta(cat,m,mo);const sp=budSplit();b.pool+=round5k(add);b.wg+=round5k(add*sp.wg);b.op+=round5k(add*sp.op);b.tr=Math.max(0,b.tr+round5k(add*sp.tr));}
 function spBudTxt(m,mo,cat){const sp=budSplit();const add=spBudDelta(cat,m,mo);const sg=v=>(v>=0?'+':'−')+fmt(Math.abs(round5k(v)));
   return `<span class="${add>=0?'good':'bad'}">${sg(add)}</span> <span class="mut">względem planu</span><br><span class="mut">transfery ${sg(add*sp.tr)} · pensje ${sg(add*sp.wg)}</span>`;}
+// ===== Kluby komputera: te same zasady — przychody, budżety (transferowy, płacowy, operacyjny), dyrektor finansowy, social media =====
+const AI_REV_LG=[5200000,2400000,1150000];
+function aiStaffSk(ti,k){const a=SAVE.ai[ti];if(!a.st)a.st={};if(a.st[k]==null)a.st[k]=R()<0.25+a.rep/200?Math.round(clamp(aiStaff(ti)+(R()*6-3),3,18)):0;return a.st[k];}
+function aiFol(ti){const a=SAVE.ai[ti];if(a.fol==null){const lm=[1,0.4,0.18][lgOf(ti)]||0.2;a.fol=Math.round((3000+a.rep*a.rep*6)*lm*(0.85+R()*0.3));a.sty=['pro','luz','kib'][Math.floor(R()*3)];}return a.fol;}
+function folRatio(ti){return ti===SAVE.team&&SAVE.soc?socRatio():aiFol(ti)/(SOC_LG_REF[lgOf(ti)]||5000);}
+function aiRev(ti){const a=SAVE.ai[ti];const inf=infraOf(ti);const r=folRatio(ti);
+  return (AI_REV_LG[lgOf(ti)]||AI_REV_LG[2])*(0.6+a.rep/100*0.8)*(1+0.05*((inf.hala||1)-1)+0.04*((inf.sied||1)-1))*(1+clamp((r-1)*0.06,-0.04,0.08));}
+function aiLgAvgRev(lg){const t=TEAMS.filter(x=>lgOf(x.idx)===lg&&x.idx!==SAVE.team);return t.length?t.reduce((s,x)=>s+aiRev(x.idx),0)/t.length:AI_REV_LG[lg];}
+// budżety na sezon: płacowy jako limit pensji, transferowy jako pula na zakupy, operacyjny na obiekty
+function aiBudgets(){const avg={};for(const t of TEAMS){const ti=t.idx;if(ti===SAVE.team)continue;const a=SAVE.ai[ti];const lg=lgOf(ti);if(avg[lg]==null)avg[lg]=aiLgAvgRev(lg);
+  const fs=aiStaffSk(ti,'fin');const acc=(fs?0.9+fs/20*0.1:0.85)/0.93;const rel=clamp(aiRev(ti)/avg[lg],0.75,1.2);
+  a.wg=round5k((WAGE_CAP[lg]||WAGE_CAP[2])*rel*acc);
+  a.bud=round5k(a.bud*0.35+(150000+a.rep*12000+R()*250000)*rel*acc);
+  a.op=round5k(aiRev(ti)*0.18*acc);}}
+// co miesiąc: obserwujący klubów komputera rosną z renomą, specjalistą i stylem; czasem kryzys
+function aiSocMonthly(){for(const t of TEAMS){const ti=t.idx;if(ti===SAVE.team)continue;const a=SAVE.ai[ti];aiFol(ti);const sk=aiStaffSk(ti,'soc');const st=SOC_STY[a.sty]||SOC_STY.pro;
+  let g=0.004*(a.rep/50)+(R()-0.45)*0.012;g=g>0?g*st[2]*(sk?0.6+sk/20*0.8:0.35):g*(sk?1-sk/20*0.4:1);
+  if(R()<0.02*st[1]*(sk?1-sk/25:1))g-=0.02+R()*0.03;// kryzys
+  a.fol=Math.max(200,Math.round(a.fol*(1+g)));if(folRatio(ti)>1.4&&R()<0.3)a.rep=Math.min(100,a.rep+1);}}
+function aiSocResult(ti,won,sweep){if(ti===SAVE.team||!SAVE.ai[ti])return;const a=SAVE.ai[ti];aiFol(ti);const sk=aiStaffSk(ti,'soc');const st=SOC_STY[a.sty]||SOC_STY.pro;
+  let g=won?0.008+(sweep?0.004:0):-(0.005+(sweep?0.004:0));g=g>0?g*st[2]*(sk?0.6+sk/20*0.8:0.35):g*(sk?1-sk/20*0.4:1);a.fol=Math.max(200,Math.round(a.fol*(1+g)));}
 // ===== Social media klubu: obserwujący, feed, styl komunikacji, akcje, kryzysy, specjalista =====
 const SOC_LG_REF=[25000,9000,3500];// typowa liczba obserwujących klubu w lidze
 const SOC_STY={pro:['Profesjonalny','Rzeczowe komunikaty i zdjęcia z meczów. Bezpiecznie, ale wolniejszy wzrost.',1,0.4,0],

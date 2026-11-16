@@ -239,7 +239,7 @@ function aiOffseason(){
 // limit płac klubu (zależny od ligi) – bogaty klub nie skupuje wszystkich gwiazd
 const WAGE_CAP=[5000000,1950000,850000];
 function teamWages(ti){return TEAMS[ti].players.reduce((a,p)=>a+(p.wage||0),0);}
-function wageCap(ti){return WAGE_CAP[lgOf(ti)]||WAGE_CAP[2];}
+function wageCap(ti){const a=SAVE.ai&&SAVE.ai[ti];if(a&&a.wg&&a.wgLg===lgOf(ti))return a.wg;return WAGE_CAP[lgOf(ti)]||WAGE_CAP[2];}
 // gwiazdy komputera odchodzą do lig zagranicznych (klub dostaje odstępne)
 function starsAbroad(){const n=S().n;const out=[];for(const p of W().players){if(p.tm<0||p.tm===SAVE.team||p.jr)continue;const r=rating(p);if(r<82||p.age>31)continue;
     const ch=0.12+(r-82)*0.03;if(R()<ch){const ti=p.tm;const fee=round5k(pValue(p)*0.8);SAVE.ai[ti].bud+=fee;out.push(p.id);news(`✈️ ${p.first} ${p.last} (${TEAMS[ti].name}) przechodzi do ligi zagranicznej za ${fmt(fee)}.`);}}
@@ -271,7 +271,8 @@ function offseason(){
   if(BAL3){faMarket();}else{let fa=W().players.filter(p=>p.tm<0).sort((a,b)=>rating(b)-rating(a));
   if(fa.length>30){const drop=new Set(fa.slice(30).map(p=>p.id));W().players=W().players.filter(p=>!drop.has(p.id));}
   while(W().players.filter(p=>p.tm<0).length<20){const p=genPlayer(randPos(),10+R()*3,20+Math.floor(R()*12));p.tm=-1;initPlayerMeta(p,n,true);W().players.push(p);}}
-  for(const a of SAVE.ai)a.bud=round5k(BAL2?a.bud*0.35+150000+a.rep*12000+R()*250000:a.bud*0.5+200000+a.rep*15000+R()*300000);
+  if(typeof aiBudgets==='function'){aiBudgets();for(const t of TEAMS)if(SAVE.ai[t.idx])SAVE.ai[t.idx].wgLg=lgOf(t.idx);}
+  else for(const a of SAVE.ai)a.bud=round5k(BAL2?a.bud*0.35+150000+a.rep*12000+R()*250000:a.bud*0.5+200000+a.rep*15000+R()*300000);
   if(BAL2)starsAbroad();
   for(const p of W().players){p.base=snap(p);}
   // oferty za zawodników użytkownika

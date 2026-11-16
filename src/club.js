@@ -41,7 +41,7 @@ function startBuild(k){const f=INFRA.find(x=>x.k===k);const L=myInfra()[k];const
   const b={k,to:L+1,start:today(),until:addDays(today(),upgradeDays(f,L))};bs.push(b);
   news(`🏗️ Rusza ${L===0?'budowa':'rozbudowa'}: ${f.n} — poziom ${L+1}. Koniec planowany na ${fmtDMY(b.until)}.`);save();tradeMsg(true,`Budowa ruszyła! Koniec: ${fmtDMY(b.until)}.`);}
 function checkBuild(d){const bs=BLD();for(const b of bs.slice()){if(d<b.until)continue;myInfra()[b.k]=b.to;const f=INFRA.find(x=>x.k===b.k);news(`🎉 Zakończono budowę: ${f.n} — poziom ${b.to}!`);bs.splice(bs.indexOf(b),1);}}
-function aiInfraOffseason(){for(const t of TEAMS){if(t.idx===SAVE.team)continue;const inf=infraOf(t.idx);if(R()<0.15){const f=INFRA[Math.floor(R()*INFRA.length)];if(inf[f.k]<Math.min(4,fMax(f))){const c=upgradeCost(f,inf[f.k]);if(SAVE.ai[t.idx].bud>c*0.6){SAVE.ai[t.idx].bud-=c*0.6;inf[f.k]++;}}}}}
+function aiInfraOffseason(){for(const t of TEAMS){if(t.idx===SAVE.team)continue;const inf=infraOf(t.idx);const a=SAVE.ai[t.idx];const opF=a.op?clamp(a.op/(AI_REV_LG[lgOf(t.idx)]*0.18),0.6,1.6):1;if(R()<0.15*opF){const f=INFRA[Math.floor(R()*INFRA.length)];if(inf[f.k]<Math.min(4,fMax(f))){const c=upgradeCost(f,inf[f.k]);if(a.op?a.op>c*0.6:a.bud>c*0.6){if(a.op)a.op-=c*0.6;else a.bud-=c*0.6;inf[f.k]++;}}}}}
 
 // ---- sztab ----
 const STAFF_ROLES=[
