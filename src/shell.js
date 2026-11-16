@@ -68,7 +68,7 @@ function ctxBar(){if(ui.tab==='mecz'&&liveMatch())return '';const t=myTeam();con
 function nextAction(){if(liveMatch()){go('mecz');return;}const s=S();if(!s||SAVE.fired){go('mecz');return;}
   const e=nextEvent();if(!e){go('mecz');return;}
   if(e.d>today()){advanceTo(e.d);save();ui.tab='home';render();return;}
-  const c=myNext();if(c&&(s.phase==='spar'||s.phase==='liga'||s.phase==='po')){playNext();return;}
+  const c=myNext();if(c&&(s.phase==='spar'||s.phase==='liga'||s.phase==='po'||s.phase==='end')){playNext();return;}
   go('mecz');}
 function nextDay(){if(liveMatch()){go('mecz');return;}const e=nextEvent();const t=addDays(today(),1);
   if(e&&t>e.d){ui.msg='Dziś jest dzień meczowy — najpierw rozegraj mecz („Następna akcja”).';ui.tab='home';render();return;}
@@ -82,7 +82,7 @@ function teamForm(i){const s=S();const out=[];
 function formDots(i){const f=teamForm(i);const pad=Array(Math.max(0,5-f.length)).fill(null);return `<div class="hdots">${pad.concat(f).map(w=>`<span class="${w==null?'n':w?'w':'l'}"></span>`).join('')}</div>`;}
 function hNext(){const s=S();
   if(SAVE.fired)return `<div class="pan hnext"><div class="ttl">Następny mecz</div><div class="hvs"><b>Jesteś bez klubu</b><div class="mut">Sprawdź oferty w zakładce Trener.</div><button class="btn" onclick="go('trener')">Oferty pracy</button></div></div>`;
-  if(s.phase==='off'||s.phase==='end')return `<div class="pan hnext"><div class="ttl">Następny mecz</div><div class="hvs"><b>${s.phase==='off'?'Przerwa między sezonami':'Sezon zakończony'}</b><div class="mut">${s.phase==='off'?'Okno transferowe otwarte. Kontrakty, transfery i przygotowania.':'Podsumowanie sezonu czeka w zakładce Mecz i sezon.'}</div><button class="btn" onclick="go('mecz')">Przejdź</button></div></div>`;
+  if(s.phase==='off'||(s.phase==='end'&&!myNext()))return `<div class="pan hnext"><div class="ttl">Następny mecz</div><div class="hvs"><b>${s.phase==='off'?'Przerwa między sezonami':'Sezon zakończony'}</b><div class="mut">${s.phase==='off'?'Okno transferowe otwarte. Kontrakty, transfery i przygotowania.':'Podsumowanie sezonu czeka w zakładce Mecz i sezon.'}</div><button class="btn" onclick="go('mecz')">Przejdź</button></div></div>`;
   const c=myNext();const e=nextEvent();
   if(!c)return `<div class="pan hnext"><div class="ttl">Następny mecz</div><div class="hvs"><b>Brak planowanych spotkań</b><div class="mut">Twoja drużyna nie gra w tej fazie.</div><button class="btn" onclick="go('mecz')">Pozostałe mecze</button></div></div>`;
   const home=c.h===SAVE.team,op=home?c.a:c.h;
@@ -104,7 +104,7 @@ function hTable(){const s=S();if(!(s.phase==='liga'||s.phase==='po'||s.phase==='
    <div class="small mut" style="margin-top:4px">Linia pod 8. miejscem: awans do play-off.</div></div>`;}
 function hFixtures(){const ev=myEvents();const ds=Object.keys(ev).sort();const up=[],done=[];
   for(const d of ds)for(const e of ev[d]){(e.r?done:up).push({d,...e});}
-  const kind=e=>e.kind==='spar'?'Sparing':e.kind==='liga'?`Liga, ${e.k}. kolejka`:e.kind==='cup'?'Puchar':'Play-off';
+  const kind=e=>e.kind==='spar'?'Sparing':e.kind==='liga'?`Liga, ${e.k}. kolejka`:e.kind==='cup'?'Puchar':e.kind==='euro'?'Europa':'Play-off';
   const row=(e,res)=>{const my=res?e.r:null;let badge='';if(my){const w=(my.h===SAVE.team)===(my.sw[0]===3);const sc=my.h===SAVE.team?my.sw[0]+':'+my.sw[1]:my.sw[1]+':'+my.sw[0];badge=`<span class="hres ${w?'w':'l'}">${sc}</span>`;}
     return `<tr><td>${e.d.slice(8)}.${e.d.slice(5,7)}</td><td class="tl">${tDot(e.op)}${esc(TEAMS[e.op].name)} <span class="mut">(${e.home?'D':'W'})</span></td><td>${badge}</td><td class="mut">${kind(e)}</td></tr>`;};
   return `<div class="pan"><div class="ttl">Nadchodzące mecze</div><table class="hfx">${up.slice(0,4).map(e=>row(e,false)).join('')||'<tr><td class="mut">Brak.</td></tr>'}</table>
@@ -122,7 +122,7 @@ function hLast(){const L=SAVE.lastMatch;if(!L)return `<div class="pan"><div clas
    <div class="hsum"><div><span class="lab">MVP</span><b>${esc(L.mvp||'—')}</b></div><div><span class="lab">Atak</span><b>${L.atk}%</b></div><div><span class="lab">Bloki</span><b>${L.blk}</b></div><div><span class="lab">Asy</span><b>${L.ace}</b></div><div><span class="lab">${L.home?'Widzów':'Mecz'}</span><b>${L.home?(L.att||0).toLocaleString('pl-PL'):'wyjazdowy'}</b></div></div></div>`;}
 function hCalendar(){const ev=myEvents();const s=S();const tr=SAVE.training?(TRAIN_FOCUS.find(x=>x[0]===SAVE.training.focus)||[])[1]:null;const out=[];
   for(let k=0;k<5;k++){const d=addDays(today(),k);const list=[];
-    for(const e of ev[d]||[]){const lab=e.kind==='spar'?'Sparing':e.kind==='liga'?'Liga':e.kind==='cup'?'Puchar':'Play-off';list.push(`<div class="hev m">${lab}: ${esc(TEAMS[e.home?SAVE.team:e.op].short)} – ${esc(TEAMS[e.home?e.op:SAVE.team].short)}${e.r?` (${e.r.sw[0]}:${e.r.sw[1]})`:''}</div>`);if(e.kind==='liga')list.push('<div class="hev">Liga juniorów</div>');}
+    for(const e of ev[d]||[]){const lab=e.kind==='spar'?'Sparing':e.kind==='liga'?'Liga':e.kind==='cup'?'Puchar':e.kind==='euro'?'Europa':'Play-off';list.push(`<div class="hev m">${lab}: ${esc(TEAMS[e.home?SAVE.team:e.op].short)} – ${esc(TEAMS[e.home?e.op:SAVE.team].short)}${e.r?` (${e.r.sw[0]}:${e.r.sw[1]})`:''}</div>`);if(e.kind==='liga')list.push('<div class="hev">Liga juniorów</div>');}
     if(s.offDate===d)list.push('<div class="hev">Otwarcie okna transferowego</div>');
     if(!list.length)list.push(s.phase==='off'?'<div class="hev">Urlop / przygotowania</div>':(()=>{const tp=typeof todayPlanTxt==='function'?todayPlanTxt(d):null;return `<div class="hev">${tp?'Trening: '+esc(tp):'Wolne'}</div>`;})());
     out.push(`<div class="hdaycol ${k===0?'today':''}"><div class="hdh">${k===0?'Dziś':fmtShort(d)}</div>${list.join('')}</div>`);}
@@ -170,13 +170,13 @@ function hvFit(){const ps=myTeam().players.slice().sort((a,b)=>frOf(a)-frOf(b));
 function hvLast(){const L=SAVE.lastMatch;const form=`<div class="hvlab">Forma drużyny</div><div class="small mut">Ostatnie 5 meczów, wszystkie rozgrywki</div><div style="margin:6px 0 12px">${hvForm(SAVE.team)}</div>`;
   if(!L)return `<div class="card hvc">${form}<div class="small mut">Po pierwszym meczu zobaczysz tu wynik i najlepszego zawodnika.</div></div>`;
   const w=(L.h===SAVE.team)===(L.sw[0]===3);
-  return `<div class="card hvc">${form}<div class="hvlab">Ostatni mecz${L.kind==='liga'&&L.k?` · ${L.k}. kolejka`:L.kind==='spar'?' · sparing':L.kind==='po'?' · play-off':L.kind==='cup'?' · puchar':''}</div>
+  return `<div class="card hvc">${form}<div class="hvlab">Ostatni mecz${L.kind==='liga'&&L.k?` · ${L.k}. kolejka`:L.kind==='spar'?' · sparing':L.kind==='po'?' · play-off':L.kind==='cup'?' · puchar':L.kind==='euro'?' · puchary europejskie':''}</div>
    <div class="hvlm">${teamCrest(L.h,30)}<b>${esc(TEAMS[L.h].short)}</b><b class="${w?'good':'bad'} hvsc">${L.sw[0]}–${L.sw[1]}</b><b>${esc(TEAMS[L.a].short)}</b>${teamCrest(L.a,30)}</div>
    <div class="small mut">${L.sets.map(x=>x[0]+'–'+x[1]).join(' · ')}${L.d?' · '+fmtDMY(L.d):''}</div>
    ${L.top?`<div class="small" style="margin-top:6px">Najlepszy u nas: <b>${esc(L.top.n)}</b> <span class="hvr">${String(L.top.r).replace('.',',')}</span></div>`:L.mvp?`<div class="small" style="margin-top:6px">MVP: <b>${esc(L.mvp)}</b></div>`:''}
    <button class="link small" onclick="go('poczta')">Raport z meczu ›</button></div>`;}
 function hvUp(){const ev=myEvents();const up=[];for(const d of Object.keys(ev).sort())for(const e of ev[d])if(!e.r)up.push({d,...e});
-  const kind=e=>e.kind==='spar'?'Sparing':e.kind==='liga'?`${e.k}. kol.`:e.kind==='cup'?'Puchar':'Play-off';
+  const kind=e=>e.kind==='spar'?'Sparing':e.kind==='liga'?`${e.k}. kol.`:e.kind==='cup'?'Puchar':e.kind==='euro'?'Europa':'Play-off';
   return `<div class="card hvc"><div class="hvlab row"><span>Najbliższe mecze</span><span class="sp"></span><button class="link" onclick="go('kalendarz')">Terminarz →</button></div>${up.slice(0,4).map(e=>`<div class="hvup"><span class="mut">${fmtShort(e.d)}</span><span class="l">${teamCrest(e.op,20)}${esc(TEAMS[e.op].name)}</span><span>${e.home?'D':'W'}</span><span class="mut">${kind(e)}</span></div>`).join('')||'<div class="small mut">Brak zaplanowanych meczów.</div>'}</div>`;}
 function hvNews(){const n=(SAVE.news||[]).slice(0,14);const strip=t=>String(t).replace(/^\p{Extended_Pictographic}️?\s*/u,'');
   return `<div class="card hvc hvgrow"><div class="hvlab">Wiadomości</div><div class="hvgl">${n.map(x=>`<div class="hvnw"><span>${newsIcon(x.t)}</span><span class="mut">${x.d?x.d.slice(8)+'.'+x.d.slice(5,7):''}</span><span class="t">${esc(strip(x.t))}</span></div>`).join('')||'<div class="small mut">Tu pojawią się wyniki, kontuzje, transfery i decyzje zarządu.</div>'}</div></div>`;}

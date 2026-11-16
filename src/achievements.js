@@ -193,7 +193,7 @@ function achMatch(m,c){try{const A=ACHS(),C=A.c;const me=m.sides[0],op=m.sides[1
   if(off)for(const p of me.pl){const x=p.st,pt=x.kill+x.blk+x.ace;achMax('pPts',pt);achMax('pAce',x.ace);achMax('pBlk',x.blk);achMax('pKill',x.kill);achMax('pDig',x.dig);
     if(p.pos==='A')achMax('pA',pt);if(p.pos==='P')achMax('pP',pt);if(p.pos==='S')achMax('pS',pt);if(p.pos==='R')achMax('pR',pt);if(p.pos==='L')achMax('pL',x.dig);}
   if(home&&m.att){achMax('att',m.att);if(m.cap&&m.att>=m.cap)achEv('soldOut');}
-  if(won){C.win=(C.win||0)+1;achEv(c.kind==='liga'?'wLiga':c.kind==='po'?'wPo':'wSpar');achEv(home?'wHome':'wAway');achEv('wLg'+myLg());achEv('as_'+SAVE.team);
+  if(won){C.win=(C.win||0)+1;if(c.kind==='liga'||c.kind==='po'||c.kind==='spar')achEv(c.kind==='liga'?'wLiga':c.kind==='po'?'wPo':'wSpar');achEv(home?'wHome':'wAway');achEv('wLg'+myLg());achEv('as_'+SAVE.team);
     const sw=m.setsWon;if(sw[1]===0)achEv('w30');if(sw[1]===2)achEv('w32');if(sets[0][0]<sets[0][1]){achEv('w01');if(sets[1]&&sets[1][0]<sets[1][1])achEv('w02');}
     const last=sets[sets.length-1];if(sets.length===5){if(last[0]-last[1]>=8)achEv('tight15');if(last[0]>15)achEv('longTb');}
     if(sets.every(st=>st[1]<15))achEv('under15');if(off){if(T.srvErr===0)achEv('mNoSE');if(T.att)achMax('mEff',Math.floor(T.kill/T.att*100));if(T.rec>=20)achMax('mRec',Math.floor(T.recPos/T.rec*100));}

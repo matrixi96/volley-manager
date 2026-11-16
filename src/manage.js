@@ -154,6 +154,7 @@ function roundTick(kind,home,att,opp){
     if(hasT(p,'amb')&&p.unh===4)news(`📢 ${p.first} ${p.last} (ambitny) chce więcej grać. Jeśli nadal będzie siedział na ławce, straci humor.`);}
   ROUND_PLAYED=new Set();
   const s=S();
+  if((kind==='cup'||kind==='euro')&&home){const t=payMatchday(kind==='euro'?1.4:0.8,att,opp);finLog(`${kind==='euro'?'Puchary europejskie':'Puchar kraju'}: mecz u siebie (${t.att} widzów)`,t.tot);}
   if(kind==='liga'){money(tvRound(),'Prawa TV');
     let t=null;if(home)t=payMatchday(1,att,opp);
     finLog(`Kolejka ${s.round}: prawa TV${t?`, mecz u siebie (${t.att} widzów: bilety, jedzenie, parking)`:''}`,tvRound()+(t?t.tot:0));}
@@ -259,6 +260,7 @@ function starsAbroad(){const n=S().n;const out=[];for(const p of W().players){if
   {const s=new Set(out);if(out.length)W().players=W().players.filter(p=>!s.has(p.id));syncTeams();
     for(const t of TEAMS){if(t.idx===SAVE.team)continue;for(const pos of ['R','A','P','S','L'])while(posCount(t,pos)<POS_STD[pos]&&t.players.length<16)aiSign(t,pos);}syncTeams();}}
 function offseason(){
+  try{if(typeof euroFinishAll==='function')euroFinishAll();}catch(e){console.error(e);}
   const old=S(),n=old.n+1;
   advanceTo(`${2026+old.n}-06-01`);
   // starzenie, spadek formy, emerytury
