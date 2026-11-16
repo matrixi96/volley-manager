@@ -15,7 +15,7 @@ function spQuality(){const rep=SAVE.ai[SAVE.team].rep;const s=S();let pb=0;try{i
 function spName(cat){if(cat==='tech')return SP_T1[Math.floor(R()*SP_T1.length)]+' '+SP_T2[Math.floor(R()*SP_T2.length)];return SP_A[Math.floor(R()*SP_A.length)]+' '+SP_B[Math.floor(R()*SP_B.length)];}
 function spDurMul(mo){return 1.05-0.01*(mo-1);}
 function genSpOffers(){const s=SPN();const q=spQuality();const n={tit:3,main:3,tech:2,mid:4,small:5};s.off={};
-  for(const [k,,sh] of SP_CAT){s.off[k]=[];for(let i=0;i<n[k];i++){const m=Math.round(SP_BASE*sh*q*LG_ECO[myLg()]*(0.8+R()*0.4)/1000)*1000;s.off[k].push({id:'sp'+(s.nid++),n:spName(k),col:SP_COL[Math.floor(R()*SP_COL.length)],m,maxM:R()<0.3?6:12});}s.off[k].sort((a,b)=>b.m-a.m);}
+  for(const [k,,sh] of SP_CAT){s.off[k]=[];for(let i=0;i<n[k];i++){const m=Math.round(SP_BASE*sh*q*LG_ECO[myLg()]*(0.8+R()*0.4)*(1+(typeof finSk==='function'?finSk():0)/20*0.05)/1000)*1000;s.off[k].push({id:'sp'+(s.nid++),n:spName(k),col:SP_COL[Math.floor(R()*SP_COL.length)],m,maxM:R()<0.3?6:12});}s.off[k].sort((a,b)=>b.m-a.m);}
   s.ref=(SAVE._now||today()).slice(0,7);}
 function spUsed(cat){return SPN().act.filter(c=>c.cat===cat).length;}
 function spMonthly(){return SPN().act.reduce((a,c)=>a+c.m,0);}
@@ -23,7 +23,7 @@ function sponsorAmt(){return spMonthly()*12;}
 function techBonus(){const c=SPN().act.find(x=>x.cat==='tech');return c?clamp(0.02+c.m/(SP_BASE*0.09)*0.03,0,0.07):0;}
 function signSponsor(cat,id){const s=SPN();const o=(s.off[cat]||[]).find(x=>x.id===id);if(!o)return;const el=document.getElementById('spd'+id);const mo=clamp(+(el?el.value:12)||12,1,o.maxM||12);
   if(spUsed(cat)>=spSlots()[cat]){ui.spMsg={ok:false,t:`Brak wolnego miejsca dla sponsora: ${SP_CAT.find(x=>x[0]===cat)[1].toLowerCase()}. ${cat==='tit'?'Sponsor tytularny może być tylko jeden.':'Więcej miejsc daje rozbudowa siedziby klubu i wyższa renoma.'}`};render();return;}
-  const m=Math.round(o.m*spDurMul(mo)/1000)*1000;const c={id:o.id,cat,n:o.n,col:o.col,m,left:mo-1,months:mo,start:today()};s.act.push(c);achEv('sp');s.off[cat]=s.off[cat].filter(x=>x.id!==id);
+  const m=Math.round(o.m*spDurMul(mo)/1000)*1000;const c={id:o.id,cat,n:o.n,col:o.col,m,left:mo-1,months:mo,start:today()};if(typeof spBudAdd==='function')spBudAdd(m,mo,cat);s.act.push(c);achEv('sp');s.off[cat]=s.off[cat].filter(x=>x.id!==id);
   money(m,'Sponsor');finLog(`Sponsor ${o.n}: pierwsza rata`,m);news(`🤝 Nowy sponsor (${SP_CAT.find(x=>x[0]===cat)[1].toLowerCase()}): ${o.n} — ${fmt(m)} miesięcznie przez ${mo} mies.`);
   ui.spMsg={ok:true,t:`Podpisano umowę z ${o.n}: ${fmt(m)}/miesiąc, ${mo} mies.`};save();render();}
 function addMonths(d,n){const [y,m]=d.split('-').map(Number);const t=new Date(Date.UTC(y,m-1+n,1));return t.getUTCFullYear()+'-'+String(t.getUTCMonth()+1).padStart(2,'0')+'-01';}
@@ -54,7 +54,8 @@ function sponsorView(){initSponsors();const s=SPN();const sl=spSlots();const q=s
   ${SP_CAT.map(([k,n,,d])=>{const act=s.act.filter(c=>c.cat===k);const free=sl[k]-act.length;const offs=s.off[k]||[];
    return `<div class="card"><div class="row wrap"><h2 style="margin:0">${n}</h2><span class="small mut" style="margin-left:10px">${esc(d)}</span><span class="sp"></span><span class="small">Miejsca: <b>${act.length}/${sl[k]}</b></span></div>
     <div class="spgrid">${act.map(c=>`<div class="spact">${spBadge(c)}<div><b>${esc(c.n)}</b><div class="small mut">${fmt(c.m)}/mies. · ${c.left>0?`jeszcze ${c.left} ${c.left===1?'rata':c.left<5?'raty':'rat'} (do ${fmtDMY(addMonths(today(),c.left))})`:'ostatni miesiąc'}</div></div></div>`).join('')}${Array(Math.max(0,free)).fill('<div class="spact empty">Wolne miejsce</div>').join('')}</div>
-    ${offs.length?`<div class="tw"><table><thead><tr><th class="l">Oferta</th><th>Miesięcznie (12 mies.)</th><th>Długość umowy</th><th></th></tr></thead><tbody>${offs.map(o=>`<tr><td class="l"><span class="fcell">${spBadge(o)}<b>${esc(o.n)}</b></span></td><td><b>${fmt(Math.round(o.m*spDurMul(12)/1000)*1000)}</b> <small class="mut">(1 mies.: ${fmt(Math.round(o.m*spDurMul(1)/1000)*1000)})</small></td>
+    ${offs.length?`<div class="tw"><table><thead><tr><th class="l">Oferta</th><th>Miesięcznie (12 mies.)</th><th>Długość umowy</th><th>Wpływ na budżety</th><th></th></tr></thead><tbody>${offs.map(o=>`<tr><td class="l"><span class="fcell">${spBadge(o)}<b>${esc(o.n)}</b></span></td><td><b>${fmt(Math.round(o.m*spDurMul(12)/1000)*1000)}</b> <small class="mut">(1 mies.: ${fmt(Math.round(o.m*spDurMul(1)/1000)*1000)})</small></td>
       <td><select id="spd${o.id}">${Array.from({length:o.maxM||12},(_,i)=>i+1).reverse().map(mo=>`<option value="${mo}">${mo} mies. · ${fmt(Math.round(o.m*spDurMul(mo)/1000)*1000)}</option>`).join('')}</select></td>
+      <td class="small">${typeof spBudTxt==='function'?spBudTxt(o.m*spDurMul(12),12,k):''}</td>
       <td><button class="${free>0?'btn':'ghost'} sm" ${free>0?'':'disabled'} onclick="signSponsor('${k}','${o.id}')">Podpisz</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="mut small">Brak ofert w tym miesiącu.</p>'}</div>`;}).join('')}
   <p class="small mut">Krótka umowa = trochę wyższa rata, ale co miesiąc możesz trafić lepszą ofertę. Długa = pewne pieniądze na cały sezon. Lepszych i liczniejszych sponsorów przyciągają: wyższa renoma, dobre miejsce w tabeli, rozbudowana siedziba klubu i gwiazda w składzie.</p>`;}

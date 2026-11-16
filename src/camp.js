@@ -17,6 +17,7 @@ function campOf(){const c=SAVE.camp;return c&&S()&&c.season===S().n?c:null;}
 function campCanBook(){const s=S();return !campOf()&&(s.phase==='off'||s.phase==='spar'&&s.spar.res.length<N_SPAR);}
 function campBook(k){const c=CAMPS.find(x=>x[0]===k);if(!c||!campCanBook())return;const cost=campCost(c);
   if(SAVE.fin.bal-cost<-500000)return tradeMsg(false,`Za mało pieniędzy na obóz (${fmt(cost)}).`);
+  if(typeof budCan==='function'){const e=budCan('op',cost);if(e)return tradeMsg(false,e);}
   if(ui.confirm!=='camp'+k){ui.confirm='camp'+k;render();return;}ui.confirm=null;
   money(-cost,'Obóz');finLog(`Obóz przygotowawczy: ${c[1]} (${c[2]})`,-cost);const s=S();
   SAVE.camp={k,season:s.n,cost,start:s.phase==='off'?null:addDays(today(),1),until:s.phase==='off'?null:addDays(today(),c[4]),done:0};
@@ -51,4 +52,4 @@ function campCard(){const c=campOf();const s=S();
   return `<div class="card"><h2>Obóz przygotowawczy</h2><p class="small mut">Wybierz miejsce obozu przed sezonem. Każde daje inne korzyści i kosztuje inaczej. Efekt wzmacnia trener przygotowania fizycznego. Jeden obóz na sezon${s.phase==='off'?'; wyjazd nastąpi razem ze startem przygotowań':'; wyjazd jutro'}.</p>
    <div class="campgrid">${CAMPS.map(C=>{const cost=campCost(C);const fx=C[6];return `<div class="campc ${ui.confirm==='camp'+C[0]?'on':''}"><div class="camph"><span class="campflag">${C[3]}</span><div class="campt"><b>${esc(C[1])}</b><span>${esc(C[2])} · ${C[4]} dni</span></div><div class="campp"><b>${fmt(cost)}</b><span>${fmt(Math.round(cost/C[4]))}/dzień</span></div></div>
      <p class="campd">${esc(C[7])}</p>${campFx(fx)}
-     <button class="${ui.confirm==='camp'+C[0]?'btn':'ghost'} sm" style="margin-top:12px;width:100%" onclick="campBook('${C[0]}')">${ui.confirm==='camp'+C[0]?`Potwierdź: zapłacisz ${fmt(cost)}`:'Wybierz'}</button></div>`;}).join('')}</div></div>`;}
+     <button class="${ui.confirm==='camp'+C[0]?'btn':'ghost'} sm" style="margin-top:12px;width:100%" onclick="campBook('${C[0]}')">${ui.confirm==='camp'+C[0]?`Potwierdź: zapłacisz ${fmt(cost)}`:'Wybierz'}</button>${ui.confirm==='camp'+C[0]&&typeof budImpact==='function'?budImpact({op:cost}):''}</div>`;}).join('')}</div></div>`;}

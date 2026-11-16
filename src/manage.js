@@ -112,7 +112,7 @@ function initWorld(){
   syncTeams();initClub();if(BAL3){faMarket();syncTeams();}
 }
 function news(t){SAVE.news=SAVE.news||[];SAVE.news.unshift({d:SAVE._now||today(),t});SAVE.news=SAVE.news.slice(0,40);try{if(typeof mailFromNews==='function')mailFromNews(t);}catch(e){}}
-function money(amt,cat){const f=SAVE.fin;f.bal+=amt;f.sea[cat]=(f.sea[cat]||0)+amt;}
+function money(amt,cat){const f=SAVE.fin;f.bal+=amt;f.sea[cat]=(f.sea[cat]||0)+amt;if(typeof budBook==='function')budBook(amt,cat);}
 function finLog(t,a){const f=SAVE.fin;f.log.unshift({d:today(),t,a});f.log=f.log.slice(0,80);}
 function payroll(){return myTeam().players.reduce((s,p)=>s+(p.wage||0),0);}
 const TV_ROUND=45000;
@@ -324,6 +324,7 @@ function financeView(){
   const row=(o)=>cats.map(c=>`<tr><td class="l">${c}</td><td class="${(o[c]||0)<0?'bad':(o[c]||0)>0?'good':''}">${o[c]?fmt(o[c]):'—'}</td></tr>`).join('')+`<tr><td class="l"><b>Razem</b></td><td><b>${fmt(cats.reduce((s,c)=>s+(o[c]||0),0))}</b></td></tr>`;
   const spFree=typeof spSlots==='function'?Object.entries(spSlots()).reduce((a,[k,n])=>a+Math.max(0,n-spUsed(k)),0):0;
   return `<div class="card fin"><div class="big ${f.bal<0?'bad':''}">${fmtFull(f.bal)}</div><div class="mut">Saldo klubu${f.bal<0?' — jesteś na minusie! Dopuszczalny debet to 500 tys. zł, poniżej nie kupisz zawodników.':''}</div></div>
+  ${typeof budgetCard==='function'?budgetCard():''}
   <div class="card"><h2>Budżet roczny</h2><table class="cmp"><tbody>
    <tr><td class="l">Pensje zawodników (rocznie)</td><td class="bad">−${fmt(pay)}</td></tr>
    <tr><td class="l">Pensje sztabu szkoleniowego</td><td class="bad">−${fmt(stp)}</td></tr>
