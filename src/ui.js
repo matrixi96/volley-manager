@@ -41,6 +41,7 @@ function render(){
   else if(ui.tab==='dane')body=dataView();
   else if(ui.tab==='skauting')body=scoutView();
   else if(ui.tab==='sponsorzy')body=sponsorView();
+  else if(ui.tab==='social')body=socialView();
   else if(ui.tab==='zapis')body=saveView();
   else if(ui.tab==='osiagniecia')body=achView();
   const wide=ui.tab==='mecz'&&ui.match&&!(ui.match.over&&ui.view==='post');
