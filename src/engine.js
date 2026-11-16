@@ -180,7 +180,7 @@ function mb(p,m,i){let b=(p.mor==null?0:(p.mor-60)/40*0.045)+formB(p)+cfB(p)+(p.
 function kc(p,m){let k=1.25-p.kcj/20*0.5;{const sd=m.sides&&m.sides.find(x=>x.pl.includes(p));if(sd&&sd.sh&&sd.sh.u>m.rallies&&sd.sh.e)k*=1-sd.sh.e;if(sd&&sd.tfE)k*=sd.tfE;}if(pressure(m))k*=1.15-p.opa/20*0.3;if(p.tr){if(hasT(p,'pro'))k*=0.9;if(hasT(p,'ner')&&pressure(m))k*=1.1;if(hasT(p,'ind'))k*=1.04;}if(MENT&&p.cf)k*=1-p.cf*0.08;return k;}
 function nerves(p,m){return pressure(m)&&p.opa<10?' Nerwy w końcówce!':'';}
 // ---- pewność siebie w meczu (cf: -3 roztrzęsiony … +2 w gazie) ----
-var MENT=1,AIM=1;var REC_PERF=0.64,MID_Q1=0.025,QUICK_B=0.09,MIX_PC=0.045;// próg idealnego przyjęcia, udział środka po złej piłce, premia szybkiej krótkiej, nieporozumienia
+var MENT=1,AIM=1;var REC_PERF=0.64,MID_Q1=0.025,QUICK_B=0.09,MIX_PC=0.045,WING_B=0.042,PIPE_B=0.27;// próg idealnego przyjęcia, udział środka po złej piłce, premia szybkiej krótkiej, nieporozumienia
 // BAL2: balans długoterminowy (inflacja umiejętności, dynastie, długi)
 var BAL2=1,BAL3=1;
 function cfK(p){const o=p.opa||10;let k=(1+(11-o)/20*(o>11?2.4:2.2))*(p.age>=28?0.8:p.age<=21?1.15:1);if(p.tr){if(hasT(p,'ner'))k*=1.45;if(hasT(p,'spo'))k*=0.45;if(hasT(p,'pro'))k*=0.3;if(hasT(p,'zde'))k*=0.6;}return clamp(k,0.05,3);}
@@ -285,7 +285,7 @@ var RECV={
  5:{1:[3.4,7.1],2:[8.1,7.6],3:[4.6,2.5],4:[8.1,1.4],5:[6.4,0.9],6:[3.4,4.6]},
  4:{1:[1.9,7.4],2:[5.1,7.1],3:[8.1,4.5],4:[8.1,1.6],5:[3.6,1.8],6:[3.6,4.5]},
  3:{1:[3.6,7.1],2:[8.1,7.5],3:[8.1,4.5],4:[4.2,1.8],5:[3.4,4.3],6:[1.6,5.8]},
- 2:{1:[3.6,7.1],2:[8.1,7.4],3:[5.1,1.9],4:[8.1,1.0],5:[1.9,1.4],6:[3.6,4.5]}};var AW=[0.84,0.56],SWP=0.08,SW=0.85,LTB=1.25,BKD=0.7,CVB=0.18;// BKD: część bloków spadająca na stronę atakujących, CVB: baza asekuracji// waga atakującego u rozgrywającego: pierwsza linia, druga linia
+ 2:{1:[3.6,7.1],2:[8.1,7.4],3:[5.1,1.9],4:[8.1,1.0],5:[1.9,1.4],6:[3.6,4.5]}};var AW=[0.84,0.56],SWP=0.08,SW=0.85,LTB=1.25,BKD=0.7,CVB=0.3;// BKD: część bloków spadająca na stronę atakujących, CVB: baza asekuracji// waga atakującego u rozgrywającego: pierwsza linia, druga linia
 function attackPhase(m,A,q,by,log,act,pd){
   const side=m.sides[A],opp=m.sides[1-A];
   const cA=onCourt(side,m.serving===A),cO=onCourt(opp,m.serving!==A);
@@ -414,7 +414,7 @@ function attackPhase(m,A,q,by,log,act,pd){
     d.st.dig++;cfUp(d,m,0.2);act.push(d.id);seq.push({k:'dig',id:d.id,s:1-A,tip:1});log.push(setTxt,`kiwka, podbija ${nm(d)}${cover?' (asekuracja za blokiem)':''}`);rec('tip','dig');
     return {done:false,next:1-A,q:R()<0.45+dc*0.35?2:1,by:d};
   }
-  const an=0.1+eff(a,'ata')/20*0.4+eff(a,'sil')/20*0.08+eff(a,'sko')/20*0.22+(a.h-197)/100+sq*0.42+bn(side)-(fr?0:0.06)+(quick&&sq>0.7?(QUICK_B+(a.szy-12)/20*0.08)*(0.4+ch):0)+mb(a,m,A)+(!fr&&side.tactics.shield&&side.libero?-0.03:0)+(AT===1?0.035:AT===2?-0.015:0)-(swp?SWP:0)-(fb&&fb.rp&&a.id===fb.rec?0.03:0)+(behind?((typeof pairChem==='function'&&real?pairChem(setter,a):ch)-0.6)*0.18:0);
+  const an=0.1+eff(a,'ata')/20*0.4+eff(a,'sil')/20*0.08+eff(a,'sko')/20*0.22+(a.h-197)/100+sq*0.42+(sq>0.8?(att.role==='P'&&!fr?PIPE_B:!quick&&wing!=='M'?WING_B:0):0)+bn(side)-(fr?0:0.06)+(quick&&sq>0.7?(QUICK_B+(a.szy-12)/20*0.08)*(0.4+ch):0)+mb(a,m,A)+(!fr&&side.tactics.shield&&side.libero?-0.03:0)+(AT===1?0.035:AT===2?-0.015:0)-(swp?SWP:0)-(fb&&fb.rp&&a.id===fb.rec?0.03:0)+(behind?((typeof pairChem==='function'&&real?pairChem(setter,a):ch)-0.6)*0.18:0);
   const nb=solo?1.3:quick?(mCom?2.0:midLate?0.9:1.4):triple?3.0:sq<0.4?2.8:2.2;
   const bs=blockers.reduce((s,x)=>s+(eff(x.p,'blo')*0.55+eff(x.p,'czy')*0.2+eff(x.p,'sko')*0.15+eff(x.p,'szy')*0.1)/20+(x.p.h-197)/120,0)/blockers.length*(0.75+nb*0.12)+bn(opp);
   const errP=(0.075+(1-sq)*0.08+(0.75-eff(a,'ata')/20)*0.08)*kc(a,m)*(AT===1?1.15:AT===2?0.92:1)*(tool?1.1:1);
@@ -441,7 +441,7 @@ function attackPhase(m,A,q,by,log,act,pd){
     if(R()<BKD){
       // piłka po bloku spada na stronę atakujących: asekuracja może ją podbić (spóźniony atakujący jest już blisko)
       const cv=pickW(cA.filter(x=>x.p!==a),x=>(x.p===late?3:x.role==='L'?1.5:x.role==='R'?1.2:isFront(x.zone)?0.8:1)*(0.5+eff(x.p,'czy')/20)).p;
-      const sv=clamp(CVB+(eff(cv,'czy')*0.5+eff(cv,'zwi')*0.3+eff(cv,'obr')*0.2-11)/20*0.25+(cv===late?0.05:0)+(tool?-0.05:0),0.06,0.42);
+      const sv=clamp(CVB+(eff(cv,'czy')*0.5+eff(cv,'zwi')*0.3+eff(cv,'obr')*0.2-11)/20*0.25+(cv===late?0.05:0)+(tool?-0.05:0),0.1,0.55);
       if(R()<sv){cv.st.dig++;act.push(cv.id);seq.push({k:'dig',id:cv.id,s:A,cov:1});log.push(setTxt,`blok ${nm(b)}, asekuruje ${nm(cv)}`);rec(dir,'wyb');return {done:false,next:A,q:1,by:cv};}
       a.st.blocked++;b.st.blk++;cfHit(a,m,0.7,'ata');cfUp(b,m,0.4);seq.push({k:'floor',s:A,blk:1});log.push(setTxt,`BLOK ${nm(b)}!`);rec(dir,'blk');return {done:true,winner:1-A,type:'block'};}
     log.push(setTxt,`wybloka ${nm(b)}`);rec(dir,'wyb');return {done:false,next:1-A,q:2,by:b};
