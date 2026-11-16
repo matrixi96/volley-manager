@@ -45,9 +45,10 @@ function render(){
   else if(ui.tab==='kadra')body=(typeof ntInit==='function'&&ntInit(),ntView());
   else if(ui.tab==='zapis')body=saveView();
   else if(ui.tab==='osiagniecia')body=achView();
+  else if(ui.tab==='historia')body=historyView();
   const wide=ui.tab==='mecz'&&ui.match&&!(ui.match.over&&ui.view==='post');
   const _ks={};for(const s of ['.mitems','.side','.nglog'])  {const e=document.querySelector(s);if(e)_ks[s]=e.scrollTop;}
-  app.innerHTML=`<div class="shell ${wide?'live':''}">${topBar()}${sideNav()}<main class="${wide?'wide':''}">${ctxBar()}${body}</main></div>`+(typeof achToastHtml==='function'?achToastHtml():'')+(ui.neg?negModal():ui.talk?talkModal():ui.card?cardModal():ui.pop?popModal():ui.teamPop!=null?teamModal():'');
+  app.innerHTML=`<div class="shell ${wide?'live':''}">${topBar()}${sideNav()}<main class="${wide?'wide':''}">${ctxBar()}${wide||typeof tutBar!=='function'?'':tutBar()}${body}</main></div>`+(typeof achToastHtml==='function'?achToastHtml():'')+(ui.neg?negModal():ui.talk?talkModal():ui.card?cardModal():ui.pop?popModal():ui.teamPop!=null?teamModal():'');
   for(const s in _ks){const e=document.querySelector(s);if(e)e.scrollTop=_ks[s];}
   if(ui.tab==='home'&&typeof hvClip==='function')hvClip();
   if(ui.tab==='klub'&&typeof v3Mount==='function')try{v3Mount();}catch(e){console.error(e);}
@@ -119,13 +120,13 @@ function famTag(k,i){return '';}
 function famTagOld(k,i){if(SAVE.team==null||typeof famOf!=='function'||(typeof TF_OPP!=='undefined'&&TF_OPP.has(k))||!TF_EL.some(x=>x[0]===k))return '';const v=Math.round(famOf(SAVE.team,k,i));return `<span class="famt" style="color:${v>=70?'var(--good)':v>=45?'var(--acc)':'var(--bad)'}" title="Znajomość tej opcji przez zespół">znajomość ${v}%</span>`;}
 function optGroup(name,opts,cur,fn){return `<div class="opts">${opts.map(([l,d],i)=>`<button class="opt ${cur===i?'on':''}" onclick="${fn}(${i})"><b>${l}</b><small>${d}</small>${famTag(name,i)}</button>`).join('')}</div>`;}
 function tacticsView(){const tc=myTac();const tabs='';
-  return tabs+`<div class="card"><h2>Zagrywka</h2>${optGroup('serve',SERVE_OPT,tc.serve,'setServe')}${srvTacRows(tc,myTeam().players)}</div>
-  <div class="card"><h2>Przyjęcie</h2>${shieldTacHtml(tc,myTeam().players)}</div>
-  <div class="card"><h2>Rozegranie</h2>${optGroup('dist',DIST_OPT,tc.dist,'setDist')}<h3 style="margin:12px 0 2px">Wariant zależnie od przyjęcia</h3>${distQHtml(tc)}</div>
-  <div class="card"><h2>Ustawienia</h2>${p1TacHtml(tc)}</div>
-  <div class="card"><h2>Atak</h2>${atkTacHtml(tc)}</div>
-  <div class="card"><h2>Blok i obrona</h2>${blockTacHtml(tc)}</div>
-  <div class="card"><h2>Piłki sytuacyjne</h2>${freeTacHtml(tc)}</div>
+  return tabs+`<div class="card"><h2>Zagrywka${tipQ('Mocniejsza zagrywka daje więcej asów, ale i więcej błędów. Bezpieczna to mniej błędów i łatwiejsze przyjęcie dla rywala.')}</h2>${optGroup('serve',SERVE_OPT,tc.serve,'setServe')}${srvTacRows(tc,myTeam().players)}</div>
+  <div class="card"><h2>Przyjęcie${tipQ('Osłona przyjmującego: libero bierze więcej zagrywek, gdy rywal celuje w słabszego lub roztrzęsionego zawodnika.')}</h2>${shieldTacHtml(tc,myTeam().players)}</div>
+  <div class="card"><h2>Rozegranie${tipQ('Do kogo rozgrywający kieruje piłki. Krótka do środka wymaga dobrego przyjęcia; po słabym przyjęciu zostają głównie skrzydła.')}</h2>${optGroup('dist',DIST_OPT,tc.dist,'setDist')}<h3 style="margin:12px 0 2px">Wariant zależnie od przyjęcia</h3>${distQHtml(tc)}</div>
+  <div class="card"><h2>Ustawienia${tipQ('Ustawienie zawodników w poszczególnych rotacjach przy przyjęciu zagrywki.')}</h2>${p1TacHtml(tc)}</div>
+  <div class="card"><h2>Atak${tipQ('Rodzaj i kierunek ataku. Atak w blok (po rękach) opłaca się przeciw wysokiemu blokowi.')}</h2>${atkTacHtml(tc)}</div>
+  <div class="card"><h2>Blok i obrona${tipQ('Gdzie stawia się blok i jak ustawia się obrona za nim. Dobrze dobrane do rywala zabiera mu ulubiony kierunek.')}</h2>${blockTacHtml(tc)}</div>
+  <div class="card"><h2>Piłki sytuacyjne${tipQ('Gdzie przebijać piłkę, gdy nie da się zaatakować: na środek, w rozgrywającego (utrudnia rozegranie) albo w środkowego (bez krótkiej).')}</h2>${freeTacHtml(tc)}</div>
   <p class="mut small">Taktykę możesz zmieniać także w trakcie meczu. Zagrywkę w konkretnego zawodnika rywala wybierasz w meczu (📋 Taktyka).</p>`;}
 function setServe(i){myTac().serve=i;save();if(ui.match&&!ui.match.over)ui.match.sides[0].tactics.serve=i;render();}
 const DQ_LV=[[3,'Idealne przyjęcie (#)'],[2,'Dobre przyjęcie (+)'],[1,'Słabe przyjęcie (−)']];

@@ -76,4 +76,4 @@ function ntView(){const s=S();const me=myNT();const co=coach();const nm=c=>`${na
 
 // kontuzje w kadrze (przenoszą się do klubu)
 function ntInj(m){for(const sd of m.sides)for(const cp of sd.pl){const x=cp.st;if(!x||x.srv+x.rec+x.att+x.dig+x.blk===0)continue;const P=PLAYERS[cp.id];if(!P)continue;const p=P.p;if(p.inj)continue;
-  if(R()<0.008*(1.3-p.kon/20*0.6)*(hasT(p,'odp')?0.65:1)){const days=7+Math.floor(R()*R()*35);p.inj=days;p.injUntil=addDays(today(),days);p.injN=injName(days);p.injD=days;if(p.tm===SAVE.team)news(`🚑 ${p.first} ${p.last} doznał kontuzji na zgrupowaniu reprezentacji ${natN(pNat(p))} — przerwa ok. ${days} dni.`);}}}
+  if(R()<0.008*(1.3-p.kon/20*0.6)*(hasT(p,'odp')?0.65:1)*reinjF(p)){const days=7+Math.floor(R()*R()*35);p.inj=days;p.injUntil=addDays(today(),days);p.injN=injName(days);p.injD=days;if(p.tm===SAVE.team)news(`🚑 ${p.first} ${p.last} doznał kontuzji na zgrupowaniu reprezentacji ${natN(pNat(p))} — przerwa ok. ${days} dni.`);}}}
