@@ -185,6 +185,7 @@ function hallAnim(m,pre,ev,done){
       const dsys=dt.dsys||0;const tipOn=!!dt[w==='M'?'tipM':w==='L4'?'tipR':'tipL'];
       const EB=w!=='M'&&dsys===0&&!fb?ebDef(bset,trip,tipOn,s.z6):null;const ebM=(o,q)=>mvTo(o,9-q[0],w==='L4'?q[1]:9-q[1]);
       side(d).filter(b=>!opp.includes(b)&&!isFrontZ(b.zone)).forEach(b=>{const z=defZone(b);const zy=z===5?1:z===1?8:4.5;
+        if(fb){moves.push(mvTo(b,z===6?3.3:3.8,z===5?1.8:z===1?7.2:4.5));return;}
         if(EB){const q=EB[z===6?'z6':z===lz?'line':'cross'];moves.push(ebM(b,q));return;}
         if(w==='M'){const bm=dt.blkM??1;const pos=bm===0?{5:[3.2,1.3],6:[1.4,6.2],1:[3.2,7.7]}:bm===2?{5:[5.6,1.8],6:[2.2,5.7],1:[3.8,7.9]}:bm===3?{5:[3.6,0.9],6:[2.7,3.4],1:[5.6,7.2]}:{5:[3.6,1.2],6:[2.4,4.5],1:[3.8,7.8]};const q=pos[z]||[3.2,zy];moves.push(mvTo(b,q[0],q[1]));}
         else if(z===6){const cz=lz===5?1:5;// 6: plecy strefy obrony prostej albo skos bliżej obrońcy skosu
@@ -197,11 +198,11 @@ function hallAnim(m,pre,ev,done){
         else moves.push(mvTo(b,2.3,z===5?1.5:7.5));});
       side(d).filter(b=>!opp.includes(b)&&isFrontZ(b.zone)).forEach(b=>{const dy=defY(b);moves.push(EB&&EB.off?ebM(b,EB.off):w!=='M'&&!fb?mvTo(b,6.1,dy<3?3.1:dy>6?5.9:4.5):w==='M'&&!fb?mvTo(b,tipOn?7.0:6.8,dy<3?(tipOn?3.0:2.0):dy>6?(tipOn?6.0:7.0):4.5):mvTo(b,6.3,dy<3?0.9:dy>6?8.1:4.5));});
       to={x:hx,y:hy,h:fb?2.6:3.4};peak=fb?1.0:1.6;dur=780;ph=fb?'Piłka sytuacyjna':o.role==='R'?'Wystawa':'Rozegranie';lastAtt=o;lastAttD=fb?'free':s.d;
-      if(s.ml&&P[s.ml])moves.push(mvTo(P[s.ml],6.9,clamp(9-ly+(9-ly<4.5?1.2:-1.2),1.5,7.5),1));// środkowy spóźniony do bloku: asekuruje kiwkę
+      if(s.ml&&P[s.ml])moves.push(mvTo(P[s.ml],6.9,clamp(9-ly+(9-ly<4.5?1.2:-1.2),1.5,7.5),0));// środkowy spóźniony do bloku: asekuruje kiwkę
       if(s.ml)ph=s.mc?'Środkowy w ciemno — pojedynczy blok':'Zmylony środkowy — pojedynczy blok';}
     else if(s.k==='blk'){to={x:cx(o),y:cy(o),h:3.0};dur=230;ph=s.tool?'Obicie bloku!':'Blok!';}
     else if(s.k==='whistle'){const i=s.s;const [X,Y]=s.why==='net'?gl(i,7.6+R()*0.8,1+R()*7):gl(i,2+R()*4,1+R()*7);to={x:X,y:Y,h:0};dur=s.why==='net'?420:520;peak=s.why==='net'?0.3:0.5;ph=s.why==='net'?'Gwizdek! Blokujący dotknął siatki':'Gwizdek! Atak z drugiej linii sprzed linii 3 m';}
-    else if(s.k==='dig'){const dx=(R()-0.5)*1.4,dy=(R()-0.5)*1.4;moves.push({id:o.id,x:cx(o)+dx,y:cy(o)+dy});to={x:cx(o)+dx,y:cy(o)+dy,h:0.35};dur=s.free?900:s.tip?620:s.cov?520:430;peak=s.free?2.6:s.tip?1.4:s.cov?1.1:0;ph=s.free?'Przebicie':s.tip?'Kiwka — obrona':s.cov?'Asekuracja!':'Atak — obrona';}
+    else if(s.k==='dig'){const sp=s.free?0.5:1.4;const dx=(R()-0.5)*sp,dy=(R()-0.5)*sp;moves.push({id:o.id,x:cx(o)+dx,y:cy(o)+dy});to={x:cx(o)+dx,y:cy(o)+dy,h:s.free?0.85:0.35};dur=s.free?900:s.tip?620:s.cov?520:430;peak=s.free?2.6:s.tip?1.4:s.cov?1.1:0;ph=s.free?'Przebicie':s.tip?'Kiwka — obrona':s.cov?'Asekuracja!':'Atak — obrona';}
     else if(s.k==='floor'){const i=s.s;let lx,ly;if(s.mix&&lastMix){lx=lastMix[0]+(R()-0.5)*0.6;ly=lastMix[1]+(R()-0.5)*0.6;}else if(s.blk){lx=7.4+R()*0.8;ly=lastAtt?lastLy+(R()-0.5):4.5;}else if(s.tip){lx=6.4+R()*1.2;ly=9-lastLy+(R()-0.5)*1.6;}else if(s.d==='line'){lx=0.5+R()*2.6;ly=clamp(9-lastLy+(R()-0.5)*1.2,0.3,8.7);}else if(s.d==='cross'){lx=1+R()*3.2;ly=clamp(lastLy+(R()-0.5)*1.8,0.3,8.7);}else if(s.d==='midS'){lx=0.8+R()*3;ly=3.6+R()*1.8;}else if(s.d==='midL'){lx=1+R()*3;ly=0.6+R()*2;}else if(s.d==='midR'){lx=1+R()*3;ly=6.4+R()*2;}else{lx=0.6+R()*7.2;ly=0.6+R()*7.8;}const [X,Y]=gl(i,lx,ly);to={x:X,y:Y,h:0};
       if(!s.blk&&!s.mix){// najbliższy obrońca rzuca się do piłki, ale nie sięga
         let nb=null,nd=1e9;for(const b of side(i)){const dd=Math.hypot(cx(b)-X,cy(b)-Y);if(dd<nd){nd=dd;nb=b;}}
