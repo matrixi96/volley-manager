@@ -168,12 +168,12 @@ function transferView(){const o=windowOpen();const f=ui.mf||(ui.mf={pos:'',src:'
    <div class="row small mut" style="margin-top:8px;flex-wrap:wrap;gap:12px"><span>Pokazano ${list.length?f.pg*per+1:0}–${f.pg*per+shown.length} z ${list.length}</span><span><b class="stars">★</b> pewne · <span class="pstp">★</span> możliwe · im większa wiedza (skauting), tym węższy zakres oceny i potencjału</span><span class="sp"></span>${pages>1?`<span>Strona ${f.pg+1} z ${pages}</span><button class="link" ${f.pg?'':'disabled'} onclick="ui.mf.pg--;render()">← Poprzednia</button><button class="link" ${f.pg<pages-1?'':'disabled'} onclick="ui.mf.pg++;render()">Następna →</button>`:''}</div></div>`}`;}
 
 // ---- baza zawodników w skautingu: filtry jak w menedżerach + przypisanie skauta ----
-function SF(){return ui.sf||(ui.sf={q:'',pos:'',src:'all',lg:'',tm:'',minR:0,minP:0,maxAge:40,maxVal:0,maxW:0,ce:0,kn:'',notObs:0,sort:'ocena',pg:0});}
+function SF(){return ui.sf||(ui.sf={q:'',pos:'',src:'all',lg:'',nat:'',tm:'',minR:0,minP:0,maxAge:40,maxVal:0,maxW:0,ce:0,kn:'',notObs:0,sort:'ocena',pg:0});}
 function sfSet(k,v){const f=SF();f[k]=v;f.pg=0;render();}
 function scoutDb(){const f=SF();const all=allScouts();const s=SC();
   let xs=W().players.filter(p=>p.tm!==SAVE.team);
   if(f.src==='club')xs=xs.filter(p=>p.tm>=0&&!p.jr);else if(f.src==='fa')xs=xs.filter(p=>p.tm<0);else if(f.src==='jr')xs=xs.filter(p=>p.jr);else xs=xs.filter(p=>!p.jr);
-  if(f.q)xs=xs.filter(p=>(p.first+' '+p.last).toLowerCase().includes(f.q.toLowerCase()));if(f.pos)xs=xs.filter(p=>p.pos===f.pos);if(f.tm!=='')xs=xs.filter(p=>p.tm===+f.tm);if(f.lg!=='')xs=xs.filter(p=>p.tm>=0&&lgOf(p.tm)===+f.lg);
+  if(f.q)xs=xs.filter(p=>(p.first+' '+p.last).toLowerCase().includes(f.q.toLowerCase()));if(f.pos)xs=xs.filter(p=>p.pos===f.pos);if(f.tm!=='')xs=xs.filter(p=>p.tm===+f.tm);if(f.lg!=='')xs=xs.filter(p=>p.tm>=0&&lgOf(p.tm)===+f.lg);if(f.nat)xs=xs.filter(p=>pNat(p)===f.nat);
   if(f.minR)xs=xs.filter(p=>rEst(p)[1]>=f.minR);if(f.minP)xs=xs.filter(p=>potRange(p)[1]>=f.minP);xs=xs.filter(p=>p.age<=f.maxAge);
   if(f.maxVal)xs=xs.filter(p=>(p.tm<0?0:pValue(p))<=f.maxVal);if(f.maxW)xs=xs.filter(p=>(p.tm<0?wageNeeded(p):p.wage)<=f.maxW);
   if(f.ce)xs=xs.filter(p=>p.tm<0||p.ce<=S().n+(+f.ce)-1);if(f.kn==='low')xs=xs.filter(p=>knowOf(p)<50);else if(f.kn==='high')xs=xs.filter(p=>knowOf(p)>=80);
@@ -188,8 +188,9 @@ function scoutDb(){const f=SF();const all=allScouts();const s=SC();
    <div class="filters2"><label class="flt"><span>Szukaj</span><input placeholder="Nazwisko…" value="${esc(f.q)}" onchange="sfSet('q',this.value)"></label>
     ${sel('pos','Pozycja',[['','Każda'],['R','Rozgrywający'],['A','Atakujący'],['P','Przyjmujący'],['S','Środkowy'],['L','Libero']])}
     ${sel('src','Kadra',[['all','Seniorzy (kluby i wolni)'],['club','Tylko z klubów'],['fa','Wolni zawodnicy'],['jr','Juniorzy rywali']])}
-    ${sel('lg','Liga',[['','Każda']].concat(LG_N.map((n,i)=>[i,n])))}
-    ${sel('tm','Drużyna',[['','Każda']].concat([0,1,2].filter(l=>f.lg===''||+f.lg===l).flatMap(l=>lgTeams(l).filter(t=>t.idx!==SAVE.team).map(t=>[t.idx,LG_SHORT[l]+' · '+t.name]))))}
+    ${sel('lg','Liga',[['','Każda']].concat(LG_N.map((n,i)=>[i,natFl(LG_C[i])+' '+n])))}
+    ${sel('nat','Narodowość',[['','Każda']].concat(Object.keys(NAT).map(c=>[c,natFl(c)+' '+natN(c)])))}
+    ${sel('tm','Drużyna',[['','Każda']].concat(allLgs().filter(l=>f.lg===''||+f.lg===l).flatMap(l=>lgTeams(l).filter(t=>t.idx!==SAVE.team).map(t=>[t.idx,LG_SHORT[l]+' · '+t.name]))))}
     ${sel('minR','Min. ocena',[[0,'Każda'],[55,'55+'],[60,'60+'],[65,'65+'],[70,'70+'],[75,'75+'],[80,'80+'],[85,'85+']],1)}
     ${sel('minP','Min. potencjał',[[0,'Każdy'],[69,'★★+'],[76,'★★★+'],[83,'★★★★+'],[90,'★★★★★']],1)}
     ${sel('maxAge','Maks. wiek',[[40,'Każdy'],[19,'19'],[21,'21'],[23,'23'],[25,'25'],[28,'28'],[31,'31']],1)}

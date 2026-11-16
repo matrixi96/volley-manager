@@ -27,7 +27,7 @@ function wageDemand(p){const r=rating(p);return round5k(Math.max(40000,Math.pow(
 function snap(p){const o={};for(const k of ALL_KEYS)o[k]=p[k];return o;}
 function baseRating(p){return p.base?rating(Object.assign({},p,p.base)):rating(p);}
 function potBonus(age,r){const k=r>=85?0.5:r>=80?0.75:1;return BAL2?k*(age<=21?2+R()*9:age<=24?1+R()*5:age<=27?R()*2:0):k*(age<=21?3+R()*12:age<=24?2+R()*7:age<=27?R()*3:0);}
-function initRep(t){const s=teamStrength(t),l=lgOf(t.idx);return Math.round(l===0?clamp((s-65)*3.5,45,90):l===1?clamp(25+(s-65)*3,22,50):clamp(10+(s-54)*2,8,30));}
+function initRep(t){const s=teamStrength(t),l=LG_LV[lgOf(t.idx)]||0;return Math.round(l===0?clamp((s-65)*3.5,45,90):l===1?clamp(25+(s-65)*3,22,50):clamp(10+(s-54)*2,8,30));}
 function teamQ(t){return teamStrength(t)/5;}
 function restoreDefs(){TEAMS.forEach((t,i)=>{const d=TEAM_DEFS[i];t.name=d.name;t.short=d.short;t.color=d.color;t.city='';});applyCustom();}
 function resetTeams(){restoreDefs();TEAMS.forEach((t,i)=>{t.players=genTeam(TEAM_DEFS[i],i).players;});rebuildIndex();}
@@ -37,15 +37,16 @@ function syncTeams(){for(const p of W().players){ensTraits(p);if(p.czy==null||p.
 function initPlayerMeta(p,season,free){const r=rating(p);p.pot=Math.min(95,Math.round(r+potBonus(p.age,r)));p.inj=0;p.xp={};p.base=snap(p);
   if(free){p.wage=0;p.ce=0;}else{p.wage=round5k(wageDemand(p)*(0.85+R()*0.3));p.ce=season+(R()<0.2?0:1+Math.floor(R()*3));}}
 function randPos(){const x=R()*14;return x<2?'R':x<4?'A':x<8?'P':x<12?'S':'L';}
-function genPlayer(pos,q,age){const id='n'+(W().nextId++);
-  const p={id,first:FIRST[Math.floor(R()*FIRST.length)],last:LAST[Math.floor(R()*LAST.length)],pos,num:0,age};
+function genPlayer(pos,q,age,nat){const id='n'+(W().nextId++);
+  if(!nat)nat=SAVE.team!=null&&R()<0.35?tmCountry(SAVE.team):natPick(R,null);const [fn,ln]=natName(nat);
+  const p={id,first:fn,last:ln,nat,pos,num:0,age};
   const hh=HEIGHT[pos];p.h=Math.round(hh[0]+R()*(hh[1]-hh[0]));
   for(const [k] of ATTRS.concat(PHYS))p[k]=Math.round(clamp(q+TEMPL[pos][k]+nz()*2.2,1,20));
   for(const [k] of MENTAL)p[k]=Math.round(clamp(q-1+nz()*4,1,20));
   p.tc=0;setDob(p);ensTraits(p);return p;}
 function assignNum(p,tm){const used=new Set(W().players.filter(x=>x.tm===tm&&x!==p).map(x=>x.num));if(p.num&&!used.has(p.num))return;for(let n=1;n<=40;n++)if(!used.has(n)){p.num=n;return;}}
 // stare zapisy (jedna liga, 12 klubów): dogeneruj kluby 1. i 2. Ligi — kadry, renomę, budżety i juniorów
-function ensureLeagues(){if(!SAVE.world)return false;const have=new Set(W().players.filter(p=>p.tm>=0).map(p=>p.tm));const sn=SAVE.season?SAVE.season.n:1;let added=0;
+function ensureLeagues(){if(!SAVE.world)return false;ensNat();const have=new Set(W().players.filter(p=>p.tm>=0).map(p=>p.tm));const sn=SAVE.season?SAVE.season.n:1;let added=0;
   if(!SAVE.lg)SAVE.lg=TEAM_DEFS.map(d=>d.lg||0);while(SAVE.lg.length<TEAM_DEFS.length)SAVE.lg.push(TEAM_DEFS[SAVE.lg.length].lg||0);
   SAVE.ai=SAVE.ai||[];
   for(const t of TEAMS){if(have.has(t.idx))continue;const g=genTeam(TEAM_DEFS[t.idx],t.idx);
@@ -56,36 +57,39 @@ function ensureLeagues(){if(!SAVE.world)return false;const have=new Set(W().play
   return added>0;}
 // ---- rynek wolnych zawodników: poziom liczony względem lig, żeby nie wracała inflacja ----
 // poziom odniesienia lig zapamiętany przy starcie świata (rynek nie może podbijać sam siebie)
-function lgRef(l){if(!SAVE.lgRef)SAVE.lgRef=[0,1,2].map(x=>Math.round(lgAvg(x)*10)/10);return SAVE.lgRef[l];}
-function lgAvg(l){const ids=lgIds(l);let s=0,n=0;for(const i of ids){const t=TEAMS[i];if(!t||!t.players.length)continue;s+=teamStrength(t);n++;}return n?s/n:[80,67,58][l];}
+function lgRef(l){if(!SAVE.lgRef)SAVE.lgRef=[];if(SAVE.lgRef[l]==null)SAVE.lgRef[l]=Math.round(lgAvg(l)*10)/10;return SAVE.lgRef[l];}
+function lvRef(lv){const L=allLgs().filter(l=>LG_LV[l]===lv);return L.reduce((s,l)=>s+lgRef(l),0)/L.length;}
+function lgAvg(l){const ids=lgIds(l);let s=0,n=0;for(const i of ids){const t=TEAMS[i];if(!t||!t.players.length)continue;s+=teamStrength(t);n++;}return n?s/n:[80,67,58][LG_LV[l]||0];}
 function genAt(pos,target,age){let q=target/5;let p=null;for(let it=0;it<4;it++){if(p)W().nextId--;p=genPlayer(pos,q,age);const r=rating(p);if(Math.abs(r-target)<=1)break;q+=(target-r)/5;}return p;}
-const FA_MIX=[['vet',10],['spor',5],['tal',8],['sol',32]];
-function faMarket(){if(!BAL3)return;const n=S()?S().n:1;const E=lgRef(0),L1=lgRef(1),L2=lgRef(2);
+const FA_MIX=[['vet',10],['spor',5],['tal',8],['sol',32]];const FA_SCALE=2.6;// rynek na cały świat (9 lig)
+function faMarket(){if(!BAL3)return;const n=S()?S().n:1;const L2=Math.min(...allLgs().map(lgRef));
   const fa=W().players.filter(p=>p.tm<0&&!p.jr);const have={};for(const p of fa)have[p.fk||'sol']=(have[p.fk||'sol']||0)+1;
-  for(const [k,cnt] of FA_MIX){for(let i=have[k]||0;i<cnt;i++){const pos=randPos();let p;
+  for(const [k,cnt0] of FA_MIX){const cnt=Math.round(cnt0*FA_SCALE);for(let i=have[k]||0;i<cnt;i++){const pos=randPos();let p;
+    const top=allLgs().filter(l=>LG_LV[l]===0),any=allLgs();const E=lgRef(top[Math.floor(R()*top.length)]);
     if(k==='vet')p=genAt(pos,E-6+R()*8,31+Math.floor(R()*4));
     else if(k==='spor'){p=genAt(pos,E-4+R()*8,25+Math.floor(R()*5));if(R()<0.6)p.tr=[R()<0.5?'kap':'ind'];}
     else if(k==='tal')p=genAt(pos,L2-3+R()*13,18+Math.floor(R()*4));
-    else{const lv=[E,L1,L2][Math.floor(R()*3)];p=genAt(pos,lv-8+R()*12,22+Math.floor(R()*9));}
+    else{const lv=lgRef(any[Math.floor(R()*any.length)]);p=genAt(pos,lv-8+R()*12,22+Math.floor(R()*9));}
     p.tm=-1;initPlayerMeta(p,n,true);if(k==='tal')p.pot=Math.min(90,rating(p)+10+Math.round(R()*8));p.fk=k;W().players.push(p);}}
   // za dużo wolnych: odchodzą najsłabsi i najstarsi
-  const all=W().players.filter(p=>p.tm<0&&!p.jr).sort((a,b)=>rating(b)-rating(a));if(all.length>75){const drop=new Set(all.slice(75).map(p=>p.id));W().players=W().players.filter(p=>!drop.has(p.id));}}
+  const all=W().players.filter(p=>p.tm<0&&!p.jr).sort((a,b)=>rating(b)-rating(a));const mx=Math.round(75*FA_SCALE);if(all.length>mx){const drop=new Set(all.slice(mx).map(p=>p.id));W().players=W().players.filter(p=>!drop.has(p.id));}}
 // kluby komputera podpisują wolnych zawodników: zawodnik idzie tam, gdzie dostanie najwięcej (budżet i renoma), w granicach limitu płac
-function faSignAI(){if(!BAL3)return;const LA=[0,1,2].map(lgRef);const fa=W().players.filter(p=>p.tm<0&&!p.jr&&!p.inj).sort((a,b)=>rating(b)-rating(a));let k=0;const per={};
+function faSignAI(){if(!BAL3)return;const LA=allLgs().map(lgRef);const tops=LA.slice().sort((a,b)=>b-a);const fa=W().players.filter(p=>p.tm<0&&!p.jr&&!p.inj).sort((a,b)=>rating(b)-rating(a));let k=0;const per={};
   for(const p of fa){const r=rating(p);
     // liga „na poziomie” zawodnika i czy przyjmie ofertę z ligi niżej (słaby sezon, weteran albo długo bez klubu)
-    const ideal=r>=LA[0]-4?0:r>=LA[1]-4?1:2;const bad=p.lsR&&p.lsR[0]<-0.25;const canDrop=bad||p.age>=30||(p.faW||0)>=1;
+    // najwyższy poziom ligi, do którego pasuje (poziom odniesienia ligi, a nie numer)
+    const idealRef=tops.find(x=>r>=x-4)||tops[tops.length-1];const bad=p.lsR&&p.lsR[0]<-0.25;const canDrop=bad||p.age>=30||(p.faW||0)>=1;
     const base=wageDemand(p)*(p.fk==='spor'?1.3:1)*(1-0.15*Math.min(2,p.faW||0));const bids=[];
     for(const t of TEAMS){if(t.idx===SAVE.team||t.players.length>=16||(per[t.idx]||0)>=2)continue;const L=lgOf(t.idx);
-      if(L>ideal+(canDrop?1:0))continue;// za nisko dla niego
+      const low=LA[L]<idealRef-1.5;if(LA[L]<idealRef-(canDrop?11:1.5))continue;// za nisko dla niego
       const best=t.players.filter(x=>x.pos===p.pos).map(x=>rating(x)).sort((a,b)=>b-a);
       const need=best.length<POS_STD[p.pos]||r>(best[Math.min(best.length-1,p.pos==='P'||p.pos==='S'?1:0)]||0)+1;if(!need)continue;
-      const wd=base*(L>ideal?0.85:1);if(teamWages(t.idx)+wd>wageCap(t.idx))continue;const a=SAVE.ai[t.idx];if(a.bud<wd*0.5)continue;
+      const wd=base*(low?0.85:1);if(teamWages(t.idx)+wd>wageCap(t.idx))continue;const a=SAVE.ai[t.idx];if(a.bud<wd*0.5)continue;
       // zawodnik wybiera: pieniądze (budżet klubu), poziom ligi i szansę gry
-      bids.push({t,wd,v:a.bud+a.rep*20000+(2-L)*400000+(best.length&&r>best[0]?300000:0)+R()*200000});}
+      bids.push({t,wd,v:a.bud+a.rep*20000+(LA[L]-60)*45000+(tmCountry(t.idx)===pNat(p)?150000:0)+(best.length&&r>best[0]?300000:0)+R()*200000});}
     if(!bids.length)continue;bids.sort((a,b)=>b.v-a.v);const {t,wd}=bids[0];SAVE.ai[t.idx].bud-=round5k(wd*0.5);
     per[t.idx]=(per[t.idx]||0)+1;movePlayer(p,t.idx);p.wage=round5k(wd);p.ce=S().n+(p.age>=31?0:1)+Math.floor(R()*2);p.viaFA=S().n;delete p.fk;delete p.faW;k++;SAVE.faSigned=(SAVE.faSigned||0)+1;
-    if(k<=6)news(`✍️ Wolny zawodnik ${p.first} ${p.last} (${POS_NAMES[p.pos]}, ${r}) podpisuje kontrakt z ${t.name}${lgOf(t.idx)>ideal?' — schodzi ligę niżej, żeby się odbudować':''}.`);
+    if(k<=6)news(`✍️ Wolny zawodnik ${p.first} ${p.last} (${POS_NAMES[p.pos]}, ${r}) podpisuje kontrakt z ${t.name}${LA[lgOf(t.idx)]<idealRef-1.5?' — schodzi ligę niżej, żeby się odbudować':''}.`);
     while(t.players.length>16){const ex=t.players.filter(x=>posCount(t,x.pos)>POS_STD[x.pos]).sort((a,b)=>rating(a)-rating(b))[0]||t.players.slice().sort((a,b)=>rating(a)-rating(b))[0];ex.tm=-1;ex.wage=0;ex.ce=0;t.players=W().players.filter(x=>x.tm===t.idx&&!x.jr);}}
   // kto nie znalazł klubu: obniża oczekiwania, a po trzecim oknie kończy karierę albo wyjeżdża
   const gone=new Set();for(const p of W().players){if(p.tm>=0||p.jr)continue;p.faW=(p.faW||0)+1;if(p.faW>=3&&!(p.age<21))gone.add(p.id);}
@@ -126,7 +130,7 @@ function develop(p,focus,intI,played,mods,jr,km){
   const r=rating(p);const gap=(p.pot||r)-r;if(gap<=0)return;
   const af=p.age<=20?1:p.age<=23?0.75:p.age<=26?0.45:p.age<=29?0.2:0.05;
   const tm=(hasT(p,'amb')?1.15:1)*(hasT(p,'pra')?1.2:1)*(hasT(p,'len')?0.78:1)*(hasT(p,'pro')?1.05:1);
-  const pts=tm*af*TRAIN_INT[intI][1]*(played?1.25:1)*Math.min(1.5,0.5+gap/20)*0.17*(mods?(jr?mods.jr:mods.all):1)*(km==null?1:km)*(BAL2&&p.tm!==SAVE.team?0.55*(BAL3&&p.tm>=0?[1,0.85,0.7][lgOf(p.tm)]||0.7:1):1);// niższa liga = słabsze warunki treningowe
+  const pts=tm*af*TRAIN_INT[intI][1]*(played?1.25:1)*Math.min(1.5,0.5+gap/20)*0.17*(mods?(jr?mods.jr:mods.all):1)*(km==null?1:km)*(BAL2&&p.tm!==SAVE.team?0.55*(BAL3&&p.tm>=0?[1,0.85,0.7][LG_LV[lgOf(p.tm)]]||0.7:1):1);// niższa liga = słabsze warunki treningowe
   const fk=(TRAIN_FOCUS.find(f=>f[0]===focus)||TRAIN_FOCUS[0])[3];const pw=WEIGHTS[p.pos];
   const w={};let tot=0;for(const k of ALL_KEYS){let x=0.3;if(pw[k])x+=1.5;if(fk.includes(k))x+=3;w[k]=x;tot+=x;}
   p.xp=p.xp||{};
@@ -237,13 +241,19 @@ function aiOffseason(){
   syncTeams();
 }
 // limit płac klubu (zależny od ligi) – bogaty klub nie skupuje wszystkich gwiazd
-const WAGE_CAP=[5000000,1950000,850000];
+const WAGE_CAP=[5000000,1950000,850000,3100000,1100000,7100000,2600000,5600000,2000000];
 function teamWages(ti){return TEAMS[ti].players.reduce((a,p)=>a+(p.wage||0),0);}
 function wageCap(ti){const a=SAVE.ai&&SAVE.ai[ti];if(a&&a.wg&&a.wgLg===lgOf(ti))return a.wg;return WAGE_CAP[lgOf(ti)]||WAGE_CAP[2];}
 // gwiazdy komputera odchodzą do lig zagranicznych (klub dostaje odstępne)
 function starsAbroad(){const n=S().n;const out=[];for(const p of W().players){if(p.tm<0||p.tm===SAVE.team||p.jr)continue;const r=rating(p);if(r<82||p.age>31)continue;
-    const ch=0.12+(r-82)*0.03;if(R()<ch){const ti=p.tm;const fee=round5k(pValue(p)*0.8);SAVE.ai[ti].bud+=fee;out.push(p.id);news(`✈️ ${p.first} ${p.last} (${TEAMS[ti].name}) przechodzi do ligi zagranicznej za ${fmt(fee)}.`);}}
-  if(out.length){const s=new Set(out);W().players=W().players.filter(p=>!s.has(p.id));syncTeams();
+    const ch=0.12+(r-82)*0.03;if(R()<ch){const ti=p.tm;const fee=round5k(pValue(p)*0.8);const L=lgOf(ti);
+      // najpierw klub z mocniejszej ligi w grze (inny kraj), który ma pieniądze i miejsce w budżecie płacowym
+      const dest=TEAMS.filter(t=>t.idx!==SAVE.team&&t.idx!==ti&&lgCountry(lgOf(t.idx))!==lgCountry(L)&&lgRef(lgOf(t.idx))>=lgRef(L)+2&&SAVE.ai[t.idx].bud>=fee&&teamWages(t.idx)+wageDemand(p)<=wageCap(t.idx)*1.05&&t.players.length<16).sort((a,b)=>SAVE.ai[b.idx].rep-SAVE.ai[a.idx].rep)[0];
+      const loud=lgCountry(L)===tmCountry(SAVE.team)||r>=86;
+      if(dest){SAVE.ai[dest.idx].bud-=fee;SAVE.ai[ti].bud+=fee;movePlayer(p,dest.idx);p.wage=wageDemand(p);p.ce=n+1+Math.floor(R()*2);if(loud)news(`✈️ ${p.first} ${p.last} (${TEAMS[ti].name}) przechodzi do ${dest.name} (${lgFull(lgOf(dest.idx))}) za ${fmt(fee)}.`);continue;}
+      if(LG_LV[L]===0&&lgRef(L)>=Math.max(...allLgs().map(lgRef))-1&&R()<0.5)continue;// z najmocniejszej ligi rzadziej się wyjeżdża
+      SAVE.ai[ti].bud+=fee;out.push(p.id);if(loud)news(`✈️ ${p.first} ${p.last} (${TEAMS[ti].name}) wyjeżdża do ligi ${['japońskiej','rosyjskiej','brazylijskiej','katarskiej','chińskiej'][Math.floor(R()*5)]} za ${fmt(fee)}.`);}}
+  {const s=new Set(out);if(out.length)W().players=W().players.filter(p=>!s.has(p.id));syncTeams();
     for(const t of TEAMS){if(t.idx===SAVE.team)continue;for(const pos of ['R','A','P','S','L'])while(posCount(t,pos)<POS_STD[pos]&&t.players.length<16)aiSign(t,pos);}syncTeams();}}
 function offseason(){
   const old=S(),n=old.n+1;
@@ -320,7 +330,7 @@ function openCard(id){ui.card=id;ui.offers=null;ui.tmsg=null;ui.confirm=null;ren
 function financeView(){
   const f=SAVE.fin;const pay=payroll(),sp=sponsorAmt();const rep=SAVE.ai[SAVE.team].rep;
   const stp=staffPay(),mnt=maintenance()*12,shp=shopIncome(myInfra().sklep)*12;const md=matchday(1,null,null,true);const kh=ECO().karS.season===S().n?ECO().karS.inc:0;
-  const proj=sp+tvRound()*22+md.tot*11+shp+kh-pay-stp-mnt;
+  const proj=sp+tvRound()*nRounds()+md.tot*Math.ceil(nRounds()/2)+shp+kh-pay-stp-mnt;
   const cats=['Sponsor','Prawa TV','Bilety','Karnety','Gastronomia','Parking','Sklep','Obóz','Nagrody','Transfery','Pensje','Sztab','Utrzymanie','Infrastruktura','Marketing','Odprawy'];
   const row=(o)=>cats.map(c=>`<tr><td class="l">${c}</td><td class="${(o[c]||0)<0?'bad':(o[c]||0)>0?'good':''}">${o[c]?fmt(o[c]):'—'}</td></tr>`).join('')+`<tr><td class="l"><b>Razem</b></td><td><b>${fmt(cats.reduce((s,c)=>s+(o[c]||0),0))}</b></td></tr>`;
   const spFree=typeof spSlots==='function'?Object.entries(spSlots()).reduce((a,[k,n])=>a+Math.max(0,n-spUsed(k)),0):0;
@@ -332,8 +342,8 @@ function financeView(){
    <tr><td class="l">Utrzymanie obiektów</td><td class="bad">−${fmt(mnt)}</td></tr>
    <tr><td class="l">Sklep kibica</td><td class="good">+${fmt(shp)}</td></tr>
    <tr><td class="l">Sponsorzy (podpisane umowy, renoma ${rep}/100)</td><td class="good">+${fmt(sp)}</td></tr>
-   <tr><td class="l">Prawa TV (${fmt(tvRound())} za kolejkę, ${LG_N[myLg()]})</td><td class="good">+${fmt(tvRound()*22)}</td></tr>
-   <tr><td class="l">Mecze u siebie: bilety, jedzenie, parking (ok. ${fmt(md.tot)} za mecz)</td><td class="good">~ +${fmt(md.tot*11)}</td></tr>${kh?`<tr><td class="l">Karnety (sprzedane w tym sezonie)</td><td class="good">+${fmt(kh)}</td></tr>`:''}
+   <tr><td class="l">Prawa TV (${fmt(tvRound())} za kolejkę, ${LG_N[myLg()]})</td><td class="good">+${fmt(tvRound()*nRounds())}</td></tr>
+   <tr><td class="l">Mecze u siebie: bilety, jedzenie, parking (ok. ${fmt(md.tot)} za mecz)</td><td class="good">~ +${fmt(md.tot*Math.ceil(nRounds()/2))}</td></tr>${kh?`<tr><td class="l">Karnety (sprzedane w tym sezonie)</td><td class="good">+${fmt(kh)}</td></tr>`:''}
    <tr><td class="l"><b>Prognoza bilansu (bez transferów i nagród)</b></td><td class="${proj<0?'bad':'good'}"><b>${proj>=0?'+':''}${fmt(proj)}</b></td></tr></tbody></table>
    ${spFree?`<p class="small" style="color:var(--acc)">Masz ${spFree} wolnych miejsc dla sponsorów — podpisz umowy w zakładce <button class="link" onclick="go('sponsorzy')">Sponsorzy</button>, żeby poprawić bilans.</p>`:''}<p class="mut small">Pensje i sponsorzy rozliczają się co miesiąc (1. dnia), prawa TV co kolejkę ligową, bilety po każdym meczu u siebie. Nagrody za miejsce w sezonie: od 50 tys. do 1 mln zł. Lepsze wyniki podnoszą renomę, a ta podnosi sponsorów i frekwencję.</p></div>${pricesCard()}${mdTableCard()}
   <div class="card"><h2>Sezon ${sLabel(S().n)}</h2><table class="cmp"><tbody>${row(f.sea)}</tbody></table>${f.prev?`<h3>Poprzedni sezon</h3><table class="cmp"><tbody>${row(f.prev)}</tbody></table>`:''}</div>

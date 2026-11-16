@@ -4,7 +4,7 @@ function rebuildIndex(){PLAYERS={};if(SAVE.world){for(const p of SAVE.world.play
 rebuildIndex();
 const N_SPAR=7;
 function S(){return SAVE.season;}
-function makeFixtures(n){const t=[...Array(n).keys()].sort(()=>R()-0.5);const rounds=[];for(let r=0;r<n-1;r++){const pr=[];for(let i=0;i<n/2;i++){const a=t[i],b=t[n-1-i];pr.push(r%2?[b,a]:[a,b]);}rounds.push(pr);t.splice(1,0,t.pop());}return rounds;}
+function makeFixtures(n0){const n=n0%2?n0+1:n0;const t=[...Array(n).keys()].sort(()=>R()-0.5);const rounds=[];for(let r=0;r<n-1;r++){const pr=[];for(let i=0;i<n/2;i++){const a=t[i],b=t[n-1-i];if(a>=n0||b>=n0)continue;pr.push(r%2?[b,a]:[a,b]);}rounds.push(pr);t.splice(1,0,t.pop());}return rounds;}
 function newSeason(n,phase){
   const ids=lgIds(myLg());const first=makeFixtures(ids.length).map(rd=>rd.map(([h,a])=>[ids[h],ids[a]]));const second=first.map(rd=>rd.map(([h,a])=>[a,h]));
   const others=ids.filter(i=>i!==SAVE.team).sort(()=>R()-0.5).slice(0,N_SPAR);
@@ -115,20 +115,20 @@ function finishSeason(){
   const qfL=ser('QF').map(seriesLoser).sort((a,b)=>s.seed.indexOf(a)-s.seed.indexOf(b));
   s.final=[seriesWinner(F),seriesLoser(F),seriesWinner(B),seriesLoser(B)].concat(qfL,s.seed.slice(8));
   s.phase='end';s.endDate=addDays(s.podates[Math.max(0,s.po.day-1)],3);
-  bgFinishAll();s.lgFinal={};s.lgFinal[myLg()]=s.final;if(s.oth)for(const k in s.oth)if(s.oth[k].final)s.lgFinal[k]=s.oth[k].final;
+  bgFinishAll();try{jrOtherFinish();}catch(e){}s.lgFinal={};s.lgFinal[myLg()]=s.final;if(s.oth)for(const k in s.oth)if(s.oth[k].final)s.lgFinal[k]=s.oth[k].final;
   for(const k in s.lgFinal){const [b0,st]=LG_REP[k];s.lgFinal[k].forEach((ti,pl)=>{const a=SAVE.ai[ti];const kw=BAL2?0.15:0.25;a.rep=Math.round(clamp(a.rep*(1-kw)+(b0-pl*st)*kw,5,100));});
-    if(+k!==myLg())news(`🏆 ${TEAMS[s.lgFinal[k][0]].name} wygrywa ${LG_N[k]} w sezonie ${sLabel(s.n)}.`);}
+    if(+k!==myLg())news(`🏆 ${TEAMS[s.lgFinal[k][0]].name} wygrywa ${lgFull(+k)} w sezonie ${sLabel(s.n)}.`);}
   if(BAL3)for(const k in s.lgFinal){const ch=s.lgFinal[k][0];for(const p of TEAMS[ch].players){if(rating(p)<78)continue;const up=0.03+R()*0.07;
       if(ch===SAVE.team){p.raiseReq=Math.round(up*100)/100;}else p.wage=round5k(p.wage*(1+up));}
     if(ch===SAVE.team&&typeof sendMail==='function')sendMail({cat:'trans',from:'Agenci zawodników',t:'Mistrzowie oczekują podwyżek',s:'Po tytule najlepsi zawodnicy będą chcieli 3–10% więcej przy przedłużaniu kontraktów.',lab:'Kontrakty'});}
   s.moves=leagueMoves(s.lgFinal);
-  for(const mv of s.moves)news(mv.up?`⬆️ ${TEAMS[mv.i].name} awansuje do ${LG_N[mv.to]==='Ekstraliga'?'Ekstraligi':LG_N[mv.to]==='1. Liga'?'1. Ligi':LG_N[mv.to]}${mv.i===SAVE.team?' — to nasz awans!':''}.`:`⬇️ ${TEAMS[mv.i].name} spada do ${LG_N[mv.to]==='1. Liga'?'1. Ligi':'2. Ligi'}${mv.i===SAVE.team?' — to nasz spadek.':''}.`);
+  for(const mv of s.moves)if(mv.i===SAVE.team||lgCountry(mv.to)===tmCountry(SAVE.team))news(mv.up?`⬆️ ${TEAMS[mv.i].name} awansuje do ${LG_GEN[mv.to]}${mv.i===SAVE.team?' — to nasz awans!':''}.`:`⬇️ ${TEAMS[mv.i].name} spada do ${LG_GEN[mv.to]}${mv.i===SAVE.team?' — to nasz spadek.':''}.`);
   const myPl=s.final.indexOf(SAVE.team);const pz=Math.round(PRIZE[myPl]*LG_PRIZE[myLg()]/5000)*5000;money(pz,'Nagrody');finLog(`Nagroda za ${myPl+1}. miejsce (${LG_N[myLg()]}) w sezonie ${sLabel(s.n)}`,pz);
   SAVE.history=SAVE.history||[];SAVE.history.push({n:s.n,team:SAVE.team,lg:myLg(),place:s.final.indexOf(SAVE.team)+1,champ:s.final[0],league:s.seed.indexOf(SAVE.team)+1,mv:(s.moves.find(x=>x.i===SAVE.team)||{}).up});
   seasonEvaluation();achSeason(pz);
 }
 // ---- pozostałe ligi (rozgrywane w tle, w tych samych kolejkach i dniach play-off) ----
-function bgInit(s){s.oth={};for(const l of [0,1,2]){if(l===myLg())continue;const ids=lgIds(l);if(ids.length<4)continue;const first=makeFixtures(ids.length).map(rd=>rd.map(([h,a])=>[ids[h],ids[a]]));
+function bgInit(s){s.oth={};for(const l of allLgs()){if(l===myLg())continue;const ids=lgIds(l);if(ids.length<4)continue;const first=makeFixtures(ids.length).map(rd=>rd.map(([h,a])=>[ids[h],ids[a]]));
   s.oth[l]={ids,rounds:first.concat(first.map(rd=>rd.map(([h,a])=>[a,h]))),results:[],po:null,seed:null,final:null};}}
 // stary zapis przeniesiony w trakcie sezonu: zbuduj pozostałe ligi i nadrób rozegrane kolejki i dni play-off
 function ensureBg(){const s=SAVE&&SAVE.season;if(!s||s.oth||!SAVE.lg||!s.rounds||s.phase==='end')return;bgInit(s);const n=Math.min((s.results||[]).length,s.rounds.length);for(let r=0;r<n;r++)bgRound(r);if(s.po)for(let d=0;d<(s.po.day||0);d++)bgPoDay();}
@@ -148,8 +148,8 @@ function bgPoDay(){const s=S();if(!s.oth)return;for(const k in s.oth){const L=s.
 function bgFinishAll(){const s=S();if(!s.oth)return;for(const k in s.oth){const L=s.oth[k];while(L.results.length<L.rounds.length)bgRound(L.results.length);if(!L.po)bgStartPo(L);}
   for(let g=0;g<40&&Object.values(s.oth).some(L=>!L.final);g++)bgPoDay();}
 // awanse i spadki: 2 w górę (finaliści play-off niższej ligi), 2 w dół (miejsca 11–12 wyższej ligi)
-function leagueMoves(F){const mv=[];for(const l of [0,1]){const hi=F[l],lo=F[l+1];if(!hi||!lo)continue;
-  hi.slice(-2).forEach(i=>mv.push({i,from:l,to:l+1,up:false}));lo.slice(0,2).forEach(i=>mv.push({i,from:l+1,to:l,up:true}));}return mv;}
+function leagueMoves(F){const mv=[];for(const l of allLgs()){const d=lgDown(l);if(d==null)continue;const hi=F[l],lo=F[d];if(!hi||!lo)continue;
+  hi.slice(-2).forEach(i=>mv.push({i,from:l,to:d,up:false}));lo.slice(0,2).forEach(i=>mv.push({i,from:d,to:l,up:true}));}return mv;}
 function applyLeagueMoves(old){if(!old||!old.moves||!old.moves.length)return;SAVE.lg=SAVE.lg||TEAM_DEFS.map(d=>d.lg||0);
   for(const mv of old.moves){SAVE.lg[mv.i]=mv.to;const a=SAVE.ai[mv.i];if(a)a.rep=Math.round(clamp(a.rep+(mv.up?8:-6),5,100));
     if(mv.i===SAVE.team)continue;
@@ -175,7 +175,7 @@ function nextCard(c,title){
 function injWarn(){const h=healthyLineup(myTeam(),myLineup());return h.ch.length?`<p class="small bad">${h.ch.map(([o,n,l])=>`🚑 ${esc(o?o.last:'?')} (${l}) — zastąpi go ${esc(n.last)}`).join('<br>')}</p>`:'';}
 function tableHtml(highlightPo){const tb=leagueTable();
   return `<div class="card"><h2>Tabela</h2><div class="tw"><table><thead><tr><th>#</th><th class="l">Drużyna</th><th>M</th><th>Z</th><th>P</th><th>Pkt</th><th>Sety</th><th>Małe pkt</th></tr></thead><tbody>${tb.map((x,i)=>`<tr class="${x.i===SAVE.team?'starter':''} ${i===7?'cut':''}"><td>${i+1}</td><td class="l">${tDot(x.i)}${tName(x.i)}</td><td>${x.m}</td><td>${x.w}</td><td>${x.l}</td><td><b>${x.pts}</b></td><td>${x.sw}:${x.sl}</td><td>${x.pw}:${x.pl}</td></tr>`).join('')}</tbody></table></div>
-  <p class="mut small">${LG_N[myLg()]}: miejsca 1–8 grają w play-off${myLg()>0?' (dwaj finaliści awansują)':''}${myLg()<2?', miejsca 11–12 spadają':''}. Punktacja: 3:0 i 3:1 to 3 pkt, 3:2 to 2 pkt dla zwycięzcy i 1 pkt dla przegranego.</p></div>`;}
+  <p class="mut small">${LG_N[myLg()]}: miejsca 1–8 grają w play-off${lgUp(myLg())!=null?' (dwaj finaliści awansują)':''}${lgDown(myLg())!=null?', dwa ostatnie miejsca spadają':''}. Punktacja: 3:0 i 3:1 to 3 pkt, 3:2 to 2 pkt dla zwycięzcy i 1 pkt dla przegranego.</p></div>`;}
 function seasonView(){
   const s=S();let out='';
   if(SAVE.fired)return `<div class="phase">📅 <b>${fmtLong(today())}</b> · Sezon ${sLabel(s.n)}</div>`+firedView()+newsHtml();
@@ -236,7 +236,7 @@ function statsView(){
   const sl=ui.stLg!=null?ui.stLg:myLg();const L=leaders(sl);
   const box=(t,k,unit)=>`<div class="card lb"><h3>${t}</h3>${L[k].length?L[k].filter(x=>PLAYERS[x.id]&&PLAYERS[x.id].t).map((x,i)=>{const P=PLAYERS[x.id];return `<div class="lrow ${P.t.idx===SAVE.team?'me':''}" onclick="openCard('${P.p.id}')"><span class="mut">${i+1}.</span> ${tDot(P.t.idx)}<span class="ln">${esc(P.p.last)} <small class="mut">${esc(P.t.short)} · ${pTag(P.p.pos)}</small></span><b>${x.v}${unit||''}</b></div>`;}).join(''):'<p class="mut small">Brak danych</p>'}</div>`;
   const mine=myTeam().players.map(p=>({p,r:s.ps[p.id]})).filter(x=>x.r).sort((a,b)=>b.r.pts-a.r.pts);
-  return `<div class="card"><div class="row wrap"><h2 style="margin:0">Liderzy sezonu ${sLabel(s.n)}</h2><span class="sp"></span>${[0,1,2].map(l=>`<button class="tabb ${sl===l?'on':''}" onclick="ui.stLg=${l};render()">${LG_N[l]}${l===myLg()?' ★':''}</button>`).join('')}</div><p class="mut small">${LG_N[sl]}: liga i play-off. Skuteczność ataku: minimum 6 ataków na mecz, przyjęcie: minimum 4 przyjęcia na mecz.</p></div>
+  return `<div class="card"><div class="row wrap"><h2 style="margin:0">Liderzy sezonu ${sLabel(s.n)}</h2><span class="sp"></span><select onchange="ui.stLg=+this.value;render()">${CTRY.map(k=>`<optgroup label="${COUNTRIES[k].n}">${COUNTRIES[k].lgs.map(l=>`<option value="${l}" ${sl===l?'selected':''}>${COUNTRIES[k].fl} ${LG_N[l]}${l===myLg()?' ★':''}</option>`).join('')}</optgroup>`).join('')}</select></div><p class="mut small">${lgFull(sl)}: liga i play-off. Skuteczność ataku: minimum 6 ataków na mecz, przyjęcie: minimum 4 przyjęcia na mecz.</p></div>
   <div class="lbgrid">${box('Punkty','pts')}${box('Skuteczność ataku','eff','%')}${box('Bloki','blk')}${box('Asy','ace')}${box('Przyjęcie pozytywne','rec','%')}${box('Obrony','dig')}${box('Nagrody MVP meczu','mvp')}</div>
   ${teamStatsHtml()}
   <div class="card"><h2>${esc(myTeam().name)}: statystyki zawodników</h2><div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th>Poz</th><th>M</th><th>Pkt</th><th>Pkt/m</th><th>Atak</th><th>Skut.</th><th>Bł.</th><th>Blok</th><th>As</th><th>Bł.zag</th><th>Przyj.poz</th><th>Obr.</th><th>MVP</th></tr></thead><tbody>
@@ -291,17 +291,17 @@ function teamStatsHtml(){const ts=S().ts;if(!ts)return '';
 // ---- zakładka Tabela ----
 function formOf(results,ti){const f=[];for(const rd of results)for(const g of rd){if(g.h!==ti&&g.a!==ti)continue;const my=g.h===ti?g.sw[0]:g.sw[1];const op=g.h===ti?g.sw[1]:g.sw[0];f.push({w:my>op,s:my+':'+op,op:g.h===ti?g.a:g.h,home:g.h===ti});}return f.slice(-5);}
 function tablesView(){
-  ensureBg();const s=S();const which=ui.tabSel||'sen';const jr=which==='jr';const vl=ui.lgSel!=null?ui.lgSel:myLg();const L=!jr&&vl!==myLg()&&s.oth?s.oth[vl]:null;
-  const res=jr?(s.jres||[]):L?L.results:s.results;const tb=L?bgTable(L):tableFrom(res);const played=res.length;const dz=!jr&&vl<2,uz=!jr&&vl>0;
+  ensureBg();const s=S();const which=ui.tabSel||'sen';const jr=which==='jr';const vl=ui.lgSel!=null?ui.lgSel:myLg();const L=!jr&&vl!==myLg()&&s.oth?s.oth[vl]:null;if(!jr&&vl!==myLg()&&!L){ui.lgSel=null;return tablesView();}
+  const jc=jr&&ui.jrC&&s.jo&&s.jo[ui.jrC]?s.jo[ui.jrC]:null;const res=jr?(jc?jc.res:(s.jres||[])):L?L.results:s.results;const tb=jc?tableFrom(jc.res,jc.ids):L?bgTable(L):tableFrom(res);const played=res.length;const dz=!jr&&lgDown(vl)!=null,uz=!jr&&lgUp(vl)!=null;const nT=tb.length;
   const ratio=(a,b)=>b?(a/b).toFixed(3).replace('.',','):(a?'MAX':'–');
   const rows=tb.map((x,i)=>{const f=formOf(res,x.i);
-    return `<tr class="${x.i===SAVE.team?'starter':''} ${!jr&&i===7?'cut':''} ${dz&&i>=10?'relz':''}"><td>${i+1}</td><td class="l"${jr?'':` style="cursor:pointer" title="Pokaż drużynę" onclick="openTeam(${x.i})"`}>${tDot(x.i)}${jr?tName(x.i):`<u style="text-decoration-color:var(--line);text-underline-offset:3px">${tName(x.i)}</u>`}${jr?' U20':''}</td><td>${x.m}</td><td>${x.w}</td><td>${x.l}</td><td><b>${x.pts}</b></td><td>${x.sw}:${x.sl}</td><td class="mut">${ratio(x.sw,x.sl)}</td><td>${x.pw}:${x.pl}</td><td class="mut">${ratio(x.pw,x.pl)}</td>
+    return `<tr class="${x.i===SAVE.team?'starter':''} ${!jr&&i===7?'cut':''} ${dz&&i>=nT-2?'relz':''}"><td>${i+1}</td><td class="l"${jr?'':` style="cursor:pointer" title="Pokaż drużynę" onclick="openTeam(${x.i})"`}>${tDot(x.i)}${jr?tName(x.i):`<u style="text-decoration-color:var(--line);text-underline-offset:3px">${tName(x.i)}</u>`}${jr?' U20':''}</td><td>${x.m}</td><td>${x.w}</td><td>${x.l}</td><td><b>${x.pts}</b></td><td>${x.sw}:${x.sl}</td><td class="mut">${ratio(x.sw,x.sl)}</td><td>${x.pw}:${x.pl}</td><td class="mut">${ratio(x.pw,x.pl)}</td>
     <td class="l"><span class="form">${f.map(r=>`<i class="${r.w?'fw':'fl'}" title="${r.home?'dom':'wyjazd'} vs ${esc(TEAMS[r.op].name)}: ${r.s}">${r.w?'Z':'P'}</i>`).join('')}</span></td></tr>`;}).join('');
-  const info=jr?`Liga juniorów U20 · ${played}/${s.rounds.length} kolejek${s.jchamp!=null?` · 🏆 mistrz: ${tName(s.jchamp)} U20`:''}`
-    :`${LG_N[vl]} · faza zasadnicza · ${played}/${s.rounds.length} kolejek · miejsca 1–8 grają w play-off${uz?' (dwaj finaliści awansują)':''}${dz?' · miejsca 11–12 spadają':''}${(L?L.final:s.final)?` · 🏆 ${vl===0?'mistrz Polski':'mistrz '+LG_N[vl].replace('Liga','Ligi')}: ${tName((L?L.final:s.final)[0])}`:''}`;
-  return `<div class="card"><div class="row wrap"><button class="tabb ${!jr?'on':''}" onclick="ui.tabSel='sen';render()">Seniorzy</button><button class="tabb ${jr?'on':''}" onclick="ui.tabSel='jr';render()">Juniorzy U20</button>${!jr?`<span style="width:14px"></span>${[0,1,2].map(l=>`<button class="tabb ${vl===l?'on':''}" onclick="ui.lgSel=${l};render()">${LG_N[l]}${l===myLg()?' ★':''}</button>`).join('')}`:''}<span class="sp"></span><span class="small mut">Sezon ${sLabel(s.n)}</span></div>
+  const info=jr?(jc?`Liga juniorów U20 (${COUNTRIES[ui.jrC].n}) · ${played}/${jc.rounds.length} kolejek${jc.champ!=null?` · 🏆 mistrz: ${tName(jc.champ)} U20`:''}`:`Liga juniorów U20 (${COUNTRIES[tmCountry(SAVE.team)].n}) · ${played}/${s.rounds.length} kolejek${s.jchamp!=null?` · 🏆 mistrz: ${tName(s.jchamp)} U20`:''}`)
+    :`${lgFull(vl)} · faza zasadnicza · ${played}/${(L?L.rounds:s.rounds).length} kolejek · miejsca 1–8 grają w play-off${uz?' (dwaj finaliści awansują)':''}${dz?' · dwa ostatnie miejsca spadają':''}${(L?L.final:s.final)?` · 🏆 ${LG_LV[vl]===0?'mistrz '+COUNTRIES[lgCountry(vl)].gen:'mistrz '+LG_GEN[vl]}: ${tName((L?L.final:s.final)[0])}`:''}`;
+  return `<div class="card"><div class="row wrap"><button class="tabb ${!jr?'on':''}" onclick="ui.tabSel='sen';render()">Seniorzy</button><button class="tabb ${jr?'on':''}" onclick="ui.tabSel='jr';render()">Juniorzy U20</button>${jr?`<span style="width:14px"></span><select onchange="ui.jrC=this.value||null;render()">${CTRY.map(k=>`<option value="${k===tmCountry(SAVE.team)?'':k}" ${(ui.jrC||tmCountry(SAVE.team))===k?'selected':''}>${COUNTRIES[k].fl} ${COUNTRIES[k].n}</option>`).join('')}</select>`:''}${!jr?`<span style="width:14px"></span><select onchange="ui.lgSel=+this.value;render()">${CTRY.map(k=>`<optgroup label="${COUNTRIES[k].n}">${COUNTRIES[k].lgs.map(l=>`<option value="${l}" ${vl===l?'selected':''}>${COUNTRIES[k].fl} ${LG_N[l]}${l===myLg()?' ★':''}</option>`).join('')}</optgroup>`).join('')}</select>`:''}<span class="sp"></span><span class="small mut">Sezon ${sLabel(s.n)}</span></div>
   <p class="small mut">${info}</p>
   ${played?`<div class="tw"><table class="ltable"><thead><tr><th>#</th><th class="l">Drużyna</th><th title="Mecze">M</th><th title="Zwycięstwa">Z</th><th title="Porażki">P</th><th>Pkt</th><th>Sety</th><th title="Stosunek setów">Ratio</th><th>Małe pkt</th><th title="Stosunek małych punktów">Ratio</th><th class="l">Forma</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<p class="mut">Tabela pojawi się po pierwszej kolejce fazy zasadniczej.</p>'}
   <p class="mut small">Punktacja: 3:0 i 3:1 to 3 pkt, 3:2 to 2 pkt dla zwycięzcy i 1 pkt dla przegranego. Kolejność: punkty, zwycięstwa, stosunek setów, stosunek małych punktów. Forma: ostatnie 5 meczów (Z = zwycięstwo, P = porażka), najnowszy po prawej.</p></div>
-  ${!jr&&!L&&s.po?bracketHtml():''}${L&&L.final?`<div class="card"><h3>Klasyfikacja końcowa · ${LG_N[vl]}</h3>${L.final.map((t,i)=>`<div class="res ${t===SAVE.team?'me':''}"><b>${i+1}.</b> ${tDot(t)}${tName(t)}${(vl>0&&i<2)?' <span class="good small">awans ⬆</span>':''}${(vl<2&&i>=10)?' <span class="bad small">spadek ⬇</span>':''}</div>`).join('')}</div>`:L&&L.po?`<p class="small mut">${LG_N[vl]}: trwa play-off.</p>`:''}`;
+  ${!jr&&!L&&s.po?bracketHtml():''}${L&&L.final?`<div class="card"><h3>Klasyfikacja końcowa · ${LG_N[vl]}</h3>${L.final.map((t,i)=>`<div class="res ${t===SAVE.team?'me':''}"><b>${i+1}.</b> ${tDot(t)}${tName(t)}${(uz&&i<2)?' <span class="good small">awans ⬆</span>':''}${(dz&&i>=L.final.length-2)?' <span class="bad small">spadek ⬇</span>':''}</div>`).join('')}</div>`:L&&L.po?`<p class="small mut">${LG_N[vl]}: trwa play-off.</p>`:''}`;
 }
