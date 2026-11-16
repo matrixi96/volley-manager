@@ -57,7 +57,7 @@ function negSign(){const n=NG();if(!n||!n.ok||!n.terms)return;const p=PLAYERS[n.
     news(`✍️ ${p.first} ${p.last} przedłużył kontrakt do ${ceDate(p.ce)} (${fmt(t.w)}/rok).`);ui.neg=null;save();return tradeMsg(true,`${p.last} przedłużył kontrakt do ${ceDate(p.ce)}.`);}
   if(!windowOpen())return tradeMsg(false,'Okno transferowe się zamknęło.');
   if(typeof budCan==='function'){const e=budCan('tr',(from>=0?n.fee:0)+(t.b||0));if(e)return tradeMsg(false,e);budWageOver(t.w);}
-  achEv('sign');if(from>=0){achEv('buy');achMax('buyFee',n.fee);if(p.age<=21)achEv('buyYoung');if(lgOf(from)<myLg())achMax('buyUp',1);}else achEv('free');
+  achEv('sign');try{if(typeof socTransfer==='function')socTransfer(p);}catch(e){}if(from>=0){achEv('buy');achMax('buyFee',n.fee);if(p.age<=21)achEv('buyYoung');if(lgOf(from)<myLg())achMax('buyUp',1);}else achEv('free');
   if(from>=0){money(-n.fee,'Transfery');SAVE.ai[from].bud+=n.fee;finLog(`Zakup: ${p.first} ${p.last} (${TEAMS[from].short})`,-n.fee);}
   if(t.b){money(-t.b,'Transfery');finLog(`Premia za podpis: ${p.first} ${p.last}`,-t.b);}
   movePlayer(p,SAVE.team);p.wage=t.w;p.ce=contractEndFor(t.y);delete p.tl;

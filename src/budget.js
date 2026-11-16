@@ -16,13 +16,13 @@ function budPlan(){const s=S();const rev=revForecast()*budAcc();const reserve=Ma
   const bs=budSplitAmt(pool,sp,reserve);
   SAVE.bud={n:s.n,pool:round5k(pool),res:reserve,wg:bs.wg,op:bs.op,tr:bs.tr,trUsed:old?old.trUsed:0,opUsed:old?old.opUsed:0,trAdd:old?old.trAdd:0,extra:old?old.extra:0,warn:{}};
   return SAVE.bud;}
-function BUD(){if(SAVE.team==null||!S())return null;if(SAVE.staffPool&&!SAVE.staffPool.some(x=>x.role==='fin'))for(let i=0;i<3;i++){const s=genStaff('fin',5+R()*14);s.wage=staffWage(s.skill);SAVE.staffPool.push(s);}if(!SAVE.bud||SAVE.bud.n!==S().n){const had=!!SAVE.bud;budPlan();if(had)budSeasonMail(true);}return SAVE.bud;}
+function BUD(){if(SAVE.team==null||!S())return null;if(SAVE.staffPool)for(const rl of ['fin','soc'])if(!SAVE.staffPool.some(x=>x.role===rl))for(let i=0;i<3;i++){const s=genStaff(rl,5+R()*14);s.wage=staffWage(s.skill);SAVE.staffPool.push(s);}if(!SAVE.bud||SAVE.bud.n!==S().n){const had=!!SAVE.bud;budPlan();if(had)budSeasonMail(true);}return SAVE.bud;}
 function wageBill(){return payroll()+staffPay();}
 function budLeft(){const b=BUD();if(!b)return {tr:0,wg:0,op:0};return {tr:b.tr+(b.trAdd||0)+(b.extra||0)-b.trUsed,wg:b.wg-wageBill(),op:b.op-b.opUsed-maintenance()*12};}
 // księgowanie: money() przekazuje tu każdy ruch
 function budBook(amt,cat){const b=SAVE.team!=null&&S()?BUD():null;if(!b)return;
   if(cat==='Transfery'||cat==='Odprawy'){if(amt<0)b.trUsed+=-amt;else b.trAdd=(b.trAdd||0)+amt*0.5;}// połowa wpływów ze sprzedaży wraca do budżetu transferowego
-  if(cat==='Infrastruktura'||cat==='Obóz')if(amt<0)b.opUsed+=-amt;}
+  if(cat==='Infrastruktura'||cat==='Obóz'||cat==='Marketing')if(amt<0)b.opUsed+=-amt;}
 // opis wpływu decyzji na budżety: d={tr,wg,op} (wydatek dodatni)
 function budImpact(d,note){const b=BUD();if(!b)return '';const L=budLeft();const rows=[];
   const one=(k,lab,tot,used,dv)=>{const after=used+dv;const left=tot-after;const pct=Math.min(130,Math.round(after/Math.max(1,tot)*100));

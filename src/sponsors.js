@@ -11,7 +11,7 @@ function spSlots(L,rep){L=L||myInfra().sied;rep=rep==null?SAVE.ai[SAVE.team].rep
 function spSlotsTxt(L){if(!SAVE.ai||SAVE.team==null)return '';const s=spSlots(L);return `główni ${s.main}, średni ${s.mid}, mali ${s.small}`;}
 function spStar(){const t=myTeam();const best=t.players.slice().sort((a,b)=>rating(b)-rating(a))[0];if(!best)return [0,null];const r=rating(best);return [(r>=88?0.12:r>=84?0.07:r>=80?0.03:0)+(best.star?0.04:0),best];}
 function spQuality(){const rep=SAVE.ai[SAVE.team].rep;const s=S();let pb=0;try{if(s&&(s.phase==='liga'||s.phase==='po')){const pos=leagueTable().findIndex(x=>x.i===SAVE.team)+1;pb=pos<=2?0.08:pos<=4?0.04:pos>=10?-0.04:0;}}catch(e){}
-  return clamp(0.55+rep/100*0.55+(myInfra().sied-1)*0.06+spStar()[0]+pb,0.5,1.7);}
+  return clamp(0.55+rep/100*0.55+(myInfra().sied-1)*0.06+spStar()[0]+pb+(typeof socSpB==='function'&&SAVE.soc?socSpB():0),0.5,1.7);}
 function spName(cat){if(cat==='tech')return SP_T1[Math.floor(R()*SP_T1.length)]+' '+SP_T2[Math.floor(R()*SP_T2.length)];return SP_A[Math.floor(R()*SP_A.length)]+' '+SP_B[Math.floor(R()*SP_B.length)];}
 function spDurMul(mo){return 1.05-0.01*(mo-1);}
 function genSpOffers(){const s=SPN();const q=spQuality();const n={tit:3,main:3,tech:2,mid:4,small:5};s.off={};

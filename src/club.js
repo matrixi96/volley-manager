@@ -52,6 +52,7 @@ const STAFF_ROLES=[
   ['sk','Skaut','Dokładniejsza ocena potencjału zawodników z innych klubów.'],
   ['jr','Trener juniorów','Szybszy rozwój juniorów i lepsze roczniki z naboru.'],
   ['sta','Statystyk / analityk','Przygotowanie do rywala: mały bonus w każdym meczu.'],
+  ['soc','Specjalista ds. social mediów','Prowadzi profile klubu: szybszy wzrost obserwujących, akcje specjalne, gaszenie kryzysów i usuwanie wpadek zawodników.'],
   ['fin','Dyrektor finansowy','Planuje budżety (transferowy, płacowy, operacyjny): dokładniejsza prognoza przychodów, wyższe budżety i do +5% w ofertach sponsorów.']
 ];
 const ROLE_N=Object.fromEntries(STAFF_ROLES.map(r=>[r[0],r[1]]));

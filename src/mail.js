@@ -1,7 +1,7 @@
 // ================= POCZTA (skrzynka wiadomości) =================
 // SAVE.mail: [{id,d,cat,from,t,s,b:{type,...},r:0/1,st:0/1,ar:0/1,act:0/1}]
 const MAIL_CAT={mecz:['Mecze','#e8b73a'],trening:['Trening','#38bdf8'],skaut:['Skauting','#a78bfa'],trans:['Transfery','#f97316'],med:['Medyczne','#ef6b5b'],
-  spon:['Sponsorzy','#5ad17a'],fin:['Finanse','#eab308'],zarz:['Zarząd','#94a3b8'],druz:['Drużyna','#2dd4bf'],liga:['Liga i media','#f472b6'],klub:['Klub','#60a5fa']};
+  spon:['Sponsorzy','#5ad17a'],fin:['Finanse','#eab308'],zarz:['Zarząd','#94a3b8'],druz:['Drużyna','#2dd4bf'],liga:['Liga i media','#f472b6'],soc:['Social media','#e1306c'],klub:['Klub','#60a5fa']};
 const MAIL_MAX=300;
 function mailBox(){return SAVE.mail||(SAVE.mail=[]);}
 function mailOpts(){return SAVE.mailOpt||(SAVE.mailOpt={trD:1,trW:1,trM:1});}
@@ -20,7 +20,7 @@ const NEWS_MAP=[[/^🚑/,'med','Lekarz klubowy','Kontuzja'],[/^🤝/,'spon','Dzi
 function mailFromNews(t){if(/^(✅ Wygrana|❌ Porażka)/.test(t))return;const r=NEWS_MAP.find(x=>x[0].test(t));if(!r)return;const tx=stripEmoji(t);
   sendMail({cat:r[1],from:r[2],t:tx,s:r[3],b:{type:'text',x:tx},ic:(t.match(/^\p{Extended_Pictographic}/u)||[''])[0]});}
 // ---- generatory ----
-function mailMatch(m,c){try{const me=m.sides[0],op=m.sides[1];const won=m.winner===0;const T=teamTotals(me),O=teamTotals(op);
+function mailMatch(m,c){try{if(typeof socAfterMatch==='function')socAfterMatch(m,c);}catch(e){console.error(e);}try{const me=m.sides[0],op=m.sides[1];const won=m.winner===0;const T=teamTotals(me),O=teamTotals(op);
   const rate=sd=>sd.pl.filter(p=>p.st.srv+p.st.rec+p.st.att+p.st.dig+p.st.blk>0).map(p=>[p.id,p.last,p.pos,Math.round((liveRating(p)||6)*10)/10,p.st.kill+p.st.blk+p.st.ace,p.st.att?Math.round(p.st.kill/p.st.att*100):null,p.st.rec?Math.round(p.st.recPos/p.st.rec*100):null]).sort((a,b)=>b[3]-a[3]);
   const mine=rate(me),opp=rate(op);const best=mine.concat(opp).sort((a,b)=>b[3]-a[3])[0];
   const s=S();let pos=null;if(c.kind==='liga'||c.kind==='po'){const tb=leagueTable();pos=tb.findIndex(x=>x.i===SAVE.team)+1;}
@@ -94,6 +94,7 @@ function mailRel(m){const b=m.b||{};const out=[];const c=myNext();const s=S();
   else if(b.type==='md'||m.cat==='fin')add('Finanse','Przychody i wydatki',"go('finanse')",'#854F0B');
   else if(m.cat==='skaut')add('Skauting','Raporty i zadania skautów',"go('skauting')",'#534AB7');
   else if(m.cat==='trans'||b.type==='offer')add('Transfery','Lista transferowa',"go('transfery')",'#993C1D');
+  else if(m.cat==='soc')add('Social media','Profil klubu i kryzysy',"go('social')",'#993556');
   else if(m.cat==='spon')add('Sponsorzy','Umowy i oferty',"go('sponsorzy')",'#3B6D11');
   else if(m.cat==='med'){add('Skład','Sprawdź ustawienie',"go('sklad')",'#0F6E56');}
   else if(m.cat==='zarz')add('Trener','Zaufanie zarządu',"go('trener')",'#444441');

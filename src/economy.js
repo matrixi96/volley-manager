@@ -26,7 +26,7 @@ function karOpen(d){const s=S();if(!s||!s.rdates)return false;d=d||today();retur
 function crowdFor(ti,k,price,est){const rep=SAVE.ai[ti].rep;const inf=infraOf(ti);const L=inf.hala;const cap=HALA_CAP[L-1];const mine=ti===SAVE.team;price=price==null?tixPrice(ti):price;
   let pm=Math.pow(refPrice(ti)/Math.max(5,price),1.4);pm=clamp(pm,0.2,1.7);
   let pos=1;try{const s=S();if(s&&(s.phase==='liga'||s.phase==='po')){const p=leagueTable().findIndex(x=>x.i===ti)+1;pos=p<=3?1.1:p>=10?0.92:1;}}catch(e){}
-  let D=(1400+rep*25)*(1+0.05*(L-1))*pm*pos*(est?1:0.85+R()*0.3)*k;
+  let D=(1400+rep*25)*(1+0.05*(L-1))*pm*pos*(est?1:0.85+R()*0.3)*k*(mine&&SAVE.soc&&typeof socCrowdB==='function'?1+socCrowdB():1);
   const spots=parkSpots(inf.park),need=D*0.3;let pk=need>spots?1-0.3*(1-spots/need):1;
   if(mine){const pp=ECO().park;pk*=clamp(1-0.04*(pp/PARK_REF-1),0.85,1);}
   D*=pk;
@@ -92,7 +92,7 @@ function karDay(d){if(SAVE.team==null||!SAVE.world)return;const e=ECO(),s=S();if
     if(t!=='v')add=Math.min(add,Math.max(0,Math.round(cap-e.karS.n-e.karS.u)));e.karS[t]+=add;inc+=add*e.kar[t];}
   if(inc>0){money(inc,'Karnety');e.karS.inc+=inc;}}
 // ---- sklep kibica ----
-function shopMonth(L,est){const e=ECO();L=L||myInfra().sklep;const rep=SAVE.ai?SAVE.ai[SAVE.team].rep:50;const F=(300+rep*20)*(1+0.15*(L-1))/1000;const m=SAVE._now?+SAVE._now.slice(5,7):+today().slice(5,7);
+function shopMonth(L,est){const e=ECO();L=L||myInfra().sklep;const rep=SAVE.ai?SAVE.ai[SAVE.team].rep:50;const F=(300+rep*20)*(1+0.15*(L-1))/1000*(SAVE.soc&&typeof socShopB==='function'?1+socShopB():1);const m=SAVE._now?+SAVE._now.slice(5,7):+today().slice(5,7);
   const rows=[];let tot=0,rev=0;for(const [key,n,lv,ref,cost,rate] of SHOP_PR){if(L<lv)continue;const pr=e.shop[key];let q=F*rate*clamp(Math.pow(ref/Math.max(1,pr),1.6),0.05,2.5)*(est?1:0.9+R()*0.2);
     if(key==='kalendarz')q*=(m===11||m===12||m===1)?3:0.4;if(key==='szalik'||key==='bluza')q*=(m>=10||m<=3)?1.3:0.75;q=Math.round(q);const pf=q*(pr-cost);rows.push({key,n,q,pr,pf,rev:q*pr});tot+=pf;rev+=q*pr;}
   return {rows,tot,rev};}

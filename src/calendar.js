@@ -51,6 +51,7 @@ function monthly(d){if(!SAVE.fin||SAVE.team==null)return;const m=+d.slice(5,7);c
   money(-pay,'Pensje');money(spm,'Sponsor');money(-stp,'Sztab');money(-mnt,'Utrzymanie');money(shp,'Sklep');const f=SAVE.fin;f.log.unshift({d,t:`${MON_NOM[m-1]}: pensje zawodników (−${fmt(pay)}) i sztabu (−${fmt(stp)}), utrzymanie (−${fmt(mnt)}), sponsorzy (+${fmt(spm)}), sklep (+${fmt(shp)})`,a:spm+shp-pay-stp-mnt});f.log=f.log.slice(0,80);
   try{debtCheck(d);}catch(e){console.error(e);}
   try{if(typeof budMonthly==='function')budMonthly();}catch(e){console.error(e);}
+  try{if(typeof socMonthly==='function')socMonthly();}catch(e){console.error(e);}
   if(typeof sendMail==='function'){const pm=MON_NOM[(m+10)%12];const rows=[['Sponsorzy',spm],['Sklep kibica',shp],['Pensje zawodników',-pay],['Pensje sztabu',-stp],['Utrzymanie obiektów',-mnt]];sendMail({cat:'fin',from:'Księgowość klubu',t:`Rozliczenie miesiąca: ${MON_NOM[m-1]}`,s:`Bilans: ${fmt(spm+shp-pay-stp-mnt)} · saldo ${fmt(f.bal)}`,b:{type:'fin',rows,tot:spm+shp-pay-stp-mnt,bal:f.bal},lab:'Miesięczne zestawienie'});}}
 // zarząd reaguje na dług: poniżej −1 mln zł przymusowa sprzedaż najdroższego zawodnika (raz w miesiącu)
 function debtCheck(d){if(SAVE.fin&&SAVE.fin.bal>-1000000){SAVE.debtNote=null;if(SAVE.fin.bal>-500000)SAVE.trBan=false;}if(!BAL2||!SAVE.fin||SAVE.fin.bal>-500000)return;
