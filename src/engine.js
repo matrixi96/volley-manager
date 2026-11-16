@@ -30,7 +30,7 @@ const TR_BAD={spo:['ner'],ner:['spo','lid'],pra:['len'],len:['pra','amb','pro'],
 function ensTraits(p){if(!p||p.tr)return p;let h=5;for(const c of String(p.id))h=(h*137+c.charCodeAt(0))>>>0;const rnd=mulberry32(h);
   const w={amb:3,zde:2+((p.wal||10)-10)*0.4,lid:1.2+((p.kom||10)-10)*0.35+(p.age>=28?1:0),pra:3,pro:2+(p.age>=27?1.5:0),spo:1.5+((p.opa||10)-10)*0.35,ner:1.5-((p.opa||10)-10)*0.3,len:1.3,kap:1,ind:1.2+(p.pos==='A'?1.5:0)};
   const pick=ex=>{let tot=0;const ks=Object.keys(w).filter(k=>!ex.includes(k)&&!ex.some(e=>(TR_BAD[e]||[]).includes(k)));for(const k of ks)tot+=Math.max(0.2,w[k]);let r=rnd()*tot;for(const k of ks){r-=Math.max(0.2,w[k]);if(r<=0)return k;}return ks[0];};
-  const a=pick([]);p.tr=[a];if(rnd()<0.38)p.tr.push(pick([a]));return p;}
+  const a=pick([]);p.tr=[a];return p;}// jeden charakter na zawodnika
 function hasT(p,k){if(!p)return false;if(!p.tr)ensTraits(p);return p.tr.includes(k);}
 const TEMPL={
   R:{czy:1,kiw:1,zag:0,prz:-3,ata:-4,blo:-2,obr:0,roz:4,sko:-1,kon:0,tod:0,tpa:4,sil:-2,szy:1,zwi:1},
