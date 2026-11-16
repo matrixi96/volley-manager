@@ -72,14 +72,24 @@ function faMarket(){if(!BAL3)return;const n=S()?S().n:1;const E=lgRef(0),L1=lgRe
   const all=W().players.filter(p=>p.tm<0&&!p.jr).sort((a,b)=>rating(b)-rating(a));if(all.length>75){const drop=new Set(all.slice(75).map(p=>p.id));W().players=W().players.filter(p=>!drop.has(p.id));}}
 // kluby komputera podpisują wolnych zawodników: zawodnik idzie tam, gdzie dostanie najwięcej (budżet i renoma), w granicach limitu płac
 function faSignAI(){if(!BAL3)return;const LA=[0,1,2].map(lgRef);const fa=W().players.filter(p=>p.tm<0&&!p.jr&&!p.inj).sort((a,b)=>rating(b)-rating(a));let k=0;const per={};
-  for(const p of fa){const r=rating(p);let wd=wageDemand(p)*(p.fk==='spor'?1.3:1);const bids=[];
-    for(const t of TEAMS){if(t.idx===SAVE.team||t.players.length>=16||(per[t.idx]||0)>=2)continue;const best=t.players.filter(x=>x.pos===p.pos).map(x=>rating(x)).sort((a,b)=>b-a);
-      const need=best.length<POS_STD[p.pos]||r>(best[Math.min(best.length-1,p.pos==='P'||p.pos==='S'?1:0)]||0)+1;if(!need)continue;if(teamWages(t.idx)+wd>wageCap(t.idx))continue;if(r>LA[lgOf(t.idx)]+(lgOf(t.idx)===0?6:4)&&p.fk!=='tal')continue;// za dobry na tę ligę: czeka na lepszą ofertę
-      const a=SAVE.ai[t.idx];if(a.bud<wd*0.5)continue;bids.push({t,v:a.bud+a.rep*20000+R()*200000});}
-    if(!bids.length)continue;bids.sort((a,b)=>b.v-a.v);const t=bids[0].t;SAVE.ai[t.idx].bud-=round5k(wd*0.5);
-    per[t.idx]=(per[t.idx]||0)+1;movePlayer(p,t.idx);p.wage=round5k(wd);p.ce=S().n+(p.age>=31?0:1)+Math.floor(R()*2);delete p.fk;k++;SAVE.faSigned=(SAVE.faSigned||0)+1;
-    if(k<=6)news(`✍️ Wolny zawodnik ${p.first} ${p.last} (${POS_NAMES[p.pos]}, ${r}) podpisuje kontrakt z ${t.name}.`);
-    while(t.players.length>16){const ex=t.players.filter(x=>posCount(t,x.pos)>POS_STD[x.pos]).sort((a,b)=>rating(a)-rating(b))[0]||t.players.slice().sort((a,b)=>rating(a)-rating(b))[0];ex.tm=-1;ex.wage=0;ex.ce=0;t.players=W().players.filter(x=>x.tm===t.idx&&!x.jr);}}}
+  for(const p of fa){const r=rating(p);
+    // liga „na poziomie” zawodnika i czy przyjmie ofertę z ligi niżej (słaby sezon, weteran albo długo bez klubu)
+    const ideal=r>=LA[0]-4?0:r>=LA[1]-4?1:2;const bad=p.lsR&&p.lsR[0]<-0.25;const canDrop=bad||p.age>=30||(p.faW||0)>=1;
+    const base=wageDemand(p)*(p.fk==='spor'?1.3:1)*(1-0.15*Math.min(2,p.faW||0));const bids=[];
+    for(const t of TEAMS){if(t.idx===SAVE.team||t.players.length>=16||(per[t.idx]||0)>=2)continue;const L=lgOf(t.idx);
+      if(L>ideal+(canDrop?1:0))continue;// za nisko dla niego
+      const best=t.players.filter(x=>x.pos===p.pos).map(x=>rating(x)).sort((a,b)=>b-a);
+      const need=best.length<POS_STD[p.pos]||r>(best[Math.min(best.length-1,p.pos==='P'||p.pos==='S'?1:0)]||0)+1;if(!need)continue;
+      const wd=base*(L>ideal?0.85:1);if(teamWages(t.idx)+wd>wageCap(t.idx))continue;const a=SAVE.ai[t.idx];if(a.bud<wd*0.5)continue;
+      // zawodnik wybiera: pieniądze (budżet klubu), poziom ligi i szansę gry
+      bids.push({t,wd,v:a.bud+a.rep*20000+(2-L)*400000+(best.length&&r>best[0]?300000:0)+R()*200000});}
+    if(!bids.length)continue;bids.sort((a,b)=>b.v-a.v);const {t,wd}=bids[0];SAVE.ai[t.idx].bud-=round5k(wd*0.5);
+    per[t.idx]=(per[t.idx]||0)+1;movePlayer(p,t.idx);p.wage=round5k(wd);p.ce=S().n+(p.age>=31?0:1)+Math.floor(R()*2);p.viaFA=S().n;delete p.fk;delete p.faW;k++;SAVE.faSigned=(SAVE.faSigned||0)+1;
+    if(k<=6)news(`✍️ Wolny zawodnik ${p.first} ${p.last} (${POS_NAMES[p.pos]}, ${r}) podpisuje kontrakt z ${t.name}${lgOf(t.idx)>ideal?' — schodzi ligę niżej, żeby się odbudować':''}.`);
+    while(t.players.length>16){const ex=t.players.filter(x=>posCount(t,x.pos)>POS_STD[x.pos]).sort((a,b)=>rating(a)-rating(b))[0]||t.players.slice().sort((a,b)=>rating(a)-rating(b))[0];ex.tm=-1;ex.wage=0;ex.ce=0;t.players=W().players.filter(x=>x.tm===t.idx&&!x.jr);}}
+  // kto nie znalazł klubu: obniża oczekiwania, a po trzecim oknie kończy karierę albo wyjeżdża
+  const gone=new Set();for(const p of W().players){if(p.tm>=0||p.jr)continue;p.faW=(p.faW||0)+1;if(p.faW>=3&&!(p.age<21))gone.add(p.id);}
+  if(gone.size){W().players=W().players.filter(p=>!gone.has(p.id));SAVE.faGone=(SAVE.faGone||0)+gone.size;}syncTeams();}
 // gwiazda dłużej w jednym klubie chce nowego wyzwania: klub komputera ją sprzedaje temu, kto zapłaci (albo za granicę)
 function starsMove(){if(!BAL3)return;const n=S().n;for(const p of W().players.slice()){if(p.tm<0||p.tm===SAVE.team||p.jr)continue;const r=rating(p);if(r<80||p.age>31)continue;if(n-(p.jn||1)<3||R()>=0.15)continue;
     const from=p.tm;const fee=askingPrice(p);const bids=TEAMS.filter(t=>t.idx!==from&&t.idx!==SAVE.team&&t.players.length<16&&SAVE.ai[t.idx].bud>=fee&&teamWages(t.idx)+wageDemand(p)<=wageCap(t.idx)).map(t=>({t,v:SAVE.ai[t.idx].bud+R()*200000})).sort((a,b)=>b.v-a.v);
@@ -116,7 +126,7 @@ function develop(p,focus,intI,played,mods,jr,km){
   const r=rating(p);const gap=(p.pot||r)-r;if(gap<=0)return;
   const af=p.age<=20?1:p.age<=23?0.75:p.age<=26?0.45:p.age<=29?0.2:0.05;
   const tm=(hasT(p,'amb')?1.15:1)*(hasT(p,'pra')?1.2:1)*(hasT(p,'len')?0.78:1)*(hasT(p,'pro')?1.05:1);
-  const pts=tm*af*TRAIN_INT[intI][1]*(played?1.25:1)*Math.min(1.5,0.5+gap/20)*0.17*(mods?(jr?mods.jr:mods.all):1)*(km==null?1:km)*(BAL2&&p.tm!==SAVE.team?0.55:1);
+  const pts=tm*af*TRAIN_INT[intI][1]*(played?1.25:1)*Math.min(1.5,0.5+gap/20)*0.17*(mods?(jr?mods.jr:mods.all):1)*(km==null?1:km)*(BAL2&&p.tm!==SAVE.team?0.55*(BAL3&&p.tm>=0?[1,0.85,0.7][lgOf(p.tm)]||0.7:1):1);// niższa liga = słabsze warunki treningowe
   const fk=(TRAIN_FOCUS.find(f=>f[0]===focus)||TRAIN_FOCUS[0])[3];const pw=WEIGHTS[p.pos];
   const w={};let tot=0;for(const k of ALL_KEYS){let x=0.3;if(pw[k])x+=1.5;if(fk.includes(k))x+=3;w[k]=x;tot+=x;}
   p.xp=p.xp||{};
@@ -227,7 +237,7 @@ function aiOffseason(){
   syncTeams();
 }
 // limit płac klubu (zależny od ligi) – bogaty klub nie skupuje wszystkich gwiazd
-const WAGE_CAP=[5000000,2300000,1000000];
+const WAGE_CAP=[5000000,1950000,850000];
 function teamWages(ti){return TEAMS[ti].players.reduce((a,p)=>a+(p.wage||0),0);}
 function wageCap(ti){return WAGE_CAP[lgOf(ti)]||WAGE_CAP[2];}
 // gwiazdy komputera odchodzą do lig zagranicznych (klub dostaje odstępne)
