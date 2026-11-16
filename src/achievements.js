@@ -209,7 +209,7 @@ function achMatch(m,c){try{const A=ACHS(),C=A.c;const me=m.sides[0],op=m.sides[1
   if(home){if(won){C.curH=(C.curH||0)+1;achMax('homeRun',C.curH);}else C.curH=0;}
 }catch(e){console.error(e);}}
 // po dniu play-off: rozstrzygnięte rywalizacje z naszym udziałem
-function achPo(c){try{const s=S();if(!s.po||!c||!c.sid)return;const sr=s.po.series.find(x=>x.id===c.sid);if(!sr||!seriesDone(sr)||sr.achDone)return;sr.achDone=1;
+function achPo(c){try{const s=S();if(!s.po||!c||!c.sid||c.kind!=='po')return;const sr=s.po.series.find(x=>x.id===c.sid);if(!sr||!seriesDone(sr)||sr.achDone)return;sr.achDone=1;
   if(seriesWinner(sr)!==SAVE.team)return;achEv({QF:'qf',SF:'sf',F:'fin',B:'bronze'}[sr.st]);
   const g0=sr.games[0];if(g0){const meH=g0.h===SAVE.team;const wonFirst=meH?g0.sw[0]===3:g0.sw[1]===3;if(!wonFirst)achEv('serComeback');}
   if(sr.st==='F'&&Math.min(sr.w[0],sr.w[1])===0)achMax('finSweep',1);}catch(e){console.error(e);}}

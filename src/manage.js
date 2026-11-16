@@ -261,6 +261,7 @@ function starsAbroad(){const n=S().n;const out=[];for(const p of W().players){if
     for(const t of TEAMS){if(t.idx===SAVE.team)continue;for(const pos of ['R','A','P','S','L'])while(posCount(t,pos)<POS_STD[pos]&&t.players.length<16)aiSign(t,pos);}syncTeams();}}
 function offseason(){
   try{if(typeof euroFinishAll==='function')euroFinishAll();}catch(e){console.error(e);}
+  try{if(typeof ntFinishAll==='function')ntFinishAll();}catch(e){console.error(e);}
   try{if(typeof loansReturn==='function')loansReturn();}catch(e){console.error(e);}
   const old=S(),n=old.n+1;
   advanceTo(`${2026+old.n}-06-01`);
