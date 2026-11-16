@@ -126,6 +126,7 @@ function finishSeason(){
       if(ch===SAVE.team){p.raiseReq=Math.round(up*100)/100;}else p.wage=round5k(p.wage*(1+up));}
     if(ch===SAVE.team&&typeof sendMail==='function')sendMail({cat:'trans',from:'Agenci zawodników',t:'Mistrzowie oczekują podwyżek',s:'Po tytule najlepsi zawodnicy będą chcieli 3–10% więcej przy przedłużaniu kontraktów.',lab:'Kontrakty'});}
   s.lgSeed={};s.lgSeed[myLg()]=s.seed;if(s.oth)for(const k in s.oth)if(s.oth[k].seed)s.lgSeed[k]=s.oth[k].seed;
+  SAVE.lastChamps=Object.values(s.lgFinal).map(f=>f[0]);
   s.moves=leagueMoves(s.lgFinal,s.lgSeed);
   for(const mv of s.moves)if(mv.i===SAVE.team||lgCountry(mv.to)===tmCountry(SAVE.team))news(mv.up?`⬆️ ${TEAMS[mv.i].name} awansuje do ${LG_GEN[mv.to]}${mv.i===SAVE.team?' — to nasz awans!':''}.`:`⬇️ ${TEAMS[mv.i].name} spada do ${LG_GEN[mv.to]}${mv.i===SAVE.team?' — to nasz spadek.':''}.`);
   const myPl=s.final.indexOf(SAVE.team);const pz=Math.round(PRIZE[myPl]*LG_PRIZE[myLg()]/5000)*5000;money(pz,'Nagrody');finLog(`Nagroda za ${myPl+1}. miejsce (${LG_N[myLg()]}) w sezonie ${sLabel(s.n)}`,pz);
@@ -170,7 +171,7 @@ function applyLeagueMoves(old){if(!old||!old.moves||!old.moves.length)return;SAV
   for(const mv of old.moves){SAVE.lg[mv.i]=mv.to;const a=SAVE.ai[mv.i];if(a)a.rep=Math.round(clamp(a.rep+(mv.up?8:-6),5,100));
     if(mv.i===SAVE.team)continue;
     // beniaminek: premia za awans na wzmocnienia (transfery w aiOffseason)
-    if(mv.up&&a){a.bud+=mv.to===0?900000:350000;a.promo=1;}
+    if(mv.up&&a){a.bud+=LG_LV[mv.to]===0?(FIX_PRO?round5k(WAGE_CAP[mv.to]*0.22):900000):350000;a.promo=1;}
     // spadkowicz: 1–2 najlepszych zawodników odchodzi do klubów wyższej ligi
     if(!mv.up){const t=TEAMS[mv.i];const best=t.players.slice().sort((x,y)=>rating(y)-rating(x)).slice(0,1+(R()<0.5?1:0));
       for(const p of best){const dest=lgIds(mv.from).filter(i=>i!==SAVE.team&&!old.moves.some(m=>m.i===i)).sort(()=>R()-0.5)[0];if(dest==null)continue;
