@@ -324,7 +324,7 @@ function attackPhase(m,A,q,by,log,act,pd){
   seq.push(Object.assign({k:'set',id:setter.id,s:A,px:+px.toFixed(2),py:+py.toFixed(2),run,alt,mix},p1keep?{p1k:1}:{},late?{late:late.id}:{}));
   if(run===2)log.push(`${nm(setter)} goni piłkę`);else if(alt&&!mix&&sE&&sE.p!==by)log.push(`rozgrywający nie zdążył`);
   if(R()<(0.006+(1-rzM)*0.01)*kc(setter,m)){cfHit(setter,m,0.8,'roz');log.push(`błąd rozegrania (${nm(setter)})`);seq.push({k:'out',s:1-A});return {done:true,winner:1-A,type:'setErr'};}
-  const tac=side.tactics.dist;
+  const dQ=side.tactics.distQ;const tac=dQ&&dQ[q]!=null&&dQ[q]>=0?dQ[q]:side.tactics.dist;// wariant rozegrania zależny od jakości przyjęcia/obrony
   const cands=cA.filter(x=>x.p!==setter&&x.role!=='L');
   // strefa, w którą trafiła piłka po przyjęciu/obronie: 0 = za 3. metrem, 4 = lewa, 3 = środek (punkt 0), 2 = prawa
   const pz=px<6?0:py<3.5?4:py>7.3?2:3;

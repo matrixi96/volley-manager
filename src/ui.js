@@ -121,13 +121,16 @@ function optGroup(name,opts,cur,fn){return `<div class="opts">${opts.map(([l,d],
 function tacticsView(){const tc=myTac();const tabs='';
   return tabs+`<div class="card"><h2>Zagrywka</h2>${optGroup('serve',SERVE_OPT,tc.serve,'setServe')}${srvTacRows(tc,myTeam().players)}</div>
   <div class="card"><h2>Przyjęcie</h2>${shieldTacHtml(tc,myTeam().players)}</div>
-  <div class="card"><h2>Rozegranie</h2>${optGroup('dist',DIST_OPT,tc.dist,'setDist')}</div>
+  <div class="card"><h2>Rozegranie</h2>${optGroup('dist',DIST_OPT,tc.dist,'setDist')}<h3 style="margin:12px 0 2px">Wariant zależnie od przyjęcia</h3>${distQHtml(tc)}</div>
   <div class="card"><h2>Ustawienia</h2>${p1TacHtml(tc)}</div>
   <div class="card"><h2>Atak</h2>${atkTacHtml(tc)}</div>
   <div class="card"><h2>Blok i obrona</h2>${blockTacHtml(tc)}</div>
   <div class="card"><h2>Piłki sytuacyjne</h2>${freeTacHtml(tc)}</div>
   <p class="mut small">Taktykę możesz zmieniać także w trakcie meczu. Zagrywkę w konkretnego zawodnika rywala wybierasz w meczu (📋 Taktyka).</p>`;}
 function setServe(i){myTac().serve=i;save();if(ui.match&&!ui.match.over)ui.match.sides[0].tactics.serve=i;render();}
+const DQ_LV=[[3,'Idealne przyjęcie (#)'],[2,'Dobre przyjęcie (+)'],[1,'Słabe przyjęcie (−)']];
+function distQHtml(t){const d=t.distQ||{};return `<div class="dqrows">${DQ_LV.map(([q,l])=>`<label class="small row" style="gap:8px;margin-top:6px"><span style="min-width:170px">${l}</span><select onchange="setDistQ(${q},+this.value)"><option value="-1" ${d[q]==null||d[q]<0?'selected':''}>jak wyżej (${esc(DIST_OPT[t.dist||0][0])})</option>${DIST_OPT.map((o,i)=>`<option value="${i}" ${d[q]===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>`).join('')}<div class="small mut" style="margin-top:4px">Ten sam wybór działa też po obronie i piłce sytuacyjnej o danej jakości.</div></div>`;}
+function setDistQ(q,i){const t=myTac();t.distQ=Object.assign({},t.distQ||{});if(i<0)delete t.distQ[q];else t.distQ[q]=i;save();if(ui.match&&!ui.match.over)ui.match.sides[0].tactics.distQ=Object.assign({},t.distQ);render();}
 function setDist(i){myTac().dist=i;save();if(ui.match&&!ui.match.over)ui.match.sides[0].tactics.dist=i;render();}
 
 // ---------- mecz ----------

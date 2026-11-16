@@ -119,6 +119,7 @@ function fmPanel(m){const a=m.sides[0];
     <label class="small">Zagrywka <select onchange="setServe(+this.value)">${SERVE_OPT.map((o,i)=>`<option value="${i}" ${a.tactics.serve===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>
     <label class="small">Rozegranie <select onchange="setDist(+this.value)">${DIST_OPT.map((o,i)=>`<option value="${i}" ${a.tactics.dist===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>
     <span class="small mut">${esc(SERVE_OPT[a.tactics.serve][1])} ${esc(DIST_OPT[a.tactics.dist][1])}</span></div>
+    ${distQHtml(a.tactics)}
     <div class="tacgrid wide">${atkTacHtml(a.tactics)}</div>
     <div class="tacgrid">${tgtTacHtml(m)}${srvTacRows(a.tactics,a.pl)}${shieldTacHtml(a.tactics,a.pl)}${freeTacHtml(a.tactics)}${p1TacHtml(a.tactics)}</div><div class="tacgrid wide">${blockTacHtml(a.tactics)}</div>${rotCard(m)}</div>`;
   if(ui.fmPanel==='more')return `<div class="card fmpanel"><div class="row wrap" style="gap:6px">

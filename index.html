@@ -1034,7 +1034,7 @@ function attackPhase(m,A,q,by,log,act,pd){
   seq.push(Object.assign({k:'set',id:setter.id,s:A,px:+px.toFixed(2),py:+py.toFixed(2),run,alt,mix},p1keep?{p1k:1}:{},late?{late:late.id}:{}));
   if(run===2)log.push(`${nm(setter)} goni piłkę`);else if(alt&&!mix&&sE&&sE.p!==by)log.push(`rozgrywający nie zdążył`);
   if(R()<(0.006+(1-rzM)*0.01)*kc(setter,m)){cfHit(setter,m,0.8,'roz');log.push(`błąd rozegrania (${nm(setter)})`);seq.push({k:'out',s:1-A});return {done:true,winner:1-A,type:'setErr'};}
-  const tac=side.tactics.dist;
+  const dQ=side.tactics.distQ;const tac=dQ&&dQ[q]!=null&&dQ[q]>=0?dQ[q]:side.tactics.dist;// wariant rozegrania zależny od jakości przyjęcia/obrony
   const cands=cA.filter(x=>x.p!==setter&&x.role!=='L');
   // strefa, w którą trafiła piłka po przyjęciu/obronie: 0 = za 3. metrem, 4 = lewa, 3 = środek (punkt 0), 2 = prawa
   const pz=px<6?0:py<3.5?4:py>7.3?2:3;
@@ -1577,13 +1577,16 @@ function optGroup(name,opts,cur,fn){return `<div class="opts">${opts.map(([l,d],
 function tacticsView(){const tc=myTac();const tabs='';
   return tabs+`<div class="card"><h2>Zagrywka</h2>${optGroup('serve',SERVE_OPT,tc.serve,'setServe')}${srvTacRows(tc,myTeam().players)}</div>
   <div class="card"><h2>Przyjęcie</h2>${shieldTacHtml(tc,myTeam().players)}</div>
-  <div class="card"><h2>Rozegranie</h2>${optGroup('dist',DIST_OPT,tc.dist,'setDist')}</div>
+  <div class="card"><h2>Rozegranie</h2>${optGroup('dist',DIST_OPT,tc.dist,'setDist')}<h3 style="margin:12px 0 2px">Wariant zależnie od przyjęcia</h3>${distQHtml(tc)}</div>
   <div class="card"><h2>Ustawienia</h2>${p1TacHtml(tc)}</div>
   <div class="card"><h2>Atak</h2>${atkTacHtml(tc)}</div>
   <div class="card"><h2>Blok i obrona</h2>${blockTacHtml(tc)}</div>
   <div class="card"><h2>Piłki sytuacyjne</h2>${freeTacHtml(tc)}</div>
   <p class="mut small">Taktykę możesz zmieniać także w trakcie meczu. Zagrywkę w konkretnego zawodnika rywala wybierasz w meczu (📋 Taktyka).</p>`;}
 function setServe(i){myTac().serve=i;save();if(ui.match&&!ui.match.over)ui.match.sides[0].tactics.serve=i;render();}
+const DQ_LV=[[3,'Idealne przyjęcie (#)'],[2,'Dobre przyjęcie (+)'],[1,'Słabe przyjęcie (−)']];
+function distQHtml(t){const d=t.distQ||{};return `<div class="dqrows">${DQ_LV.map(([q,l])=>`<label class="small row" style="gap:8px;margin-top:6px"><span style="min-width:170px">${l}</span><select onchange="setDistQ(${q},+this.value)"><option value="-1" ${d[q]==null||d[q]<0?'selected':''}>jak wyżej (${esc(DIST_OPT[t.dist||0][0])})</option>${DIST_OPT.map((o,i)=>`<option value="${i}" ${d[q]===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>`).join('')}<div class="small mut" style="margin-top:4px">Ten sam wybór działa też po obronie i piłce sytuacyjnej o danej jakości.</div></div>`;}
+function setDistQ(q,i){const t=myTac();t.distQ=Object.assign({},t.distQ||{});if(i<0)delete t.distQ[q];else t.distQ[q]=i;save();if(ui.match&&!ui.match.over)ui.match.sides[0].tactics.distQ=Object.assign({},t.distQ);render();}
 function setDist(i){myTac().dist=i;save();if(ui.match&&!ui.match.over)ui.match.sides[0].tactics.dist=i;render();}
 
 // ---------- mecz ----------
@@ -3259,7 +3262,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=118').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=119').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
@@ -3352,6 +3355,7 @@ function hallAnim(m,pre,ev,done){
       const dsys=dt.dsys||0;const tipOn=!!dt[w==='M'?'tipM':w==='L4'?'tipR':'tipL'];
       const EB=w!=='M'&&dsys===0&&!fb?ebDef(bset,trip,tipOn,s.z6):null;const ebM=(o,q)=>mvTo(o,9-q[0],w==='L4'?q[1]:9-q[1]);
       side(d).filter(b=>!opp.includes(b)&&!isFrontZ(b.zone)).forEach(b=>{const z=defZone(b);const zy=z===5?1:z===1?8:4.5;
+        if(fb){moves.push(mvTo(b,z===6?3.3:3.8,z===5?1.8:z===1?7.2:4.5));return;}
         if(EB){const q=EB[z===6?'z6':z===lz?'line':'cross'];moves.push(ebM(b,q));return;}
         if(w==='M'){const bm=dt.blkM??1;const pos=bm===0?{5:[3.2,1.3],6:[1.4,6.2],1:[3.2,7.7]}:bm===2?{5:[5.6,1.8],6:[2.2,5.7],1:[3.8,7.9]}:bm===3?{5:[3.6,0.9],6:[2.7,3.4],1:[5.6,7.2]}:{5:[3.6,1.2],6:[2.4,4.5],1:[3.8,7.8]};const q=pos[z]||[3.2,zy];moves.push(mvTo(b,q[0],q[1]));}
         else if(z===6){const cz=lz===5?1:5;// 6: plecy strefy obrony prostej albo skos bliżej obrońcy skosu
@@ -3364,11 +3368,11 @@ function hallAnim(m,pre,ev,done){
         else moves.push(mvTo(b,2.3,z===5?1.5:7.5));});
       side(d).filter(b=>!opp.includes(b)&&isFrontZ(b.zone)).forEach(b=>{const dy=defY(b);moves.push(EB&&EB.off?ebM(b,EB.off):w!=='M'&&!fb?mvTo(b,6.1,dy<3?3.1:dy>6?5.9:4.5):w==='M'&&!fb?mvTo(b,tipOn?7.0:6.8,dy<3?(tipOn?3.0:2.0):dy>6?(tipOn?6.0:7.0):4.5):mvTo(b,6.3,dy<3?0.9:dy>6?8.1:4.5));});
       to={x:hx,y:hy,h:fb?2.6:3.4};peak=fb?1.0:1.6;dur=780;ph=fb?'Piłka sytuacyjna':o.role==='R'?'Wystawa':'Rozegranie';lastAtt=o;lastAttD=fb?'free':s.d;
-      if(s.ml&&P[s.ml])moves.push(mvTo(P[s.ml],6.9,clamp(9-ly+(9-ly<4.5?1.2:-1.2),1.5,7.5),1));// środkowy spóźniony do bloku: asekuruje kiwkę
+      if(s.ml&&P[s.ml])moves.push(mvTo(P[s.ml],6.9,clamp(9-ly+(9-ly<4.5?1.2:-1.2),1.5,7.5),0));// środkowy spóźniony do bloku: asekuruje kiwkę
       if(s.ml)ph=s.mc?'Środkowy w ciemno — pojedynczy blok':'Zmylony środkowy — pojedynczy blok';}
     else if(s.k==='blk'){to={x:cx(o),y:cy(o),h:3.0};dur=230;ph=s.tool?'Obicie bloku!':'Blok!';}
     else if(s.k==='whistle'){const i=s.s;const [X,Y]=s.why==='net'?gl(i,7.6+R()*0.8,1+R()*7):gl(i,2+R()*4,1+R()*7);to={x:X,y:Y,h:0};dur=s.why==='net'?420:520;peak=s.why==='net'?0.3:0.5;ph=s.why==='net'?'Gwizdek! Blokujący dotknął siatki':'Gwizdek! Atak z drugiej linii sprzed linii 3 m';}
-    else if(s.k==='dig'){const dx=(R()-0.5)*1.4,dy=(R()-0.5)*1.4;moves.push({id:o.id,x:cx(o)+dx,y:cy(o)+dy});to={x:cx(o)+dx,y:cy(o)+dy,h:0.35};dur=s.free?900:s.tip?620:s.cov?520:430;peak=s.free?2.6:s.tip?1.4:s.cov?1.1:0;ph=s.free?'Przebicie':s.tip?'Kiwka — obrona':s.cov?'Asekuracja!':'Atak — obrona';}
+    else if(s.k==='dig'){const sp=s.free?0.5:1.4;const dx=(R()-0.5)*sp,dy=(R()-0.5)*sp;moves.push({id:o.id,x:cx(o)+dx,y:cy(o)+dy});to={x:cx(o)+dx,y:cy(o)+dy,h:s.free?0.85:0.35};dur=s.free?900:s.tip?620:s.cov?520:430;peak=s.free?2.6:s.tip?1.4:s.cov?1.1:0;ph=s.free?'Przebicie':s.tip?'Kiwka — obrona':s.cov?'Asekuracja!':'Atak — obrona';}
     else if(s.k==='floor'){const i=s.s;let lx,ly;if(s.mix&&lastMix){lx=lastMix[0]+(R()-0.5)*0.6;ly=lastMix[1]+(R()-0.5)*0.6;}else if(s.blk){lx=7.4+R()*0.8;ly=lastAtt?lastLy+(R()-0.5):4.5;}else if(s.tip){lx=6.4+R()*1.2;ly=9-lastLy+(R()-0.5)*1.6;}else if(s.d==='line'){lx=0.5+R()*2.6;ly=clamp(9-lastLy+(R()-0.5)*1.2,0.3,8.7);}else if(s.d==='cross'){lx=1+R()*3.2;ly=clamp(lastLy+(R()-0.5)*1.8,0.3,8.7);}else if(s.d==='midS'){lx=0.8+R()*3;ly=3.6+R()*1.8;}else if(s.d==='midL'){lx=1+R()*3;ly=0.6+R()*2;}else if(s.d==='midR'){lx=1+R()*3;ly=6.4+R()*2;}else{lx=0.6+R()*7.2;ly=0.6+R()*7.8;}const [X,Y]=gl(i,lx,ly);to={x:X,y:Y,h:0};
       if(!s.blk&&!s.mix){// najbliższy obrońca rzuca się do piłki, ale nie sięga
         let nb=null,nd=1e9;for(const b of side(i)){const dd=Math.hypot(cx(b)-X,cy(b)-Y);if(dd<nd){nd=dd;nb=b;}}
@@ -3612,6 +3616,7 @@ function fmPanel(m){const a=m.sides[0];
     <label class="small">Zagrywka <select onchange="setServe(+this.value)">${SERVE_OPT.map((o,i)=>`<option value="${i}" ${a.tactics.serve===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>
     <label class="small">Rozegranie <select onchange="setDist(+this.value)">${DIST_OPT.map((o,i)=>`<option value="${i}" ${a.tactics.dist===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>
     <span class="small mut">${esc(SERVE_OPT[a.tactics.serve][1])} ${esc(DIST_OPT[a.tactics.dist][1])}</span></div>
+    ${distQHtml(a.tactics)}
     <div class="tacgrid wide">${atkTacHtml(a.tactics)}</div>
     <div class="tacgrid">${tgtTacHtml(m)}${srvTacRows(a.tactics,a.pl)}${shieldTacHtml(a.tactics,a.pl)}${freeTacHtml(a.tactics)}${p1TacHtml(a.tactics)}</div><div class="tacgrid wide">${blockTacHtml(a.tactics)}</div>${rotCard(m)}</div>`;
   if(ui.fmPanel==='more')return `<div class="card fmpanel"><div class="row wrap" style="gap:6px">
