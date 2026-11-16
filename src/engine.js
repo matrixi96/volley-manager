@@ -160,7 +160,7 @@ function makeSide(team,lu,tac,home,x){
   {let d=0;if(st7.some(p=>p&&hasT(p,'lid')))d+=3;if(cap&&hasT(cap,'lid'))d+=2;if(pl.some(p=>hasT(p,'kap')&&(p.unh||0)>=3))d-=3;
    for(const p of pl){let e=d;if(hasT(p,'amb'))e+=2;if(hasT(p,'kap')&&(p.unh||0)>=3)e-=8;if(e)p.mor=Math.round(clamp(p.mor+e,5,100));}}
   if(typeof pairBonusSide==='function'){try{pairBonusSide(team,lu,pl);}catch(e){}}
-  return {cfLid:st7.some(p=>p&&hasT(p,'lid')),chem,cap:cap?cap.id:null,team,pl,slots,libero:g(lu.L),rot:baseRot(tac),tactics:Object.assign({},tac),mom:0,home:!!home,fatMul:(x&&x.fat)||1,momMul:(x&&x.momMul)||1,prB:(x&&x.prB)||0,trB:(x&&x.trB)||0,prep0:PREPV?((x&&x.sb)||0):0,form:nz()*0.09+(home?(x&&x.hb!=null?x.hb:0.015):0)+(PREPV?0:((x&&x.sb)||0)),to:2,subs:6,fam:(x&&x.fam)||null,tfE:(x&&x.tfE)||1};
+  return {cfSta:st7.some(p=>p&&hasT(p,'sta')),wer:st7.some(p=>p&&hasT(p,'wer')),cfLid:st7.some(p=>p&&hasT(p,'lid')),chem,cap:cap?cap.id:null,team,pl,slots,libero:g(lu.L),rot:baseRot(tac),tactics:Object.assign({},tac),mom:0,home:!!home,fatMul:(x&&x.fat)||1,momMul:(x&&x.momMul)||1,prB:(x&&x.prB)||0,trB:(x&&x.trB)||0,prep0:PREPV?((x&&x.sb)||0):0,form:nz()*0.09+(home?(x&&x.hb!=null?x.hb:0.015):0)+(PREPV?0:((x&&x.sb)||0)),to:2,subs:6,fam:(x&&x.fam)||null,tfE:(x&&x.tfE)||1};
 }
 function newMatch(a,b){
   const m={sides:[makeSide(a.team,a.lineup,a.tactics,a.home,a.x),makeSide(b.team,b.lineup,b.tactics,b.home,b.x)],setNo:1,score:[0,0],setsWon:[0,0],sets:[],firstServe:R()<0.5?0:1,run:{t:-1,n:0},over:false,rallies:0,sideout:[0,0]};
@@ -190,7 +190,7 @@ function obeyF(p){if(!MENT||!p||!p.tr)return 1;let k=1;if(hasT(p,'ind'))k*=0.55;
 function readF(p){return clamp(((p.czy||10)-8)/8,0,1.2)*(p.tr&&hasT(p,'ind')?0.7:1);}
 // technika amortyzuje nerwy: atrybut 18+ = połowa załamania; po 2 błędach z rzędu dalej już nie spada
 function cfDamp(p,sk){if(!sk)return 1;const v=sk==='prz'?(p.prz||10)*0.7+(p.tod||10)*0.3:(p[sk]||10);return 1-clamp((v-14)/4,0,1)*0.75;}
-function cfHit(p,m,x,sk){if(!MENT||!p)return;p.cfN=(p.cfN||0)+1;if(p.cfN>2)return;const o=p.cf||0;p.cf=clamp(o-x*cfK(p)*cfDamp(p,sk)*(pressure(m)?1.5:1),-3,2);
+function cfHit(p,m,x,sk){if(!MENT||!p)return;p.cfN=(p.cfN||0)+1;if(p.cfN>2)return;const o=p.cf||0;const sd=m.sides.find(s=>s.pl.includes(p));p.cf=clamp(o-x*cfK(p)*cfDamp(p,sk)*(pressure(m)?1.5:1)*(hasT(p,'odp')?0.7:1)*(sd&&sd.cfSta?0.9:1),-3,2);
   if(o>-1.5&&p.cf<=-1.5&&m.sides){const i=m.sides.findIndex(sd=>sd.pl.includes(p));(m.cfEv=m.cfEv||[]).push({k:'tilt',i,id:p.id,n:p.last,set:m.setNo,w:sk||''});}}
 function cfNote(m,e){if(m)(m.cfEv=m.cfEv||[]).push(Object.assign({set:m.setNo},e));}
 function cfUp(p,m,x){if(!MENT||!p)return;const sd=m.sides.find(s=>s.pl.includes(p));const k=1+((p.wal||10)-10)/20+(sd&&sd.cfLid?0.5:0);p.cfN=0;p.cf=clamp((p.cf||0)+x*k,-3,2);}
@@ -496,7 +496,7 @@ function freeBall(m,A,a,log,act,seq,setTxt){const side=m.sides[A],opp=m.sides[1-
   return {done:false,next:1-A,q,by:tgt.p};}
 function fatigue(m,n){
   for(let i=0;i<2;i++){const s=m.sides[i];const on=new Set(onCourt(s,m.serving===i).map(x=>x.p.id));
-    for(const p of s.pl){if(on.has(p.id))p.en=Math.max(30,p.en-(0.22+0.12*n)*(1.35-p.kon/20)*(1.2-p.zaa/20*0.4)*(s.fatMul||1));else p.en=Math.min(100,p.en+0.25);}}
+    for(const p of s.pl){if(on.has(p.id))p.en=Math.max(30,p.en-(0.22+0.12*n)*(1.35-p.kon/20)*(1.2-p.zaa/20*0.4)*(s.fatMul||1)*(hasT(p,'wer')?0.85:1));else p.en=Math.min(100,p.en+0.25);}}
 }
 function startSet(m){
   m.setNo++;m.score=[0,0];m.run={t:-1,n:0};
@@ -516,7 +516,7 @@ function stepRally(m){
   if(MENT)for(const sd of m.sides)for(const p of sd.pl)if(p.cf)p.cf=Math.abs(p.cf)<0.05?0:p.cf*(p.cf<0?(sd.cfLid?0.86:0.9)+clamp(cfK(p)-1,0,1)*0.04:0.85);
   const w=r.winner;m.score[w]++;(m.hist=m.hist||[]).push([m.setNo,m.score[0],m.score[1]]);
   if(m.run.t===w)m.run.n++;else m.run={t:w,n:1};
-  const ws=m.sides[w],ls=m.sides[1-w];ws.mom=Math.min(3,Math.max(0,ws.mom)+1);ls.mom=0;
+  const ws=m.sides[w],ls=m.sides[1-w];ws.mom=Math.min(3,Math.max(0,ws.mom)+1+(ws.wer&&R()<0.15?1:0));ls.mom=0;
   if(w!==m.serving){m.serving=w;ws.rot.push(ws.rot.shift());}
   const subNotes=specialSubsAfter(m,w);
   moraleAfter(m,r,w);

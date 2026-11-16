@@ -23,7 +23,7 @@ function traitVal(p){if(!p.tr)ensTraits(p);return clamp(p.tr.reduce((s,k)=>s+(TR
 function pValueBase(p){const r=rating(p);const af=p.age<=22?1.35:p.age<=28?1.1:p.age<=31?0.85:p.age<=33?0.55:0.3;const pf=1+Math.max(0,(p.pot||r)-r)/35;return Math.pow(Math.max(0,r-50)/40,2.5)*1500000*af*pf;}
 function pValue(p){return Math.max(10000,Math.round(pValueBase(p)*(1+seasonForm(p).f)*(1+traitVal(p))/10000)*10000);}
 function valTip(p){const sf=seasonForm(p),tv=traitVal(p);const a=[];if(sf.n)a.push(`forma sezonu ${sf.f>=0?'+':''}${String(Math.round(sf.f*1000)/10).replace('.',',')}% (śr. ocena ${sf.avg!=null?String(sf.avg).replace('.',','):'?'} w ${sf.n} meczach)`);if(tv)a.push(`charakter ${tv>0?'+':''}${String(Math.round(tv*1000)/10).replace('.',',')}%`);return a.join(' · ');}
-function wageDemand(p){const r=rating(p);return round5k(Math.max(40000,Math.pow(Math.max(0,r-45)/45,2)*700000)*(p.age>=33?0.8:1));}
+function wageDemand(p){const r=rating(p);return round5k(Math.max(40000,Math.pow(Math.max(0,r-45)/45,2)*700000)*(p.age>=33?0.8:1)*(p.tr&&p.tr.includes('loj')&&p.tm===SAVE.team?0.92:1)*(p.tr&&p.tr.includes('sta')?1.05:1));}
 function snap(p){const o={};for(const k of ALL_KEYS)o[k]=p[k];return o;}
 function baseRating(p){return p.base?rating(Object.assign({},p,p.base)):rating(p);}
 function potBonus(age,r){const k=r>=85?0.5:r>=80?0.75:1;return BAL2?k*(age<=21?2+R()*9:age<=24?1+R()*5:age<=27?R()*2:0):k*(age<=21?3+R()*12:age<=24?2+R()*7:age<=27?R()*3:0);}
@@ -46,7 +46,7 @@ function genPlayer(pos,q,age,nat){const id='n'+(W().nextId++);
   p.tc=0;setDob(p);ensTraits(p);return p;}
 function assignNum(p,tm){const used=new Set(W().players.filter(x=>x.tm===tm&&x!==p).map(x=>x.num));if(p.num&&!used.has(p.num))return;for(let n=1;n<=40;n++)if(!used.has(n)){p.num=n;return;}}
 // stare zapisy (jedna liga, 12 klubów): dogeneruj kluby 1. i 2. Ligi — kadry, renomę, budżety i juniorów
-function ensureLeagues(){if(!SAVE.world)return false;ensNat();const have=new Set(W().players.filter(p=>p.tm>=0).map(p=>p.tm));const sn=SAVE.season?SAVE.season.n:1;let added=0;
+function ensureLeagues(){if(!SAVE.world)return false;ensNat();if(typeof trMigrate==='function')trMigrate();const have=new Set(W().players.filter(p=>p.tm>=0).map(p=>p.tm));const sn=SAVE.season?SAVE.season.n:1;let added=0;
   if(!SAVE.lg)SAVE.lg=TEAM_DEFS.map(d=>d.lg||0);while(SAVE.lg.length<TEAM_DEFS.length)SAVE.lg.push(TEAM_DEFS[SAVE.lg.length].lg||0);
   SAVE.ai=SAVE.ai||[];
   for(const t of TEAMS){if(have.has(t.idx))continue;const g=genTeam(TEAM_DEFS[t.idx],t.idx);
@@ -140,7 +140,7 @@ function injuryCheck(m,mult){
   for(const sd of m.sides){const mine=sd.team.idx===SAVE.team;const md=clubMods(sd.team.idx);const im=(mine?TRAIN_INT[SAVE.training.int][2]:1)*md.injChance;
     for(const cp of sd.pl){const x=cp.st;if(x.srv+x.rec+x.att+x.dig+x.blk===0)continue;ROUND_PLAYED.add(cp.id);
       const P=PLAYERS[cp.id];if(!P)continue;const p=P.p;if(p.inj)continue;
-      if(R()<0.012*im*(1.3-p.kon/20*0.6)*mult){const d=1+Math.floor(R()*R()*7);const days=Math.max(3,Math.round((d*7-3+R()*6)*md.injDur));p.inj=days;p.injUntil=addDays(today(),days);p.injN=injName(days);p.injD=days;if(!mine)aiStarInjNews(p,days);if(mine)news(`🚑 ${p.first} ${p.last} doznał kontuzji (${p.injN.toLowerCase()}) — przerwa ok. ${days} dni (powrót ok. ${fmtDMY(p.injUntil)}).`);}}}
+      if(R()<0.012*im*(1.3-p.kon/20*0.6)*mult*(hasT(p,'odp')?0.65:1)){const d=1+Math.floor(R()*R()*7);const days=Math.max(3,Math.round((d*7-3+R()*6)*md.injDur));p.inj=days;p.injUntil=addDays(today(),days);p.injN=injName(days);p.injD=days;if(!mine)aiStarInjNews(p,days);if(mine)news(`🚑 ${p.first} ${p.last} doznał kontuzji (${p.injN.toLowerCase()}) — przerwa ok. ${days} dni (powrót ok. ${fmtDMY(p.injUntil)}).`);}}}
 }
 function roundTick(kind,home,att,opp){
   const tr=SAVE.training;
