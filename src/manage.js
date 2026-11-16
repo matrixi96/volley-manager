@@ -95,7 +95,7 @@ function faSignAI(){if(!BAL3)return;const LA=allLgs().map(lgRef);const tops=LA.s
   const gone=new Set();for(const p of W().players){if(p.tm>=0||p.jr)continue;p.faW=(p.faW||0)+1;if(p.faW>=3&&!(p.age<21))gone.add(p.id);}
   if(gone.size){W().players=W().players.filter(p=>!gone.has(p.id));SAVE.faGone=(SAVE.faGone||0)+gone.size;}syncTeams();}
 // gwiazda dłużej w jednym klubie chce nowego wyzwania: klub komputera ją sprzedaje temu, kto zapłaci (albo za granicę)
-function starsMove(){if(!BAL3)return;const n=S().n;for(const p of W().players.slice()){if(p.tm<0||p.tm===SAVE.team||p.jr)continue;const r=rating(p);if(r<80||p.age>31)continue;if(n-(p.jn||1)<3||R()>=0.15)continue;
+function starsMove(){if(!BAL3)return;const n=S().n;for(const p of W().players.slice()){if(p.tm<0||p.tm===SAVE.team||p.jr||p.loan)continue;const r=rating(p);if(r<80||p.age>31)continue;if(n-(p.jn||1)<3||R()>=0.15)continue;
     const from=p.tm;const fee=askingPrice(p);const bids=TEAMS.filter(t=>t.idx!==from&&t.idx!==SAVE.team&&t.players.length<16&&SAVE.ai[t.idx].bud>=fee&&teamWages(t.idx)+wageDemand(p)<=wageCap(t.idx)).map(t=>({t,v:SAVE.ai[t.idx].bud+R()*200000})).sort((a,b)=>b.v-a.v);
     if(bids.length){const t=bids[0].t;SAVE.ai[t.idx].bud-=fee;SAVE.ai[from].bud+=fee;movePlayer(p,t.idx);p.wage=wageDemand(p);news(`🔁 ${p.first} ${p.last} chciał nowego wyzwania: przechodzi z ${TEAMS[from].name} do ${t.name} za ${fmt(fee)}.`);}
     else{const fe=round5k(pValue(p)*0.8);SAVE.ai[from].bud+=fe;W().players=W().players.filter(x=>x.id!==p.id);news(`✈️ ${p.first} ${p.last} (${TEAMS[from].name}) szuka nowego wyzwania za granicą (${fmt(fe)}).`);}}
@@ -118,7 +118,7 @@ function initWorld(){
 function news(t){SAVE.news=SAVE.news||[];SAVE.news.unshift({d:SAVE._now||today(),t});SAVE.news=SAVE.news.slice(0,40);try{if(typeof mailFromNews==='function')mailFromNews(t);}catch(e){}}
 function money(amt,cat){const f=SAVE.fin;f.bal+=amt;f.sea[cat]=(f.sea[cat]||0)+amt;if(typeof budBook==='function')budBook(amt,cat);}
 function finLog(t,a){const f=SAVE.fin;f.log.unshift({d:today(),t,a});f.log=f.log.slice(0,80);}
-function payroll(){return myTeam().players.reduce((s,p)=>s+(p.wage||0),0);}
+function payroll(){const me=SAVE.team;return myTeam().players.reduce((s,p)=>s+(p.wage||0)*(p.loan?p.loan.share:1),0)+(typeof myLoansOut==='function'?myLoansOut().reduce((s,p)=>s+(p.wage||0)*(1-p.loan.share),0):0);}
 const TV_ROUND=45000;
 function tvRound(){return Math.round(TV_ROUND*LG_ECO[myLg()]/1000)*1000;}
 
@@ -166,7 +166,7 @@ function windowOpen(){const p=S().phase;return p==='off'||p==='spar';}
 function posCount(t,pos){return t.players.filter(p=>p.pos===pos).length;}
 function isStarter(p){if(p.tm<0)return false;const lu=autoLineup(TEAMS[p.tm]);return Object.values(lu).includes(p.id);}
 function askingPrice(p){return Math.round(pValue(p)*(isStarter(p)?1.35:1.05)/10000)*10000;}
-function canSellAI(p){const t=TEAMS[p.tm];return posCount(t,p.pos)-1>=POS_MIN[p.pos]&&t.players.length-1>=SQUAD_MIN;}
+function canSellAI(p){if(p.loan)return false;const t=TEAMS[p.tm];return posCount(t,p.pos)-1>=POS_MIN[p.pos]&&t.players.length-1>=SQUAD_MIN;}
 function wageNeeded(p){if(p.tm===SAVE.team)return round5k(wageDemand(p)*negF()*(1+(p.raiseReq||0)));const my=SAVE.ai[SAVE.team].rep;const cur=p.tm>=0?SAVE.ai[p.tm].rep:0;const ld=p.tm>=0?Math.max(0,myLg()-lgOf(p.tm)):0;return round5k(wageDemand(p)*(p.tm<0?0.9:cur>my+10?1.15:1)*(1+0.35*ld)*negF());}
 function contractEndFor(years){const s=S();return (s.phase==='off'?s.n-1:s.n)+years;}
 function movePlayer(p,tm){p.tm=tm;if(tm>=0&&typeof S==='function'&&S())p.jn=S().n;if(tm>=0)assignNum(p,tm);syncTeams();}
@@ -246,10 +246,10 @@ function aiOffseason(){
 }
 // limit płac klubu (zależny od ligi) – bogaty klub nie skupuje wszystkich gwiazd
 const WAGE_CAP=[5000000,1950000,850000,3100000,1100000,7100000,2600000,5600000,2000000];
-function teamWages(ti){return TEAMS[ti].players.reduce((a,p)=>a+(p.wage||0),0);}
+function teamWages(ti){return TEAMS[ti].players.reduce((a,p)=>a+(p.wage||0)*(p.loan&&p.tm===ti?p.loan.share:1),0);}
 function wageCap(ti){const a=SAVE.ai&&SAVE.ai[ti];if(a&&a.wg&&a.wgLg===lgOf(ti))return a.wg;return WAGE_CAP[lgOf(ti)]||WAGE_CAP[2];}
 // gwiazdy komputera odchodzą do lig zagranicznych (klub dostaje odstępne)
-function starsAbroad(){const n=S().n;const out=[];for(const p of W().players){if(p.tm<0||p.tm===SAVE.team||p.jr)continue;const r=rating(p);if(r<(FIX_DYN&&SAVE.lastChamps&&SAVE.lastChamps.includes(p.tm)?79:82)||p.age>31)continue;
+function starsAbroad(){const n=S().n;const out=[];for(const p of W().players){if(p.tm<0||p.tm===SAVE.team||p.jr||p.loan)continue;const r=rating(p);if(r<(FIX_DYN&&SAVE.lastChamps&&SAVE.lastChamps.includes(p.tm)?79:82)||p.age>31)continue;
     const champ=FIX_DYN&&SAVE.lastChamps&&SAVE.lastChamps.includes(p.tm);const ch=0.12+(r-82)*0.03+(champ?0.18:0);if(R()<ch){const ti=p.tm;const fee=round5k(pValue(p)*0.8);const L=lgOf(ti);
       // najpierw klub z mocniejszej ligi w grze (inny kraj), który ma pieniądze i miejsce w budżecie płacowym
       const dest=TEAMS.filter(t=>t.idx!==SAVE.team&&t.idx!==ti&&lgCountry(lgOf(t.idx))!==lgCountry(L)&&lgRef(lgOf(t.idx))>=lgRef(L)+2&&SAVE.ai[t.idx].bud>=fee&&teamWages(t.idx)+wageDemand(p)<=wageCap(t.idx)*1.05&&t.players.length<16).sort((a,b)=>SAVE.ai[b.idx].rep-SAVE.ai[a.idx].rep)[0];
@@ -261,6 +261,7 @@ function starsAbroad(){const n=S().n;const out=[];for(const p of W().players){if
     for(const t of TEAMS){if(t.idx===SAVE.team)continue;for(const pos of ['R','A','P','S','L'])while(posCount(t,pos)<POS_STD[pos]&&t.players.length<16)aiSign(t,pos);}syncTeams();}}
 function offseason(){
   try{if(typeof euroFinishAll==='function')euroFinishAll();}catch(e){console.error(e);}
+  try{if(typeof loansReturn==='function')loansReturn();}catch(e){console.error(e);}
   const old=S(),n=old.n+1;
   advanceTo(`${2026+old.n}-06-01`);
   // starzenie, spadek formy, emerytury
@@ -279,7 +280,7 @@ function offseason(){
   // awanse i spadki, potem nowy sezon (okno transferowe)
   applyLeagueMoves(old);
   newSeason(n,'off');
-  aiOffseason();juniorsOffseason();aiInfraOffseason();refreshStaffPool();
+  aiOffseason();juniorsOffseason();aiInfraOffseason();refreshStaffPool();try{if(typeof aiLoans==='function')aiLoans();}catch(e){console.error(e);}
   {const ps=staffSkill('psy');const t=TEAMS[SAVE.team];if(t&&ps>10)for(const p of t.players){if(p.tr&&p.tr.includes('ner')&&R()<(ps-10)*0.02){p.tr=p.tr.filter(x=>x!=='ner');news(`🧠 Praca z psychologiem: ${p.first} ${p.last} nie jest już nerwowy.`);}}}
   for(const r in SAVE.staff){const st=SAVE.staff[r];if(st){st.age++;if(st.age<50&&R()<0.4&&st.skill<20)st.skill++;}}
   // wolni zawodnicy: porządki i uzupełnienie
@@ -318,8 +319,9 @@ function cardModal(){
   const st=S().ps[p.id];
   let act='';const o=windowOpen();
   if(mine&&p.jr){act+=`<div class="act"><h4>Junior (U20)</h4><p class="small">Gra w lidze juniorów. Awans do pierwszej drużyny daje kontrakt na 3 sezony z pensją ok. ${fmt(Math.max(40000,wageDemand(p)))}/rok.</p><div class="row wrap"><button class="btn" onclick="promote('${p.id}')">⬆️ Awansuj do pierwszej drużyny</button><button class="link" onclick="releaseJunior('${p.id}')">${ui.confirm==='rj'+p.id?'Na pewno?':'Zwolnij z akademii'}</button></div></div>`;}
-  else if(mine){act+=myContractAct(p);}
-  else{act+=buyAct(p);}
+  else if(mine&&p.loan&&p.loan.from!==SAVE.team){act+=`<div class="act"><h4>🔁 Wypożyczony</h4><p class="small">Gra u nas do końca sezonu, potem wraca do ${tName(p.loan.from)}. Nie można go sprzedać ani przedłużyć z nim kontraktu.</p></div>`;}
+  else if(mine){act+=myContractAct(p)+(typeof loanOutAct==='function'?loanOutAct(p):'');}
+  else{act+=(p.loan?`<div class="act"><h4>🔁 Wypożyczony</h4><p class="small">Gra w ${tName(p.tm)} na wypożyczeniu z ${tName(p.loan.from)} do końca sezonu — teraz nie można go kupić.</p></div>`:buyAct(p)+(typeof loanInAct==='function'?loanInAct(p):''));}
   return `<div class="modal" onclick="if(event.target===this){ui.card=null;ui.offers=null;render()}"><div class="mcard">
    <div class="row"><span class="cface">${pFace(p,84)}</span><div><div class="mut small">${p.tm>=0?tDot(p.tm)+esc(TEAMS[p.tm].name)+(p.jr?' · juniorzy U20':''):'Wolny zawodnik'}</div><h2>${p.num&&p.tm>=0?p.num+'. ':''}${esc(p.first)} ${esc(p.last)}${p.star?' <span title="Gwiazda zespołu">⭐</span>':''}</h2></div><span class="sp"></span><button class="ghost" onclick="ui.card=null;ui.offers=null;render()">✕</button></div>
    ${ui.tmsg?`<div class="tmsg ${ui.tmsg.ok?'ok':'no'}">${esc(ui.tmsg.t)}</div>`:''}

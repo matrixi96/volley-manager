@@ -8,7 +8,7 @@ function capOk(id){return myTeam().players.some(p=>p.id===id);}
 function myCaptain(){if(SAVE.captain&&capOk(SAVE.captain))return PLAYERS[SAVE.captain].p;const lu=myLineup();const t=myTeam();const c=autoCaptain(Object.values(lu).map(id=>t.players.find(p=>p.id===id)));if(c)SAVE.captain=c.id;return c;}
 function setCaptain(id){const p=PLAYERS[id]&&PLAYERS[id].p;if(!p||p.tm!==SAVE.team)return;SAVE.captain=id;news(`©️ ${p.first} ${p.last} nowym kapitanem drużyny.`);save();render();}
 function isCap(p){const c=myCaptain();return c&&c.id===p.id;}
-function natTag(p){return `<span class="natf" title="${natN(pNat(p))}">${natFl(pNat(p))}</span>`;}
+function natTag(p){return `<span class="natf" title="${natN(pNat(p))}">${natFl(pNat(p))}</span>`+(p.loan&&typeof loanBadge==='function'?loanBadge(p):'');}
 function capBadge(p){return natTag(p)+(isCap(p)?'<span class="capb" title="Kapitan drużyny">C</span>':'');}
 function capInfo(c){if(!c)return '';const b=capBonus(c);const v=b>=0.05?['świetny','var(--good)']:b>=0.02?['dobry','#a3e635']:b>-0.01?['przeciętny','var(--acc)']:['słaby','var(--bad)'];
   return `<span style="color:${v[1]}"><b>${v[0]}</b></span> kapitan`;}
