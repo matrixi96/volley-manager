@@ -10,14 +10,14 @@ Object.assign(TR_BAD,{oby:['kap','ind'],kap:(TR_BAD.kap||[]).concat(['oby','loj'
 Object.assign(TR_VAL,{loj:0.3,sta:0.3,odp:1,oby:0.8,suk:0.5,wer:0.8});
 // nowi zawodnicy losują też nowe cechy; starzy (z zapisów) dostają je z pewną szansą, deterministycznie
 const NEW_TR=['loj','sta','odp','oby','suk','wer'];
-function trNewRoll(p){let h=11;for(const c of String(p.id))h=(h*131+c.charCodeAt(0))>>>0;const rnd=mulberry32(h);if(rnd()>0.42)return;
+function trNewRoll(p){let h=11;for(const c of String(p.id))h=(h*131+c.charCodeAt(0))>>>0;const rnd=mulberry32(h);if(rnd()>0.375)return;// 6 z 16 charakterów
   const w={loj:1.2+(p.age>=29?0.8:0),sta:1+((p.kom||10)-10)*0.2,odp:1+((p.kon||10)-10)*0.15,oby:1,suk:1+((p.wal||10)-10)*0.2,wer:1+(p.age<25?0.6:0)};
-  const ks=NEW_TR.filter(k=>!p.tr.includes(k)&&!p.tr.some(e=>(TR_BAD[e]||[]).includes(k)||(TR_BAD[k]||[]).includes(e)));if(!ks.length)return;
+  const ks=NEW_TR;
   let tot=ks.reduce((s,k)=>s+Math.max(0.2,w[k]),0),r=rnd()*tot;let pick=ks[0];for(const k of ks){r-=Math.max(0.2,w[k]);if(r<=0){pick=k;break;}}
-  if(p.tr.length>=2)p.tr[1]=pick;else p.tr.push(pick);}
+  p.tr=[pick];}
 const _ensTraits=ensTraits;ensTraits=function(p){if(!p||p.tr)return p;_ensTraits(p);trNewRoll(p);p.trV=2;return p;};
 function jnInit(){if(!SAVE.world||SAVE.jnV||!S())return;let h=7;for(const p of W().players){if(p.jn==null&&p.tm>=0){h=(h*1103515245+12345)>>>0;p.jn=S().n-(h%5);}}SAVE.jnV=1;}
-function trMigrate(){jnInit();if(!SAVE.world||SAVE.trV>=2)return;for(const p of W().players){if(!p.tr)ensTraits(p);else if(!p.trV){trNewRoll(p);p.trV=2;}}SAVE.trV=2;}
+function trMigrate(){jnInit();if(!SAVE.world||SAVE.trV>=3)return;for(const p of W().players){if(!p.tr)ensTraits(p);else if(!p.trV){trNewRoll(p);p.trV=2;}if(p.tr.length>1){const nw=p.tr.find(k=>NEW_TR.includes(k));p.tr=[nw||p.tr[0]];}}SAVE.trV=3;}
 // ---- zadowolenie zawodnika (0–100) z powodami ----
 function pSat(p,t){t=t||TEAMS[p.tm];const r=[];let s=50+((p.mor==null?60:p.mor)-60)*0.5;r.push(['Morale',Math.round(((p.mor==null?60:p.mor)-60)*0.5)]);
   const lu=t.idx===SAVE.team?myLineup():autoLineup(t);const st=Object.values(lu).includes(p.id);const exp=hRank(p,t)<=7;
