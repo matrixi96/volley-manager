@@ -84,7 +84,7 @@ function aiRev(ti){const a=SAVE.ai[ti];const inf=infraOf(ti);const r=folRatio(ti
 function aiLgAvgRev(lg){const t=TEAMS.filter(x=>lgOf(x.idx)===lg&&x.idx!==SAVE.team);return t.length?t.reduce((s,x)=>s+aiRev(x.idx),0)/t.length:AI_REV_LG[lg];}
 // budżety na sezon: płacowy jako limit pensji, transferowy jako pula na zakupy, operacyjny na obiekty
 function aiBudgets(){const avg={};for(const t of TEAMS){const ti=t.idx;if(ti===SAVE.team)continue;const a=SAVE.ai[ti];const lg=lgOf(ti);if(avg[lg]==null)avg[lg]=aiLgAvgRev(lg);
-  const fs=aiStaffSk(ti,'fin');const acc=(fs?0.9+fs/20*0.1:0.85)/0.93;const rel=clamp(aiRev(ti)/avg[lg],0.75,1.2);
+  const fs=aiStaffSk(ti,'fin');const acc=(fs?0.9+fs/20*0.1:0.85)/0.93;let rel=clamp(aiRev(ti)/avg[lg],0.75,1.2);if(FIX_DYN)rel=1+(rel-1)*0.5;
   a.wg=round5k((WAGE_CAP[lg]||WAGE_CAP[2])*rel*acc);
   a.bud=round5k(a.bud*0.35+(150000+a.rep*12000+R()*250000)*rel*acc);
   a.op=round5k(aiRev(ti)*0.18*acc);}}

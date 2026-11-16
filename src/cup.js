@@ -29,10 +29,10 @@ function cupTick(d){const s=S();if(!s||!s.cups)return;for(const c in s.cups){con
     for(const t of rd.ties){if(t.res)continue;if(t.h===SAVE.team||t.a===SAVE.team){pend=true;continue;}t.res=cupSim(t,rd.left);t.res.d=C.dates[C.r];}
     if(pend)break;cupRoundDone(c,C);}}}
 // faworyt z wyższej ligi we wczesnych rundach często oszczędza podstawowych zawodników (jak w prawdziwych pucharach)
-function cupRot(i,opp,left){const d=LG_LV[lgOf(opp)]-LG_LV[lgOf(i)];return d>=1&&left>=16&&R()<0.55;}
-function cupPart(i,home,rot){const p=participant(i,home);if(!rot)return p;const t=TEAMS[i];const st=Object.values(p.lineup).map(id=>t.players.find(x=>x.id===id)).filter(Boolean).sort((a,b)=>rating(b)-rating(a)).slice(0,3).map(x=>x.id);
+function cupRot(i,opp,left){const d=LG_LV[lgOf(opp)]-LG_LV[lgOf(i)];return d>=1&&left>=16&&R()<(FIX_CUP?0.65:0.55);}
+function cupPart(i,home,rot,opp){const p=participant(i,home);if(FIX_CUP&&home&&opp!=null&&LG_LV[lgOf(i)]>LG_LV[lgOf(opp)]){p.x.hb=(p.x.hb||0)+0.02;}if(!rot)return p;const t=TEAMS[i];const st=Object.values(p.lineup).map(id=>t.players.find(x=>x.id===id)).filter(Boolean).sort((a,b)=>rating(b)-rating(a)).slice(0,FIX_CUP?4:3).map(x=>x.id);
   const t2=Object.assign({},t,{players:t.players.filter(x=>!st.includes(x.id))});if(t2.players.length>=7)p.lineup=autoLineup(t2);return p;}
-function cupSim(t,left){const m=simMatch(cupPart(t.h,!t.neutral,cupRot(t.h,t.a,left||0)),cupPart(t.a,false,cupRot(t.a,t.h,left||0)));return resultOf(m,t.h,t.a);}
+function cupSim(t,left){const m=simMatch(cupPart(t.h,!t.neutral,cupRot(t.h,t.a,left||0),t.a),cupPart(t.a,false,cupRot(t.a,t.h,left||0),t.h));return resultOf(m,t.h,t.a);}
 function cupRoundDone(c,C){const rd=C.rounds[C.r];const mine=c===myCountry();
   // nagrody i wiadomości dla klubu użytkownika
   if(mine&&SAVE.team!=null){const myT=rd.ties.find(t=>t.h===SAVE.team||t.a===SAVE.team);if(myT){const won=cupWinner(myT)===SAVE.team;const k=Math.log2(rd.left);const pz=won?CUP_PRIZE[Math.max(0,CUP_PRIZE.length-k)]||20000:0;

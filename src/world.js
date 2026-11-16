@@ -68,6 +68,7 @@ function jrInitOther(s){s.jo={};const my=tmCountry(SAVE.team);for(const c of CTR
 function jrOtherRound(r){const s=S();if(!s.jo)jrInitOther(s);for(const c in s.jo){const J=s.jo[c];if(J.res.length>r||!J.rounds[r])continue;
   J.res.push(J.rounds[r].map(([h,a])=>{ensureJuniors(h);ensureJuniors(a);return jrQuick(h,a);}));if(J.res.length===J.rounds.length)J.champ=tableFrom(J.res,J.ids)[0].i;}}
 function jrOtherFinish(){const s=S();if(!s.jo)return;for(const c in s.jo){const J=s.jo[c];while(J.res.length<J.rounds.length)jrOtherRound(J.res.length);}}
+var FIX_DYN=1,FIX_PRO=1,FIX_CUP=1;// poprawki balansu: dynastie, beniaminkowie, niespodzianki w pucharach
 // ===== Zasady lig (sezon 2026/27, na podstawie regulaminów i doniesień) =====
 // po: liczba wygranych potrzebna w ćwierćfinale/półfinale/finale/meczu o 3. miejsce (qf:0 = od razu półfinały 1–4, b:0 = bez meczu o brąz)
 // down: ilu spada do niższej ligi (tyle samo awansuje); maxF: najwięcej obcokrajowców jednocześnie na boisku (wliczając libero); playout: dół tabeli gra baraż
