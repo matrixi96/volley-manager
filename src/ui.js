@@ -71,7 +71,7 @@ function changeClub(){if(!ui.confirmReset){ui.confirmReset=true;render();return;
 // ---------- skład ----------
 function squadView(){
   const sqT=`<div class="card"><div class="row" style="gap:6px"><button class="tabb ${ui.sqTab!=='dyn'?'on':''}" onclick="ui.sqTab=null;render()">Skład i kadra</button><button class="tabb ${ui.sqTab==='dyn'?'on':''}" onclick="ui.sqTab='dyn';render()">Dynamika zespołu</button></div></div>`;
-  if(ui.sqTab==='dyn')return sqT+dynView();
+  if(ui.sqTab==='dyn')return sqT+dynView()+(typeof loansCard==='function'?loansCard():'');
   const t=myTeam(),lu=myLineup();
   const inLu=new Map(LINEUP_KEYS.map(([k,l])=>[lu[k],l]));
   const order={R:0,A:1,P:2,S:3,L:4};
