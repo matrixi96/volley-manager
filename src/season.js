@@ -34,7 +34,7 @@ function tableFrom(results,ids){ids=ids||curIds();const T={};for(const i of ids)
 function rankOf(i){return leagueTable().findIndex(x=>x.i===i)+1;}
 
 // ---- uczestnicy / symulacja ----
-function participant(i,home){const t=TEAMS[i];const mine=i===SAVE.team;let lu=mine?healthyLineup(t,myLineup()).lu:autoLineup(t);if(mine&&typeof lineupFix==='function'){const f=lineupFix(t,lu);if(JSON.stringify(f)!==JSON.stringify(lu)){lu=f;news(`🌍 Za dużo obcokrajowców w składzie (${forRuleTxt(myLg())}) — asystent zmienił ustawienie na ten mecz.`);}}return {team:t,lineup:lu,tactics:mine?Object.assign({},myTac()):aiStyle(t,lu),home,x:(()=>{const md=clubMods(i);const o={hb:md.hb,fat:md.fat,sb:md.sb};if(mine){o.cap=SAVE.captain;const cx=coachMatchX();o.sb+=(cx.sb||0)+(typeof tacPrep==='function'?tacPrep()*0.006:0)+(typeof oppPrepBonus==='function'?oppPrepBonus():0);o.momMul=cx.momMul;o.prB=cx.prB;o.trB=cx.trB;}return o;})()};}
+function participant(i,home){const t=TEAMS[i];const mine=i===SAVE.team;let lu=mine?healthyLineup(t,myLineup()).lu:autoLineup(t);if(mine&&typeof lineupFix==='function'){const f=lineupFix(t,lu);if(JSON.stringify(f)!==JSON.stringify(lu)){lu=f;news(`🌍 Za dużo obcokrajowców w składzie (${forRuleTxt(myLg())}) — asystent zmienił ustawienie na ten mecz.`);}}return {team:t,lineup:lu,tactics:mine?Object.assign({},myTac()):aiStyle(t,lu),home,x:(()=>{const md=clubMods(i);const o={hb:md.hb,fat:md.fat,sb:md.sb};if(mine){o.cap=SAVE.captain;const cx=coachMatchX();o.sb+=(typeof dynBonus==='function'?dynBonus(i):0)+(cx.sb||0)+(typeof tacPrep==='function'?tacPrep()*0.006:0)+(typeof oppPrepBonus==='function'?oppPrepBonus():0);o.momMul=cx.momMul;o.prB=cx.prB;o.trB=cx.trB;}return o;})()};}
 function resultOf(m,h,a){const flip=m.sides[0].team.idx!==h;const r={h,a,sets:m.sets.map(x=>flip?[x[1],x[0]]:x.slice()),sw:flip?[m.setsWon[1],m.setsWon[0]]:m.setsWon.slice()};
   try{if(typeof aiSocResult==='function'){const hw=r.sw[0]>r.sw[1],sw=Math.min(r.sw[0],r.sw[1])===0;aiSocResult(h,hw,sw);aiSocResult(a,!hw,sw);}}catch(e){}return r;}
 function addTogether(m){try{formAfterMatch(m);}catch(e){console.error(e);}try{if(typeof pairsAfterMatch==='function')pairsAfterMatch(m);if(typeof famAfterMatch==='function')famAfterMatch(m);}catch(e){}for(const sd of m.sides)for(const p of sd.pl){const x=p.st;if(x.srv+x.rec+x.att+x.dig+x.blk===0&&!sd.slots.some(z=>z.p.id===p.id)&&sd.libero!==p)continue;
@@ -62,7 +62,7 @@ function myNext(){
 function buildMatch(ctx){
   const meHome=ctx.h===SAVE.team;const op=meHome?ctx.a:ctx.h;
   const neu=(ctx.kind==='cup'||ctx.kind==='euro')&&ctx.neutral;const m=newMatch(participant(SAVE.team,meHome&&!neu),ctx.kind==='cup'?cupPart(op,!meHome&&!neu,cupRot(op,SAVE.team,ctx.left)):participant(op,!meHome));
-  m.log=[];m.paused=false;m.hl=[];m.ctx=ctx;matchCrowd(m);if(meHome&&m.cap){m.sides[0].form+=(m.att/m.cap-0.75)*0.02;}
+  m.log=[];m.paused=false;m.hl=[];m.ctx=ctx;if(ctx.kind==='po'||ctx.kind==='cup'||ctx.kind==='euro')for(const sd of m.sides)for(const p of sd.pl)if(hasT(p,'suk'))p.cf=Math.max(p.cf||0,0.5);matchCrowd(m);if(meHome&&m.cap){m.sides[0].form+=(m.att/m.cap-0.75)*0.02;}
   m.log.push({t:`${ctx.kind==='spar'?'Sparing':ctx.kind==='po'?'Play-off':ctx.kind==='cup'?`${cupName(myCountry())} (${cupRoundName(0,ctx.left)})`:ctx.kind==='euro'?euroLab(ctx):'Liga'} · ${ctx.neutral?'teren neutralny':meHome?'mecz u siebie':'mecz wyjazdowy'}. Losowanie: seta zaczyna zagrywką <b>${esc(m.sides[m.serving].team.name)}</b>.`,c:'sys'});
   return m;
 }

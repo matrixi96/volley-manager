@@ -24,7 +24,7 @@ function matchDrainK(){return 1.15-staffSkill('med')/20*0.3;}
 // zmęczenie po meczu: tylko Twoi zawodnicy (świeżość odbudowuje się na treningach)
 function fatigueAfterMatch(m){const sd=m.sides[0];if(!sd||sd.team.idx!==SAVE.team)return;const dk=matchDrainK();
   for(const cp of sd.pl){const x=cp.st;if(x.srv+x.rec+x.att+x.dig+x.blk===0)continue;const P=PLAYERS[cp.id];if(!P)continue;const p=P.p;
-    p.fr=Math.round(clamp(frOf(p)-(14+(100-cp.en)*0.4)*dk,0,100));}}
+    p.fr=Math.round(clamp(frOf(p)-(14+(100-cp.en)*0.4)*dk*(hasT(p,'wer')?0.8:1)*(hasT(p,'odp')?0.9:1),0,100));}}
 
 // ================= TRENING: PLAN TYGODNIA, 3 JEDNOSTKI DZIENNIE =================
 const TR_UNITS={

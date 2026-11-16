@@ -70,6 +70,8 @@ function changeClub(){if(!ui.confirmReset){ui.confirmReset=true;render();return;
 
 // ---------- skład ----------
 function squadView(){
+  const sqT=`<div class="card"><div class="row" style="gap:6px"><button class="tabb ${ui.sqTab!=='dyn'?'on':''}" onclick="ui.sqTab=null;render()">Skład i kadra</button><button class="tabb ${ui.sqTab==='dyn'?'on':''}" onclick="ui.sqTab='dyn';render()">Dynamika zespołu</button></div></div>`;
+  if(ui.sqTab==='dyn')return sqT+dynView();
   const t=myTeam(),lu=myLineup();
   const inLu=new Map(LINEUP_KEYS.map(([k,l])=>[lu[k],l]));
   const order={R:0,A:1,P:2,S:3,L:4};
@@ -82,7 +84,7 @@ function squadView(){
   else pl.sort((a,b)=>b[ui.sort]-a[ui.sort]);
   const sel=([k,l,pos])=>`<label class="lu"><span>${l}</span><select onchange="setLu('${k}',this.value)">${
     t.players.slice().sort((a,b)=>(a.pos===pos?0:1)-(b.pos===pos?0:1)||rating(b,pos)-rating(a,pos)).map(p=>`<option value="${p.id}" ${lu[k]===p.id?'selected':''}>${p.inj?'🚑 ':''}${esc(p.last)} (${POS_SHORT[p.pos]}) — ${rating(p,pos)}</option>`).join('')}</select></label>`;
-  return `<div class="card"><div class="row"><h2>Skład wyjściowy</h2><span class="sp"></span><button class="ghost" onclick="autoLu()">Ustaw automatycznie</button></div>
+  return sqT+`<div class="card"><div class="row"><h2>Skład wyjściowy</h2><span class="sp"></span><button class="ghost" onclick="autoLu()">Ustaw automatycznie</button></div>
   <p class="mut small">System 5-1. Ocena w nawiasie dotyczy wybranej pozycji: zawodnik grający poza swoją pozycją wypada słabiej. Libero wchodzi za środkowego w drugiej linii.</p>
   ${lineupCourt(t,lu)}${injWarn()}
   <div class="row small mut" style="margin-top:8px">Siła składu: <b style="color:var(--txt);margin-left:4px">${lineupStrength(t,lu)}</b><span style="margin-left:14px">${chemBadge(t,lu)}</span><span class="sp"></span>${ui.confirmReset?`<span class="bad">Zmiana klubu kasuje obecną grę (sloty zostają). Na pewno?</span> <button class="link" onclick="changeClub()">Tak, zmień</button> <button class="link" onclick="ui.confirmReset=false;render()">Nie</button>`:`<button class="link" onclick="changeClub()">Zmień klub</button>`}</div></div>
