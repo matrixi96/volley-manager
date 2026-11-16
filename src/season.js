@@ -39,7 +39,7 @@ function resultOf(m,h,a){const flip=m.sides[0].team.idx!==h;const r={h,a,sets:m.
   try{if(typeof aiSocResult==='function'){const hw=r.sw[0]>r.sw[1],sw=Math.min(r.sw[0],r.sw[1])===0;aiSocResult(h,hw,sw);aiSocResult(a,!hw,sw);}}catch(e){}return r;}
 function addTogether(m){try{formAfterMatch(m);}catch(e){console.error(e);}try{if(typeof pairsAfterMatch==='function')pairsAfterMatch(m);if(typeof famAfterMatch==='function')famAfterMatch(m);}catch(e){}for(const sd of m.sides)for(const p of sd.pl){const x=p.st;if(x.srv+x.rec+x.att+x.dig+x.blk===0&&!sd.slots.some(z=>z.p.id===p.id)&&sd.libero!==p)continue;
   const w=PLAYERS[p.id]&&PLAYERS[p.id].p;if(!w)continue;if(w.tcTm!==sd.team.idx){w.tcTm=sd.team.idx;w.tc=0;}w.tc=(w.tc||0)+1;}}
-function recordStats(m){addTogether(m);const s=S();const ps=s.ps;const ts=s.ts||(s.ts={});
+function recordStats(m){addTogether(m);if(typeof histAfterMatch==='function')histAfterMatch(m);const s=S();const ps=s.ps;const ts=s.ts||(s.ts={});
   m.sides.forEach((sd,i)=>{const r=ts[sd.team.idx]||(ts[sd.team.idx]={m:0,sets:0,kill:0,att:0,attErr:0,blk:0,ace:0,srvErr:0,srv:0,rec:0,recPos:0,dig:0,pw:0,pl:0});
     r.m++;r.sets+=m.sets.length;for(const st of m.sets){r.pw+=st[i];r.pl+=st[1-i];}
     for(const p of sd.pl){const x=p.st;r.kill+=x.kill;r.att+=x.att;r.attErr+=x.attErr;r.blk+=x.blk;r.ace+=x.ace;r.srvErr+=x.srvErr;r.srv+=x.srv;r.rec+=x.rec;r.recPos+=x.recPos;r.dig+=x.dig;}});

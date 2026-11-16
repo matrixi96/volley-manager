@@ -180,7 +180,7 @@ function mb(p,m,i){let b=(p.mor==null?0:(p.mor-60)/40*0.045)+formB(p)+cfB(p)+(p.
 function kc(p,m){let k=1.25-p.kcj/20*0.5;{const sd=m.sides&&m.sides.find(x=>x.pl.includes(p));if(sd&&sd.sh&&sd.sh.u>m.rallies&&sd.sh.e)k*=1-sd.sh.e;if(sd&&sd.tfE)k*=sd.tfE;}if(pressure(m))k*=1.15-p.opa/20*0.3;if(p.tr){if(hasT(p,'pro'))k*=0.9;if(hasT(p,'ner')&&pressure(m))k*=1.1;if(hasT(p,'ind'))k*=1.04;}if(MENT&&p.cf)k*=1-p.cf*0.08;return k;}
 function nerves(p,m){return pressure(m)&&p.opa<10?' Nerwy w końcówce!':'';}
 // ---- pewność siebie w meczu (cf: -3 roztrzęsiony … +2 w gazie) ----
-var MENT=1,AIM=1;var REC_PERF=0.64,MID_Q1=0.025,QUICK_B=0.09,MIX_PC=0.045,WING_B=0.042,PIPE_B=0.27;// próg idealnego przyjęcia, udział środka po złej piłce, premia szybkiej krótkiej, nieporozumienia
+var MENT=1,AIM=1;var REC_PERF=0.64,MID_Q1=0.025,QUICK_B=0.09,MIX_PC=0.045,WING_B=0.042,PIPE_B=0.22,ACE_V=0.145,SERR_M=1.35;// próg idealnego przyjęcia, udział środka po złej piłce, premia szybkiej krótkiej, nieporozumienia
 // BAL2: balans długoterminowy (inflacja umiejętności, dynastie, długi)
 var BAL2=1,BAL3=1;
 function cfK(p){const o=p.opa||10;let k=(1+(11-o)/20*(o>11?2.4:2.2))*(p.age>=28?0.8:p.age<=21?1.15:1);if(p.tr){if(hasT(p,'ner'))k*=1.45;if(hasT(p,'spo'))k*=0.45;if(hasT(p,'pro'))k*=0.3;if(hasT(p,'zde'))k*=0.6;}return clamp(k,0.05,3);}
@@ -233,7 +233,7 @@ function rally(m,ex){
     if(st>0&&!(tc.srvRisk||[]).includes(server.id)&&R()<pS){st=0;sSafe=1;sT=0;cfNote(m,{k:'safe',i:S,id:server.id,n:server.last});}}
   server.st.srv++;
   const aim=(tc.tgt&&cD.some(x=>x.p.id===tc.tgt&&(x.role==='L'||x.role==='P')))||zt>0;const aimS=MENT&&tc.shk&&!aim&&cD.some(x=>(x.p.cf||0)<-0.7);
-  const errP=[0.075,0.15,0.25][st]*(1.45-0.9*n)*kc(server,m)*(sS.tmp&&sS.tmp.n>0&&sS.tmp.k==='srv'?1.25:1)*(aim?1+Math.max(0,13-server.zag)*(zt>0?0.015:0.025):aimS?1.03+Math.max(0,13-server.zag)*0.01:1)*SRV_ERR[ty]*ZERR[zt]*(sT?1+sT*0.045:1);
+  const errP=[0.075,0.15,0.25][st]*(1.45-0.9*n)*kc(server,m)*(sS.tmp&&sS.tmp.n>0&&sS.tmp.k==='srv'?1.25:1)*(aim?1+Math.max(0,13-server.zag)*(zt>0?0.015:0.025):aimS?1.03+Math.max(0,13-server.zag)*0.01:1)*SRV_ERR[ty]*ZERR[zt]*(sT?1+sT*0.045:1)*SERR_M;
   if(R()<errP){server.st.srvErr++;cfHit(server,m,0.6,'zag');if(MENT)server.sT=clamp(cfK(server),0.2,1.5)*cfDamp(server,'zag')*(pressure(m)?1.5:1);sS.lastSrv={k:'err'};const r2=R();const how=r2<0.42?'net':r2<0.75?'long':'wide';seq.push({k:how==='net'?'net':'out',s:D,how,srv:1});return {winner:D,type:'serr',act,seq,text:`${nm(server)} psuje zagrywkę (${how==='net'?'siatka':how==='long'?'aut za linią końcową':'aut obok boiska'}).${nerves(server,m)}`};}
   const tS0=sS.tmp&&sS.tmp.n>0?sS.tmp.k:null,tD0=sD.tmp&&sD.tmp.n>0?sD.tmp.k:null;
   const pow=n+(MENT?-(server.cf||0)*0.018:0)+(MENT?0.0:0)+[-0.14,0,0.13][st]+(tS0==='srv'?0.05:0)+SRV_POW[ty]+(zt===4?-0.05:0);
@@ -260,7 +260,7 @@ function rally(m,ex){
       seq.push({k:'mix',ids:[seam[0].p.id,seam[1].p.id],s:D,px:+px.toFixed(2),py:+py.toFixed(2),srv:1});seq.push({k:'floor',s:D,mix:1});
       return {winner:S,type:'ace',act,seq,text:`${nm(server)} — AS SERWISOWY! Zagrywka między ${nm(seam[0].p)} i ${nm(seam[1].p)}, nikt nie przyjął.`};}}
   rec.st.rec++;
-  if(v<0.17){server.st.ace++;rec.st.recErr++;cfHit(rec,m,1.2,'prz');cfUp(server,m,0.7);sS.lastSrv={k:'ace',rec:rec.id};const sh=v>=0.09;seq.push(Object.assign({k:'ace',id:rec.id,s:D,sh},zt===4?{z:'short'}:{}));return {winner:S,type:'ace',act,seq,text:sh?`${nm(server)} — AS SERWISOWY! ${nm(rec)} odbija piłkę poza boisko.`:`${nm(server)} — AS SERWISOWY! ${nm(rec)} nie zdążył do piłki.`};}
+  if(v<ACE_V){server.st.ace++;rec.st.recErr++;cfHit(rec,m,1.2,'prz');cfUp(server,m,0.7);sS.lastSrv={k:'ace',rec:rec.id};const sh=v>=ACE_V*0.53;seq.push(Object.assign({k:'ace',id:rec.id,s:D,sh},zt===4?{z:'short'}:{}));return {winner:S,type:'ace',act,seq,text:sh?`${nm(server)} — AS SERWISOWY! ${nm(rec)} odbija piłkę poza boisko.`:`${nm(server)} — AS SERWISOWY! ${nm(rec)} nie zdążył do piłki.`};}
   const q=v<0.42?1:v<REC_PERF?2:3;
   seq.push(Object.assign({k:'rec',id:rec.id,s:D},zt===4?{z:'short'}:{}));
   if(q>=2)rec.st.recPos++;if(q===3)rec.st.recPerf++;if(q===1)cfHit(rec,m,0.5,'prz');else cfUp(rec,m,q===3?0.3:0.05);

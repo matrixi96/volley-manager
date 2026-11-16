@@ -140,7 +140,7 @@ function injuryCheck(m,mult){
   for(const sd of m.sides){const mine=sd.team.idx===SAVE.team;const md=clubMods(sd.team.idx);const im=(mine?TRAIN_INT[SAVE.training.int][2]:1)*md.injChance;
     for(const cp of sd.pl){const x=cp.st;if(x.srv+x.rec+x.att+x.dig+x.blk===0)continue;ROUND_PLAYED.add(cp.id);
       const P=PLAYERS[cp.id];if(!P)continue;const p=P.p;if(p.inj)continue;
-      if(R()<0.012*im*(1.3-p.kon/20*0.6)*mult*(hasT(p,'odp')?0.65:1)){const d=1+Math.floor(R()*R()*7);const days=Math.max(3,Math.round((d*7-3+R()*6)*md.injDur));p.inj=days;p.injUntil=addDays(today(),days);p.injN=injName(days);p.injD=days;if(!mine)aiStarInjNews(p,days);if(mine)news(`🚑 ${p.first} ${p.last} doznał kontuzji (${p.injN.toLowerCase()}) — przerwa ok. ${days} dni (powrót ok. ${fmtDMY(p.injUntil)}).`);}}}
+      if(R()<0.012*im*(1.3-p.kon/20*0.6)*mult*(hasT(p,'odp')?0.65:1)*reinjF(p)){const d=1+Math.floor(R()*R()*7);const days=Math.max(3,Math.round((d*7-3+R()*6)*md.injDur));p.inj=days;p.injUntil=addDays(today(),days);p.injN=injName(days);p.injD=days;if(!mine)aiStarInjNews(p,days);if(mine)news(`🚑 ${p.first} ${p.last} doznał kontuzji (${p.injN.toLowerCase()}) — przerwa ok. ${days} dni (powrót ok. ${fmtDMY(p.injUntil)}).`);}}}
 }
 function roundTick(kind,home,att,opp){
   const tr=SAVE.training;
@@ -262,6 +262,7 @@ function starsAbroad(){const n=S().n;const out=[];for(const p of W().players){if
 function offseason(){
   try{if(typeof euroFinishAll==='function')euroFinishAll();}catch(e){console.error(e);}
   try{if(typeof ntFinishAll==='function')ntFinishAll();}catch(e){console.error(e);}
+  try{if(typeof histSeasonEnd==='function')histSeasonEnd();}catch(e){console.error(e);}
   try{if(typeof loansReturn==='function')loansReturn();}catch(e){console.error(e);}
   const old=S(),n=old.n+1;
   advanceTo(`${2026+old.n}-06-01`);
@@ -375,6 +376,8 @@ function healthyLineup(team,lu){
   return {lu:ok,ch};}
 
 const INJ_NAMES=[[10,['Stłuczenie kolana','Skręcenie palca','Naciągnięcie mięśnia łydki','Stłuczenie uda','Uraz nadgarstka']],[24,['Skręcenie stawu skokowego','Naderwanie mięśnia uda','Uraz pleców','Zapalenie ścięgna Achillesa','Naciągnięcie mięśnia brzucha']],[999,['Uraz barku','Złamanie palca','Przeciążeniowe złamanie kości śródstopia','Uszkodzenie więzadła w kolanie','Zapalenie ścięgna rzepki']]];
+// po powrocie z urazu (≥7 dni) przez 3 tygodnie większe ryzyko odnowienia: do 2,2× zaraz po powrocie, maleje do 1×
+function reinjF(p){const L=p&&p.injLast;if(!L||!L.back||!(+L.days>=7))return 1;const d=daysBetween(L.back,today());return d>=0&&d<21?1+1.2*(1-d/21):1;}
 function injName(days){const g=INJ_NAMES.find(x=>days<=x[0])[1];return g[Math.floor(R()*g.length)];}
 
 // beniaminek: wzmacnia najsłabsze pozycje podstawowej szóstki zawodnikami na poziomie nowej ligi (rynek wolnych zawodników, a gdy go brak — zawodnicy spoza gry)
