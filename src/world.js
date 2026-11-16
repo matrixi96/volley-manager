@@ -68,3 +68,39 @@ function jrInitOther(s){s.jo={};const my=tmCountry(SAVE.team);for(const c of CTR
 function jrOtherRound(r){const s=S();if(!s.jo)jrInitOther(s);for(const c in s.jo){const J=s.jo[c];if(J.res.length>r||!J.rounds[r])continue;
   J.res.push(J.rounds[r].map(([h,a])=>{ensureJuniors(h);ensureJuniors(a);return jrQuick(h,a);}));if(J.res.length===J.rounds.length)J.champ=tableFrom(J.res,J.ids)[0].i;}}
 function jrOtherFinish(){const s=S();if(!s.jo)return;for(const c in s.jo){const J=s.jo[c];while(J.res.length<J.rounds.length)jrOtherRound(J.res.length);}}
+// ===== Zasady lig (sezon 2026/27, na podstawie regulaminów i doniesień) =====
+// po: liczba wygranych potrzebna w ćwierćfinale/półfinale/finale/meczu o 3. miejsce (qf:0 = od razu półfinały 1–4, b:0 = bez meczu o brąz)
+// down: ilu spada do niższej ligi (tyle samo awansuje); maxF: najwięcej obcokrajowców jednocześnie na boisku (wliczając libero); playout: dół tabeli gra baraż
+const LG_CFG=[
+ {po:{qf:2,sf:2,f:2,b:2},down:1,maxF:3},          // Ekstraliga (PL: min. 3 Polaków na boisku, play-off do 2 wygranych)
+ {po:{qf:2,sf:2,f:3,b:2},down:2,maxF:2},          // 1. Liga (min. 4 Polaków)
+ {po:{qf:2,sf:2,f:3,b:2},down:0,maxF:1},          // 2. Liga (min. 5 Polaków)
+ {po:{qf:2,sf:2,f:3,b:2},down:1,maxF:null},       // Bundesliga (14, w tym kadra młodzieżowa bez spadku i play-off)
+ {po:{qf:2,sf:2,f:2,b:0},down:0,maxF:null},       // 2. Bundesliga
+ {po:{qf:3,sf:3,f:3,b:0},down:1,maxF:null,playout:true}, // SuperLega: play-off do 3 wygranych, baraż 9–12 decyduje o jedynym spadkowiczu
+ {po:{qf:2,sf:2,f:2,b:0},down:0,maxF:null},       // Serie A2: play-off do 2 wygranych, awansuje zwycięzca
+ {po:{qf:0,sf:2,f:3,b:2},down:2,maxF:3},          // Efeler Ligi: play-off 1–4 (półfinały do 2, finał do 3 wygranych)
+ {po:{qf:2,sf:2,f:1,b:0},down:0,maxF:null,up:'rs1+po'}]; // 1. Lig: zwycięzca sezonu zasadniczego awansuje bezpośrednio, drugi przez play-off
+function lgCfg(l){return LG_CFG[l]||LG_CFG[1];}
+function isYT(ti){return !!(TEAM_DEFS[ti]&&TEAM_DEFS[ti].yt);}
+// ---- limit obcokrajowców ----
+function tmMaxF(team){if(!team||team.idx==null||!SAVE.lg)return null;const l=SAVE.lg[team.idx];if(l==null||l<0)return null;const c=lgCfg(l).maxF;return c==null?null:c;}
+function isForeign(p,team){return pNat(p)!==LG_C[SAVE.lg[team.idx]];}
+function luForeign(team,lu){const ids=Object.values(lu);return team.players.filter(p=>ids.includes(p.id)&&isForeign(p,team)).length;}
+function lineupFix(team,lu){const mx=tmMaxF(team);if(mx==null)return lu;lu=Object.assign({},lu);let guard=8;
+  while(luForeign(team,lu)>mx&&guard-->0){const used=new Set(Object.values(lu));const keys=LINEUP_KEYS.filter(([k])=>{const p=team.players.find(x=>x.id===lu[k]);return p&&isForeign(p,team);});
+    let best=null;for(const [k,,pos] of keys){const cur=team.players.find(x=>x.id===lu[k]);const c=team.players.filter(p=>!p.inj&&!used.has(p.id)&&!isForeign(p,team)).sort((a,b)=>lineupScore(b,pos)-lineupScore(a,pos))[0];
+      if(!c)continue;const loss=lineupScore(cur,pos)-lineupScore(c,pos);if(!best||loss<best.loss)best={k,c,loss};}
+    if(!best)break;lu[best.k]=best.c.id;}
+  return lu;}
+function sideForOK(s,outP,inP){const mx=tmMaxF(s.team);if(mx==null)return true;const on=s.slots.map(x=>x.p).concat(s.libero?[s.libero]:[]);
+  const n=on.filter(p=>p&&p!==outP&&isForeign(p,s.team)).length+(inP&&isForeign(inP,s.team)?1:0);return n<=mx;}
+function forRuleTxt(l){const c=lgCfg(l);return c.maxF==null?'bez limitu obcokrajowców':`na boisku najwyżej ${c.maxF} ${c.maxF===1?'obcokrajowiec':'obcokrajowców'} (min. ${7-c.maxF} zawodników z kraju ligi, wliczając libero)`;}
+// ---- zmiany struktury lig w starych zapisach: przeniesienia wchodzą od nowego sezonu ----
+function worldMigrate(){if(SAVE.wv>=3)return;for(const t of TEAMS){const d=TEAM_DEFS[t.idx];if(d&&d.mvLg!=null)SAVE.lg[t.idx]=d.mvLg;}SAVE.wv=3;}
+(function(){const D=TEAM_DEFS;const f=n=>D.findIndex(d=>d.name===n);
+  const h=f('Haie Hamburg');if(h>=0){D[h].lg=4;D[h].mvLg=4;}
+  const l=f('Luchse Leipzig');if(l>=0){Object.assign(D[l],{name:'Bundesnachwuchs Berlin',short:'BNB',q:9.6,yt:true,color:'#64748b'});}
+  D.push({name:'Leuchttürme Lübeck',short:'LLT',q:8.2,color:'#0ea5e9',lg:4});
+  D.push({name:'Hetman Zawiercie',short:'HZA',q:12.3,color:'#b45309',lg:0});
+  D.push({name:'Wilki Częstochowa',short:'WCZ',q:12.0,color:'#4b5563',lg:0});})();

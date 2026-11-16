@@ -6,6 +6,7 @@ const N_SPAR=7;
 function S(){return SAVE.season;}
 function makeFixtures(n0){const n=n0%2?n0+1:n0;const t=[...Array(n).keys()].sort(()=>R()-0.5);const rounds=[];for(let r=0;r<n-1;r++){const pr=[];for(let i=0;i<n/2;i++){const a=t[i],b=t[n-1-i];if(a>=n0||b>=n0)continue;pr.push(r%2?[b,a]:[a,b]);}rounds.push(pr);t.splice(1,0,t.pop());}return rounds;}
 function newSeason(n,phase){
+  if(typeof worldMigrate==='function'&&SAVE.lg)worldMigrate();
   const ids=lgIds(myLg());const first=makeFixtures(ids.length).map(rd=>rd.map(([h,a])=>[ids[h],ids[a]]));const second=first.map(rd=>rd.map(([h,a])=>[a,h]));
   const others=ids.filter(i=>i!==SAVE.team).sort(()=>R()-0.5).slice(0,N_SPAR);
   SAVE.season={n:n||1,phase:phase||'spar',spar:{opps:others,res:[]},rounds:first.concat(second),round:0,results:[],po:null,final:null,ps:{}};
@@ -21,7 +22,8 @@ function tDot(i){const t=TEAMS[i];if(!t)return '';return `<span class="tcrest">$
 
 // ---- tabela ----
 function leagueTable(){return tableFrom(S().results);}
-function tableFrom(results,ids){ids=ids||lgIds(myLg());const T={};for(const i of ids)T[i]={i,m:0,w:0,l:0,pts:0,sw:0,sl:0,pw:0,pl:0};
+function curIds(){const s=S();if(s&&s.rounds&&s.rounds.length){const set=new Set();for(const rd of s.rounds.slice(0,2))for(const [h,a] of rd){set.add(h);set.add(a);}if(set.size)return [...set];}return lgIds(myLg());}
+function tableFrom(results,ids){ids=ids||curIds();const T={};for(const i of ids)T[i]={i,m:0,w:0,l:0,pts:0,sw:0,sl:0,pw:0,pl:0};
   for(const rd of results)for(const g of rd){const h=T[g.h],a=T[g.a];h.m++;a.m++;h.sw+=g.sw[0];h.sl+=g.sw[1];a.sw+=g.sw[1];a.sl+=g.sw[0];
     for(const st of g.sets){h.pw+=st[0];h.pl+=st[1];a.pw+=st[1];a.pl+=st[0];}
     const hw=g.sw[0]===3,W=hw?h:a,Lo=hw?a:h,ls=Math.min(...g.sw);W.w++;Lo.l++;W.pts+=ls<=1?3:2;Lo.pts+=ls===2?1:0;}
@@ -30,7 +32,7 @@ function tableFrom(results,ids){ids=ids||lgIds(myLg());const T={};for(const i of
 function rankOf(i){return leagueTable().findIndex(x=>x.i===i)+1;}
 
 // ---- uczestnicy / symulacja ----
-function participant(i,home){const t=TEAMS[i];const mine=i===SAVE.team;const lu=mine?healthyLineup(t,myLineup()).lu:autoLineup(t);return {team:t,lineup:lu,tactics:mine?Object.assign({},myTac()):aiStyle(t,lu),home,x:(()=>{const md=clubMods(i);const o={hb:md.hb,fat:md.fat,sb:md.sb};if(mine){o.cap=SAVE.captain;const cx=coachMatchX();o.sb+=(cx.sb||0)+(typeof tacPrep==='function'?tacPrep()*0.006:0)+(typeof oppPrepBonus==='function'?oppPrepBonus():0);o.momMul=cx.momMul;o.prB=cx.prB;o.trB=cx.trB;}return o;})()};}
+function participant(i,home){const t=TEAMS[i];const mine=i===SAVE.team;let lu=mine?healthyLineup(t,myLineup()).lu:autoLineup(t);if(mine&&typeof lineupFix==='function'){const f=lineupFix(t,lu);if(JSON.stringify(f)!==JSON.stringify(lu)){lu=f;news(`🌍 Za dużo obcokrajowców w składzie (${forRuleTxt(myLg())}) — asystent zmienił ustawienie na ten mecz.`);}}return {team:t,lineup:lu,tactics:mine?Object.assign({},myTac()):aiStyle(t,lu),home,x:(()=>{const md=clubMods(i);const o={hb:md.hb,fat:md.fat,sb:md.sb};if(mine){o.cap=SAVE.captain;const cx=coachMatchX();o.sb+=(cx.sb||0)+(typeof tacPrep==='function'?tacPrep()*0.006:0)+(typeof oppPrepBonus==='function'?oppPrepBonus():0);o.momMul=cx.momMul;o.prB=cx.prB;o.trB=cx.trB;}return o;})()};}
 function resultOf(m,h,a){const flip=m.sides[0].team.idx!==h;const r={h,a,sets:m.sets.map(x=>flip?[x[1],x[0]]:x.slice()),sw:flip?[m.setsWon[1],m.setsWon[0]]:m.setsWon.slice()};
   try{if(typeof aiSocResult==='function'){const hw=r.sw[0]>r.sw[1],sw=Math.min(r.sw[0],r.sw[1])===0;aiSocResult(h,hw,sw);aiSocResult(a,!hw,sw);}}catch(e){}return r;}
 function addTogether(m){try{formAfterMatch(m);}catch(e){console.error(e);}try{if(typeof pairsAfterMatch==='function')pairsAfterMatch(m);if(typeof famAfterMatch==='function')famAfterMatch(m);}catch(e){}for(const sd of m.sides)for(const p of sd.pl){const x=p.st;if(x.srv+x.rec+x.att+x.dig+x.blk===0&&!sd.slots.some(z=>z.p.id===p.id)&&sd.libero!==p)continue;
@@ -84,8 +86,10 @@ function simRound(){/* runda bez meczu użytkownika nie występuje w lidze */}
 
 // ---- play-off ----
 function mkSeries(st,a,b,need){const ra=rankOf(a),rb=rankOf(b);const hi=ra<rb?a:b,lo=hi===a?b:a;return {id:st+'-'+hi+'-'+lo,st,hi,lo,need,w:[0,0],games:[]};}
-function startPlayoff(){const s=S();const tb=leagueTable().map(x=>x.i);s.seed=tb;s.phase='po';
-  s.po={stage:'QF',day:0,series:[mkSeries('QF',tb[0],tb[7],2),mkSeries('QF',tb[3],tb[4],2),mkSeries('QF',tb[1],tb[6],2),mkSeries('QF',tb[2],tb[5],2)]};}
+function poSeed(tb){return tb.filter(i=>!isYT(i)).concat(tb.filter(i=>isYT(i)));}
+function poFirst(tb,c,mk){return c.qf?{stage:'QF',day:0,series:[mk('QF',tb[0],tb[7],c.qf),mk('QF',tb[3],tb[4],c.qf),mk('QF',tb[1],tb[6],c.qf),mk('QF',tb[2],tb[5],c.qf)]}:{stage:'SF',day:0,series:[mk('SF',tb[0],tb[3],c.sf),mk('SF',tb[1],tb[2],c.sf)]};}
+function startPlayoff(){const s=S();const tb=poSeed(leagueTable().map(x=>x.i));s.seed=tb;s.phase='po';
+  s.po=poFirst(tb,lgCfg(myLg()).po,mkSeries);}
 function seriesDone(sr){return sr.w[0]>=sr.need||sr.w[1]>=sr.need;}
 function seriesWinner(sr){return sr.w[0]>=sr.need?sr.hi:sr.lo;}
 function seriesLoser(sr){return sr.w[0]>=sr.need?sr.lo:sr.hi;}
@@ -101,9 +105,9 @@ function advanceStage(){
   const s=S(),po=s.po;if(activeSeries().length)return;
   const seedRank=i=>s.seed.indexOf(i);
   if(po.stage==='QF'){const w=po.series.filter(x=>x.st==='QF').map(seriesWinner).sort((a,b)=>seedRank(a)-seedRank(b));
-    po.series.push(mkSeriesSeed('SF',w[0],w[3],2),mkSeriesSeed('SF',w[1],w[2],2));po.stage='SF';}
+    const c=lgCfg(myLg()).po;po.series.push(mkSeriesSeed('SF',w[0],w[3],c.sf),mkSeriesSeed('SF',w[1],w[2],c.sf));po.stage='SF';}
   else if(po.stage==='SF'){const sf=po.series.filter(x=>x.st==='SF');
-    po.series.push(mkSeriesSeed('F',seriesWinner(sf[0]),seriesWinner(sf[1]),3),mkSeriesSeed('B',seriesLoser(sf[0]),seriesLoser(sf[1]),2));po.stage='FB';}
+    const c=lgCfg(myLg()).po;po.series.push(mkSeriesSeed('F',seriesWinner(sf[0]),seriesWinner(sf[1]),c.f));if(c.b)po.series.push(mkSeriesSeed('B',seriesLoser(sf[0]),seriesLoser(sf[1]),c.b));po.stage='FB';}
   else if(po.stage==='FB'){finishSeason();}
 }
 function mkSeriesSeed(st,a,b,need){const s=S();const hi=s.seed.indexOf(a)<s.seed.indexOf(b)?a:b;const lo=hi===a?b:a;return {id:st+'-'+hi+'-'+lo,st,hi,lo,need,w:[0,0],games:[]};}
@@ -111,9 +115,7 @@ function simPoDay(){if(S().phase!=='po')return;const mine=myNext();if(mine)retur
 function simPoAll(){while(S().phase==='po'&&!myNext()){playPoDay(null,null);roundTick('po',false);syncDate();}save();render();}
 function finishSeason(){
   ensureBg();const s=S(),po=s.po,ser=st=>po.series.filter(x=>x.st===st);
-  const F=ser('F')[0],B=ser('B')[0];
-  const qfL=ser('QF').map(seriesLoser).sort((a,b)=>s.seed.indexOf(a)-s.seed.indexOf(b));
-  s.final=[seriesWinner(F),seriesLoser(F),seriesWinner(B),seriesLoser(B)].concat(qfL,s.seed.slice(8));
+  s.final=poFinal(po,s.seed,lgCfg(myLg()));if(lgCfg(myLg()).playout)playout(s.final,myLg());
   s.phase='end';s.endDate=addDays(s.podates[Math.max(0,s.po.day-1)],3);
   bgFinishAll();try{jrOtherFinish();}catch(e){}s.lgFinal={};s.lgFinal[myLg()]=s.final;if(s.oth)for(const k in s.oth)if(s.oth[k].final)s.lgFinal[k]=s.oth[k].final;
   for(const k in s.lgFinal){const [b0,st]=LG_REP[k];s.lgFinal[k].forEach((ti,pl)=>{const a=SAVE.ai[ti];const kw=BAL2?0.15:0.25;a.rep=Math.round(clamp(a.rep*(1-kw)+(b0-pl*st)*kw,5,100));});
@@ -121,7 +123,8 @@ function finishSeason(){
   if(BAL3)for(const k in s.lgFinal){const ch=s.lgFinal[k][0];for(const p of TEAMS[ch].players){if(rating(p)<78)continue;const up=0.03+R()*0.07;
       if(ch===SAVE.team){p.raiseReq=Math.round(up*100)/100;}else p.wage=round5k(p.wage*(1+up));}
     if(ch===SAVE.team&&typeof sendMail==='function')sendMail({cat:'trans',from:'Agenci zawodników',t:'Mistrzowie oczekują podwyżek',s:'Po tytule najlepsi zawodnicy będą chcieli 3–10% więcej przy przedłużaniu kontraktów.',lab:'Kontrakty'});}
-  s.moves=leagueMoves(s.lgFinal);
+  s.lgSeed={};s.lgSeed[myLg()]=s.seed;if(s.oth)for(const k in s.oth)if(s.oth[k].seed)s.lgSeed[k]=s.oth[k].seed;
+  s.moves=leagueMoves(s.lgFinal,s.lgSeed);
   for(const mv of s.moves)if(mv.i===SAVE.team||lgCountry(mv.to)===tmCountry(SAVE.team))news(mv.up?`⬆️ ${TEAMS[mv.i].name} awansuje do ${LG_GEN[mv.to]}${mv.i===SAVE.team?' — to nasz awans!':''}.`:`⬇️ ${TEAMS[mv.i].name} spada do ${LG_GEN[mv.to]}${mv.i===SAVE.team?' — to nasz spadek.':''}.`);
   const myPl=s.final.indexOf(SAVE.team);const pz=Math.round(PRIZE[myPl]*LG_PRIZE[myLg()]/5000)*5000;money(pz,'Nagrody');finLog(`Nagroda za ${myPl+1}. miejsce (${LG_N[myLg()]}) w sezonie ${sLabel(s.n)}`,pz);
   SAVE.history=SAVE.history||[];SAVE.history.push({n:s.n,team:SAVE.team,lg:myLg(),place:s.final.indexOf(SAVE.team)+1,champ:s.final[0],league:s.seed.indexOf(SAVE.team)+1,mv:(s.moves.find(x=>x.i===SAVE.team)||{}).up});
@@ -129,27 +132,38 @@ function finishSeason(){
 }
 // ---- pozostałe ligi (rozgrywane w tle, w tych samych kolejkach i dniach play-off) ----
 function bgInit(s){s.oth={};for(const l of allLgs()){if(l===myLg())continue;const ids=lgIds(l);if(ids.length<4)continue;const first=makeFixtures(ids.length).map(rd=>rd.map(([h,a])=>[ids[h],ids[a]]));
-  s.oth[l]={ids,rounds:first.concat(first.map(rd=>rd.map(([h,a])=>[a,h]))),results:[],po:null,seed:null,final:null};}}
+  s.oth[l]={lg:l,ids,rounds:first.concat(first.map(rd=>rd.map(([h,a])=>[a,h]))),results:[],po:null,seed:null,final:null};}}
 // stary zapis przeniesiony w trakcie sezonu: zbuduj pozostałe ligi i nadrób rozegrane kolejki i dni play-off
 function ensureBg(){const s=SAVE&&SAVE.season;if(!s||s.oth||!SAVE.lg||!s.rounds||s.phase==='end')return;bgInit(s);const n=Math.min((s.results||[]).length,s.rounds.length);for(let r=0;r<n;r++)bgRound(r);if(s.po)for(let d=0;d<(s.po.day||0);d++)bgPoDay();}
 function bgTable(L){return tableFrom(L.results,L.ids);}
 function bgRound(r){const s=S();if(!s.oth)return;for(const k in s.oth){const L=s.oth[k];if(L.results.length>r||!L.rounds[r])continue;
   L.results.push(L.rounds[r].map(([h,a])=>{const g=simFixture(h,a,true);g.d=today();return g;}));if(L.results.length===L.rounds.length&&!L.po)bgStartPo(L);}}
 function bgSer(L,st,a,b,need){const hi=L.seed.indexOf(a)<L.seed.indexOf(b)?a:b,lo=hi===a?b:a;return {id:st+'-'+hi+'-'+lo,st,hi,lo,need,w:[0,0],games:[]};}
-function bgStartPo(L){const t=bgTable(L).map(x=>x.i);L.seed=t;L.po={stage:'QF',day:0,series:[bgSer(L,'QF',t[0],t[7],2),bgSer(L,'QF',t[3],t[4],2),bgSer(L,'QF',t[1],t[6],2),bgSer(L,'QF',t[2],t[5],2)]};}
+function bgStartPo(L){const t=poSeed(bgTable(L).map(x=>x.i));L.seed=t;L.po=poFirst(t,lgCfg(L.lg!=null?L.lg:lgOf(t[0])).po,(st,a,b,n)=>bgSer(L,st,a,b,n));}
 function bgActive(L){if(!L.po)return [];const st=L.po.stage;return L.po.series.filter(x=>(st==='FB'?(x.st==='F'||x.st==='B'):x.st===st)&&!seriesDone(x));}
 function bgAdvance(L){if(bgActive(L).length)return;const po=L.po,r=i=>L.seed.indexOf(i);
-  if(po.stage==='QF'){const w=po.series.filter(x=>x.st==='QF').map(seriesWinner).sort((a,b)=>r(a)-r(b));po.series.push(bgSer(L,'SF',w[0],w[3],2),bgSer(L,'SF',w[1],w[2],2));po.stage='SF';}
-  else if(po.stage==='SF'){const sf=po.series.filter(x=>x.st==='SF');po.series.push(bgSer(L,'F',seriesWinner(sf[0]),seriesWinner(sf[1]),3),bgSer(L,'B',seriesLoser(sf[0]),seriesLoser(sf[1]),2));po.stage='FB';}
-  else if(po.stage==='FB'){const g=st=>po.series.find(x=>x.st===st);const F=g('F'),B=g('B');const qfL=po.series.filter(x=>x.st==='QF').map(seriesLoser).sort((a,b)=>r(a)-r(b));
-    L.final=[seriesWinner(F),seriesLoser(F),seriesWinner(B),seriesLoser(B)].concat(qfL,L.seed.slice(8));po.stage='done';}}
+  const lg=L.lg!=null?L.lg:lgOf(L.seed[0]);const c=lgCfg(lg).po;
+  if(po.stage==='QF'){const w=po.series.filter(x=>x.st==='QF').map(seriesWinner).sort((a,b)=>r(a)-r(b));po.series.push(bgSer(L,'SF',w[0],w[3],c.sf),bgSer(L,'SF',w[1],w[2],c.sf));po.stage='SF';}
+  else if(po.stage==='SF'){const sf=po.series.filter(x=>x.st==='SF');po.series.push(bgSer(L,'F',seriesWinner(sf[0]),seriesWinner(sf[1]),c.f));if(c.b)po.series.push(bgSer(L,'B',seriesLoser(sf[0]),seriesLoser(sf[1]),c.b));po.stage='FB';}
+  else if(po.stage==='FB'){L.final=poFinal(po,L.seed,lgCfg(lg));if(lgCfg(lg).playout)playout(L.final,lg);po.stage='done';}}
 function bgPoDay(){const s=S();if(!s.oth)return;for(const k in s.oth){const L=s.oth[k];if(!L.po||L.final)continue;
   for(const sr of bgActive(L)){const h=seriesHome(sr);const g=simFixture(h,h===sr.hi?sr.lo:sr.hi,true);g.d=today();addGame(sr,g);}L.po.day++;bgAdvance(L);}}
 function bgFinishAll(){const s=S();if(!s.oth)return;for(const k in s.oth){const L=s.oth[k];while(L.results.length<L.rounds.length)bgRound(L.results.length);if(!L.po)bgStartPo(L);}
   for(let g=0;g<40&&Object.values(s.oth).some(L=>!L.final);g++)bgPoDay();}
 // awanse i spadki: 2 w górę (finaliści play-off niższej ligi), 2 w dół (miejsca 11–12 wyższej ligi)
-function leagueMoves(F){const mv=[];for(const l of allLgs()){const d=lgDown(l);if(d==null)continue;const hi=F[l],lo=F[d];if(!hi||!lo)continue;
-  hi.slice(-2).forEach(i=>mv.push({i,from:l,to:d,up:false}));lo.slice(0,2).forEach(i=>mv.push({i,from:d,to:l,up:true}));}return mv;}
+function leagueMoves(F,SD){const mv=[];for(const l of allLgs()){const d=lgDown(l);if(d==null)continue;const n=lgCfg(l).down;if(!n)continue;const hi=F[l]&&F[l].filter(i=>!isYT(i)),lo=F[d]&&F[d].filter(i=>!isYT(i));if(!hi||!lo)continue;
+  let up=lo.slice(0,n);if(lgCfg(d).up==='rs1+po'&&SD&&SD[d]){const rs=SD[d].filter(i=>!isYT(i))[0];up=[rs].concat(lo.filter(i=>i!==rs)).slice(0,n);}
+  hi.slice(-n).forEach(i=>mv.push({i,from:l,to:d,up:false}));up.forEach(i=>mv.push({i,from:d,to:l,up:true}));}return mv;}
+// kolejność końcowa po play-off (bez meczu o brąz: przegrani półfinałów według rozstawienia); kadra młodzieżowa zawsze na końcu
+function poFinal(po,seed,c){const ser=st=>po.series.filter(x=>x.st===st);const F=ser('F')[0],B=ser('B')[0],r=i=>seed.indexOf(i);
+  const top=[seriesWinner(F),seriesLoser(F)].concat(B?[seriesWinner(B),seriesLoser(B)]:ser('SF').map(seriesLoser).sort((a,b)=>r(a)-r(b)));
+  const qfL=ser('QF').map(seriesLoser).sort((a,b)=>r(a)-r(b));const used=new Set(top.concat(qfL));
+  return top.concat(qfL,seed.filter(i=>!used.has(i)&&!isYT(i)),seed.filter(i=>isYT(i)));}
+// baraż o utrzymanie (SuperLega): cztery ostatnie drużyny grają każdy z każdym, z punktami bonusowymi za miejsce (3/2/1/0); ostatnia spada
+function playout(fin,l){const pool=fin.filter(i=>!isYT(i)).slice(-4);if(pool.length<4)return;const pts={};pool.forEach((i,k)=>pts[i]=3-k);const res=[];
+  for(let a=0;a<4;a++)for(let b=a+1;b<4;b++){const g=simFixture(pool[a],pool[b],true);const hw=g.sw[0]>g.sw[1];const lsets=Math.min(g.sw[0],g.sw[1]);pts[hw?pool[a]:pool[b]]+=lsets===2?2:3;if(lsets===2)pts[hw?pool[b]:pool[a]]+=1;res.push(g);}
+  const ord=pool.slice().sort((a,b)=>pts[b]-pts[a]||pool.indexOf(a)-pool.indexOf(b));const st=fin.length-4-fin.filter(i=>isYT(i)).length;ord.forEach((i,k)=>fin[st+k]=i);
+  if(pool.includes(SAVE.team)||lgCountry(l)===tmCountry(SAVE.team))news(`🔻 Baraż o utrzymanie (${LG_N[l]}): ${ord.map(i=>`${TEAMS[i].short} ${pts[i]} pkt`).join(', ')} — spada ${TEAMS[ord[3]].name}.`);}
 function applyLeagueMoves(old){if(!old||!old.moves||!old.moves.length)return;SAVE.lg=SAVE.lg||TEAM_DEFS.map(d=>d.lg||0);
   for(const mv of old.moves){SAVE.lg[mv.i]=mv.to;const a=SAVE.ai[mv.i];if(a)a.rep=Math.round(clamp(a.rep+(mv.up?8:-6),5,100));
     if(mv.i===SAVE.team)continue;

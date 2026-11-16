@@ -211,6 +211,7 @@ function doDblSub(){const m=ui.match;if(!m||m.over)return;const s=m.sides[0];con
 function doSub(pid){const m=ui.match;const s=m.sides[0];const slot=ui.subSel;
   if(slot==='srv'){const old=s.slots[nextServerSlot(m,0)].p;if(serveSub(m,0,pid)){achEv('srvSub');const np=s.pl.find(p=>p.id===pid);m.log.push({t:`Zmiana na zagrywkę: <b>${esc(np.last)}</b> za ${esc(old.last)}.`,c:'sys'});}ui.subSel=null;persistLive();render();return;}const old=slot==='L'?s.libero:s.slots[slot].p;
   if(substitute(m,0,slot,pid)){const np=s.pl.find(p=>p.id===pid);m.log.push({t:`Zmiana: <b>${esc(np.last)}</b> za ${esc(old.last)}.`,c:'sys'});}
+  else if(s.forErr){s.forErr=0;m.log.push({t:`Zmiana niemożliwa: ${forRuleTxt(myLg())}.`,c:'sys'});}
   ui.subSel=null;persistLive();render();}
 function lum(h){const n=parseInt(h.slice(1),16);return (0.299*(n>>16)+0.587*(n>>8&255)+0.114*(n&255))/255;}
 function rgb(h){const n=parseInt(h.slice(1),16);return [n>>16,n>>8&255,n&255];}

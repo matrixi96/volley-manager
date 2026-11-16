@@ -115,7 +115,7 @@ function genTeam(def,idx){
 function lineupScore(p,pos){return rating(p,pos)+(p.pos===pos?8:0);}
 function autoLineup(team){const u=new Set(),lu={};
   for(const [k,,pos] of LINEUP_KEYS){const c=team.players.filter(p=>!p.inj&&!u.has(p.id)).sort((a,b)=>lineupScore(b,pos)-lineupScore(a,pos))[0]||team.players.filter(p=>!u.has(p.id))[0];if(!c)continue;u.add(c.id);lu[k]=c.id;}
-  return lu;}
+  return typeof lineupFix==='function'?lineupFix(team,lu):lu;}
 const LINEUP_KEYS=[['R','Rozgrywający','R'],['A','Atakujący','A'],['P1','Przyjmujący 1','P'],['P2','Przyjmujący 2','P'],['S1','Środkowy 1','S'],['S2','Środkowy 2','S'],['L','Libero','L']];
 function validLineup(team,lu){if(!lu)return false;const ids=LINEUP_KEYS.map(k=>lu[k[0]]);if(new Set(ids).size!==7)return false;return ids.every(id=>team.players.some(p=>p.id===id));}
 function teamStrength(team){const lu=autoLineup(team);let s=0,t=0;for(const [k,,pos] of LINEUP_KEYS){const p=team.players.find(x=>x.id===lu[k]);if(!p){t+=1;continue;}const w=k==='L'?0.6:1;s+=rating(p,pos)*w;t+=w;}return Math.round(s/t);}
@@ -578,7 +578,7 @@ function benchOf(side){const on=new Set(side.slots.map(s=>s.p.id));if(side.liber
 // kto zagrywa jako następny: przy własnej zagrywce zawodnik ze strefy 1, przy przyjęciu — ze strefy 2 (przejdzie na zagrywkę po wygranej akcji)
 function nextServerSlot(m,i){const s=m.sides[i];return s.rot[m.serving===i?0:1];}
 function canServeSub(m,i){const s=m.sides[i];if(s.srvSub||s.dbl)return 'Trwa już specjalna zmiana.';if(s.subs<2)return 'Za mało zmian (potrzebne 2: wejście i powrót).';const sl=s.slots[nextServerSlot(m,i)];if(sl.role==='R')return 'Na zagrywkę wychodzi rozgrywający — nie zmieniamy go.';return '';}
-function serveSub(m,i,pid){if(canServeSub(m,i))return false;const s=m.sides[i];const si=nextServerSlot(m,i);const p=benchOf(s).find(x=>x.id===pid);if(!p||p.pos==='L'||p.pos==='R'||p.inj>0)return false;
+function serveSub(m,i,pid){if(canServeSub(m,i))return false;const s=m.sides[i];const si=nextServerSlot(m,i);const p=benchOf(s).find(x=>x.id===pid);if(!p||p.pos==='L'||p.pos==='R'||p.inj>0)return false;if(typeof sideForOK==='function'&&!sideForOK(s,s.slots[si].p,p)){s.forErr=1;return false;}
   s.srvSub={si,out:s.slots[si].p.id,on:m.serving===i?1:0};s.slots[si].p=p;s.subs--;return true;}
 function dblCands(s){const b=benchOf(s).filter(p=>!(p.inj>0));const r=b.filter(p=>p.pos==='R').sort((x,y)=>rating(y)-rating(x))[0],a=b.filter(p=>p.pos==='A').sort((x,y)=>rating(y)-rating(x))[0];return r&&a?[r,a]:null;}
 function canDblSub(m,i){const s=m.sides[i];if(s.srvSub||s.dbl)return 'Trwa już specjalna zmiana.';if(s.subs<4)return 'Za mało zmian (potrzebne 4: dwie przy wejściu i dwie przy powrocie).';
@@ -596,6 +596,7 @@ function specialSubsAfter(m,w){const out=[];for(const i of [0,1]){const s=m.side
   if(s.dbl&&isFront(s.rot.indexOf(s.dbl.aI)))out.push(...undoSpecialSubs(m,i));}
   return out;}
 function substitute(m,i,slot,pid){const s=m.sides[i];const p=s.pl.find(x=>x.id===pid);if(!p)return false;
+  if(typeof sideForOK==='function'&&!sideForOK(s,slot==='L'?s.libero:s.slots[slot]&&s.slots[slot].p,p)){s.forErr=1;return false;}
   if(slot==='L'){s.libero=p;return true;}
   if(s.subs<=0)return false;s.slots[slot].p=p;s.subs--;return true;}
 function aiTurn(m,i){
