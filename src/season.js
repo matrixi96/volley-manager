@@ -31,7 +31,8 @@ function rankOf(i){return leagueTable().findIndex(x=>x.i===i)+1;}
 
 // ---- uczestnicy / symulacja ----
 function participant(i,home){const t=TEAMS[i];const mine=i===SAVE.team;const lu=mine?healthyLineup(t,myLineup()).lu:autoLineup(t);return {team:t,lineup:lu,tactics:mine?Object.assign({},myTac()):aiStyle(t,lu),home,x:(()=>{const md=clubMods(i);const o={hb:md.hb,fat:md.fat,sb:md.sb};if(mine){o.cap=SAVE.captain;const cx=coachMatchX();o.sb+=(cx.sb||0)+(typeof tacPrep==='function'?tacPrep()*0.006:0)+(typeof oppPrepBonus==='function'?oppPrepBonus():0);o.momMul=cx.momMul;o.prB=cx.prB;o.trB=cx.trB;}return o;})()};}
-function resultOf(m,h,a){const flip=m.sides[0].team.idx!==h;return {h,a,sets:m.sets.map(x=>flip?[x[1],x[0]]:x.slice()),sw:flip?[m.setsWon[1],m.setsWon[0]]:m.setsWon.slice()};}
+function resultOf(m,h,a){const flip=m.sides[0].team.idx!==h;const r={h,a,sets:m.sets.map(x=>flip?[x[1],x[0]]:x.slice()),sw:flip?[m.setsWon[1],m.setsWon[0]]:m.setsWon.slice()};
+  try{if(typeof aiSocResult==='function'){const hw=r.sw[0]>r.sw[1],sw=Math.min(r.sw[0],r.sw[1])===0;aiSocResult(h,hw,sw);aiSocResult(a,!hw,sw);}}catch(e){}return r;}
 function addTogether(m){try{formAfterMatch(m);}catch(e){console.error(e);}try{if(typeof pairsAfterMatch==='function')pairsAfterMatch(m);if(typeof famAfterMatch==='function')famAfterMatch(m);}catch(e){}for(const sd of m.sides)for(const p of sd.pl){const x=p.st;if(x.srv+x.rec+x.att+x.dig+x.blk===0&&!sd.slots.some(z=>z.p.id===p.id)&&sd.libero!==p)continue;
   const w=PLAYERS[p.id]&&PLAYERS[p.id].p;if(!w)continue;if(w.tcTm!==sd.team.idx){w.tcTm=sd.team.idx;w.tc=0;}w.tc=(w.tc||0)+1;}}
 function recordStats(m){addTogether(m);const s=S();const ps=s.ps;const ts=s.ts||(s.ts={});
