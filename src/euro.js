@@ -42,7 +42,7 @@ function euroMine(){const s=S();if(!s||!s.euro)return [];const me=SAVE.team,out=
   return out.sort((x,y)=>x.d<y.d?-1:1);}
 // najbliższy mecz spoza ligi (puchar krajowy, puchary europejskie, później reprezentacja) przed podaną datą
 function extraNext(before){const L=[];const cu=typeof myCupTie==='function'?myCupTie():null;if(cu)L.push({d:cu.d,ctx:{kind:'cup',h:cu.t.h,a:cu.t.a,neutral:cu.t.neutral,left:cu.rd.left}});
-  L.push(...euroMine());L.sort((x,y)=>x.d<y.d?-1:1);const e=L[0];if(!e)return null;return !before||e.d<=before?e:null;}
+  L.push(...euroMine());if(typeof ntMine==='function')L.push(...ntMine());L.sort((x,y)=>x.d<y.d?-1:1);const e=L[0];if(!e)return null;return !before||e.d<=before?e:null;}
 // codziennie: mecze innych drużyn
 function euroTick(d){const s=S();if(!s||!s.euro)return;const E=s.euro,me=SAVE.team;
   for(const x of E.cl.gm)if(!x.res&&x.d<=d&&x.h!==me&&x.a!==me){x.res=euroSim(x.h,x.a);}

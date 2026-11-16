@@ -1,6 +1,6 @@
 // ================= SZKIELET INTERFEJSU: MENU BOCZNE, PASEK KLUBU, EKRAN GŁÓWNY =================
 const NAV=[['home','🏠','Ekran główny'],['mecz','🏐','Mecz i sezon'],['sklad','👥','Skład'],['taktyka','📋','Taktyka'],['trening','🏋️','Trening'],['kalendarz','📅','Terminarz'],['tabela','🏆','Tabela'],['staty','📈','Statystyki'],['transfery','🔁','Transfery'],['finanse','💰','Finanse'],['sztab','🧑‍🏫','Sztab'],['juniorzy','🌱','Juniorzy'],['klub','🏟️','Infrastruktura'],['trener','🎓','Trener']];
-function teamCrest(i,size){const t=TEAMS[i];if(!t)return '';if(SAVE.custom&&SAVE.custom.idx===i)return crestSvg(t.name,t.short,t.color,size,SAVE.custom.crest);return crestSvg(t.name,t.short,t.color,size,CLUB_CRESTS[i]||(i*7+3)%20);}
+function teamCrest(i,size){if(i<=-100&&typeof ntCode==='function')return `<span style="font-size:${Math.round((size||16)*0.9)}px;line-height:1">${natFl(ntCode(i))}</span>`;const t=TEAMS[i];if(!t)return '';if(SAVE.custom&&SAVE.custom.idx===i)return crestSvg(t.name,t.short,t.color,size,SAVE.custom.crest);return crestSvg(t.name,t.short,t.color,size,CLUB_CRESTS[i]||(i*7+3)%20);}
 function liveMatch(){return ui.match&&!ui.match.over;}
 // ikony liniowe (styl jak w menedżerach)
 const IC={home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
@@ -20,11 +20,12 @@ const IC={home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1
  osiagniecia:'<circle cx="12" cy="9" r="5.5"/><path d="M8.5 13.5L7 21l5-2.5 5 2.5-1.5-7.5M12 6.5l.8 1.6 1.7.2-1.2 1.2.3 1.7-1.6-.8-1.6.8.3-1.7-1.2-1.2 1.7-.2z"/>',
  zapis:'<path d="M5 3h11l3 3v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1zM8 3v5h7V3M8 21v-7h8v7"/>',
  test:'<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3M7.5 15h9"/>',
+ kadra:'<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>',
  social:'<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M12 15.5s-3.2-2-3.2-4a1.7 1.7 0 0 1 3.2-.8 1.7 1.7 0 0 1 3.2.8c0 2-3.2 4-3.2 4z"/>',
  play:'<path d="M7 4.5v15l12-7.5z"/>',dane:'<path d="M4 20V4M4 20h16M8 16l3-4 3 2 5-7"/><circle cx="19" cy="7" r="1"/>',poczta:'<rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3.5 6l8.5 7 8.5-7"/>',skauting:'<circle cx="7" cy="15" r="3.5"/><circle cx="17" cy="15" r="3.5"/><path d="M10.5 15h3M5 11.5L7.5 5h2l1 5M19 11.5L16.5 5h-2l-1 5"/>',sponsorzy:'<path d="M12 3l2.6 5.5 6 .8-4.4 4.2 1.1 6L12 16.6 6.7 19.5l1.1-6L3.4 9.3l6-.8z"/>',day:'<path d="M9 5l7 7-7 7"/>',search:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',collapse:'<rect x="3.5" y="4.5" width="17" height="15" rx="1.5"/><path d="M9 4.5v15"/>'};
 function ico(k,sz){return `<svg viewBox="0 0 24 24" width="${sz||18}" height="${sz||18}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="svgi">${IC[k]||''}</svg>`;}
-const NAV_GROUPS=[['Przegląd',['home','poczta','mecz','kalendarz']],['Drużyna',['sklad','taktyka','dane','trening','juniorzy']],['Rekrutacja',['skauting','transfery']],['Klub',['sztab','klub','sponsorzy','social','finanse','trener']],['Świat',['tabela','staty','osiagniecia']]];
-const NAV_L=Object.fromEntries(NAV.map(x=>[x[0],x[2]]));NAV_L.poczta='Poczta';NAV_L.dane='Centrum danych';NAV_L.skauting='Skauting';NAV_L.sponsorzy='Sponsorzy';NAV_L.social='Social media';NAV_L.zapis='Zapis gry';NAV_L.osiagniecia='Osiągnięcia';NAV_L.test='Test silnika';
+const NAV_GROUPS=[['Przegląd',['home','poczta','mecz','kalendarz']],['Drużyna',['sklad','taktyka','dane','trening','juniorzy']],['Rekrutacja',['skauting','transfery']],['Klub',['sztab','klub','sponsorzy','social','finanse','trener']],['Świat',['tabela','kadra','staty','osiagniecia']]];
+const NAV_L=Object.fromEntries(NAV.map(x=>[x[0],x[2]]));NAV_L.poczta='Poczta';NAV_L.dane='Centrum danych';NAV_L.skauting='Skauting';NAV_L.sponsorzy='Sponsorzy';NAV_L.social='Social media';NAV_L.kadra='Reprezentacja';NAV_L.zapis='Zapis gry';NAV_L.osiagniecia='Osiągnięcia';NAV_L.test='Test silnika';
 function sideNav(){const mini=ui.tab==='mecz'&&liveMatch();const newsN=typeof unreadN==='function'?unreadN():0;
   const item=k=>`<button class="nav ${ui.tab===k?'on':''}" onclick="ui.navOpen=false;go('${k}')" title="${NAV_L[k]}"><span class="ic">${ico(k)}</span><span class="tx">${NAV_L[k]}</span>${k==='poczta'&&newsN?`<span class="nbad">${newsN}</span>`:''}${k==='osiagniecia'&&typeof achFreshN==='function'&&achFreshN()?`<span class="nbad">${achFreshN()}</span>`:''}</button>`;
   return `<aside class="side ${mini?'mini':''} ${ui.navOpen?'open':''}">
@@ -68,7 +69,7 @@ function ctxBar(){if(ui.tab==='mecz'&&liveMatch())return '';const t=myTeam();con
 function nextAction(){if(liveMatch()){go('mecz');return;}const s=S();if(!s||SAVE.fired){go('mecz');return;}
   const e=nextEvent();if(!e){go('mecz');return;}
   if(e.d>today()){advanceTo(e.d);save();ui.tab='home';render();return;}
-  const c=myNext();if(c&&(s.phase==='spar'||s.phase==='liga'||s.phase==='po'||s.phase==='end')){playNext();return;}
+  const c=myNext();if(c&&(s.phase==='spar'||s.phase==='liga'||s.phase==='po'||s.phase==='end'||s.phase==='off')){playNext();return;}
   go('mecz');}
 function nextDay(){if(liveMatch()){go('mecz');return;}const e=nextEvent();const t=addDays(today(),1);
   if(e&&t>e.d){ui.msg='Dziś jest dzień meczowy — najpierw rozegraj mecz („Następna akcja”).';ui.tab='home';render();return;}
@@ -82,11 +83,11 @@ function teamForm(i){const s=S();const out=[];
 function formDots(i){const f=teamForm(i);const pad=Array(Math.max(0,5-f.length)).fill(null);return `<div class="hdots">${pad.concat(f).map(w=>`<span class="${w==null?'n':w?'w':'l'}"></span>`).join('')}</div>`;}
 function hNext(){const s=S();
   if(SAVE.fired)return `<div class="pan hnext"><div class="ttl">Następny mecz</div><div class="hvs"><b>Jesteś bez klubu</b><div class="mut">Sprawdź oferty w zakładce Trener.</div><button class="btn" onclick="go('trener')">Oferty pracy</button></div></div>`;
-  if(s.phase==='off'||(s.phase==='end'&&!myNext()))return `<div class="pan hnext"><div class="ttl">Następny mecz</div><div class="hvs"><b>${s.phase==='off'?'Przerwa między sezonami':'Sezon zakończony'}</b><div class="mut">${s.phase==='off'?'Okno transferowe otwarte. Kontrakty, transfery i przygotowania.':'Podsumowanie sezonu czeka w zakładce Mecz i sezon.'}</div><button class="btn" onclick="go('mecz')">Przejdź</button></div></div>`;
+  if((s.phase==='off'&&!myNext())||(s.phase==='end'&&!myNext()))return `<div class="pan hnext"><div class="ttl">Następny mecz</div><div class="hvs"><b>${s.phase==='off'?'Przerwa między sezonami':'Sezon zakończony'}</b><div class="mut">${s.phase==='off'?'Okno transferowe otwarte. Kontrakty, transfery i przygotowania.':'Podsumowanie sezonu czeka w zakładce Mecz i sezon.'}</div><button class="btn" onclick="go('mecz')">Przejdź</button></div></div>`;
   const c=myNext();const e=nextEvent();
   if(!c)return `<div class="pan hnext"><div class="ttl">Następny mecz</div><div class="hvs"><b>Brak planowanych spotkań</b><div class="mut">Twoja drużyna nie gra w tej fazie.</div><button class="btn" onclick="go('mecz')">Pozostałe mecze</button></div></div>`;
   const home=c.h===SAVE.team,op=home?c.a:c.h;
-  const comp=s.phase==='spar'?`Sparing ${s.spar.res.length+1}/${N_SPAR}`:s.phase==='liga'?`${LG_N[myLg()]} · ${s.round+1}. kolejka`:`Play-off · ${STAGE[s.po.series.find(x=>x.id===c.sid).st]}`;
+  const comp=c.kind==='nt'?(S().nt?S().nt.comps[c.ci].n:'Reprezentacja'):c.kind==='cup'?cupName(myCountry()):c.kind==='euro'?euroLab(c):s.phase==='spar'?`Sparing ${s.spar.res.length+1}/${N_SPAR}`:s.phase==='liga'?`${LG_N[myLg()]} · ${s.round+1}. kolejka`:`Play-off · ${STAGE[s.po.series.find(x=>x.id===c.sid).st]}`;
   const days=e?daysBetween(today(),e.d):0;const isDay=days<=0;
   return `<div class="pan hnext"><div class="ttl">Następny mecz</div><div class="hnx">
    <div class="hcr">${teamCrest(c.h,96)}${formDots(c.h)}</div>
@@ -139,7 +140,7 @@ function hvNotes(c,op){const out=[];const lu=SAVE.lineup||{};const t=myTeam();co
 function hvHero(){const s=S();const c=myNext();const e=nextEvent();const asy=SAVE.staff&&SAVE.staff.asy;
   if(!c)return `<div class="card hvhero"><div class="hvlab"><span class="acc">Prowadzisz</span> ${SAVE.coach?esc(SAVE.coach.first+' '+SAVE.coach.last):''}</div><div class="hvteam">${teamCrest(SAVE.team,58)}<div><div class="hvtn">${esc(myTeam().name)}</div><div class="hvsub">${hvPos(SAVE.team)} ${hvForm(SAVE.team)}</div></div></div><p class="mut">Brak zaplanowanych meczów w tej fazie sezonu.</p><button class="btn" onclick="nextAction()">Dalej</button></div>`;
   const home=c.h===SAVE.team,op=home?c.a:c.h;const days=e?daysBetween(today(),e.d):0;
-  const comp=s.phase==='spar'?`Sparing ${s.spar.res.length+1}/${N_SPAR}`:s.phase==='liga'?`${s.round+1}. kolejka`:`Play-off · ${STAGE[s.po.series.find(x=>x.id===c.sid).st]}`;
+  const comp=c.kind==='nt'?(S().nt?S().nt.comps[c.ci].n:'Reprezentacja'):c.kind==='cup'?cupName(myCountry()):c.kind==='euro'?euroLab(c):s.phase==='spar'?`Sparing ${s.spar.res.length+1}/${N_SPAR}`:s.phase==='liga'?`${s.round+1}. kolejka`:`Play-off · ${STAGE[s.po.series.find(x=>x.id===c.sid).st]}`;
   const side=(i,right)=>`<div class="hvteam ${right?'r':''}">${right?'':teamCrest(i,58)}<div><button class="link hvtn" onclick="openTeam(${i})">${esc(TEAMS[i].name)}</button><div class="hvsub">${right?hvForm(i)+' '+hvPos(i):hvPos(i)+' '+hvForm(i)}</div></div>${right?teamCrest(i,58):''}</div>`;
   return `<div class="card hvhero"><div><div class="hvlab"><span class="acc">Prowadzisz</span> ${SAVE.coach?esc(SAVE.coach.first+' '+SAVE.coach.last):''}</div>
     <div class="hvvs">${side(SAVE.team,false)}<b class="acc hvv">vs</b>${side(op,true)}</div>
