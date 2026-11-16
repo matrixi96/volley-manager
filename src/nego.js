@@ -53,9 +53,10 @@ function negAgentOffer(w,y,b){const n=NG();const p=PLAYERS[n.pid].p;const a=n.ag
   a.wAsk=Math.max(a.wMin,round5k(a.wAsk-(a.wAsk-w)*ST[4]*(low?0.3:1)));a.bAsk=Math.max(a.bMin,round5k(a.bAsk-(a.bAsk-b)*ST[4]*(low?0.3:1)));
   negLog('ag',`${ag.first} ${ag.last}: „${low?'To za mało, nawet nie ma o czym mówić. ':''}Możemy przyjąć ${fmt(a.wAsk)} rocznie i ${fmt(a.bAsk)} premii${y!==a.yPref?`, najlepiej na ${a.yPref} ${a.yPref===1?'sezon':'sezony'}`:''}.${a.pat===1?' Ostatnia szansa.':''}”`);render();}
 function negSign(){const n=NG();if(!n||!n.ok||!n.terms)return;const p=PLAYERS[n.pid].p;const t=n.terms;const from=p.tm;
-  if(n.kind==='renew'){p.wage=t.w;p.ce=contractEndFor(t.y);achEv('renew');if(t.b){money(-t.b,'Transfery');finLog(`Premia za przedłużenie: ${p.first} ${p.last}`,-t.b);}
+  if(n.kind==='renew'){if(typeof budWageOver==='function')budWageOver(t.w-p.wage);p.wage=t.w;p.ce=contractEndFor(t.y);achEv('renew');if(t.b){money(-t.b,'Transfery');finLog(`Premia za przedłużenie: ${p.first} ${p.last}`,-t.b);}
     news(`✍️ ${p.first} ${p.last} przedłużył kontrakt do ${ceDate(p.ce)} (${fmt(t.w)}/rok).`);ui.neg=null;save();return tradeMsg(true,`${p.last} przedłużył kontrakt do ${ceDate(p.ce)}.`);}
   if(!windowOpen())return tradeMsg(false,'Okno transferowe się zamknęło.');
+  if(typeof budCan==='function'){const e=budCan('tr',(from>=0?n.fee:0)+(t.b||0));if(e)return tradeMsg(false,e);budWageOver(t.w);}
   achEv('sign');if(from>=0){achEv('buy');achMax('buyFee',n.fee);if(p.age<=21)achEv('buyYoung');if(lgOf(from)<myLg())achMax('buyUp',1);}else achEv('free');
   if(from>=0){money(-n.fee,'Transfery');SAVE.ai[from].bud+=n.fee;finLog(`Zakup: ${p.first} ${p.last} (${TEAMS[from].short})`,-n.fee);}
   if(t.b){money(-t.b,'Transfery');finLog(`Premia za podpis: ${p.first} ${p.last}`,-t.b);}
@@ -68,6 +69,7 @@ function negModal(){const n=NG();const P=PLAYERS[n.pid];if(!P){ui.neg=null;retur
   let form='';
   if(n.ok===false)form=`<p class="bad">Negocjacje zerwane.</p><button class="btn" onclick="${close}">Zamknij</button>`;
   else if(n.ok&&n.terms)form=`<div class="ngdeal"><b>Porozumienie:</b> ${n.fee?`odstępne ${fmt(n.fee)} · `:''}pensja ${fmt(n.terms.w)}/rok · ${n.terms.y} ${n.terms.y===1?'sezon':'sezony'} · premia ${fmt(n.terms.b)}</div>
+     ${typeof budImpact==='function'?budImpact(n.kind==='renew'?{tr:n.terms.b||0,wg:n.terms.w-p.wage}:{tr:(n.fee||0)+(n.terms.b||0),wg:n.terms.w}):''}
      <div class="row" style="gap:8px;margin-top:10px"><button class="btn" onclick="negSign()">✍️ Podpisz kontrakt</button><button class="ghost" onclick="${close}">Wycofaj się</button></div>`;
   else if(n.stage==='club')form=`<div class="ngform"><label>Kwota odstępnego <input id="ngfee" type="number" step="10000" value="${Math.round((club.ask*0.9)/10000)*10000}"></label><button class="btn" onclick="negClubOffer($('#ngfee').value)">Złóż ofertę</button></div>
      <p class="small mut">Klub żąda teraz <b>${fmt(club.ask)}</b>. Wartość zawodnika: ${fmt(pValue(p))}. Oferta poniżej 60% żądania zirytuje klub.</p>`;

@@ -244,7 +244,11 @@ button.sm{padding:5px 10px;font-size:12px}
 .fmnr{display:flex;align-items:center;justify-content:center;gap:2px;max-width:100%;min-width:0}
 .fmnr .fmnm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .azg{display:grid;grid-template-columns:minmax(150px,1.2fr) 1fr 1fr;gap:6px 10px;align-items:center}.azh{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);font-weight:700}.azn{display:flex;flex-direction:column}.azn small{font-size:11px}.azg select{width:100%}.tacgrid .atkz,.atkz{grid-column:1/-1}@media(max-width:700px){.azg{grid-template-columns:1fr 1fr}.azg .azh:first-child{display:none}.azn{grid-column:1/-1}}
-.fmnr .cfi{flex:0 0 auto;margin:0;font-size:10px}
+.fmnr .bimpw{margin:10px 0 4px;padding:8px 10px;border:1px solid #ffffff14;border-radius:10px;background:#ffffff06}.bimph{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--mut);margin-bottom:4px}
+.bimp{display:grid;grid-template-columns:150px 1fr auto;gap:2px 10px;align-items:center;font-size:12.5px;margin:3px 0}.bimp small{grid-column:2/-1;color:var(--mut)}.bimp.warn small{color:#f59e0b}.bimp.over small{color:#f87171}
+.bbar{display:block;height:6px;border-radius:4px;background:#ffffff14;overflow:hidden}.bbar i{display:block;height:100%;background:var(--acc)}.bimp.warn .bbar i,.bbar i.warn{background:#f59e0b}.bimp.over .bbar i,.bbar i.over{background:#ef4444}.bbar.big{height:9px;margin:4px 0}
+.bud{margin:8px 0 10px}.budsp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px;font-size:12.5px}.budsp>b{grid-column:1/-1}.budsp label{display:flex;flex-direction:column;gap:3px}@media(max-width:700px){.budsp{grid-template-columns:1fr}.bimp{grid-template-columns:1fr}}
+.cfi{flex:0 0 auto;margin:0;font-size:10px}
 .cfi{font-size:10px;margin-left:2px}
 .fmnm{font-size:11px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fmen{width:80%;height:3px;border-radius:2px;background:#ffffff14;overflow:hidden}.fmen i{display:block;height:100%}
@@ -2089,7 +2093,7 @@ function initWorld(){
   syncTeams();initClub();if(BAL3){faMarket();syncTeams();}
 }
 function news(t){SAVE.news=SAVE.news||[];SAVE.news.unshift({d:SAVE._now||today(),t});SAVE.news=SAVE.news.slice(0,40);try{if(typeof mailFromNews==='function')mailFromNews(t);}catch(e){}}
-function money(amt,cat){const f=SAVE.fin;f.bal+=amt;f.sea[cat]=(f.sea[cat]||0)+amt;}
+function money(amt,cat){const f=SAVE.fin;f.bal+=amt;f.sea[cat]=(f.sea[cat]||0)+amt;if(typeof budBook==='function')budBook(amt,cat);}
 function finLog(t,a){const f=SAVE.fin;f.log.unshift({d:today(),t,a});f.log=f.log.slice(0,80);}
 function payroll(){return myTeam().players.reduce((s,p)=>s+(p.wage||0),0);}
 const TV_ROUND=45000;
@@ -2301,6 +2305,7 @@ function financeView(){
   const row=(o)=>cats.map(c=>`<tr><td class="l">${c}</td><td class="${(o[c]||0)<0?'bad':(o[c]||0)>0?'good':''}">${o[c]?fmt(o[c]):'—'}</td></tr>`).join('')+`<tr><td class="l"><b>Razem</b></td><td><b>${fmt(cats.reduce((s,c)=>s+(o[c]||0),0))}</b></td></tr>`;
   const spFree=typeof spSlots==='function'?Object.entries(spSlots()).reduce((a,[k,n])=>a+Math.max(0,n-spUsed(k)),0):0;
   return `<div class="card fin"><div class="big ${f.bal<0?'bad':''}">${fmtFull(f.bal)}</div><div class="mut">Saldo klubu${f.bal<0?' — jesteś na minusie! Dopuszczalny debet to 500 tys. zł, poniżej nie kupisz zawodników.':''}</div></div>
+  ${typeof budgetCard==='function'?budgetCard():''}
   <div class="card"><h2>Budżet roczny</h2><table class="cmp"><tbody>
    <tr><td class="l">Pensje zawodników (rocznie)</td><td class="bad">−${fmt(pay)}</td></tr>
    <tr><td class="l">Pensje sztabu szkoleniowego</td><td class="bad">−${fmt(stp)}</td></tr>
@@ -2385,6 +2390,7 @@ function monthly(d){if(!SAVE.fin||SAVE.team==null)return;const m=+d.slice(5,7);c
   const spd=typeof sponsorsMonth==='function'?sponsorsMonth(d):null;const spm=spd?spd.inc:sp;
   money(-pay,'Pensje');money(spm,'Sponsor');money(-stp,'Sztab');money(-mnt,'Utrzymanie');money(shp,'Sklep');const f=SAVE.fin;f.log.unshift({d,t:`${MON_NOM[m-1]}: pensje zawodników (−${fmt(pay)}) i sztabu (−${fmt(stp)}), utrzymanie (−${fmt(mnt)}), sponsorzy (+${fmt(spm)}), sklep (+${fmt(shp)})`,a:spm+shp-pay-stp-mnt});f.log=f.log.slice(0,80);
   try{debtCheck(d);}catch(e){console.error(e);}
+  try{if(typeof budMonthly==='function')budMonthly();}catch(e){console.error(e);}
   if(typeof sendMail==='function'){const pm=MON_NOM[(m+10)%12];const rows=[['Sponsorzy',spm],['Sklep kibica',shp],['Pensje zawodników',-pay],['Pensje sztabu',-stp],['Utrzymanie obiektów',-mnt]];sendMail({cat:'fin',from:'Księgowość klubu',t:`Rozliczenie miesiąca: ${MON_NOM[m-1]}`,s:`Bilans: ${fmt(spm+shp-pay-stp-mnt)} · saldo ${fmt(f.bal)}`,b:{type:'fin',rows,tot:spm+shp-pay-stp-mnt,bal:f.bal},lab:'Miesięczne zestawienie'});}}
 // zarząd reaguje na dług: poniżej −1 mln zł przymusowa sprzedaż najdroższego zawodnika (raz w miesiącu)
 function debtCheck(d){if(SAVE.fin&&SAVE.fin.bal>-1000000){SAVE.debtNote=null;if(SAVE.fin.bal>-500000)SAVE.trBan=false;}if(!BAL2||!SAVE.fin||SAVE.fin.bal>-500000)return;
@@ -2483,6 +2489,7 @@ function startBuild(k){const f=INFRA.find(x=>x.k===k);const L=myInfra()[k];const
   if(bs.length>=MAX_BUILDS)return tradeMsg(false,`Trwają już ${MAX_BUILDS} budowy. Klub prowadzi najwyżej ${MAX_BUILDS} inwestycje naraz.`);
   if(L>=fMax(f))return tradeMsg(false,'Ten obiekt ma już maksymalny poziom.');
   const c=upgradeCost(f,L);if(SAVE.fin.bal-c<-500000)return tradeMsg(false,`Za mało pieniędzy. Rozbudowa kosztuje ${fmt(c)}.`);
+  if(typeof budCan==='function'){const e=budCan('op',c+MAINT_PER_LEVEL*12);if(e)return tradeMsg(false,e);}
   if(ui.confirm!=='b'+k){ui.confirm='b'+k;render();return;}ui.confirm=null;
   money(-c,'Infrastruktura');finLog(`${L===0?'Budowa':'Rozbudowa'}: ${f.n} (poz. ${L+1})`,-c);
   const b={k,to:L+1,start:today(),until:addDays(today(),upgradeDays(f,L))};bs.push(b);
@@ -2498,7 +2505,8 @@ const STAFF_ROLES=[
   ['med','Fizjoterapeuta','Krótsze przerwy po kontuzjach, szybsza regeneracja po treningach i mniejsze zmęczenie po meczach.'],
   ['sk','Skaut','Dokładniejsza ocena potencjału zawodników z innych klubów.'],
   ['jr','Trener juniorów','Szybszy rozwój juniorów i lepsze roczniki z naboru.'],
-  ['sta','Statystyk / analityk','Przygotowanie do rywala: mały bonus w każdym meczu.']
+  ['sta','Statystyk / analityk','Przygotowanie do rywala: mały bonus w każdym meczu.'],
+  ['fin','Dyrektor finansowy','Planuje budżety (transferowy, płacowy, operacyjny): dokładniejsza prognoza przychodów, wyższe budżety i do +5% w ofertach sponsorów.']
 ];
 const ROLE_N=Object.fromEntries(STAFF_ROLES.map(r=>[r[0],r[1]]));
 function staffWage(sk){return round5k(30000+sk*sk*350);}
@@ -2508,6 +2516,7 @@ function staffSkill(r){if(r==='sk'){const a=allScouts();return a.length?Math.max
 function staffPay(){return Object.values(SAVE.staff||{}).filter(Boolean).concat(SAVE.scouts||[]).reduce((a,s)=>a+s.wage,0);}
 function hireStaff(id){const c=SAVE.staffPool.find(x=>x.id===id);if(!c)return;const cur=SAVE.staff[c.role];
   if(!cur&&staffCount()>=staffCap())return tradeMsg(false,`Siedziba klubu (poziom ${myInfra().sied}) mieści ${staffCap()} osób sztabu. Rozbuduj siedzibę w zakładce Infrastruktura.`);
+  if(typeof budWageOver==='function')budWageOver(c.wage-(cur?cur.wage:0));
   {const e=staffCheck(c.wage-(cur?cur.wage:0));if(e)return tradeMsg(false,e);}
   if(cur&&ui.confirm!=='h'+id){ui.confirm='h'+id;render();return;}ui.confirm=null;
   if(cur){const sev=round5k(cur.wage/4);money(-sev,'Sztab');finLog(`Odprawa: ${cur.first} ${cur.last} (${ROLE_N[cur.role]})`,-sev);SAVE.staffPool.push(cur);}
@@ -2582,7 +2591,7 @@ function staffView(){
     return `<div class="card staff"><div class="row"><h3 style="margin:0">${n}</h3><span class="sp"></span>${s?`<span class="sk ${aCls(s.skill)}">${s.skill}/20</span>`:'<span class="bad small">wakat</span>'}</div><p class="small mut">${d}</p>${r==='med'?`<p class="small">Teraz: regeneracja świeżości <b>${Math.round(regenK()*100)}%</b> normy (z odnową biologiczną) · zmęczenie po meczu <b>${Math.round(matchDrainK()*100)}%</b> normy · przerwy po kontuzjach <b>${Math.round(clubMods(SAVE.team).injDur*100)}%</b> normy.</p>`:''}
     ${s?`<div class="row small">${sFace(s,40)}<span><b>${esc(s.first)} ${esc(s.last)}</b>, ${s.age} l. · ${fmt(s.wage)}/rok</span><span class="sp"></span><button class="link" onclick="fireStaff('${r}')">${ui.confirm==='f'+r?`Na pewno? Odprawa ${fmt(round5k(s.wage/4))}`:'Zwolnij'}</button></div>`:'<p class="small bad">Brak osoby na tym stanowisku — efekt jak przy bardzo słabym specjaliście.</p>'}
     ${r==='sk'?`${(SAVE.scouts||[]).map(x=>`<div class="row small">${sFace(x,40)}<span><b>${esc(x.first)} ${esc(x.last)}</b> <span class="sk ${aCls(x.skill)}">${x.skill}</span> · dodatkowy skaut · ${fmt(x.wage)}/rok</span><span class="sp"></span><button class="link" onclick="fireScout('${x.id}')">${ui.confirm==='fs'+x.id?`Na pewno? Odprawa ${fmt(round5k(x.wage/4))}`:'Zwolnij'}</button></div>`).join('')}<p class="small mut">Skautów: ${allScouts().length}/${scoutCap()} (limit z siedziby klubu). Każdy skaut prowadzi własne zadania (zakładka Skauting).</p>`:''}
-    <details ${s?'':'open'}><summary class="link">Kandydaci (${cands.length})</summary>${cands.map(c=>`<div class="row small cand"><span class="sk ${aCls(c.skill)}">${c.skill}</span>${sFace(c,30)}<span>${esc(c.first)} ${esc(c.last)}, ${c.age} l. · ${fmt(c.wage)}/rok</span><span class="sp"></span>${r==='sk'&&s?`<button class="ghost" onclick="hireScoutExtra('${c.id}')">+ Dodatkowy skaut</button>`:''}<button class="ghost" onclick="hireStaff('${c.id}')">${ui.confirm==='h'+c.id?'Na pewno? (zastąpi obecnego)':s?'Zastąp':'Zatrudnij'}</button></div>`).join('')||'<p class="mut small">Brak kandydatów — nowi pojawią się w oknie transferowym.</p>'}</details></div>`;};
+    <details ${s?'':'open'}><summary class="link">Kandydaci (${cands.length})</summary>${cands.map(c=>`<div class="row small cand"><span class="sk ${aCls(c.skill)}">${c.skill}</span>${sFace(c,30)}<span>${esc(c.first)} ${esc(c.last)}, ${c.age} l. · ${fmt(c.wage)}/rok${typeof budLeft==='function'?` <small class="${budLeft().wg-(c.wage-(s?s.wage:0))<0?'bad':'mut'}">· budżet płacowy po: ${fmt(budLeft().wg-(c.wage-(s?s.wage:0)))}</small>`:''}</span><span class="sp"></span>${r==='sk'&&s?`<button class="ghost" onclick="hireScoutExtra('${c.id}')">+ Dodatkowy skaut</button>`:''}<button class="ghost" onclick="hireStaff('${c.id}')">${ui.confirm==='h'+c.id?'Na pewno? (zastąpi obecnego)':s?'Zastąp':'Zatrudnij'}</button></div>`).join('')||'<p class="mut small">Brak kandydatów — nowi pojawią się w oknie transferowym.</p>'}</details></div>`;};
   return `${ui.tmsg?`<div class="card tmsg ${ui.tmsg.ok?'ok':'no'}">${esc(ui.tmsg.t)}</div>`:''}<div class="card"><div class="row wrap"><h2 style="margin:0">Sztab szkoleniowy</h2><span class="sp"></span><span class="small">Osób w sztabie: <b>${staffCount()}/${staffCap()}</b> · pensje <b>${fmt(staffPay())}</b> z budżetu <b>${fmt(staffBudget())}</b>/rok · saldo ${fmt(SAVE.fin.bal)}</span></div>
   <p class="small mut">Liczbę osób w sztabie ogranicza siedziba klubu (poziom ${myInfra().sied}: ${staffCap()} osób, ${scoutCap()} skautów). Budżet sztabu zależy od renomy klubu i siedziby; zadłużony klub nie może zatrudniać.</p>
   <p class="small mut">Jakość w skali 1–20. Lepszy specjalista to silniejszy efekt, ale wyższa pensja (płatna co miesiąc). Zwolnienie kosztuje odprawę (3 miesiące pensji). Nowi kandydaci pojawiają się co roku w oknie transferowym.</p></div>
@@ -3067,7 +3076,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=104').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=105').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
@@ -4246,9 +4255,10 @@ function negAgentOffer(w,y,b){const n=NG();const p=PLAYERS[n.pid].p;const a=n.ag
   a.wAsk=Math.max(a.wMin,round5k(a.wAsk-(a.wAsk-w)*ST[4]*(low?0.3:1)));a.bAsk=Math.max(a.bMin,round5k(a.bAsk-(a.bAsk-b)*ST[4]*(low?0.3:1)));
   negLog('ag',`${ag.first} ${ag.last}: „${low?'To za mało, nawet nie ma o czym mówić. ':''}Możemy przyjąć ${fmt(a.wAsk)} rocznie i ${fmt(a.bAsk)} premii${y!==a.yPref?`, najlepiej na ${a.yPref} ${a.yPref===1?'sezon':'sezony'}`:''}.${a.pat===1?' Ostatnia szansa.':''}”`);render();}
 function negSign(){const n=NG();if(!n||!n.ok||!n.terms)return;const p=PLAYERS[n.pid].p;const t=n.terms;const from=p.tm;
-  if(n.kind==='renew'){p.wage=t.w;p.ce=contractEndFor(t.y);achEv('renew');if(t.b){money(-t.b,'Transfery');finLog(`Premia za przedłużenie: ${p.first} ${p.last}`,-t.b);}
+  if(n.kind==='renew'){if(typeof budWageOver==='function')budWageOver(t.w-p.wage);p.wage=t.w;p.ce=contractEndFor(t.y);achEv('renew');if(t.b){money(-t.b,'Transfery');finLog(`Premia za przedłużenie: ${p.first} ${p.last}`,-t.b);}
     news(`✍️ ${p.first} ${p.last} przedłużył kontrakt do ${ceDate(p.ce)} (${fmt(t.w)}/rok).`);ui.neg=null;save();return tradeMsg(true,`${p.last} przedłużył kontrakt do ${ceDate(p.ce)}.`);}
   if(!windowOpen())return tradeMsg(false,'Okno transferowe się zamknęło.');
+  if(typeof budCan==='function'){const e=budCan('tr',(from>=0?n.fee:0)+(t.b||0));if(e)return tradeMsg(false,e);budWageOver(t.w);}
   achEv('sign');if(from>=0){achEv('buy');achMax('buyFee',n.fee);if(p.age<=21)achEv('buyYoung');if(lgOf(from)<myLg())achMax('buyUp',1);}else achEv('free');
   if(from>=0){money(-n.fee,'Transfery');SAVE.ai[from].bud+=n.fee;finLog(`Zakup: ${p.first} ${p.last} (${TEAMS[from].short})`,-n.fee);}
   if(t.b){money(-t.b,'Transfery');finLog(`Premia za podpis: ${p.first} ${p.last}`,-t.b);}
@@ -4261,6 +4271,7 @@ function negModal(){const n=NG();const P=PLAYERS[n.pid];if(!P){ui.neg=null;retur
   let form='';
   if(n.ok===false)form=`<p class="bad">Negocjacje zerwane.</p><button class="btn" onclick="${close}">Zamknij</button>`;
   else if(n.ok&&n.terms)form=`<div class="ngdeal"><b>Porozumienie:</b> ${n.fee?`odstępne ${fmt(n.fee)} · `:''}pensja ${fmt(n.terms.w)}/rok · ${n.terms.y} ${n.terms.y===1?'sezon':'sezony'} · premia ${fmt(n.terms.b)}</div>
+     ${typeof budImpact==='function'?budImpact(n.kind==='renew'?{tr:n.terms.b||0,wg:n.terms.w-p.wage}:{tr:(n.fee||0)+(n.terms.b||0),wg:n.terms.w}):''}
      <div class="row" style="gap:8px;margin-top:10px"><button class="btn" onclick="negSign()">✍️ Podpisz kontrakt</button><button class="ghost" onclick="${close}">Wycofaj się</button></div>`;
   else if(n.stage==='club')form=`<div class="ngform"><label>Kwota odstępnego <input id="ngfee" type="number" step="10000" value="${Math.round((club.ask*0.9)/10000)*10000}"></label><button class="btn" onclick="negClubOffer($('#ngfee').value)">Złóż ofertę</button></div>
      <p class="small mut">Klub żąda teraz <b>${fmt(club.ask)}</b>. Wartość zawodnika: ${fmt(pValue(p))}. Oferta poniżej 60% żądania zirytuje klub.</p>`;
@@ -4326,6 +4337,7 @@ function campOf(){const c=SAVE.camp;return c&&S()&&c.season===S().n?c:null;}
 function campCanBook(){const s=S();return !campOf()&&(s.phase==='off'||s.phase==='spar'&&s.spar.res.length<N_SPAR);}
 function campBook(k){const c=CAMPS.find(x=>x[0]===k);if(!c||!campCanBook())return;const cost=campCost(c);
   if(SAVE.fin.bal-cost<-500000)return tradeMsg(false,`Za mało pieniędzy na obóz (${fmt(cost)}).`);
+  if(typeof budCan==='function'){const e=budCan('op',cost);if(e)return tradeMsg(false,e);}
   if(ui.confirm!=='camp'+k){ui.confirm='camp'+k;render();return;}ui.confirm=null;
   money(-cost,'Obóz');finLog(`Obóz przygotowawczy: ${c[1]} (${c[2]})`,-cost);const s=S();
   SAVE.camp={k,season:s.n,cost,start:s.phase==='off'?null:addDays(today(),1),until:s.phase==='off'?null:addDays(today(),c[4]),done:0};
@@ -4360,7 +4372,7 @@ function campCard(){const c=campOf();const s=S();
   return `<div class="card"><h2>Obóz przygotowawczy</h2><p class="small mut">Wybierz miejsce obozu przed sezonem. Każde daje inne korzyści i kosztuje inaczej. Efekt wzmacnia trener przygotowania fizycznego. Jeden obóz na sezon${s.phase==='off'?'; wyjazd nastąpi razem ze startem przygotowań':'; wyjazd jutro'}.</p>
    <div class="campgrid">${CAMPS.map(C=>{const cost=campCost(C);const fx=C[6];return `<div class="campc ${ui.confirm==='camp'+C[0]?'on':''}"><div class="camph"><span class="campflag">${C[3]}</span><div class="campt"><b>${esc(C[1])}</b><span>${esc(C[2])} · ${C[4]} dni</span></div><div class="campp"><b>${fmt(cost)}</b><span>${fmt(Math.round(cost/C[4]))}/dzień</span></div></div>
      <p class="campd">${esc(C[7])}</p>${campFx(fx)}
-     <button class="${ui.confirm==='camp'+C[0]?'btn':'ghost'} sm" style="margin-top:12px;width:100%" onclick="campBook('${C[0]}')">${ui.confirm==='camp'+C[0]?`Potwierdź: zapłacisz ${fmt(cost)}`:'Wybierz'}</button></div>`;}).join('')}</div></div>`;}
+     <button class="${ui.confirm==='camp'+C[0]?'btn':'ghost'} sm" style="margin-top:12px;width:100%" onclick="campBook('${C[0]}')">${ui.confirm==='camp'+C[0]?`Potwierdź: zapłacisz ${fmt(cost)}`:'Wybierz'}</button>${ui.confirm==='camp'+C[0]&&typeof budImpact==='function'?budImpact({op:cost}):''}</div>`;}).join('')}</div></div>`;}
 // ================= SKAUTING: WIEDZA O ZAWODNIKACH, ZADANIA SKAUTÓW, RAPORT O RYWALU =================
 function SC(){const s=SAVE.sc||(SAVE.sc={});if(!s.know)s.know={};if(!s.tasks)s.tasks=[];if(!s.short)s.short=[];if(!s.opp)s.opp={on:1,done:{}};if(!s.nid)s.nid=1;return s;}
 function isMineP(p){return p&&p.tm===SAVE.team;}
@@ -4584,7 +4596,7 @@ function spQuality(){const rep=SAVE.ai[SAVE.team].rep;const s=S();let pb=0;try{i
 function spName(cat){if(cat==='tech')return SP_T1[Math.floor(R()*SP_T1.length)]+' '+SP_T2[Math.floor(R()*SP_T2.length)];return SP_A[Math.floor(R()*SP_A.length)]+' '+SP_B[Math.floor(R()*SP_B.length)];}
 function spDurMul(mo){return 1.05-0.01*(mo-1);}
 function genSpOffers(){const s=SPN();const q=spQuality();const n={tit:3,main:3,tech:2,mid:4,small:5};s.off={};
-  for(const [k,,sh] of SP_CAT){s.off[k]=[];for(let i=0;i<n[k];i++){const m=Math.round(SP_BASE*sh*q*LG_ECO[myLg()]*(0.8+R()*0.4)/1000)*1000;s.off[k].push({id:'sp'+(s.nid++),n:spName(k),col:SP_COL[Math.floor(R()*SP_COL.length)],m,maxM:R()<0.3?6:12});}s.off[k].sort((a,b)=>b.m-a.m);}
+  for(const [k,,sh] of SP_CAT){s.off[k]=[];for(let i=0;i<n[k];i++){const m=Math.round(SP_BASE*sh*q*LG_ECO[myLg()]*(0.8+R()*0.4)*(1+(typeof finSk==='function'?finSk():0)/20*0.05)/1000)*1000;s.off[k].push({id:'sp'+(s.nid++),n:spName(k),col:SP_COL[Math.floor(R()*SP_COL.length)],m,maxM:R()<0.3?6:12});}s.off[k].sort((a,b)=>b.m-a.m);}
   s.ref=(SAVE._now||today()).slice(0,7);}
 function spUsed(cat){return SPN().act.filter(c=>c.cat===cat).length;}
 function spMonthly(){return SPN().act.reduce((a,c)=>a+c.m,0);}
@@ -4592,7 +4604,7 @@ function sponsorAmt(){return spMonthly()*12;}
 function techBonus(){const c=SPN().act.find(x=>x.cat==='tech');return c?clamp(0.02+c.m/(SP_BASE*0.09)*0.03,0,0.07):0;}
 function signSponsor(cat,id){const s=SPN();const o=(s.off[cat]||[]).find(x=>x.id===id);if(!o)return;const el=document.getElementById('spd'+id);const mo=clamp(+(el?el.value:12)||12,1,o.maxM||12);
   if(spUsed(cat)>=spSlots()[cat]){ui.spMsg={ok:false,t:`Brak wolnego miejsca dla sponsora: ${SP_CAT.find(x=>x[0]===cat)[1].toLowerCase()}. ${cat==='tit'?'Sponsor tytularny może być tylko jeden.':'Więcej miejsc daje rozbudowa siedziby klubu i wyższa renoma.'}`};render();return;}
-  const m=Math.round(o.m*spDurMul(mo)/1000)*1000;const c={id:o.id,cat,n:o.n,col:o.col,m,left:mo-1,months:mo,start:today()};s.act.push(c);achEv('sp');s.off[cat]=s.off[cat].filter(x=>x.id!==id);
+  const m=Math.round(o.m*spDurMul(mo)/1000)*1000;const c={id:o.id,cat,n:o.n,col:o.col,m,left:mo-1,months:mo,start:today()};if(typeof spBudAdd==='function')spBudAdd(m,mo,cat);s.act.push(c);achEv('sp');s.off[cat]=s.off[cat].filter(x=>x.id!==id);
   money(m,'Sponsor');finLog(`Sponsor ${o.n}: pierwsza rata`,m);news(`🤝 Nowy sponsor (${SP_CAT.find(x=>x[0]===cat)[1].toLowerCase()}): ${o.n} — ${fmt(m)} miesięcznie przez ${mo} mies.`);
   ui.spMsg={ok:true,t:`Podpisano umowę z ${o.n}: ${fmt(m)}/miesiąc, ${mo} mies.`};save();render();}
 function addMonths(d,n){const [y,m]=d.split('-').map(Number);const t=new Date(Date.UTC(y,m-1+n,1));return t.getUTCFullYear()+'-'+String(t.getUTCMonth()+1).padStart(2,'0')+'-01';}
@@ -4623,8 +4635,9 @@ function sponsorView(){initSponsors();const s=SPN();const sl=spSlots();const q=s
   ${SP_CAT.map(([k,n,,d])=>{const act=s.act.filter(c=>c.cat===k);const free=sl[k]-act.length;const offs=s.off[k]||[];
    return `<div class="card"><div class="row wrap"><h2 style="margin:0">${n}</h2><span class="small mut" style="margin-left:10px">${esc(d)}</span><span class="sp"></span><span class="small">Miejsca: <b>${act.length}/${sl[k]}</b></span></div>
     <div class="spgrid">${act.map(c=>`<div class="spact">${spBadge(c)}<div><b>${esc(c.n)}</b><div class="small mut">${fmt(c.m)}/mies. · ${c.left>0?`jeszcze ${c.left} ${c.left===1?'rata':c.left<5?'raty':'rat'} (do ${fmtDMY(addMonths(today(),c.left))})`:'ostatni miesiąc'}</div></div></div>`).join('')}${Array(Math.max(0,free)).fill('<div class="spact empty">Wolne miejsce</div>').join('')}</div>
-    ${offs.length?`<div class="tw"><table><thead><tr><th class="l">Oferta</th><th>Miesięcznie (12 mies.)</th><th>Długość umowy</th><th></th></tr></thead><tbody>${offs.map(o=>`<tr><td class="l"><span class="fcell">${spBadge(o)}<b>${esc(o.n)}</b></span></td><td><b>${fmt(Math.round(o.m*spDurMul(12)/1000)*1000)}</b> <small class="mut">(1 mies.: ${fmt(Math.round(o.m*spDurMul(1)/1000)*1000)})</small></td>
+    ${offs.length?`<div class="tw"><table><thead><tr><th class="l">Oferta</th><th>Miesięcznie (12 mies.)</th><th>Długość umowy</th><th>Wpływ na budżety</th><th></th></tr></thead><tbody>${offs.map(o=>`<tr><td class="l"><span class="fcell">${spBadge(o)}<b>${esc(o.n)}</b></span></td><td><b>${fmt(Math.round(o.m*spDurMul(12)/1000)*1000)}</b> <small class="mut">(1 mies.: ${fmt(Math.round(o.m*spDurMul(1)/1000)*1000)})</small></td>
       <td><select id="spd${o.id}">${Array.from({length:o.maxM||12},(_,i)=>i+1).reverse().map(mo=>`<option value="${mo}">${mo} mies. · ${fmt(Math.round(o.m*spDurMul(mo)/1000)*1000)}</option>`).join('')}</select></td>
+      <td class="small">${typeof spBudTxt==='function'?spBudTxt(o.m*spDurMul(12),12,k):''}</td>
       <td><button class="${free>0?'btn':'ghost'} sm" ${free>0?'':'disabled'} onclick="signSponsor('${k}','${o.id}')">Podpisz</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="mut small">Brak ofert w tym miesiącu.</p>'}</div>`;}).join('')}
   <p class="small mut">Krótka umowa = trochę wyższa rata, ale co miesiąc możesz trafić lepszą ofertę. Długa = pewne pieniądze na cały sezon. Lepszych i liczniejszych sponsorów przyciągają: wyższa renoma, dobre miejsce w tabeli, rozbudowana siedziba klubu i gwiazda w składzie.</p>`;}
 // ================= EKONOMIA: DZIEŃ MECZOWY (BILETY, KARNETY, VIP, GOŚCIE, PARKING, GASTRONOMIA), SKLEP KIBICA, PENSJE SZTABU =================
@@ -4756,6 +4769,82 @@ function shopCard(){const e=ECO(),L=myInfra().sklep;const est=shopMonth(L,true);
    <p class="small"><b>Szacowany zysk:</b> ${fmt(est.tot)} / miesiąc (sprzedaż ${fmt(est.rev)})</p>
    ${lr?`<h3>Raport: ${MON_NOM[lr.m-1]}</h3><div class="tw"><table><thead><tr><th class="l">Produkt</th><th>Sztuk</th><th>Cena</th><th>Sprzedaż</th><th>Zysk</th></tr></thead><tbody>${lr.rows.map(r=>`<tr><td class="l">${r.n}</td><td>${r.q}</td><td>${r.pr} zł</td><td>${fmt(r.rev)}</td><td class="good">${fmt(r.pf)}</td></tr>`).join('')}<tr><td class="l"><b>Razem</b></td><td></td><td></td><td>${fmt(lr.rev)}</td><td class="good"><b>${fmt(lr.tot)}</b></td></tr></tbody></table></div>`:''}</div>`;}
 function pricesCard(){return `<div class="card"><h2>Ceny</h2><p class="small">Ceny biletów, karnetów, parkingu i jedzenia ustawisz w <button class="link" onclick="ui.infraSel='hala';go('klub')">Infrastruktura → Hala sportowa</button>, a ceny produktów w <button class="link" onclick="ui.infraSel='sklep';go('klub')">Infrastruktura → Sklep kibica</button>.</p></div>`;}
+// ===== Budżety klubu: transferowy, płacowy, operacyjny + dyrektor finansowy =====
+// Budżet ustalany na sezon z prognozy przychodów. Dyrektor finansowy dzieli pieniądze, dokładniej prognozuje i pilnuje wydatków.
+const BUD_DEF={wg:0.64,op:0.2,tr:0.16};
+function finSk(){return SAVE.staff&&SAVE.staff.fin?SAVE.staff.fin.skill:0;}
+function finName(){const s=SAVE.staff&&SAVE.staff.fin;return s?`${s.first} ${s.last}`:null;}
+// prognoza rocznych przychodów (sponsorzy, TV, dzień meczowy, sklep, karnety)
+// sponsorzy: podpisane umowy albo (gdy są wolne miejsca) typowa wartość ofert, które klub może podpisać
+function spPotential(){try{const sl=spSlots();const q=spQuality();let t=0;for(const [k,,sh] of SP_CAT){const act=SPN().act.filter(c=>c.cat===k);const sig=act.reduce((a,c)=>a+c.m,0);const free=Math.max(0,sl[k]-act.length);t+=sig+free*SP_BASE*sh*q*LG_ECO[myLg()]*0.85;}return t*12;}catch(e){return sponsorAmt();}}
+function revForecast(){try{const md=matchday(1,null,null,true);const kh=ECO().karS&&ECO().karS.season===S().n?ECO().karS.inc:0;
+  return Math.max(sponsorAmt(),spPotential())+tvRound()*22+md.tot*11+shopIncome(myInfra().sklep)*12+kh;}catch(e){return 3000000;}}
+// bez dyrektora zarząd planuje ostrożnie (85% prognozy); dobry dyrektor do 100%
+function budAcc(){const fs=finSk();return fs?0.9+fs/20*0.1:0.85;}
+function budSplit(){return Object.assign({},BUD_DEF,SAVE.budSplit||{});}
+function budPlan(){const s=S();const rev=revForecast()*budAcc();const reserve=Math.max(0,(SAVE.fin?SAVE.fin.bal:0)-300000);const pool=rev+reserve*0.6;const sp=budSplit();
+  const old=SAVE.bud&&SAVE.bud.n===s.n?SAVE.bud:null;
+  const bs=budSplitAmt(pool,sp,reserve);
+  SAVE.bud={n:s.n,pool:round5k(pool),res:reserve,wg:bs.wg,op:bs.op,tr:bs.tr,trUsed:old?old.trUsed:0,opUsed:old?old.opUsed:0,trAdd:old?old.trAdd:0,extra:old?old.extra:0,warn:{}};
+  return SAVE.bud;}
+function BUD(){if(SAVE.team==null||!S())return null;if(SAVE.staffPool&&!SAVE.staffPool.some(x=>x.role==='fin'))for(let i=0;i<3;i++){const s=genStaff('fin',5+R()*14);s.wage=staffWage(s.skill);SAVE.staffPool.push(s);}if(!SAVE.bud||SAVE.bud.n!==S().n){const had=!!SAVE.bud;budPlan();if(had)budSeasonMail(true);}return SAVE.bud;}
+function wageBill(){return payroll()+staffPay();}
+function budLeft(){const b=BUD();if(!b)return {tr:0,wg:0,op:0};return {tr:b.tr+(b.trAdd||0)+(b.extra||0)-b.trUsed,wg:b.wg-wageBill(),op:b.op-b.opUsed-maintenance()*12};}
+// księgowanie: money() przekazuje tu każdy ruch
+function budBook(amt,cat){const b=SAVE.team!=null&&S()?BUD():null;if(!b)return;
+  if(cat==='Transfery'||cat==='Odprawy'){if(amt<0)b.trUsed+=-amt;else b.trAdd=(b.trAdd||0)+amt*0.5;}// połowa wpływów ze sprzedaży wraca do budżetu transferowego
+  if(cat==='Infrastruktura'||cat==='Obóz')if(amt<0)b.opUsed+=-amt;}
+// opis wpływu decyzji na budżety: d={tr,wg,op} (wydatek dodatni)
+function budImpact(d,note){const b=BUD();if(!b)return '';const L=budLeft();const rows=[];
+  const one=(k,lab,tot,used,dv)=>{const after=used+dv;const left=tot-after;const pct=Math.min(130,Math.round(after/Math.max(1,tot)*100));
+    rows.push(`<div class="bimp ${left<0?'over':pct>90?'warn':''}"><span>${lab}</span><span class="bbar"><i style="width:${Math.min(100,pct)}%"></i></span><b>${fmt(used)} → ${fmt(after)}</b><small>${left<0?`przekroczony o ${fmt(-left)}`:`zostaje ${fmt(left)}`}</small></div>`);};
+  if(d.tr)one('tr','Budżet transferowy',b.tr+(b.trAdd||0)+(b.extra||0),b.trUsed,d.tr);
+  if(d.wg)one('wg','Budżet płacowy (rocznie)',b.wg,wageBill(),d.wg);
+  if(d.op)one('op','Budżet operacyjny',b.op,b.opUsed+maintenance()*12,d.op);
+  if(!rows.length&&!note)return '';
+  return `<div class="bimpw"><div class="bimph">💼 Wpływ na budżety${finName()?` <small class="mut">· ${esc(finName())}</small>`:''}</div>${rows.join('')}${note?`<div class="small mut">${note}</div>`:''}</div>`;}
+// czy wydatek mieści się w budżecie; transfery i inwestycje są blokowane, pensje tylko ostrzegają
+function budCan(kind,amt){const L=budLeft();if(kind==='tr'&&amt>L.tr)return `Brak środków w budżecie transferowym (zostało ${fmt(Math.max(0,L.tr))}). Możesz poprosić zarząd o dodatkowe pieniądze w Finanse → Budżety.`;
+  if(kind==='op'&&amt>L.op)return `Brak środków w budżecie operacyjnym (zostało ${fmt(Math.max(0,L.op))}). Zmień podział budżetów w Finanse → Budżety.`;return null;}
+function budWageOver(dw){const L=budLeft();if(dw>0&&dw>L.wg){if(SAVE.board){SAVE.board.conf=Math.max(0,SAVE.board.conf-3);}news(`💼 Pensje przekroczyły budżet płacowy o ${fmt(dw-Math.max(0,L.wg))} — zarząd jest niezadowolony.`);}}
+// prośba do zarządu: +25% budżetu transferowego, raz na sezon, kosztem zaufania
+function budAsk(){const b=BUD();if(!b||b.extra)return;const add=round5k(Math.max(150000,b.tr*0.25));if(SAVE.fin.bal-add<-500000)return tradeMsg(false,'Zarząd odmawia: klub nie ma pieniędzy na dodatkowe transfery.');
+  b.extra=add;if(SAVE.board)SAVE.board.conf=Math.max(0,SAVE.board.conf-6);news(`🏦 Zarząd dołożył ${fmt(add)} do budżetu transferowego, ale oczekuje wyników.`);save();render();}
+// zarząd nie planuje pensji poniżej obecnych zobowiązań ani utrzymania poniżej kosztów obiektów — reszta dzielona według proporcji
+function budSplitAmt(pool,sp,res){const wb=wageBill(),mn=maintenance()*12;let wg=Math.max(pool*sp.wg,wb+Math.max(150000,wb*0.04));let op=Math.max(pool*sp.op,mn+50000);let tr=pool-wg-op;
+  if(tr<pool*sp.tr){const rest=Math.max(0,pool-wg);const k=sp.op+sp.tr;op=Math.max(mn+50000,rest*sp.op/k);tr=Math.max(0,rest-op);}
+  tr=Math.max(tr,(res||0)*0.25);// część oszczędności zawsze można przeznaczyć na transfery
+  return {wg:round5k(wg),op:round5k(op),tr:round5k(Math.max(0,tr))};}
+function budSetSplit(k,v){const sp=budSplit();v=clamp(+v/100,0.05,0.85);sp[k]=v;const rest=['wg','op','tr'].filter(x=>x!==k);const sum=rest.reduce((a,x)=>a+sp[x],0);const free=1-v;
+  for(const x of rest)sp[x]=sum>0?sp[x]/sum*free:free/2;SAVE.budSplit=sp;const b=BUD();if(b){const bs=budSplitAmt(b.pool,sp,b.res);b.wg=bs.wg;b.op=bs.op;b.tr=bs.tr;}save();render();}
+// raport dyrektora co miesiąc: ostrzega, gdy budżet się kończy
+function budMonthly(){const b=BUD();if(!b)return;const L=budLeft();const fs=finSk();const msg=[];
+  const chk=(k,lab,tot,left)=>{if(left<tot*0.1&&!b.warn[k]){b.warn[k]=1;msg.push(`${lab}: ${left<0?`przekroczony o ${fmt(-left)}`:`zostało tylko ${fmt(left)}`}.`);}};
+  chk('tr','Budżet transferowy',b.tr+(b.trAdd||0)+(b.extra||0),L.tr);chk('wg','Budżet płacowy',b.wg,L.wg);chk('op','Budżet operacyjny',b.op,L.op);
+  if(msg.length&&typeof sendMail==='function')sendMail({cat:'fin',from:fs?`${finName()} (dyrektor finansowy)`:'Zarząd klubu',t:'Budżety: uwaga',s:msg[0],b:{type:'text',x:msg.join(' ')}});}
+function budSeasonMail(noRe){const b=noRe?SAVE.bud:budPlan();if(typeof sendMail!=='function')return;const fs=finSk();
+  sendMail({cat:'fin',from:fs?`${finName()} (dyrektor finansowy)`:'Zarząd klubu',t:`Budżety na sezon: transfery ${fmtShort2(b.tr)}, pensje ${fmtShort2(b.wg)}`,
+    s:'Plan finansowy na nowy sezon',b:{type:'text',x:`Prognoza przychodów ${fmt(round5k(revForecast()))}${fs?'':' (bez dyrektora finansowego zarząd liczy ostrożnie: 85% prognozy)'}. Transfery ${fmt(b.tr)}, pensje ${fmt(b.wg)} rocznie, funkcjonowanie klubu ${fmt(b.op)}. Podział zmienisz w Finanse → Budżety.`}});}
+function fmtShort2(v){return v>=1e6?(Math.round(v/1e5)/10).toString().replace('.',',')+' mln zł':Math.round(v/1000)+' tys. zł';}
+// widok Finanse → Budżety
+function budgetCard(){const b=BUD();if(!b)return '';const L=budLeft();const sp=budSplit();const fs=finSk();
+  const bar=(lab,tot,used,desc)=>{const pct=Math.round(used/Math.max(1,tot)*100);return `<div class="bud"><div class="row"><b>${lab}</b><span class="sp"></span><span class="${used>tot?'bad':''}">${fmt(used)} / ${fmt(tot)}</span></div><div class="bbar big"><i class="${pct>100?'over':pct>90?'warn':''}" style="width:${Math.min(100,pct)}%"></i></div><div class="small mut">${desc} · ${used>tot?`<span class="bad">przekroczony o ${fmt(used-tot)}</span>`:`zostaje ${fmt(tot-used)}`}</div></div>`;};
+  const trTot=b.tr+(b.trAdd||0)+(b.extra||0);
+  return `<div class="card"><div class="row wrap"><h2 style="margin:0">Budżety na sezon ${S().n}</h2><span class="sp"></span><span class="small mut">${fs?`Dyrektor finansowy: <b>${esc(finName())}</b> (${fs}/20) · planuje ${Math.round(budAcc()*100)}% prognozy`:'Brak dyrektora finansowego: zarząd planuje ostrożnie (85% prognozy). Zatrudnisz go w zakładce Sztab.'}</span></div>
+   <div class="small mut" style="margin:4px 0 10px">Do podziału: <b>${fmt(b.pool)}</b> (prognoza przychodów + część oszczędności).</div>
+   ${bar('Transferowy',trTot,b.trUsed,`odstępne i premie za podpis${b.trAdd?` · +${fmt(b.trAdd)} ze sprzedaży`:''}${b.extra?` · +${fmt(b.extra)} od zarządu`:''}`)}
+   ${bar('Płacowy (rocznie)',b.wg,wageBill(),'pensje zawodników i sztabu')}
+   ${bar('Operacyjny',b.op,b.opUsed+maintenance()*12,'utrzymanie obiektów, budowy, obóz')}
+   <div class="budsp"><b>Podział budżetu</b>${[['wg','Pensje'],['tr','Transfery'],['op','Funkcjonowanie']].map(([k,l])=>`<label>${l} <b>${Math.round(sp[k]*100)}%</b><input type="range" min="5" max="85" value="${Math.round(sp[k]*100)}" onchange="budSetSplit('${k}',this.value)"></label>`).join('')}</div>
+   <div class="row" style="gap:8px;margin-top:8px">${b.extra?'<span class="small mut">Zarząd dołożył już pieniądze w tym sezonie.</span>':`<button class="ghost sm" onclick="budAsk()">🏦 Poproś zarząd o +${fmt(round5k(Math.max(150000,b.tr*0.25)))} na transfery</button><span class="small mut">zaufanie zarządu −6</span>`}</div></div>`;}
+// sponsor podpisany w trakcie sezonu: jego raty do końca sezonu (czerwiec) zasilają budżety według podziału
+function spMonthsLeft(mo){const d=SAVE._now||today();const y=+d.slice(0,4),m=+d.slice(5,7);const end=m<=6?6-m:18-m;return Math.max(0,Math.min(mo,end+1));}
+// budżet zakładał typową umowę na każdym wolnym miejscu; podpis zmienia budżety o różnicę między umową a tym założeniem
+function spExp(cat){const c=SP_CAT.find(x=>x[0]===cat);return c?SP_BASE*c[2]*spQuality()*LG_ECO[myLg()]*0.85:0;}
+function spBudDelta(cat,m,mo){return (m*spMonthsLeft(mo)-spExp(cat)*spMonthsLeft(12))*budAcc();}
+function spBudAdd(m,mo,cat){const b=BUD();if(!b)return;const add=spBudDelta(cat,m,mo);const sp=budSplit();b.pool+=round5k(add);b.wg+=round5k(add*sp.wg);b.op+=round5k(add*sp.op);b.tr=Math.max(0,b.tr+round5k(add*sp.tr));}
+function spBudTxt(m,mo,cat){const sp=budSplit();const add=spBudDelta(cat,m,mo);const sg=v=>(v>=0?'+':'−')+fmt(Math.abs(round5k(v)));
+  return `<span class="${add>=0?'good':'bad'}">${sg(add)}</span> <span class="mut">względem planu</span><br><span class="mut">transfery ${sg(add*sp.tr)} · pensje ${sg(add*sp.wg)}</span>`;}
 // ================= INFRASTRUKTURA W 3D: MAPA KOMPLEKSU I EKRANY BUDYNKÓW =================
 const V3={yaw:2.5,pitch:0.74,zoom:2,tx:-15,ty:-10,roof:true,raf:0};
 const V3L=(()=>{const v=[-0.5,-0.62,0.75],m=Math.hypot(...v);return v.map(x=>x/m);})();
@@ -4929,7 +5018,7 @@ function projRow(f){const inf=myInfra(),L=inf[f.k],mx=L>=fMax(f),bs=BLD(),inB=bs
   return `<div class="pj2 ${ui.v3prev===f.k?'pv':''}"><div class="row"><b>${f.n}</b><span class="sp"></span><span class="small mut">${L?`poziom ${L}/${fMax(f)}`:'brak'}</span></div>
    <div class="small mut">${f.d}</div><div class="small">Teraz: ${f.eff(L)}</div>
    ${inB?`<div class="small" style="color:var(--acc)">🏗️ W budowie → poziom ${inB.to}, koniec ${fmtDMY(inB.until)}</div>`:mx?'<div class="small good">Maksymalny poziom</div>':`<div class="small good">Po rozbudowie: ${f.eff(L+1)}</div>
-   <div class="pjk small"><span>Koszt <b>${fmt(upgradeCost(f,L))}</b></span><span>Czas <b>${upgradeDays(f,L)} dni</b></span><span>Utrzymanie <b>+${fmt(MAINT_PER_LEVEL)}/mies.</b></span></div>
+   <div class="pjk small"><span>Koszt <b>${fmt(upgradeCost(f,L))}</b></span><span>Czas <b>${upgradeDays(f,L)} dni</b></span><span>Utrzymanie <b>+${fmt(MAINT_PER_LEVEL)}/mies.</b></span></div>${ui.confirm==='b'+f.k&&typeof budImpact==='function'?budImpact({op:upgradeCost(f,L)+MAINT_PER_LEVEL*12}):''}
    <div class="row" style="gap:6px;margin-top:6px"><button class="ghost sm" onclick="v3Prev('${f.k}')">${ui.v3prev===f.k?'Ukryj podgląd':'Pokaż na mapie'}</button><button class="btn sm" ${full?'disabled':''} onclick="startBuild('${f.k}')">${ui.confirm==='b'+f.k?`Na pewno? Zapłacisz ${fmt(upgradeCost(f,L))}`:L===0?'Zbuduj':`Rozbuduj do poziomu ${L+1}`}</button></div>${full?`<div class="small mut">Trwają już ${MAX_BUILDS} budowy — poczekaj, aż któraś się skończy.</div>`:''}`}</div>`;}
 function hallStats(){const inf=myInfra(),e=ECO(),c=crowdFor(SAVE.team,1,e.tix,true),m=matchday(1,null,null,true);const res=(S().results||[]).flat().filter(r=>r&&r.me&&r.h===SAVE.team);const L=e.last;
   return `<div class="hstat"><div><span>Pojemność</span><b class="acc">${HALA_CAP[inf.hala-1].toLocaleString('pl-PL')} miejsc</b></div><div><span>Ostatni mecz u siebie</span><b>${L?L.att.toLocaleString('pl-PL'):'—'}</b></div><div><span>Szacowana frekwencja</span><b>${c.att.toLocaleString('pl-PL')}</b></div><div><span>Parking</span><b>${parkSpots(inf.park).toLocaleString('pl-PL')} miejsc</b></div><div><span>Loża VIP</span><b>${inf.vip?vipSeats(inf.vip)+' miejsc':'brak'}</b></div><div><span>Sektor gości</span><b>${inf.gosc?guestSeats(inf.gosc)+' miejsc':'brak'}</b></div><div><span>Gastronomia</span><b>${GAS_PR.filter(p=>p[2]<=inf.gastro).length} produktów</b></div><div><span>Za mecz (szac.)</span><b>${fmt(m.tot)}</b></div></div>`;}
