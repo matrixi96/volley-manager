@@ -75,7 +75,7 @@ function advanceTo(t){
   SAVE.date=d;updateAges();updateInjuries();
   for(const p of born)if(p.tm===SAVE.team)news(`🎂 ${p.first} ${p.last} kończy ${p.age} lat.`);
 }
-function migrateDates(){
+function migrateDates(){fixNaNBal();
   if(!SAVE.season)return;ensureDates(SAVE.season);
   if(!SAVE.date){const e=nextEvent();SAVE.date=e?e.d:`${seasonYear(SAVE.season.n)}-08-01`;}
   if(SAVE.world)for(const p of W().players){if(!p.dob)setDob(p,SAVE.date);}
@@ -115,3 +115,6 @@ function calView(){
 function keyDates(){const s=S();ensureDates(s);const Y=seasonYear(s.n);
   const rows=[['Okno transferowe',`${fmtDMY(s.offDate)} – ${fmtDMY(s.sdates[N_SPAR-1])}`],['Sparingi',`${fmtDMY(s.sdates[0])} – ${fmtDMY(s.sdates[N_SPAR-1])}`],[`Faza zasadnicza (${s.rounds.length} kolejek)`,`${fmtDMY(addDays(s.rdates[0],-1))} – ${fmtDMY(addDays(s.rdates[s.rdates.length-1],1))}`],['Przerwa świąteczna',`20.12.${Y} – 06.01.${Y+1}`],['Play-off',`od ${fmtDMY(s.podates[0])}`],['Koniec sezonu i kontraktów','30.06.'+(Y+1)]];
   return `<div class="card"><h2>Najważniejsze daty sezonu ${sLabel(s.n)}</h2><table class="cmp"><tbody>${rows.map(r=>`<tr><td class="l">${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</tbody></table></div>`;}
+
+// naprawa salda zepsutego przez brak nagrody za miejsca poniżej 12. (błąd do v129)
+function fixNaNBal(){const f=SAVE.fin;if(!f||!isNaN(f.bal))return;for(const k in f.sea)if(isNaN(f.sea[k]))f.sea[k]=0;if(f.prev)for(const k in f.prev)if(isNaN(f.prev[k]))f.prev[k]=0;f.bal=500000;(f.log=f.log||[]).unshift({d:SAVE.date||GAME_START,t:'Korekta salda po błędzie gry (saldo ustawione na 500 tys. zł)',a:0});if(typeof news==='function')news('🔧 Naprawiono błąd salda klubu (było nieprawidłowe po końcu sezonu). Saldo ustawiono na 500 tys. zł.');}

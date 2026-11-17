@@ -1964,7 +1964,7 @@ function finishSeason(){
   SAVE.lastChamps=Object.values(s.lgFinal).map(f=>f[0]);SAVE.lastFinal=JSON.parse(JSON.stringify(s.lgFinal));
   s.moves=leagueMoves(s.lgFinal,s.lgSeed);
   for(const mv of s.moves)if(mv.i===SAVE.team||lgCountry(mv.to)===tmCountry(SAVE.team))news(mv.up?`⬆️ ${TEAMS[mv.i].name} awansuje do ${LG_GEN[mv.to]}${mv.i===SAVE.team?' — to nasz awans!':''}.`:`⬇️ ${TEAMS[mv.i].name} spada do ${LG_GEN[mv.to]}${mv.i===SAVE.team?' — to nasz spadek.':''}.`);
-  const myPl=s.final.indexOf(SAVE.team);const pz=Math.round(PRIZE[myPl]*LG_PRIZE[myLg()]/5000)*5000;money(pz,'Nagrody');finLog(`Nagroda za ${myPl+1}. miejsce (${LG_N[myLg()]}) w sezonie ${sLabel(s.n)}`,pz);
+  const myPl=s.final.indexOf(SAVE.team);const pz=Math.round((PRIZE[myPl]!=null?PRIZE[myPl]:25000)*(LG_PRIZE[myLg()]||0.1)/5000)*5000;money(pz,'Nagrody');finLog(`Nagroda za ${myPl+1}. miejsce (${LG_N[myLg()]}) w sezonie ${sLabel(s.n)}`,pz);
   SAVE.history=SAVE.history||[];SAVE.history.push({n:s.n,team:SAVE.team,lg:myLg(),place:s.final.indexOf(SAVE.team)+1,champ:s.final[0],league:s.seed.indexOf(SAVE.team)+1,mv:(s.moves.find(x=>x.i===SAVE.team)||{}).up});
   seasonEvaluation();achSeason(pz);
 }
@@ -2629,7 +2629,7 @@ function advanceTo(t){
   SAVE.date=d;updateAges();updateInjuries();
   for(const p of born)if(p.tm===SAVE.team)news(`🎂 ${p.first} ${p.last} kończy ${p.age} lat.`);
 }
-function migrateDates(){
+function migrateDates(){fixNaNBal();
   if(!SAVE.season)return;ensureDates(SAVE.season);
   if(!SAVE.date){const e=nextEvent();SAVE.date=e?e.d:`${seasonYear(SAVE.season.n)}-08-01`;}
   if(SAVE.world)for(const p of W().players){if(!p.dob)setDob(p,SAVE.date);}
@@ -2669,6 +2669,9 @@ function calView(){
 function keyDates(){const s=S();ensureDates(s);const Y=seasonYear(s.n);
   const rows=[['Okno transferowe',`${fmtDMY(s.offDate)} – ${fmtDMY(s.sdates[N_SPAR-1])}`],['Sparingi',`${fmtDMY(s.sdates[0])} – ${fmtDMY(s.sdates[N_SPAR-1])}`],[`Faza zasadnicza (${s.rounds.length} kolejek)`,`${fmtDMY(addDays(s.rdates[0],-1))} – ${fmtDMY(addDays(s.rdates[s.rdates.length-1],1))}`],['Przerwa świąteczna',`20.12.${Y} – 06.01.${Y+1}`],['Play-off',`od ${fmtDMY(s.podates[0])}`],['Koniec sezonu i kontraktów','30.06.'+(Y+1)]];
   return `<div class="card"><h2>Najważniejsze daty sezonu ${sLabel(s.n)}</h2><table class="cmp"><tbody>${rows.map(r=>`<tr><td class="l">${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</tbody></table></div>`;}
+
+// naprawa salda zepsutego przez brak nagrody za miejsca poniżej 12. (błąd do v129)
+function fixNaNBal(){const f=SAVE.fin;if(!f||!isNaN(f.bal))return;for(const k in f.sea)if(isNaN(f.sea[k]))f.sea[k]=0;if(f.prev)for(const k in f.prev)if(isNaN(f.prev[k]))f.prev[k]=0;f.bal=500000;(f.log=f.log||[]).unshift({d:SAVE.date||GAME_START,t:'Korekta salda po błędzie gry (saldo ustawione na 500 tys. zł)',a:0});if(typeof news==='function')news('🔧 Naprawiono błąd salda klubu (było nieprawidłowe po końcu sezonu). Saldo ustawiono na 500 tys. zł.');}
 // ================= KLUB: SZTAB, JUNIORZY, INFRASTRUKTURA =================
 // ---- infrastruktura ----
 const HALA_CAP=[2500,3500,4500,6000,8000];
@@ -3294,7 +3297,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=129').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=130').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
