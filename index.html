@@ -1505,7 +1505,7 @@ function render(){
   else if(ui.tab==='zapis')body=saveView();
   else if(ui.tab==='osiagniecia')body=achView();
   else if(ui.tab==='historia')body=historyView();
-  else if(ui.tab==='rozmowy')body=ixView();
+  else if(ui.tab==='rozmowy')body=rozmowyView();
   const wide=ui.tab==='mecz'&&ui.match&&!(ui.match.over&&ui.view==='post');
   const _ks={};for(const s of ['.mitems','.side','.nglog'])  {const e=document.querySelector(s);if(e)_ks[s]=e.scrollTop;}
   app.innerHTML=`<div class="shell ${wide?'live':''}">${topBar()}${sideNav()}<main class="${wide?'wide':''}">${ctxBar()}${wide||typeof tutBar!=='function'?'':tutBar()}${body}</main></div>`+(typeof achToastHtml==='function'?achToastHtml():'')+(ui.neg?negModal():ui.roleP&&typeof roleModal==='function'?roleModal():ui.talk?talkModal():ui.card?cardModal():ui.pop?popModal():ui.teamPop!=null?teamModal():'');
@@ -1902,7 +1902,7 @@ function finishMatch(m){
   achMatch(m,c);
   const res=resultOf(m,c.h,c.a);res.me=true;res.d=today();
   if(c.kind==='spar'){addTogether(m);s.spar.res.push(res);injuryCheck(m,0.5);roundTick('spar',false);}
-  else if(c.kind==='liga'){const psB=psSnap(),tbB=leagueTable();recordStats(m);boardAfterMatch(res);const rd=[];for(const f of s.rounds[s.round]){if(f[0]===c.h&&f[1]===c.a)rd.push(res);else rd.push(simFixture(f[0],f[1],true));}
+  else if(c.kind==='liga'){const psB=psSnap(),tbB=leagueTable();recordStats(m);boardAfterMatch(res);try{if(typeof bmAfterMatch==='function')bmAfterMatch(res,'liga');}catch(e){console.error(e);}const rd=[];for(const f of s.rounds[s.round]){if(f[0]===c.h&&f[1]===c.a)rd.push(res);else rd.push(simFixture(f[0],f[1],true));}
     s.results.push(rd);bgRound(s.round);simJrRound(s.round);s.round++;leagueNews(psB,tbB,rd,s.round);roundTick('liga',c.h===SAVE.team,m.att,c.a);if(s.round>=s.rounds.length)startPlayoff();}
   else if(c.kind==='cup'){addTogether(m);injuryCheck(m,1);cupMyResult(res);roundTick('cup',c.h===SAVE.team&&!c.neutral,m.att,c.a);}
   else if(c.kind==='euro'){addTogether(m);injuryCheck(m,1);res.d=today();euroMyResult(c,res);roundTick('euro',c.h===SAVE.team&&!c.neutral,m.att,c.a);}
@@ -2761,7 +2761,7 @@ function hashId(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return ((
 // ---- juniorzy ----
 const JR_PLAN=['R','R','A','A','P','P','P','S','S','S','L','L'];
 function genJunior(ti,age,pos){const t=TEAMS[ti];const inf=infraOf(ti);const mine=ti===SAVE.team;
-  const jq=teamQ(t)-2.5-4.5+0.4*inf.akad+((mine?staffSkill('jr'):aiStaff(ti))-10)*0.06+(mine&&SAVE.coach?(cA('mlo')-10)*0.04:0)+(age-16)*0.6;
+  const jq=teamQ(t)-2.5-4.5+0.4*inf.akad+((mine?staffSkill('jr'):aiStaff(ti))-10)*0.06+(mine&&SAVE.coach?(cA('mlo')-10)*0.04:0)+(mine&&SAVE.bm&&SAVE.bm.jrBoost===S().n-1?1.5:0)+(age-16)*0.6;
   const hc=tmCountry(ti);const p=genPlayer(pos||randPos(),jq+R()*1.2,age,R()<0.88?hc:natPick(R,hc));p.tm=ti;p.jr=true;p.inj=0;p.xp={};p.wage=0;p.ce=0;
   p.pot=Math.min(92,Math.round(rating(p)+(BAL2?3+R()*9:4+R()*12)+inf.akad));p.base=snap(p);assignNum(p,ti);return p;}
 function initClub(){
@@ -2970,7 +2970,7 @@ function boardAfterMatch(res){const b=SAVE.board;if(!b||!coach())return;
   const won=my>op?1:0;let d=(won-p)*5;if(won&&op===0)d+=0.5;if(!won&&my===0)d-=0.5;
   if(d>0)d*=0.9+cA('aut')/100;else d*=1.1-cA('aut')/100;
   b.conf=clamp(b.conf+d,0,100);
-  const s=S();if(b.conf<8&&s.phase==='liga'&&s.round>=8&&!SAVE.fired&&!SAVE.ownClub)fireCoach('Zarząd stracił zaufanie po serii słabych wyników w trakcie sezonu.');}
+  const s=S();if(b.conf<8&&s.phase==='liga'&&s.round>=8&&!SAVE.fired&&!SAVE.ownClub&&!(SAVE.bm&&(SAVE.bm.ult||SAVE.bm.q.some(q=>q.k==='ult')||SAVE.bm.ultN!==s.n)))fireCoach('Zarząd stracił zaufanie po serii słabych wyników w trakcie sezonu.');}
 function seasonEvaluation(){const s=S(),c=coach();if(!c||!s.final)return;const place=s.final.indexOf(SAVE.team)+1;const g=s.goal||goalFor(SAVE.team);const b=SAVE.board;
   const met=place<=g;const diff=g-place;
   b.conf=clamp(b.conf+(met?15+Math.min(15,diff*4):-10*Math.min(4,1-diff)),0,100);
@@ -3002,7 +3002,7 @@ function acceptJob(ti){const old=SAVE.team;const c=coach();
   SAVE.fired=null;SAVE.offers=null;ui.match=null;ui.tab='mecz';save();render();}
 function declineOffers(){SAVE.offers=null;save();render();}
 function coachOffseason(){const c=coach();if(!c)return;if(coachAge(c)<60){for(let i=0;i<2;i++){const k=C_ATTR[Math.floor(R()*C_ATTR.length)][0];if(c.attrs[k]<20&&R()<0.6)c.attrs[k]++;}}
-  const s=S();s.goal=goalFor(SAVE.team);news(`👔 Cel zarządu na sezon ${sLabel(s.n)}: ${goalTxt(s.goal,lgOf(SAVE.team))}.`);SAVE.offers=null;}
+  const s=S();s.goal=goalFor(SAVE.team);news(`👔 Cel zarządu na sezon ${sLabel(s.n)}: ${goalTxt(s.goal,lgOf(SAVE.team))}.`);SAVE.offers=null;try{if(typeof bmSeasonGoal==='function')bmSeasonGoal();}catch(e){console.error(e);}}
 // ---- widoki ----
 function boardCard(){const s=S(),b=SAVE.board;if(!b||!coach())return '';const g=s.goal||goalFor(SAVE.team);const cf=Math.round(b.conf);
   return `<div class="card board"><div class="row wrap"><span class="mut small">Zarząd ${esc(myTeam().name)}</span><span class="sp"></span><span class="small">Cel sezonu: <b>${goalTxt(g,lgOf(SAVE.team))}</b></span></div>
@@ -3294,7 +3294,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=123').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=124').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
@@ -4265,7 +4265,7 @@ function mailTraining(kind,days){if(!days.length||kind==='D')return;const o=mail
   const sn=`${top.length?`Wyróżnili się: ${top.map(x=>trWho(x,true)).join(', ')}.`:'Nikt wyraźnie się nie wyróżnił.'}${low.length?` Poniżej oczekiwań: ${low.map(x=>trWho(x,false)).join(', ')}.`:''}${ups.length?` Podniesione atrybuty: ${ups.length} zawodn.`:''}${tired.length?` Zmęczeni: ${tired.length}.`:''}`;
   sendMail({cat:'trening',from:asyName(),t:ttl,s:sn,b:{type:'train',k:kind,sm},lab:kind==='D'?'Raport dzienny':kind==='W'?'Raport tygodniowy':'Raport miesięczny'});}
 // codziennie: raporty tygodniowe (poniedziałek) i miesięczne (1. dnia)
-function mailDaily(d){const rep=(SAVE.trn&&SAVE.trn.rep)||[];try{fitMail(d);}catch(e){console.error(e);}try{if(typeof tutTips==='function')tutTips(d);}catch(e){console.error(e);}try{if(typeof ixDaily==='function')ixDaily(d);}catch(e){console.error(e);}
+function mailDaily(d){const rep=(SAVE.trn&&SAVE.trn.rep)||[];try{fitMail(d);}catch(e){console.error(e);}try{if(typeof tutTips==='function')tutTips(d);}catch(e){console.error(e);}try{if(typeof ixDaily==='function')ixDaily(d);}catch(e){console.error(e);}try{if(typeof bmDaily==='function')bmDaily(d);}catch(e){console.error(e);}
   if(dow(d)===1){const lim=addDays(d,-7);mailTraining('W',rep.filter(x=>x.d>=lim&&x.d<d));}
   if(d.endsWith('-01')){const lim=addDays(d,-31);const pm=addDays(d,-1).slice(0,7);mailTraining('M',rep.filter(x=>x.d>lim&&x.d.slice(0,7)===pm));}}
 // ---- akcje ----
@@ -4315,7 +4315,8 @@ function mailRel(m){const b=m.b||{};const out=[];const c=myNext();const s=S();
   else if(m.cat==='spon')add('Sponsorzy','Umowy i oferty',"go('sponsorzy')",'#3B6D11');
   else if(m.cat==='med'){add('Skład','Sprawdź ustawienie',"go('sklad')",'#0F6E56');}
   else if(m.cat==='zarz')add('Trener','Zaufanie zarządu',"go('trener')",'#444441');
-  if(b.type==='ix')out.unshift(['Rozmowy','Odpowiedz zawodnikowi',"go('rozmowy')",'#B45309']);
+  if(b.type==='ix')out.unshift(['Rozmowy','Odpowiedz zawodnikowi',"ui.ixTab=null;go('rozmowy')",'#B45309']);
+  if(b.type==='bm')out.unshift(['Zarząd','Odpowiedz zarządowi',"ui.ixTab='zarzad';go('rozmowy')",'#444441']);
   if(out.length<2&&b.type!=='match'&&b.type!=='fit')nx();
   return out.length?`<div class="mxrel"><div class="mxrt">Powiązane informacje</div><div class="mxrg">${out.slice(0,3).map(([l,t,a,col])=>`<button class="mxrc" style="--rc:${col}" onclick="${a}"><small>${l}</small><b>${t}</b></button>`).join('')}</div></div>`:'';}
 function mailPane(m){const C=MAIL_CAT[m.cat]||MAIL_CAT.klub;const from=String(m.from).replace(/\s*\(([^)]*)\)\s*$/,' · $1');
@@ -4343,7 +4344,8 @@ function fitMailHtml(b){const op=TEAMS[b.op];const tc=t=>t==='zaliczony'?'good':
    <div class="mx2"><div><b>Testy wydolności</b><p>Zawodnicy wracający po kontuzji przechodzą test przed meczem. Wynik mówi, ile mogą zagrać i czy grozi im nawrót urazu.</p></div>
    <div><b>Porada pionu medycznego</b><p>Wystawienie zawodnika, który nie jest w pełni sił, zwiększa ryzyko pogłębienia urazu. Możesz się z tym nie zgodzić — decyzja o składzie należy do Ciebie.</p></div></div></div>`;}
 function mailBodyHtml(m){const b=m.b||{};
-  if(b.type==='ix'){const q=SAVE.ix&&SAVE.ix.q.find(x=>x.id===b.id);if(!q)return '<p>Sprawa została już rozstrzygnięta. Historia rozmów i obietnice: zakładka Rozmowy.</p>';const P=PLAYERS[q.pid];return `<p>${P?esc(IX_T[q.k].x(P.p,q)):''}</p><p><button class="btn" onclick="go('rozmowy')">Przejdź do rozmowy</button></p>`;}
+  if(b.type==='bm'){const q=SAVE.bm&&SAVE.bm.q.find(x=>x.id===b.id);if(!q)return '<p>Sprawa została już rozstrzygnięta. Historia: Rozmowy → Zarząd.</p>';return `<p>${esc(BMQ[q.k].x(q))}</p><p><button class="btn" onclick="ui.ixTab='zarzad';go('rozmowy')">Przejdź do rozmowy</button></p>`;}
+  if(b.type==='ix'){const q=SAVE.ix&&SAVE.ix.q.find(x=>x.id===b.id);if(!q)return '<p>Sprawa została już rozstrzygnięta. Historia rozmów i obietnice: zakładka Rozmowy.</p>';const P=PLAYERS[q.pid];return `<p>${P?esc(IX_T[q.k].x(P.p,q)):''}</p><p><button class="btn" onclick="ui.ixTab=null;go('rozmowy')">Przejdź do rozmowy</button></p>`;}
   if(b.type==='match')return matchMailHtml(b);
   if(b.type==='train')return trainMailHtml(b);
   if(typeof scoutMailHtml==='function'&&/^(scout|opp|market)$/.test(b.type))return scoutMailHtml(m);
@@ -5053,7 +5055,7 @@ function budCan(kind,amt){const L=budLeft();if(kind==='tr'&&amt>L.tr)return `Bra
   if(kind==='op'&&amt>L.op)return `Brak środków w budżecie operacyjnym (zostało ${fmt(Math.max(0,L.op))}). Zmień podział budżetów w Finanse → Budżety.`;return null;}
 function budWageOver(dw){const L=budLeft();if(dw>0&&dw>L.wg){if(SAVE.board){SAVE.board.conf=Math.max(0,SAVE.board.conf-3);}news(`💼 Pensje przekroczyły budżet płacowy o ${fmt(dw-Math.max(0,L.wg))} — zarząd jest niezadowolony.`);}}
 // prośba do zarządu: +25% budżetu transferowego, raz na sezon, kosztem zaufania
-function budAsk(){const b=BUD();if(!b||b.extra)return;const add=round5k(Math.max(150000,b.tr*0.25));if(SAVE.fin.bal-add<-500000)return tradeMsg(false,'Zarząd odmawia: klub nie ma pieniędzy na dodatkowe transfery.');
+function budAsk(){if(typeof bmView==='function'){ui.ixTab='zarzad';go('rozmowy');return;}const b=BUD();if(!b||b.extra)return;const add=round5k(Math.max(150000,b.tr*0.25));if(SAVE.fin.bal-add<-500000)return tradeMsg(false,'Zarząd odmawia: klub nie ma pieniędzy na dodatkowe transfery.');
   b.extra=add;if(SAVE.board)SAVE.board.conf=Math.max(0,SAVE.board.conf-6);news(`🏦 Zarząd dołożył ${fmt(add)} do budżetu transferowego, ale oczekuje wyników.`);save();render();}
 // zarząd nie planuje pensji poniżej obecnych zobowiązań ani utrzymania poniżej kosztów obiektów — reszta dzielona według proporcji
 function budSplitAmt(pool,sp,res){const wb=wageBill(),mn=maintenance()*12;let wg=Math.max(pool*sp.wg,wb+Math.max(150000,wb*0.04));let op=Math.max(pool*sp.op,mn+50000);let tr=pool-wg-op;
@@ -6470,6 +6472,82 @@ function ixView(){const X=IX();const res=ui.ixRes;
    <div class="card"><h2>Role w zespole</h2><p class="small mut">Rola mówi zawodnikowi, ile gry może oczekiwać. Zmienisz ją w karcie zawodnika („Rozmowa o roli”).</p>
     <div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th>Poz.</th><th class="l">Rola</th><th>Gra (ost. 8)</th><th>Relacja</th><th>Zadowolenie</th></tr></thead><tbody>${myTeam().players.filter(p=>!p.jr).sort((a,b)=>ROLE_I[roleOf(a)]-ROLE_I[roleOf(b)]).map(p=>{const sh=plShare(p);const e=roleExp(p);const sat=pSat(p).v;
       return `<tr><td class="l"><button class="link pn" onclick="ui.roleP='${p.id}';render()">${esc(p.first[0]+'. '+p.last)}</button></td><td>${p.pos}</td><td class="l">${ROLES[ROLE_I[roleOf(p)]][1]}</td><td style="color:${sh==null?'':sh<e-0.25?'var(--bad,#ef4444)':sh>=e-0.1?'var(--good,#22c55e)':''}">${sh==null?'—':Math.round(sh*100)+'%'}</td><td>${relOf(p)}</td><td>${sat}</td></tr>`;}).join('')}</tbody></table></div></div>`;}
+// ================= ZARZĄD: SPOTKANIA, PROŚBY, OCENA W POŁOWIE SEZONU, ULTIMATUM, CEL NA SEZON =================
+// SAVE.bm = {last: data ostatniego spotkania, asked:{klucz:numer sezonu}, q:[sprawy od zarządu], ult:{need,n,w,from,until}|null, log:[]}
+function BM(){return SAVE.bm||(SAVE.bm={last:null,asked:{},q:[],ult:null,log:[]});}
+function bConf(){return SAVE.board?SAVE.board.conf:60;}
+function bAdd(d){if(SAVE.board)SAVE.board.conf=clamp(SAVE.board.conf+d,0,100);}
+function bmFree(){const b=BM();return !b.last||daysBetween(b.last,today())>=30;}
+function bmChance(base){const c=coach();return clamp(base+(bConf()-50)/100*0.8+((c?c.rep:40)-40)/100*0.4+(cA('neg')-10)/10*0.08,0.03,0.95);}
+const BM_REQ=[
+ ['tr','Większy budżet transferowy','+25% budżetu transferowego na ten sezon.',()=>{const b=BUD();return b&&!b.extra?null:'Zarząd dołożył już pieniądze w tym sezonie.';},()=>bmChance(0.55)*(SAVE.fin.bal>300000?1:0.5),
+   ok=>{const b=BUD();if(ok){const add=round5k(Math.max(150000,b.tr*0.25));b.extra=add;bAdd(-4);return `Zarząd dołożył ${fmt(add)} do budżetu transferowego. Oczekuje za to wyników.`;}bAdd(-2);return 'Zarząd odmówił: „Najpierw wyniki, potem pieniądze”.';}],
+ ['wg','Większy budżet płacowy','+10% budżetu na pensje (łatwiej zatrzymać i kupić zawodników).',()=>null,()=>bmChance(0.45),
+   ok=>{const b=BUD();if(ok){const add=round5k(b.wg*0.1);b.wg+=add;bAdd(-3);return `Budżet płacowy wzrósł o ${fmt(add)} rocznie.`;}bAdd(-2);return 'Zarząd odmówił: koszty pensji i tak są wysokie.';}],
+ ['inf','Dotacja na infrastrukturę','Zarząd przekazuje pieniądze na rozbudowę obiektów (Infrastruktura).',()=>null,()=>bmChance(0.4)*(SAVE.fin.bal>0?1:0.4),
+   ok=>{if(ok){const add=round5k(200000+(coach().rep||40)*4000);money(add,'Dotacja zarządu');finLog('Dotacja zarządu na infrastrukturę',add);SAVE.bm.infEar=(SAVE.bm.infEar||0)+add;return `Zarząd przekazał ${fmt(add)} na inwestycje w obiekty. Wydaj je na rozbudowę (Infrastruktura).`;}bAdd(-1);return 'Zarząd odmówił: inne wydatki są teraz ważniejsze.';}],
+ ['jr','Inwestycja w juniorów','Lepsi juniorzy w następnym naborze.',()=>null,()=>bmChance(0.6),
+   ok=>{if(ok){SAVE.bm.jrBoost=S().n;return 'Zarząd zgodził się: w następnym naborze juniorzy będą zdolniejsi.';}return 'Zarząd odmówił: akademia ma wystarczające środki.';}],
+ ['goal','Obniżenie celu sezonu','Niższy cel, ale zarząd zapamięta, że prosiłeś.',()=>{const s=S();if(s.phase!=='liga'&&s.phase!=='spar')return 'Cel można zmienić tylko na początku sezonu.';if(s.phase==='liga'&&s.round>=6)return 'Na zmianę celu jest już za późno (po 6. kolejce).';if(goalLower(s.goal)==null)return 'Cel jest już najniższy.';return null;},()=>bmChance(0.4),
+   ok=>{const s=S();if(ok){const g0=s.goal;s.goal=goalLower(s.goal);bAdd(-8);coach().rep=Math.max(0,coach().rep-2);return `Zarząd zgodził się: nowy cel to „${goalTxt(s.goal,lgOf(SAVE.team))}” (było: ${goalTxt(g0,lgOf(SAVE.team))}). Twoja pozycja jest jednak słabsza.`;}bAdd(-5);return 'Zarząd odmówił i jest zaniepokojony brakiem wiary w zespół.';}],
+];
+function goalLower(g){const n=lgIds(myLg()).length;const L=[2,4,8,10,n-2,n].filter((x,i,a)=>x>0&&x<=n&&a.indexOf(x)===i).sort((a,b)=>a-b);const i=L.indexOf(g);return i>=0&&i<L.length-1?L[i+1]:null;}
+function goalHigher(g){const n=lgIds(myLg()).length;const L=[2,4,8,10,n-2,n].filter((x,i,a)=>x>0&&x<=n&&a.indexOf(x)===i).sort((a,b)=>a-b);const i=L.indexOf(g);return i>0?L[i-1]:null;}
+function bmAsk(k){const B=BM();const r=BM_REQ.find(x=>x[0]===k);if(!r)return;if(!bmFree())return;const blk=r[3]();if(blk||B.asked[k]===S().n)return;
+  B.last=today();B.asked[k]=S().n;const ok=R()<r[4]();const txt=r[5](ok);B.log.unshift({d:today(),k,ok,txt});B.log=B.log.slice(0,30);ui.bmRes={txt,ok};save();render();}
+// ---- sprawy od zarządu ----
+function bmOpen(q){const B=BM();if(B.q.some(x=>x.k===q.k))return;q.id='bm'+Date.now().toString(36);q.d=today();B.q.push(q);
+  sendMail({cat:'zarz',from:'Prezes klubu',t:BMQ[q.k].t(q),s:'Zarząd prosi o spotkanie — Rozmowy → Zarząd.',b:{type:'bm',id:q.id},act:1,lab:'Zarząd'});}
+const BMQ={
+ mid:{t:q=>'Ocena w połowie sezonu',x:q=>{const p=q.pos,g=q.goal;return `„Jesteśmy na ${p}. miejscu, a celem jest ${goalTxt(g,lgOf(SAVE.team))}. ${p<=g?'Wyniki nas cieszą — oby tak dalej.':'Wyniki są poniżej oczekiwań. Jak pan to widzi?'}”`;},
+   o:[['dobrze','Jesteśmy na dobrej drodze, plan działa.',q=>q.pos<=q.goal?0.85:0.35,(q,ok)=>{bAdd(ok?3:-4);return ok?'Zarząd jest spokojny.':'Zarząd uważa, że nie widzi pan problemów.';}],
+     ['wzm','Potrzebuję wzmocnień, żeby osiągnąć cel.',q=>bmChance(0.45),(q,ok)=>{if(ok){const b=BUD();const add=round5k(Math.max(100000,b.tr*0.15));b.trAdd=(b.trAdd||0)+add;bAdd(-3);return `Zarząd dołożył ${fmt(add)} na transfery w trakcie sezonu.`;}bAdd(-3);return 'Zarząd odmówił: „Proszę pracować z tymi, których pan ma”.';}],
+     ['odp','Biorę pełną odpowiedzialność za wynik.',q=>clamp(0.4+(cA('aut')-10)/20,0.1,0.85),(q,ok)=>{bAdd(ok?5:-2);return ok?'Zarząd docenia postawę i daje panu więcej spokoju.':'Zarząd zapamięta te słowa.';}]]},
+ ult:{t:q=>'Ultimatum zarządu',x:q=>`„Zaufanie do pana jest na wyczerpaniu. Oczekujemy ${q.need} zwycięstw w najbliższych ${q.n} meczach ligowych. W przeciwnym razie rozstaniemy się.”`,
+   o:[['ok','Rozumiem. Dowiozę te wyniki.',q=>0.9,(q,ok)=>{ultStart(q);return 'Ultimatum przyjęte. Licznik ruszył.';}],
+     ['wal','To niesprawiedliwe — drużyna jest w budowie.',q=>clamp(0.25+(cA('neg')-10)/20+(coach().rep-40)/150,0.05,0.6),(q,ok)=>{if(ok){bAdd(10);return 'Zarząd dał się przekonać i daje panu więcej czasu. Ultimatum wycofane.';}ultStart(q);bAdd(-3);return 'Zarząd nie zmienił zdania. Ultimatum obowiązuje.';}]]},
+ goal:{t:q=>'Cel na nowy sezon',x:q=>`„Na sezon ${sLabel(S().n)} oczekujemy: ${goalTxt(q.goal,lgOf(SAVE.team))}. Czy to dla pana realne?”`,
+   o:[['ok','Przyjmuję cel.',q=>0.95,(q,ok)=>{S().goal=q.goal;bAdd(2);return 'Cel zatwierdzony.';}],
+     ['niz','Proszę o niższy cel — drużyna potrzebuje czasu.',q=>goalLower(q.goal)==null?0:bmChance(0.45),(q,ok)=>{if(ok){S().goal=goalLower(q.goal);const b=BUD();if(b){b.tr=round5k(b.tr*0.85);}bAdd(-4);return `Zarząd zgodził się na „${goalTxt(S().goal,lgOf(SAVE.team))}”, ale obciął budżet transferowy o 15%.`;}S().goal=q.goal;bAdd(-4);return 'Zarząd nie zgodził się i jest zaniepokojony.';}],
+     ['wyz','Stać nas na więcej — proszę o ambitniejszy cel i większy budżet.',q=>goalHigher(q.goal)==null?0:bmChance(0.6),(q,ok)=>{if(ok){S().goal=goalHigher(q.goal);const b=BUD();const add=b?round5k(Math.max(150000,b.tr*0.2)):0;if(b)b.trAdd=(b.trAdd||0)+add;bAdd(5);return `Nowy cel: „${goalTxt(S().goal,lgOf(SAVE.team))}”. Zarząd dołożył ${fmt(add)} do budżetu transferowego.`;}S().goal=q.goal;return 'Zarząd woli zostać przy pierwotnym celu.';}]]},
+};
+function bmAnswer(id,opt,auto){const B=BM();const q=B.q.find(x=>x.id===id);if(!q)return;B.q=B.q.filter(x=>x!==q);const T=BMQ[q.k];
+  let txt;if(opt==='_ignore'){const o=T.o[0];txt=o[3](q,true);bAdd(-3);txt='Brak odpowiedzi na wezwanie zarządu. '+txt;}
+  else{const o=T.o.find(x=>x[0]===opt);if(!o)return;const ok=R()<o[2](q);txt=o[3](q,ok);}
+  B.log.unshift({d:today(),k:q.k,ok:true,txt});B.log=B.log.slice(0,30);if(auto){news('👔 '+txt);return;}ui.bmRes={txt,ok:true};save();render();}
+// ---- ultimatum ----
+function ultStart(q){BM().ult={need:q.need,n:q.n,w:0,p:0,from:today()};}
+function bmAfterMatch(res,kind){const B=BM();const U=B.ult;if(!U||kind!=='liga')return;const me=res.h===SAVE.team;const won=(me?res.sw[0]:res.sw[1])>(me?res.sw[1]:res.sw[0]);U.p++;if(won)U.w++;
+  if(U.w>=U.need){B.ult=null;bAdd(15);news(`👔 Ultimatum spełnione (${U.w} zwycięstw w ${U.p} meczach). Zarząd odzyskał zaufanie.`);return;}
+  if(U.need-U.w>U.n-U.p){B.ult=null;if(!SAVE.ownClub)fireCoach(`Nie spełniłeś ultimatum zarządu (${U.w} z wymaganych ${U.need} zwycięstw w ${U.n} meczach).`);}}
+// ---- codziennie: wyzwalacze spraw ----
+function bmDaily(d){if(SAVE.team==null||!S()||SAVE.fired||!coach())return;const B=BM();const s=S();
+  for(const q of B.q.slice())if(daysBetween(q.d,d)>10)bmAnswer(q.id,'_ignore',1);
+  if(s.phase==='liga'){const half=Math.floor(s.rounds.length/2);if(s.round>=half&&B.midN!==s.n){B.midN=s.n;const T=leagueTable();bmOpen({k:'mid',pos:T.findIndex(x=>x.i===SAVE.team)+1,goal:s.goal||goalFor(SAVE.team)});}
+    if(bConf()<25&&!B.ult&&B.ultN!==s.n&&s.round>=5&&!SAVE.ownClub&&s.round<s.rounds.length-4){B.ultN=s.n;bmOpen({k:'ult',need:3,n:5});}}}
+// po starcie nowego sezonu (z coachOffseason): propozycja celu do negocjacji
+function bmSeasonGoal(){const s=S();bmOpen({k:'goal',goal:s.goal||goalFor(SAVE.team)});}
+function bmPred(ch){const [pl,c]=ixPred(ch);return [pl.replace('przyjmie dobrze','duża szansa').replace('raczej przyjmie','spora szansa').replace('może się nie spodobać','mała szansa').replace('źle przyjmie','prawie bez szans'),c];}
+function bmN(){return SAVE.bm?SAVE.bm.q.length:0;}
+function bmView(){const B=BM();const res=ui.bmRes;const free=bmFree();const s=S();
+  const qcard=q=>{const T=BMQ[q.k];return `<div class="card"><div class="row" style="gap:12px;align-items:flex-start"><div style="font-size:42px;line-height:1">👔</div><div style="flex:1"><h2 style="margin:0 0 4px">${esc(T.t(q))}</h2><p style="margin:8px 0">${esc(T.x(q))}</p>
+    ${T.o.map(o=>{const ch=o[2](q);if(ch<=0)return '';const [pl,c]=bmPred(ch);return `<button class="opt" style="display:block;width:100%;text-align:left;margin:6px 0" onclick="bmAnswer('${q.id}','${o[0]}')"><b>${esc(o[1])}</b> <span class="mxpill ${c}" style="margin-left:6px">${pl}</span></button>`;}).join('')}
+    <div class="small mut">Zarząd czeka na odpowiedź do 10 dni.</div></div></div></div>`;};
+  const U=B.ult;
+  return `${res?`<div class="card" style="border:1px solid var(--acc)"><b>Zarząd:</b> ${esc(res.txt)} <button class="ghost sm" onclick="ui.bmRes=null;render()">OK</button></div>`:''}
+   ${U?`<div class="card" style="border:1px solid var(--bad,#ef4444)"><h2>Ultimatum</h2><p>Wymagane ${U.need} zwycięstwa w ${U.n} meczach ligowych. Stan: <b>${U.w} zwycięstw w ${U.p} meczach</b> (zostało ${U.n-U.p}).</p></div>`:''}
+   ${B.q.map(qcard).join('')}
+   <div class="card"><h2>Spotkanie z zarządem${tipQ('Raz na 30 dni możesz poprosić zarząd o jedną rzecz. Każdą prośbę można złożyć raz w sezonie. Szansa zależy od zaufania zarządu, Twojej reputacji i umiejętności negocjacji.')}</h2>
+    <div class="small" style="margin-bottom:8px">Zaufanie zarządu: <b>${Math.round(bConf())}%</b> · cel sezonu: <b>${goalTxt(s.goal||goalFor(SAVE.team),lgOf(SAVE.team))}</b> · ${free?'<span class="good">możesz poprosić o spotkanie</span>':`następne spotkanie możliwe ${fmtShort(addDays(B.last,30))}`}</div>
+    ${BM_REQ.map(r=>{const blk=r[3]()||(B.asked[r[0]]===s.n?'Prosiłeś już o to w tym sezonie.':null);const [pl,c]=bmPred(r[4]());return `<div class="row wrap" style="gap:10px;margin:8px 0;align-items:center"><div style="flex:1;min-width:220px"><b>${r[1]}</b><div class="small mut">${r[2]}</div></div>${blk?`<span class="small mut">${esc(blk)}</span>`:`<span class="mxpill ${c}">${pl}</span><button class="btn sm" ${free?'':'disabled'} onclick="bmAsk('${r[0]}')">Poproś</button>`}</div>`;}).join('')}</div>
+   ${B.log.length?`<div class="card"><h2>Historia rozmów z zarządem</h2>${B.log.slice(0,8).map(l=>`<div class="small" style="margin:4px 0">${fmtShort(l.d)} — ${esc(l.txt)}</div>`).join('')}</div>`:''}`;}
+
+// ---- zakładki widoku „Rozmowy” ----
+const ROZ_TABS=[[null,'Zawodnicy',()=>ixN()],['zarzad','Zarząd',()=>bmN()]];
+function rozN(){return ROZ_TABS.reduce((a,t)=>a+(t[2]()||0),0);}
+function rozmowyView(){const tab=ui.ixTab||null;const T=ROZ_TABS.find(t=>t[0]===tab)||ROZ_TABS[0];
+  const head=`<div class="card"><div class="row wrap" style="gap:6px">${ROZ_TABS.map(([k,l,n])=>`<button class="tabb ${T[0]===k?'on':''}" onclick="ui.ixTab=${k?`'${k}'`:'null'};render()">${l}${n()?` (${n()})`:''}</button>`).join('')}</div></div>`;
+  const body=T[0]==='zarzad'?bmView():T[0]==='media'&&typeof mdView==='function'?mdView():T[0]==='agenci'&&typeof agView==='function'?agView():ixView();return head+body;}
 // ================= HISTORIA I REKORDY =================
 // Zbierane od momentu wprowadzenia (wcześniejszych sezonów nie da się odtworzyć).
 function HIST(){return SAVE.hist||(SAVE.hist={seasons:[],rec:{},str:{},club:{}});}
@@ -6568,7 +6646,7 @@ function ico(k,sz){return `<svg viewBox="0 0 24 24" width="${sz||18}" height="${
 const NAV_GROUPS=[['Przegląd',['home','poczta','rozmowy','mecz','kalendarz']],['Drużyna',['sklad','taktyka','dane','trening','juniorzy']],['Rekrutacja',['skauting','transfery']],['Klub',['sztab','klub','sponsorzy','social','finanse','trener']],['Świat',['tabela','kadra','staty','historia','osiagniecia']]];
 const NAV_L=Object.fromEntries(NAV.map(x=>[x[0],x[2]]));NAV_L.poczta='Poczta';NAV_L.dane='Centrum danych';NAV_L.skauting='Skauting';NAV_L.sponsorzy='Sponsorzy';NAV_L.social='Social media';NAV_L.kadra='Reprezentacja';NAV_L.zapis='Zapis gry';NAV_L.osiagniecia='Osiągnięcia';NAV_L.historia='Historia';NAV_L.rozmowy='Rozmowy';NAV_L.test='Test silnika';
 function sideNav(){const mini=ui.tab==='mecz'&&liveMatch();const newsN=typeof unreadN==='function'?unreadN():0;
-  const item=k=>`<button class="nav ${ui.tab===k?'on':''}" onclick="ui.navOpen=false;go('${k}')" title="${NAV_L[k]}"><span class="ic">${ico(k)}</span><span class="tx">${NAV_L[k]}</span>${k==='poczta'&&newsN?`<span class="nbad">${newsN}</span>`:''}${k==='rozmowy'&&typeof ixN==='function'&&ixN()?`<span class="nbad">${ixN()}</span>`:''}${k==='osiagniecia'&&typeof achFreshN==='function'&&achFreshN()?`<span class="nbad">${achFreshN()}</span>`:''}</button>`;
+  const item=k=>`<button class="nav ${ui.tab===k?'on':''}" onclick="ui.navOpen=false;go('${k}')" title="${NAV_L[k]}"><span class="ic">${ico(k)}</span><span class="tx">${NAV_L[k]}</span>${k==='poczta'&&newsN?`<span class="nbad">${newsN}</span>`:''}${k==='rozmowy'&&typeof rozN==='function'&&rozN()?`<span class="nbad">${rozN()}</span>`:''}${k==='osiagniecia'&&typeof achFreshN==='function'&&achFreshN()?`<span class="nbad">${achFreshN()}</span>`:''}</button>`;
   return `<aside class="side ${mini?'mini':''} ${ui.navOpen?'open':''}">
    <div class="sbrand"><span class="sbm">${ico('mecz',20)}</span><span class="tx">VOLLEY MANAGER</span></div>
    ${NAV_GROUPS.map(([g,ks])=>`<div class="ngh tx">${g}</div>${ks.map(item).join('')}`).join('')}

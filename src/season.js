@@ -91,7 +91,7 @@ function finishMatch(m){
   achMatch(m,c);
   const res=resultOf(m,c.h,c.a);res.me=true;res.d=today();
   if(c.kind==='spar'){addTogether(m);s.spar.res.push(res);injuryCheck(m,0.5);roundTick('spar',false);}
-  else if(c.kind==='liga'){const psB=psSnap(),tbB=leagueTable();recordStats(m);boardAfterMatch(res);const rd=[];for(const f of s.rounds[s.round]){if(f[0]===c.h&&f[1]===c.a)rd.push(res);else rd.push(simFixture(f[0],f[1],true));}
+  else if(c.kind==='liga'){const psB=psSnap(),tbB=leagueTable();recordStats(m);boardAfterMatch(res);try{if(typeof bmAfterMatch==='function')bmAfterMatch(res,'liga');}catch(e){console.error(e);}const rd=[];for(const f of s.rounds[s.round]){if(f[0]===c.h&&f[1]===c.a)rd.push(res);else rd.push(simFixture(f[0],f[1],true));}
     s.results.push(rd);bgRound(s.round);simJrRound(s.round);s.round++;leagueNews(psB,tbB,rd,s.round);roundTick('liga',c.h===SAVE.team,m.att,c.a);if(s.round>=s.rounds.length)startPlayoff();}
   else if(c.kind==='cup'){addTogether(m);injuryCheck(m,1);cupMyResult(res);roundTick('cup',c.h===SAVE.team&&!c.neutral,m.att,c.a);}
   else if(c.kind==='euro'){addTogether(m);injuryCheck(m,1);res.d=today();euroMyResult(c,res);roundTick('euro',c.h===SAVE.team&&!c.neutral,m.att,c.a);}

@@ -48,7 +48,7 @@ function mailTraining(kind,days){if(!days.length||kind==='D')return;const o=mail
   const sn=`${top.length?`Wyróżnili się: ${top.map(x=>trWho(x,true)).join(', ')}.`:'Nikt wyraźnie się nie wyróżnił.'}${low.length?` Poniżej oczekiwań: ${low.map(x=>trWho(x,false)).join(', ')}.`:''}${ups.length?` Podniesione atrybuty: ${ups.length} zawodn.`:''}${tired.length?` Zmęczeni: ${tired.length}.`:''}`;
   sendMail({cat:'trening',from:asyName(),t:ttl,s:sn,b:{type:'train',k:kind,sm},lab:kind==='D'?'Raport dzienny':kind==='W'?'Raport tygodniowy':'Raport miesięczny'});}
 // codziennie: raporty tygodniowe (poniedziałek) i miesięczne (1. dnia)
-function mailDaily(d){const rep=(SAVE.trn&&SAVE.trn.rep)||[];try{fitMail(d);}catch(e){console.error(e);}try{if(typeof tutTips==='function')tutTips(d);}catch(e){console.error(e);}try{if(typeof ixDaily==='function')ixDaily(d);}catch(e){console.error(e);}
+function mailDaily(d){const rep=(SAVE.trn&&SAVE.trn.rep)||[];try{fitMail(d);}catch(e){console.error(e);}try{if(typeof tutTips==='function')tutTips(d);}catch(e){console.error(e);}try{if(typeof ixDaily==='function')ixDaily(d);}catch(e){console.error(e);}try{if(typeof bmDaily==='function')bmDaily(d);}catch(e){console.error(e);}
   if(dow(d)===1){const lim=addDays(d,-7);mailTraining('W',rep.filter(x=>x.d>=lim&&x.d<d));}
   if(d.endsWith('-01')){const lim=addDays(d,-31);const pm=addDays(d,-1).slice(0,7);mailTraining('M',rep.filter(x=>x.d>lim&&x.d.slice(0,7)===pm));}}
 // ---- akcje ----
@@ -98,7 +98,8 @@ function mailRel(m){const b=m.b||{};const out=[];const c=myNext();const s=S();
   else if(m.cat==='spon')add('Sponsorzy','Umowy i oferty',"go('sponsorzy')",'#3B6D11');
   else if(m.cat==='med'){add('Skład','Sprawdź ustawienie',"go('sklad')",'#0F6E56');}
   else if(m.cat==='zarz')add('Trener','Zaufanie zarządu',"go('trener')",'#444441');
-  if(b.type==='ix')out.unshift(['Rozmowy','Odpowiedz zawodnikowi',"go('rozmowy')",'#B45309']);
+  if(b.type==='ix')out.unshift(['Rozmowy','Odpowiedz zawodnikowi',"ui.ixTab=null;go('rozmowy')",'#B45309']);
+  if(b.type==='bm')out.unshift(['Zarząd','Odpowiedz zarządowi',"ui.ixTab='zarzad';go('rozmowy')",'#444441']);
   if(out.length<2&&b.type!=='match'&&b.type!=='fit')nx();
   return out.length?`<div class="mxrel"><div class="mxrt">Powiązane informacje</div><div class="mxrg">${out.slice(0,3).map(([l,t,a,col])=>`<button class="mxrc" style="--rc:${col}" onclick="${a}"><small>${l}</small><b>${t}</b></button>`).join('')}</div></div>`:'';}
 function mailPane(m){const C=MAIL_CAT[m.cat]||MAIL_CAT.klub;const from=String(m.from).replace(/\s*\(([^)]*)\)\s*$/,' · $1');
@@ -126,7 +127,8 @@ function fitMailHtml(b){const op=TEAMS[b.op];const tc=t=>t==='zaliczony'?'good':
    <div class="mx2"><div><b>Testy wydolności</b><p>Zawodnicy wracający po kontuzji przechodzą test przed meczem. Wynik mówi, ile mogą zagrać i czy grozi im nawrót urazu.</p></div>
    <div><b>Porada pionu medycznego</b><p>Wystawienie zawodnika, który nie jest w pełni sił, zwiększa ryzyko pogłębienia urazu. Możesz się z tym nie zgodzić — decyzja o składzie należy do Ciebie.</p></div></div></div>`;}
 function mailBodyHtml(m){const b=m.b||{};
-  if(b.type==='ix'){const q=SAVE.ix&&SAVE.ix.q.find(x=>x.id===b.id);if(!q)return '<p>Sprawa została już rozstrzygnięta. Historia rozmów i obietnice: zakładka Rozmowy.</p>';const P=PLAYERS[q.pid];return `<p>${P?esc(IX_T[q.k].x(P.p,q)):''}</p><p><button class="btn" onclick="go('rozmowy')">Przejdź do rozmowy</button></p>`;}
+  if(b.type==='bm'){const q=SAVE.bm&&SAVE.bm.q.find(x=>x.id===b.id);if(!q)return '<p>Sprawa została już rozstrzygnięta. Historia: Rozmowy → Zarząd.</p>';return `<p>${esc(BMQ[q.k].x(q))}</p><p><button class="btn" onclick="ui.ixTab='zarzad';go('rozmowy')">Przejdź do rozmowy</button></p>`;}
+  if(b.type==='ix'){const q=SAVE.ix&&SAVE.ix.q.find(x=>x.id===b.id);if(!q)return '<p>Sprawa została już rozstrzygnięta. Historia rozmów i obietnice: zakładka Rozmowy.</p>';const P=PLAYERS[q.pid];return `<p>${P?esc(IX_T[q.k].x(P.p,q)):''}</p><p><button class="btn" onclick="ui.ixTab=null;go('rozmowy')">Przejdź do rozmowy</button></p>`;}
   if(b.type==='match')return matchMailHtml(b);
   if(b.type==='train')return trainMailHtml(b);
   if(typeof scoutMailHtml==='function'&&/^(scout|opp|market)$/.test(b.type))return scoutMailHtml(m);

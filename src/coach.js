@@ -69,7 +69,7 @@ function boardAfterMatch(res){const b=SAVE.board;if(!b||!coach())return;
   const won=my>op?1:0;let d=(won-p)*5;if(won&&op===0)d+=0.5;if(!won&&my===0)d-=0.5;
   if(d>0)d*=0.9+cA('aut')/100;else d*=1.1-cA('aut')/100;
   b.conf=clamp(b.conf+d,0,100);
-  const s=S();if(b.conf<8&&s.phase==='liga'&&s.round>=8&&!SAVE.fired&&!SAVE.ownClub)fireCoach('Zarząd stracił zaufanie po serii słabych wyników w trakcie sezonu.');}
+  const s=S();if(b.conf<8&&s.phase==='liga'&&s.round>=8&&!SAVE.fired&&!SAVE.ownClub&&!(SAVE.bm&&(SAVE.bm.ult||SAVE.bm.q.some(q=>q.k==='ult')||SAVE.bm.ultN!==s.n)))fireCoach('Zarząd stracił zaufanie po serii słabych wyników w trakcie sezonu.');}
 function seasonEvaluation(){const s=S(),c=coach();if(!c||!s.final)return;const place=s.final.indexOf(SAVE.team)+1;const g=s.goal||goalFor(SAVE.team);const b=SAVE.board;
   const met=place<=g;const diff=g-place;
   b.conf=clamp(b.conf+(met?15+Math.min(15,diff*4):-10*Math.min(4,1-diff)),0,100);
@@ -101,7 +101,7 @@ function acceptJob(ti){const old=SAVE.team;const c=coach();
   SAVE.fired=null;SAVE.offers=null;ui.match=null;ui.tab='mecz';save();render();}
 function declineOffers(){SAVE.offers=null;save();render();}
 function coachOffseason(){const c=coach();if(!c)return;if(coachAge(c)<60){for(let i=0;i<2;i++){const k=C_ATTR[Math.floor(R()*C_ATTR.length)][0];if(c.attrs[k]<20&&R()<0.6)c.attrs[k]++;}}
-  const s=S();s.goal=goalFor(SAVE.team);news(`👔 Cel zarządu na sezon ${sLabel(s.n)}: ${goalTxt(s.goal,lgOf(SAVE.team))}.`);SAVE.offers=null;}
+  const s=S();s.goal=goalFor(SAVE.team);news(`👔 Cel zarządu na sezon ${sLabel(s.n)}: ${goalTxt(s.goal,lgOf(SAVE.team))}.`);SAVE.offers=null;try{if(typeof bmSeasonGoal==='function')bmSeasonGoal();}catch(e){console.error(e);}}
 // ---- widoki ----
 function boardCard(){const s=S(),b=SAVE.board;if(!b||!coach())return '';const g=s.goal||goalFor(SAVE.team);const cf=Math.round(b.conf);
   return `<div class="card board"><div class="row wrap"><span class="mut small">Zarząd ${esc(myTeam().name)}</span><span class="sp"></span><span class="small">Cel sezonu: <b>${goalTxt(g,lgOf(SAVE.team))}</b></span></div>
