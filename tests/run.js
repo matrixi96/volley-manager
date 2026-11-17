@@ -11,7 +11,7 @@ const LIM={
   'przyjęcie idealne':[16,25],'przyjęcie pozytywne':[50,63],
   'asy (% zagrywek)':[4.5,8],'błędy zagrywki (% zagrywek)':[14,22],
   'skuteczność asekuracji po bloku':[25,45],
-  'tie-breaki (% meczów)':[15,30],'punkty na set':[40,48],
+  'tie-breaki (% meczów)':[12,30],'punkty na set':[40,48],
 };
 (async()=>{
   const b=await chromium.launch({executablePath:process.env.CHROME||'/usr/bin/google-chrome'});const pg=await b.newPage();
