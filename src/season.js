@@ -153,7 +153,7 @@ function finishSeason(){
   SAVE.lastChamps=Object.values(s.lgFinal).map(f=>f[0]);SAVE.lastFinal=JSON.parse(JSON.stringify(s.lgFinal));
   s.moves=leagueMoves(s.lgFinal,s.lgSeed);
   for(const mv of s.moves)if(mv.i===SAVE.team||lgCountry(mv.to)===tmCountry(SAVE.team))news(mv.up?`⬆️ ${TEAMS[mv.i].name} awansuje do ${LG_GEN[mv.to]}${mv.i===SAVE.team?' — to nasz awans!':''}.`:`⬇️ ${TEAMS[mv.i].name} spada do ${LG_GEN[mv.to]}${mv.i===SAVE.team?' — to nasz spadek.':''}.`);
-  const myPl=s.final.indexOf(SAVE.team);const pz=Math.round(PRIZE[myPl]*LG_PRIZE[myLg()]/5000)*5000;money(pz,'Nagrody');finLog(`Nagroda za ${myPl+1}. miejsce (${LG_N[myLg()]}) w sezonie ${sLabel(s.n)}`,pz);
+  const myPl=s.final.indexOf(SAVE.team);const pz=Math.round((PRIZE[myPl]!=null?PRIZE[myPl]:25000)*(LG_PRIZE[myLg()]||0.1)/5000)*5000;money(pz,'Nagrody');finLog(`Nagroda za ${myPl+1}. miejsce (${LG_N[myLg()]}) w sezonie ${sLabel(s.n)}`,pz);
   SAVE.history=SAVE.history||[];SAVE.history.push({n:s.n,team:SAVE.team,lg:myLg(),place:s.final.indexOf(SAVE.team)+1,champ:s.final[0],league:s.seed.indexOf(SAVE.team)+1,mv:(s.moves.find(x=>x.i===SAVE.team)||{}).up});
   seasonEvaluation();achSeason(pz);
 }
