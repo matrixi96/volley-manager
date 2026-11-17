@@ -117,6 +117,7 @@ function v3dStatic(m){const el=document.getElementById('m3d');if(!el)return;
   v3dLoad().then(M=>{if(!M||!document.getElementById('m3d'))return;const box=document.getElementById('m3d');box.classList.add('on');M.mount(box);const cv=document.getElementById('mcv');if(cv)cv.style.display='none';
     if(ui.to&&!M.busy()){const back=ui.to.returning||!ui.to.end;const sc=back?formation(m):benchScene(m,formation(m));M.idle({pre:v3dList(m,sc),srv:null,huddle:!back,sb:v3dSb(m)});return;}
     M.bench(v3dBench(m,formation(m)));
+    {const kc=kitColors(m);const hs=m.homeIdx!=null?(m.sides[0].team.idx===m.homeIdx?0:1):0;M.crowd({fill:m.cap?Math.max(0.12,Math.min(0.97,(m.att||0)/m.cap)):0.85,c0:kc[hs],c1:kc[1-hs],homeSide:hs});}
     if(!m.animating&&!M.busy()){const sc=formation(m);const sv=sc.find(o=>o.zone===0&&o.i===m.serving);const LL=v3dList(m,sc);v3dSubs(m,LL,M,()=>{if(M.busy())return;M.idle({pre:LL,srv:sv&&!m.over?String(sv.id):null,sb:v3dSb(m)});
       if(!m.rallies&&!m.over&&!m.score[0]&&!m.score[1]&&(m.setNo||1)===1&&ui.v3dGr!==m&&typeof M.greet==='function'){ui.v3dGr=m;M.greet({pre:v3dList(m,sc),sb:v3dSb(m)});}});}});}
 function drawHallStatic(){const m=ui.match;if(!m||ui.mview==='klasyczny'||!document.getElementById('mcv'))return;
