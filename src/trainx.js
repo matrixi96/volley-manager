@@ -66,7 +66,7 @@ function rezSave(){const t=ensTrn();const nm=(document.getElementById('rezn')||{
 function rezDel(k){const t=ensTrn();t.myRez=(t.myRez||[]).filter(x=>x[0]!==k);save();render();}
 // ---- trenerzy ----
 const TR_COACH=[['asy','Technika (zagrywka, przyjęcie, atak, blok, obrona, rozegranie)','tech'],['fiz','Przygotowanie fizyczne','phys'],['psy','Cechy mentalne','ment'],['med','Regeneracja i powrót po urazach','inj'],['jr','Juniorzy','jr'],['sta','Taktyka i analiza rywala','tac']];
-function stars(sk){const v=Math.round(sk/4*2)/2;let s='';for(let i=1;i<=5;i++)s+=v>=i?'★':v>=i-0.5?'⯪':'☆';return `<span style="color:#eab308;letter-spacing:1px" title="${sk}/20">${s}</span>`;}
+function coachStars(sk){const v=Math.round(sk/4*2)/2;let s='';for(let i=1;i<=5;i++)s+=v>=i?'★':v>=i-0.5?'⯪':'☆';return `<span style="color:#eab308;letter-spacing:1px" title="${sk}/20">${s}</span>`;}
 // ================= WIDOK =================
 const TRX_TABS=[['ov','Widok ogólny'],['ind','Indywidualny'],['ment','Mentoring'],['rest','Odpoczynek'],['rez','Reżimy'],['coach','Trenerzy']];
 function trxHead(){const trn=ensTrn();const asy=SAVE.staff&&SAVE.staff.asy;const W=teamWeak();
@@ -128,7 +128,7 @@ function trxCoach(){const m=clubMods(SAVE.team);
   return `<div class="card"><h2>Trenerzy</h2><p class="small mut">Kto w sztabie odpowiada za które elementy treningu. Lepszy trener = szybszy rozwój w jego obszarze. Pusty etat = obszar prowadzony słabo (jak trener 3/20).</p>
    <div class="tw"><table><thead><tr><th class="l">Obszar</th><th class="l">Trener</th><th class="l">Jakość</th><th>Wpływ</th></tr></thead><tbody>
    ${TR_COACH.map(([r,area,mk])=>{const s=SAVE.staff&&SAVE.staff[r];const sk=staffSkill(r);const eff=mk==='tech'?m.tech:mk==='phys'?m.phys:mk==='ment'?m.ment:mk==='jr'?m.jr:mk==='inj'?1/m.injDur:1+(sk-10)*0.01;
-     return `<tr><td class="l">${area}</td><td class="l">${s?`${esc(s.first)} ${esc(s.last)}`:`<span class="mut">— brak (${ROLE_N[r]})</span>`}</td><td class="l">${stars(sk)} <small class="mut">${sk}/20</small></td><td class="${eff>=1.05?'good':eff<0.95?'bad':''}">${eff>=1?'+':''}${Math.round((eff-1)*100)}%</td></tr>`;}).join('')}</tbody></table></div>
+     return `<tr><td class="l">${area}</td><td class="l">${s?`${esc(s.first)} ${esc(s.last)}`:`<span class="mut">— brak (${ROLE_N[r]})</span>`}</td><td class="l">${coachStars(sk)} <small class="mut">${sk}/20</small></td><td class="${eff>=1.05?'good':eff<0.95?'bad':''}">${eff>=1?'+':''}${Math.round((eff-1)*100)}%</td></tr>`;}).join('')}</tbody></table></div>
    <p class="small"><button class="link" onclick="go('sztab')">Zatrudnij lub zmień trenerów (Klub → Sztab) →</button></p></div>`;}
 // wstawienie paska intensywności do siatki tygodnia i nowe zakładki
 {const _tv=trainingView;trainingView=function(){const tab=ui.trTab||'ov';if(tab!=='ov'){const v=tab==='ind'?trxInd():tab==='ment'?trxMent():tab==='rest'?trxRest():tab==='rez'?trxRez():trxCoach();return trxHead()+v;}
