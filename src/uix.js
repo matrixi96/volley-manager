@@ -36,7 +36,7 @@ function looksCard(){const th=uiPref('theme','fm');const G=navGroups();
    <button class="ghost sm" style="margin-top:8px" onclick="navReset()">Przywróć domyślną kolejność</button></details></div>`;}
 {const _sv=saveView;saveView=function(){return `<div class="card row wrap" style="gap:8px;align-items:center"><span>Ustawienia i zapis gry</span><span class="sp"></span><button class="ghost" onclick="ui.start=true;render()">⏏ Menu główne</button></div>`+looksCard()+_sv.apply(this,arguments);};}
 // ================= EKRAN STARTOWY =================
-const CHANGES=[['v145','Balans treningu „mocniej”, łagodniejsza ocena zarządu po sezonie, kibice na pasku we własnym klubie'],['v143','Własny klub: sam wybierasz charakter i plan, kibice wpływają na frekwencję i sponsorów'],['v142','Ekran startowy, motyw grafitowy jak w FM, przestawiane menu'],['v141','Strategia klubu: cele zarządu, plan pięcioletni, kibice'],['v140','Finanse: wykresy, kredyt bankowy, licencja ligowa, prognoza'],['v139','Trening: indywidualny, mentoring, odpoczynek, reżimy, trenerzy'],['v138','Wyższe limity sztabu, skauci osobno, własny klub bez limitu'],['v137','Dźwięki meczu i powiadomień, wersja na Windows'],['v136','Zapisy w IndexedDB, delegowanie transferów']];
+const CHANGES=[['v146','Analiza rywala na ekranie głównym, zakładki na starszych ekranach'],['v145','Balans treningu „mocniej”, łagodniejsza ocena zarządu po sezonie, kibice na pasku we własnym klubie'],['v143','Własny klub: sam wybierasz charakter i plan, kibice wpływają na frekwencję i sponsorów'],['v142','Ekran startowy, motyw grafitowy jak w FM, przestawiane menu'],['v141','Strategia klubu: cele zarządu, plan pięcioletni, kibice'],['v140','Finanse: wykresy, kredyt bankowy, licencja ligowa, prognoza'],['v139','Trening: indywidualny, mentoring, odpoczynek, reżimy, trenerzy'],['v138','Wyższe limity sztabu, skauci osobno, własny klub bez limitu'],['v137','Dźwięki meczu i powiadomień, wersja na Windows'],['v136','Zapisy w IndexedDB, delegowanie transferów']];
 ui.start=true;
 function smHasSave(){return SAVE.team!=null&&!!SAVE.coach;}
 function smCont(){ui.start=false;ui.sm=null;render();}
@@ -77,3 +77,37 @@ function startMenuView(){const has=smHasSave();const s=has&&S()?S():null;const s
 {const _r=render;render=function(){if(ui.start){const app=$('#app');if(app){app.innerHTML=startMenuView();return;}}return _r.apply(this,arguments);};}
 
 {const _go=go;go=function(){ui.start=false;return _go.apply(this,arguments);};}
+
+// ================= EKRAN GŁÓWNY: analiza najbliższego rywala (styl gry, najgroźniejsi, ustawienie) =================
+const SRV_TXT=['bezpieczna zagrywka — mało błędów, mało asów','zrównoważona zagrywka','ryzykowna, mocna zagrywka — dużo asów i błędów'];
+const DIST_TXT=['rozegranie zrównoważone','gra skrzydłami (przyjmujący)','gra środkiem — szybkie ataki środkowych','atakujący jako główna broń'];
+function hvRival(){const c=myNext();if(!c||c.h==null)return '';const op=c.h===SAVE.team?c.a:c.h;if(op==null||op<0||!TEAMS[op])return '';const T=TEAMS[op];let lu;try{lu=autoLineup(T);}catch(e){return '';}
+  let st={};try{st=aiStyle(T,lu)||{};}catch(e){}const P=id=>T.players.find(p=>p.id===id);const ps=T.players.filter(p=>!p.jr);
+  const best=(k)=>ps.slice().sort((a,b)=>b[k]-a[k])[0];const top=ps.slice().sort((a,b)=>rating(b)-rating(a))[0];const sv=best('zag'),bl=best('blo'),at=best('ata');
+  const mine=teamStrength(myTeam()),their=teamStrength(T);const thr=their-mine>=4?'Rywal jest wyraźnie silniejszy — duże zagrożenie.':their-mine>=1?'Rywal jest nieco silniejszy.':mine-their>=4?'Rywal stanowi niewielkie zagrożenie.':'Wyrównany mecz.';
+  const pos={P1:[20,26,-1],S1:[50,26,-1],A:[80,26,-1],P2:[20,62,1],S2:[50,62,1],R:[80,62,1]};
+  const court=`<svg viewBox="0 0 100 100" class="hvcourt"><rect x="2" y="2" width="96" height="96" rx="2" fill="#2f7d4f"/><rect x="8" y="6" width="84" height="88" fill="none" stroke="#fff" stroke-width=".8" opacity=".8"/><line x1="8" y1="6" x2="92" y2="6" stroke="#fff" stroke-width="2"/><line x1="8" y1="40" x2="92" y2="40" stroke="#fff" stroke-width=".6" opacity=".7"/>
+   ${Object.entries(pos).map(([k,[x,y,d]])=>{const p=P(lu[k]);const nm=p?(p.last.length>9?p.last.slice(0,8)+'.':p.last):'';return p?`<circle cx="${x}" cy="${y}" r="4.5" fill="#fff"/><text x="${x}" y="${d<0?y-7:y+11}" font-size="6" fill="#fff" text-anchor="middle">${esc(nm)}</text>`:'';}).join('')}
+   ${P(lu.L)?`<circle cx="34" cy="86" r="4" fill="#facc15"/><text x="42" y="88" font-size="6" fill="#fff">${esc(P(lu.L).last)} (L)</text>`:''}</svg>`;
+  const row=(lab,p,val)=>p?`<div class="hvst"><small>${lab}</small><b><button class="link pn" onclick="openCard('${p.id}')">${esc(p.first[0])}. ${esc(p.last)}</button></b><span class="mut small">${POS_NAMES[p.pos]} · ${val}</span></div>`:'';
+  return `<div class="pan hvriv"><div class="ttl">Analiza rywala — ${esc(T.name)}</div>
+   <div class="small" style="margin-bottom:6px"><b>Spodziewany styl:</b> ${SRV_TXT[st.serve==null?1:st.serve]}; ${DIST_TXT[st.dist||0]}.</div>
+   <div class="small mut" style="margin-bottom:8px"><b>Podsumowanie:</b> ${thr} (siła ${their} wobec ${mine})</div>
+   <div class="hvrg"><div>${row('Najlepszy zawodnik',top,'ocena '+rating(top))}${row('Najgroźniejszy atak',at,'atak '+at.ata)}${row('Najlepsza zagrywka',sv,'zagrywka '+sv.zag)}${row('Najlepszy blok',bl,'blok '+bl.blo)}</div><div>${court}</div></div></div>`;}
+{const _hv=homeView;homeView=function(){let h=_hv.apply(this,arguments);try{const r=hvRival();if(r){const i=h.indexOf('<div class="hv3">');if(i>=0){const j=h.indexOf('<div class="hvcol">',h.indexOf('<div class="hvcol">',i)+5);if(j>0)h=h.slice(0,j+19)+r+h.slice(j+19);}}}catch(e){console.error(e);}return h;};}
+// ================= ZAKŁADKI NA STARSZYCH EKRANACH (podział sekcji jak w FM) =================
+const SUBT={klub:[['ob','Obiekty',null],['md','Dzień meczowy',/Dzień meczowy|Podsumowanie dnia/i]],
+ juniorzy:[['k','Kadra juniorów',null],['l','Liga juniorów',/Liga juniorów/i]],
+ trener:[['p','Profil',null],['k','Kariera',/Kariera/i]],
+ kalendarz:[['m','Miesiąc',null],['d','Najważniejsze daty',/Najważniejsze daty/i]],
+ sztab:[['s','Sztab szkoleniowy',null],['o','Obowiązki',/Obowiązki/i]],
+ kadra:[['s','Praca selekcjonera',null],['r','Ranking kadr',/Ranking/i]],
+ sponsorzy:[['a','Tytularny i główny',/Tytularny|Główny/i],['b','Techniczny',/Techniczny/i],['c','Średni i mali',/Średni|Mały/i]]};
+function subTabs(){const tab=ui.tab;const D=SUBT[tab];const main=document.querySelector('main');if(!D||!main||ui.start)return;ui.sub=ui.sub||{};const cur=ui.sub[tab]||D[0][0];
+  const kids=[...main.children].filter(c=>!c.classList.contains('ctx')&&!c.classList.contains('tutbar')&&!c.classList.contains('subtabs')&&!c.classList.contains('kstrip')&&!c.classList.contains('msg')&&!c.classList.contains('tmsg'));
+  let last=D[0][0];const asg=kids.map(c=>{const h=c.querySelector('h2');const tx=h?h.textContent:'';let k=null;for(const [kk,,re] of D)if(re&&re.test(tx)){k=kk;break;}if(!k)k=h?(D.find(x=>!x[2])||D[0])[0]:last;last=k;return k;});
+  if(new Set(asg).size<2&&D.every(d=>d[2]))return;
+  kids.forEach((c,i)=>{if(asg[i]!==cur)c.style.display='none';});
+  const bar=document.createElement('div');bar.className='subtabs';bar.innerHTML=D.map(([k,l])=>`<button class="${k===cur?'on':''}" onclick="ui.sub=ui.sub||{};ui.sub['${tab}']='${k}';render()">${l}</button>`).join('');
+  const ctx=main.querySelector('.ctx');if(ctx&&ctx.nextSibling)main.insertBefore(bar,ctx.nextSibling);else main.insertBefore(bar,main.firstChild);}
+{const _r2=render;render=function(){const r=_r2.apply(this,arguments);try{subTabs();}catch(e){console.error(e);}return r;};}
