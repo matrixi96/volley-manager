@@ -39,22 +39,22 @@ function sideNav(){const mini=ui.tab==='mecz'&&liveMatch();const newsN=typeof un
   </aside>${ui.navOpen?'<div class="navshade" onclick="ui.navOpen=false;render()"></div>':''}`;}
 // ---- pasek górny ----
 function myLineupPlayers(){const t=myTeam();const lu=SAVE.lineup||{};return Object.values(lu).map(id=>t.players.find(p=>p.id===id)).filter(Boolean);}
-function phaseName(s){return !s?'':s.phase==='spar'?'Sparingi':s.phase==='liga'?LG_N[myLg()]:s.phase==='po'?'Play-off':s.phase==='off'?'Przerwa':'Koniec sezonu';}
-function actLabel(){if(liveMatch())return 'WRÓĆ DO MECZU';const e=nextEvent();const c=myNext();if(e&&e.d<=today()&&c)return 'GRAJ MECZ';return 'DALEJ';}
+function phaseName(s){return !s?'':s.phase==='spar'?_t('Sparingi'):s.phase==='liga'?LG_N[myLg()]:s.phase==='po'?_t('Play-off'):s.phase==='off'?_t('Przerwa'):_t('Koniec sezonu');}
+function actLabel(){if(liveMatch())return _t('WRÓĆ DO MECZU');const e=nextEvent();const c=myNext();if(e&&e.d<=today()&&c)return _t('GRAJ MECZ');return _t('DALEJ');}
 function topBar(){const t=myTeam();const s=S();const d=today();
   return `<div class="topbar">
    <button class="burger" onclick="ui.navOpen=!ui.navOpen;render()" aria-label="Menu">☰</button>
    <div class="tclub" onclick="go('home')"><span class="tcr">${teamCrest(SAVE.team,36)}</span><span class="tcn"><b>${esc(t.name)}</b><small>${s?''+LG_N[myLg()]+' · '+sLabel(s.n):''}</small></span></div>
    <div class="tpage">${esc((NAV_L[ui.tab]||'').toUpperCase())}</div>
-   <div class="tsearch">${ico('search',16)}<input id="psq" placeholder="Szukaj zawodnika…" value="${esc(ui.q||'')}" oninput="ui.q=this.value;searchDrop()" onfocus="searchDrop()" autocomplete="off"><kbd>Ctrl + K</kbd><div id="psd" class="psd"></div></div>
+   <div class="tsearch">${ico('search',16)}<input id="psq" placeholder="${_t('Szukaj zawodnika…')}" value="${esc(ui.q||'')}" oninput="ui.q=this.value;searchDrop()" onfocus="searchDrop()" autocomplete="off"><kbd>Ctrl + K</kbd><div id="psd" class="psd"></div></div>
    <span class="sp"></span>
-   <div class="tdate"><span class="lab">${s?'Sezon '+sLabel(s.n)+' · '+esc(phaseName(s)):''}</span><b>${DOW[dow(d)].replace(/^./,c=>c.toUpperCase())}, ${fmtDMY(d)}</b></div>
-   <button class="tbtn" onclick="nextDay()" title="Przejdź do następnego dnia">NASTĘPNY DZIEŃ</button>
+   <div class="tdate"><span class="lab">${s?_t('Sezon')+' '+sLabel(s.n)+' · '+esc(phaseName(s)):''}</span><b>${DOW[dow(d)].replace(/^./,c=>c.toUpperCase())}, ${fmtDMY(d)}</b></div>
+   <button class="tbtn" onclick="nextDay()" title="${_t('Przejdź do następnego dnia')}">${_t('NASTĘPNY DZIEŃ')}</button>
    <button class="tplay" onclick="nextAction()">${ico('play',15)} ${actLabel()}</button>
   </div>`;}
 function searchDrop(){const el=document.getElementById('psd');if(!el)return;const q=(ui.q||'').trim().toLowerCase();if(q.length<2){el.innerHTML='';el.classList.remove('on');return;}
   const res=W().players.filter(p=>(p.first+' '+p.last).toLowerCase().includes(q)).sort((a,b)=>(b.tm===SAVE.team)-(a.tm===SAVE.team)||rating(b)-rating(a)).slice(0,8);
-  el.innerHTML=res.length?res.map(p=>`<button onclick="ui.q='';openPop('${p.id}')">${pFace(p,24)}<span><b>${esc(p.first)} ${esc(p.last)}</b><small>${pTag(p.pos)} · ${p.age} l. · ${p.tm>=0?esc(TEAMS[p.tm].short)+(p.jr?' U20':''):'wolny'}</small></span><em>${rating(p)}</em></button>`).join(''):'<div class="small mut" style="padding:8px">Brak zawodników.</div>';el.classList.add('on');}
+  el.innerHTML=res.length?res.map(p=>`<button onclick="ui.q='';openPop('${p.id}')">${pFace(p,24)}<span><b>${esc(p.first)} ${esc(p.last)}</b><small>${pTag(p.pos)} · ${p.age} l. · ${p.tm>=0?esc(TEAMS[p.tm].short)+(p.jr?' U20':''):_t('wolny')}</small></span><em>${rating(p)}</em></button>`).join(''):'<div class="small mut" style="padding:8px">'+_t('Brak zawodników.')+'</div>';el.classList.add('on');}
 // pasek kontekstu pod górnym paskiem: rozgrywki, następny rywal, stan drużyny
 function ctxBar(){if(ui.tab==='mecz'&&liveMatch())return '';const t=myTeam();const s=S();const ps=t.players;
   const mor=Math.round(ps.reduce((a,p)=>a+(p.mor==null?60:p.mor),0)/Math.max(1,ps.length));
@@ -62,11 +62,11 @@ function ctxBar(){if(ui.tab==='mecz'&&liveMatch())return '';const t=myTeam();con
   const okLu=validLineup(t,SAVE.lineup)&&!myLineupPlayers().some(p=>p.inj);
   let pos='—';if(s&&(s.phase==='liga'||s.phase==='po'||s.phase==='end')){const tb=leagueTable();pos=(tb.findIndex(x=>x.i===SAVE.team)+1)+'.';}
   const c=s?myNext():null;const e=nextEvent();const op=c?(c.h===SAVE.team?c.a:c.h):null;
-  const comp=!s?'':s.phase==='spar'?`Sparing ${s.spar.res.length+1}/${N_SPAR}`:s.phase==='liga'?`${LG_N[myLg()]} · ${s.round+1}. kolejka`:s.phase==='po'?'Play-off':phaseName(s);
-  const st=(l,v,col,go)=>`<div class="cst" ${go?`onclick="go('${go}')"`:''}><span>${l}</span><b style="${col?'color:'+col:''}">${v}</b></div>`;
+  const comp=!s?'':s.phase==='spar'?_t('Sparing {0}/{1}',s.spar.res.length+1,N_SPAR):s.phase==='liga'?_t('{0} · {1}. kolejka',LG_N[myLg()],s.round+1):s.phase==='po'?_t('Play-off'):phaseName(s);
+  const st=(l,v,col,go)=>`<div class="cst" ${go?`onclick="go('${go}')"`:''}><span>${_t(l)}</span><b style="${col?'color:'+col:''}">${v}</b></div>`;
   const pc=v=>v>=70?'var(--good)':v>=45?'var(--acc)':'var(--bad)';
-  return `<div class="ctx"><div class="cpair"><span class="clab">Rozgrywki</span><b>${esc(comp)}</b></div>
-   ${op!=null?`<div class="cpair"><span class="clab">Następny rywal</span><span class="ccr" onclick="openTeam(${op})">${teamCrest(op,22)}</span><b>${esc(TEAMS[op].name)}</b><span class="mut">${e?fmtMid(e.d)+(e.t?', '+e.t:''):''}</span></div>`:''}
+  return `<div class="ctx"><div class="cpair"><span class="clab">${_t('Rozgrywki')}</span><b>${esc(comp)}</b></div>
+   ${op!=null?`<div class="cpair"><span class="clab">${_t('Następny rywal')}</span><span class="ccr" onclick="openTeam(${op})">${teamCrest(op,22)}</span><b>${esc(TEAMS[op].name)}</b><span class="mut">${e?fmtMid(e.d)+(e.t?', '+e.t:''):''}</span></div>`:''}
    <span class="sp"></span>${st('Morale',mor+'%',pc(mor))}${st('Zgranie',chem+'%',pc(chem),'sklad')}${SAVE.ownClub&&SAVE.vis?st('Kibice',(SAVE.vis.fans==null?55:SAVE.vis.fans)+'%',pc(SAVE.vis.fans==null?55:SAVE.vis.fans),'strategia'):st('Zarząd',conf+'%',pc(conf),'trener')}${st('Skład',okLu?'OK':'!',okLu?'var(--good)':'var(--bad)','sklad')}${st('Pozycja',pos,null,'tabela')}${st('Budżet',fmt(SAVE.fin?SAVE.fin.bal:0),null,'finanse')}</div>`;}
 // ---- czas gry ----
 function nextAction(){if(liveMatch()){go('mecz');return;}const s=S();if(!s||SAVE.fired){go('mecz');return;}
