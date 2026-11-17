@@ -16,7 +16,7 @@ const LIM={
 (async()=>{
   const b=await chromium.launch({executablePath:process.env.CHROME||'/usr/bin/google-chrome'});const pg=await b.newPage();
   const errs=[];pg.on('pageerror',e=>errs.push(e.message));
-  await pg.goto(FILE);await pg.waitForTimeout(200);
+  await pg.goto(FILE);await pg.waitForFunction(()=>window.vmReady,null,{timeout:10000});
   const r=await pg.evaluate((seed)=>{
     let a=seed;Math.random=()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
     pickTeam(3);SAVE.coach={first:'J',last:'T',exp:'zaw',rep:40,attrs:{tak:12,tre:12,mlo:12,neg:12,mot:12,opa:12,det:12,aut:12},face:'c1',hist:[],trophies:[],seasons:0,dob:'1985-03-03',joined:today()};

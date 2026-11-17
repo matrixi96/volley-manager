@@ -2108,21 +2108,48 @@ function deserMatch(o){const m=Object.assign({},o,{over:false,paused:true,hl:[]}
   return m;}
 function persistLive(){const m=ui.match;SAVE.live=m&&!m.over&&m.ctx?serMatch(m):null;save();}
 let storageOk=true;
-function save(){try{if(typeof achCheck==='function')achCheck();}catch(e){console.error(e);}try{localStorage.setItem(KEY,JSON.stringify(SAVE));storageOk=true;}catch(e){storageOk=false;}}
+// ---- pamięć zapisów: IndexedDB (bez limitu ~5 MB localStorage), z kopią w pamięci i awaryjnym localStorage ----
+const ST={c:{},db:null,ready:false,mode:'ls',pend:{},busy:false,err:null};
+function stGet(k){if(k in ST.c)return ST.c[k];try{return localStorage.getItem(k);}catch(e){return null;}}
+function stLsSet(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v);return true;}catch(e){return false;}}
+function stSet(k,v){if(!ST.ready)return true;ST.c[k]=v;if(ST.mode!=='idb')return stLsSet(k,v);ST.pend[k]=v;stFlush();return true;}
+function stDel(k){delete ST.c[k];stLsSet(k,null);if(ST.mode==='idb'&&ST.ready){ST.pend[k]=null;stFlush();}}
+function stFlush(){if(ST.busy||!ST.db)return;const ks=Object.keys(ST.pend);if(!ks.length)return;ST.busy=true;const batch=ST.pend;ST.pend={};
+  try{const tx=ST.db.transaction('kv','readwrite');const os=tx.objectStore('kv');for(const k of ks){if(batch[k]==null)os.delete(k);else os.put(batch[k],k);}
+    tx.oncomplete=()=>{ST.busy=false;storageOk=true;stFlush();};
+    tx.onerror=tx.onabort=()=>{ST.busy=false;ST.err=String(tx.error||'błąd');for(const k of ks)if(!(k in ST.pend))ST.pend[k]=batch[k];storageOk=false;ST.mode='ls';for(const k in ST.pend)stLsSet(k,ST.pend[k]);};}
+  catch(e){ST.busy=false;ST.mode='ls';for(const k of ks)stLsSet(k,batch[k]);}}
+function stKeys(){return [KEY,KEY+'_slot1',KEY+'_slot2',KEY+'_slot3'];}
+function stInit(){return new Promise(res=>{const done=()=>{ST.ready=true;res();};
+  let req;try{if(!window.indexedDB)return done();req=indexedDB.open('volley-manager',1);}catch(e){return done();}
+  const to=setTimeout(()=>{ST.db=null;done();},4000);
+  req.onupgradeneeded=()=>{req.result.createObjectStore('kv');};
+  req.onerror=()=>{clearTimeout(to);done();};
+  req.onsuccess=()=>{const db=req.result;const tx=db.transaction('kv','readonly');const os=tx.objectStore('kv');const got={};
+    for(const k of stKeys()){const g=os.get(k);g.onsuccess=()=>{if(g.result!=null)got[k]=g.result;};}
+    tx.oncomplete=()=>{clearTimeout(to);ST.db=db;ST.mode='idb';
+      // migracja z localStorage: nowsze dane z localStorage (np. po awaryjnym zapisie) mają pierwszeństwo
+      const mig={};ST.lsHad=false;for(const k of stKeys()){let ls=null;try{ls=localStorage.getItem(k);}catch(e){}if(ls!=null){mig[k]=ls;got[k]=ls;if(k===KEY)ST.lsHad=true;}}
+      Object.assign(ST.c,got);ST.ready=true;
+      const mk=Object.keys(mig);if(mk.length){const t2=db.transaction('kv','readwrite');const o2=t2.objectStore('kv');for(const k of mk)o2.put(mig[k],k);t2.oncomplete=()=>{for(const k of mk)stLsSet(k,null);};}
+      try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});}catch(e){}
+      res();};
+    tx.onerror=()=>{clearTimeout(to);done();};};});}
+function save(){try{if(typeof achCheck==='function')achCheck();}catch(e){console.error(e);}try{storageOk=stSet(KEY,JSON.stringify(SAVE))!==false;}catch(e){storageOk=false;}}
 function slotKey(i){return KEY+'_slot'+i;}
-function slotInfo(i){try{const o=JSON.parse(localStorage.getItem(slotKey(i)));return o;}catch(e){return null;}}
+function slotInfo(i){try{const o=JSON.parse(stGet(slotKey(i)));return o;}catch(e){return null;}}
 function descSave(o){if(!o||o.team==null)return 'pusty';const s=o.season;return `${esc(TEAMS[o.team].name)} · sezon ${s?sLabel(s.n):''} · ${s?PHASE_NAMES[s.phase]:''}${s&&s.phase==='liga'?' (kolejka '+(s.round+1)+')':''}${o.savedAt?' · '+esc(o.savedAt):''}`;}
-function saveSlot(i){persistLive();const o=Object.assign({},SAVE,{savedAt:new Date().toLocaleString('pl-PL')});try{localStorage.setItem(slotKey(i),JSON.stringify(o));ui.msg=`Zapisano w slocie ${i}.`;}catch(e){ui.msg='Nie udało się zapisać — przeglądarka blokuje pamięć. Użyj kodu zapisu.';}render();}
+function saveSlot(i){persistLive();const o=Object.assign({},SAVE,{savedAt:new Date().toLocaleString('pl-PL')});try{if(stSet(slotKey(i),JSON.stringify(o))===false)throw 0;ui.msg=`Zapisano w slocie ${i}.`;}catch(e){ui.msg='Nie udało się zapisać — przeglądarka blokuje pamięć. Użyj kodu zapisu.';}render();}
 function loadObj(o){clearTimeout(timer);SAVE=o;delete SAVE.savedAt;restoreDefs();if(!SAVE.world)initWorld();else{syncTeams();ensureLeagues();}migrateDates();initClub();try{ensureBg();}catch(e){console.error(e);}ui.match=SAVE.live?deserMatch(SAVE.live):null;ui.confirm=null;ui.card=null;save();}
 function loadSlot(i){const o=slotInfo(i);if(!o)return;loadObj(o);ui.msg=`Wczytano slot ${i}.`;ui.tab='mecz';render();}
-function delSlot(i){if(ui.confirm!=='del'+i){ui.confirm='del'+i;render();return;}try{localStorage.removeItem(slotKey(i));}catch(e){}ui.confirm=null;ui.msg=`Usunięto slot ${i}.`;render();}
+function delSlot(i){if(ui.confirm!=='del'+i){ui.confirm='del'+i;render();return;}try{stDel(slotKey(i));}catch(e){}ui.confirm=null;ui.msg=`Usunięto slot ${i}.`;render();}
 function exportCode(){persistLive();ui.code=btoa(unescape(encodeURIComponent(JSON.stringify(SAVE))));render();}
 function copyCode(){const t=ui.code;try{navigator.clipboard.writeText(t).then(()=>{ui.msg='Skopiowano kod zapisu.';render();},()=>{ui.msg='Nie udało się skopiować — zaznacz kod i skopiuj ręcznie.';render();});}catch(e){ui.msg='Nie udało się skopiować — zaznacz kod i skopiuj ręcznie.';render();}}
 function importCode(){const v=($('#imp')||{}).value||'';try{const o=JSON.parse(decodeURIComponent(escape(atob(v.trim()))));if(o.team==null||!o.season)throw 0;loadObj(o);ui.msg='Wczytano grę z kodu.';ui.code=null;ui.tab='mecz';}catch(e){ui.msg='Ten kod zapisu jest nieprawidłowy.';}render();}
 function newGame(){if(ui.confirm!=='new'){ui.confirm='new';render();return;}clearTimeout(timer);SAVE={};resetTeams();ui.match=null;ui.confirm=null;save();render();}
 function saveView(){
   return `${ui.msg?`<div class="card msg">${ui.msg}</div>`:''}
-  <div class="card"><h2>Zapis gry</h2><p>${storageOk?'✅ Gra zapisuje się automatycznie po każdym meczu i w trakcie meczu, więc po zamknięciu strony wrócisz w to samo miejsce.':'⚠️ Ta przeglądarka nie pozwala na zapis. Używaj kodu zapisu poniżej.'}</p>
+  <div class="card"><h2>Zapis gry</h2><p>${storageOk?'✅ Gra zapisuje się automatycznie po każdym meczu i w trakcie meczu, więc po zamknięciu strony wrócisz w to samo miejsce.':'⚠️ Ta przeglądarka nie pozwala na zapis. Używaj kodu zapisu poniżej.'}</p><p class="small mut">${ST.mode==='idb'?'Zapisy trzymane są w bazie przeglądarki (IndexedDB) — bez limitu 5 MB, więc długie kariery mieszczą się bez problemu.':'Zapisy trzymane są w localStorage (limit ok. 5 MB). Przy bardzo długiej karierze zapisuj kopię kodem zapisu.'} Rozmiar zapisu: ${(((stGet(KEY)||'').length)/1048576).toFixed(1)} MB.</p>
   <p class="mut small">Zapis jest w tej przeglądarce na tym urządzeniu. Żeby przenieść grę na inne urządzenie, użyj kodu zapisu.</p></div>
   <div class="card"><h2>Sloty</h2>${[1,2,3].map(i=>{const o=slotInfo(i);return `<div class="slot"><b>Slot ${i}</b><span class="mut small">${descSave(o)}</span><span class="sp"></span><button class="ghost" onclick="saveSlot(${i})">Zapisz</button>${o?`<button class="ghost" onclick="loadSlot(${i})">Wczytaj</button><button class="ghost" onclick="delSlot(${i})">${ui.confirm==='del'+i?'Na pewno usunąć?':'Usuń'}</button>`:''}</div>`;}).join('')}</div>
   <div class="card"><h2>Kod zapisu</h2><p class="mut small">Kod to cała gra zapisana jako tekst. Skopiuj go (np. do notatek albo wiadomości do siebie) i wklej na innym urządzeniu.</p>
@@ -2704,6 +2731,11 @@ var STAFF_LIM=1;
 function staffLimitBase(){const a=SAVE.ai&&SAVE.team!=null?SAVE.ai[SAVE.team]:null;return clamp(Math.round(2+((a&&a.rep)||30)/7.5),4,13);}
 function staffLimit(){return staffLimitBase()+((SAVE.bm&&SAVE.bm.stX)||0);}
 function staffCheck(add,neu){if(SAVE.fin.bal<-300000)return 'Klub jest zadłużony — zarząd wstrzymał zatrudnianie w sztabie.';if(STAFF_LIM&&neu&&staffCount()>=staffLimit())return `Zarząd zgodził się na ${staffLimit()} etatów w sztabie i wszystkie są zajęte. Zwolnij kogoś albo poproś zarząd o dodatkowy etat (Rozmowy → Zarząd).`;if(SAVE.fin.bal<-300000)return 'Klub jest zadłużony — zarząd wstrzymał zatrudnianie w sztabie.';if(add>0&&typeof budLeft==='function'&&add>budLeft().wg)return `Brak miejsca w budżecie płacowym (zostało ${fmt(Math.max(0,budLeft().wg))}/rok, a ta pensja to ${fmt(add)}). Zwolnij kogoś, zmień podział budżetów (Finanse) albo poproś zarząd o większy budżet płacowy.`;return null;}
+// ostrzeżenie: pensje sztabu zajmują zbyt dużą część budżetu płacowego (raz na kwartał, 1. dnia miesiąca)
+function staffCostWarn(d){if(SAVE.team==null||SAVE.fired||d.slice(8)!=='01'||typeof BUD!=='function')return;const b=BUD();if(!b||!b.wg)return;const sp=staffPay(),sh=sp/b.wg;if(sh<=0.25)return;
+  if(SAVE.stWarn&&daysBetween(SAVE.stWarn,d)<85)return;SAVE.stWarn=d;const f=SAVE.staff&&SAVE.staff.fin;
+  sendMail({cat:'fin',from:f?`${f.first} ${f.last} (dyrektor finansowy)`:'Księgowość klubu',t:'Pensje sztabu są zbyt wysokie',s:`Sztab kosztuje ${fmt(sp)}/rok — ${Math.round(sh*100)}% budżetu płacowego.`,
+    b:{type:'text',x:`Pensje sztabu wynoszą ${fmt(sp)} rocznie, czyli ${Math.round(sh*100)}% całego budżetu płacowego (${fmt(b.wg)}). Bezpieczny poziom to najwyżej około 25% — reszta powinna iść na zawodników.\n\nCo można zrobić:\n• zastąpić najdroższych pracowników tańszymi (Klub → Sztab),\n• zrezygnować ze stanowisk, które najmniej pomagają (np. social media, dodatkowi skauci),\n• poprosić zarząd o większy budżet płacowy (Rozmowy → Zarząd).`},lab:'Finanse'});}
 function myInfra(){return infraOf(SAVE.team);}
 function upgradeCost(f,L){return Math.round(f.cost*Math.pow(L+1-fMin(f),1.4)/10000)*10000;}
 function upgradeDays(f,L){return Math.round(f.days*(0.7+0.3*(L+1-fMin(f))));}
@@ -3001,7 +3033,12 @@ function makeOffers(fired){const c=coach();const cur=initRepStatic(myTeam());
   // w trakcie sezonu można przejść tylko do klubu z tej samej ligi (terminarz ligi jest wspólny); inne kluby zgłoszą się po sezonie
   const mid=S()&&['spar','liga','po'].includes(S().phase);if(mid){const L=myLg();let same=TEAMS.filter(t=>t&&t.idx!==SAVE.team&&!isYT(t.idx)&&lgOf(t.idx)===L&&canTake(t.idx,c.rep));if(same.length<2)same=TEAMS.filter(t=>t&&t.idx!==SAVE.team&&!isYT(t.idx)&&lgOf(t.idx)===L).sort((a,b)=>teamStrength(a)-teamStrength(b)).slice(0,3);pool=fired?same.sort((a,b)=>teamStrength(a)-teamStrength(b)).slice(0,4):same.filter(t=>initRepStatic(t)>cur);}
   const n=fired?2+(R()<0.5?1:0):(R()<0.6?1:0)+(R()<0.3?1:0);
-  return pool.sort(()=>R()-0.5).slice(0,n).map(t=>({tm:t.idx,goal:goalFor(t.idx)}));}
+  let out=pool.sort(()=>R()-0.5).slice(0,n);
+  // po zwolnieniu zawsze jest co najmniej jedna „uczciwa” oferta: klub na miarę reputacji trenera (nie tylko najsłabsze kluby)
+  if(fired){let fair=TEAMS.filter(t=>t&&t.idx!==SAVE.team&&!isYT(t.idx)&&canTake(t.idx,c.rep)&&(!mid||lgOf(t.idx)===myLg()));
+    if(fair.length){fair.sort((a,b)=>Math.abs(initRepStatic(a)-(c.rep-8))-Math.abs(initRepStatic(b)-(c.rep-8)));const f=fair.slice(0,3)[Math.floor(R()*Math.min(3,fair.length))];
+      if(!out.includes(f))out=[f].concat(out.slice(0,Math.max(1,n-1)));}}
+  return out.map(t=>({tm:t.idx,goal:goalFor(t.idx)}));}
 function fireCoach(why){SAVE.fired={why,d:today()};SAVE.offers=makeOffers(true);news(`❌ Zostałeś zwolniony z ${myTeam().name}. ${why}`);
   coach().hist.push({n:S().n,team:SAVE.team,fired:true,d:today()});coach().rep=Math.max(0,coach().rep-5);}
 function acceptJob(ti){const old=SAVE.team;const c=coach();
@@ -3306,7 +3343,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=135').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=136').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
@@ -4290,7 +4327,7 @@ function medWeeklyHtml(b){const sec=(h,x)=>x?`<h3>${h}</h3>${x}`:'';const tb=(he
    ${sec('Kontuzjowani',tb(['Zawodnik','Uraz','Powrót'],b.inj.map(x=>`<tr><td class="l">${pLink?pLink(x.id,x.n):esc(x.n)} ${pTag(x.pos)}</td><td class="l">${esc(x.what)}</td><td class="l">${fmtShort(x.back)} (${x.days} dni)</td></tr>`)))}
    ${sec('Po powrocie z urazu — uwaga na przeciążenie',tb(['Zawodnik','Od powrotu','Świeżość','Ryzyko odnowienia'],b.back.map(x=>`<tr><td class="l">${pLink?pLink(x.id,x.n):esc(x.n)} ${pTag(x.pos)}</td><td class="l">${x.since} dni</td><td class="l"><b style="color:${frCol(x.fr)}">${x.fr}%</b></td><td class="l">${x.rf>0?'+'+x.rf+'%':'normalne'}</td></tr>`)))}
    ${sec('Zmęczeni (świeżość poniżej 60%)',tb(['Zawodnik','Świeżość'],b.tired.map(x=>`<tr><td class="l">${pLink?pLink(x.id,x.n):esc(x.n)} ${pTag(x.pos)}</td><td class="l"><b style="color:${frCol(x.fr)}">${x.fr}%</b></td></tr>`)))}`;}
-function mailDaily(d){try{medWeekly(d);}catch(e){console.error(e);}const rep=(SAVE.trn&&SAVE.trn.rep)||[];try{fitMail(d);}catch(e){console.error(e);}try{if(typeof tutTips==='function')tutTips(d);}catch(e){console.error(e);}try{if(typeof ixDaily==='function')ixDaily(d);}catch(e){console.error(e);}try{if(typeof bmDaily==='function')bmDaily(d);}catch(e){console.error(e);}try{if(typeof agDaily==='function')agDaily(d);}catch(e){console.error(e);}try{if(typeof dlgDaily==='function')dlgDaily(d);}catch(e){console.error(e);}
+function mailDaily(d){try{medWeekly(d);}catch(e){console.error(e);}try{staffCostWarn(d);}catch(e){console.error(e);}const rep=(SAVE.trn&&SAVE.trn.rep)||[];try{fitMail(d);}catch(e){console.error(e);}try{if(typeof tutTips==='function')tutTips(d);}catch(e){console.error(e);}try{if(typeof ixDaily==='function')ixDaily(d);}catch(e){console.error(e);}try{if(typeof bmDaily==='function')bmDaily(d);}catch(e){console.error(e);}try{if(typeof agDaily==='function')agDaily(d);}catch(e){console.error(e);}try{if(typeof dlgDaily==='function')dlgDaily(d);}catch(e){console.error(e);}
   if(dow(d)===1){const lim=addDays(d,-7);mailTraining('W',rep.filter(x=>x.d>=lim&&x.d<d));}
   if(d.endsWith('-01')){const lim=addDays(d,-31);const pm=addDays(d,-1).slice(0,7);mailTraining('M',rep.filter(x=>x.d>lim&&x.d.slice(0,7)===pm));}}
 // ---- akcje ----
@@ -6884,6 +6921,7 @@ const DLG=[
  ['spons','Sponsorzy','fin','Dyrektor podpisuje oferty sponsorów (tytularnego, gdy go brak). Nigdy nie zrywa umów.'],
  ['agents','Kontakty agentów','fin','Dyrektor odpowiada agentom: zgadza się na rozmowy o kontraktach ważnych zawodników, inne prośby grzecznie odrzuca.'],
  ['scout','Przydziały skautów','sk','Skaut sam rozpoczyna przydziały pod najsłabsze pozycje w kadrze, gdy ma wolne miejsce.'],
+ ['trans','Transfery (uzupełnianie kadry)','sk','W oknie transferowym główny skaut (jak dyrektor sportowy) uzupełnia brakujące pozycje: najpierw szuka wolnych zawodników, potem tańszych rezerwowych z innych klubów. Mieści się w budżetach, kupuje najwyżej 3 zawodników na okno i nikogo nie sprzedaje. Słabszy skaut gorzej ocenia kandydatów.'],
  ['jr','Juniorzy','jr','Trener juniorów promuje do pierwszej drużyny gotowych juniorów (gdy jest miejsce) i zwalnia 20-latków bez perspektyw.'],
 ];
 function DL(){if(!SAVE.dlg){SAVE.dlg={on:{},quiet:0,log:[],wk:null};try{if(ensTrn().mode==='asy')SAVE.dlg.on.train=1;}catch(e){}}return SAVE.dlg;}
@@ -6914,6 +6952,22 @@ function dlgContracts(d){if(!dlg('contr'))return;const s=S();if(!s)return;const 
     if(rating(p)>=avg&&p.age<=32){const w=wageNeeded(p);const dw=w-(p.wage||0);if(dw>0&&dw>budLeft().wg){dlgNote(`Dyrektor nie przedłużył ${p.first} ${p.last}: brak miejsca w budżecie płacowym (potrzeba ${fmt(w)}).`);continue;}
       dlgRenew(p,1);dlgNote(`Dyrektor przedłużył kontrakt: ${p.first} ${p.last} do ${ceDate(p.ce)} (${fmt(w)}/rok).`);}
     else if(md==='05-01'){p.noExt=s.n;dlgNote(`Dyrektor nie przedłuży umowy ${p.first} ${p.last} (odejdzie po sezonie).`);}}}
+// ---- transfery: uzupełnianie brakujących pozycji ----
+function dlgTransfers(d){if(!dlg('trans')||!windowOpen())return;const D=DL();const s=S();if(D.trLast&&daysBetween(D.trLast,d)<3)return;D.trLast=d;
+  D.trN=D.trN||{};if((D.trN[s.n]||0)>=3)return;const t=myTeam();const mine=t.players.filter(p=>!p.jr&&!(p.loan&&p.loan.from===SAVE.team&&p.tm!==SAVE.team));if(t.players.length>=SQUAD_MAX)return;
+  const need=Object.keys(POS_STD).filter(k=>mine.filter(p=>p.pos===k).length<POS_STD[k]).sort((a,b)=>(mine.filter(p=>p.pos===a).length-POS_STD[a])-(mine.filter(p=>p.pos===b).length-POS_STD[b]));if(!need.length)return;
+  const top=mine.map(p=>rating(p)).sort((a,b)=>b-a).slice(0,12);const avg=top.reduce((a,b)=>a+b,0)/Math.max(1,top.length);const sk=dlgSk('trans');const myRep=SAVE.ai[SAVE.team].rep;const miss=need.reduce((a,k)=>a+POS_STD[k]-mine.filter(p=>p.pos===k).length,0);const maxW=budLeft().wg*(miss>1?Math.max(0.35,1/miss*1.3):1);
+  for(const pos of need){const posR=mine.filter(p=>p.pos===pos).map(p=>rating(p));const bar=Math.min(avg-6,posR.length?Math.max(...posR)-2:avg-6);
+    const cands=[];for(const p of W().players){if(p.pos!==pos||p.jr||p.retired||p.inj>0||p.tm===SAVE.team||p.loan||p.age<19||p.age>32)continue;
+      if(p.tm>=0){if(isYT(p.tm)||(isStarter(p)&&!p.tl)||TEAMS[p.tm].players.length<=SQUAD_MIN+1||SAVE.ai[p.tm].rep>myRep+15)continue;}
+      const est=rating(p)+(R()-0.5)*(20-sk)/2;if(est<bar)continue;const fee=p.tm<0?0:Math.round(pValue(p)*(p.tl?1:1.15)/10000)*10000;const w=wageNeeded(p);
+      if(fee>0&&(budCan('tr',fee)||SAVE.fin.bal-fee<0))continue;if(w>maxW)continue;cands.push({p,est,fee,w,sc:est+(p.tm<0?3:0)-fee/250000});}
+    if(!cands.length){if(!D.trMiss||D.trMiss[pos]!==s.n){D.trMiss=D.trMiss||{};D.trMiss[pos]=s.n;dlgNote(`Skaut nie znalazł nikogo na pozycję ${POS_NAMES[pos]||pos}, kto zmieściłby się w budżetach i podniósł poziom kadry.`);}continue;}
+    cands.sort((a,b)=>b.sc-a.sc);const c=cands[0];const p=c.p;const from=p.tm;
+    if(c.fee){money(-c.fee,'Transfery');SAVE.ai[from].bud+=c.fee;finLog(`Zakup (skaut): ${p.first} ${p.last} (${TEAMS[from].short})`,-c.fee);}
+    if(typeof budWageOver==='function')budWageOver(c.w);movePlayer(p,SAVE.team);p.wage=c.w;p.ce=contractEndFor(prefYears(p));delete p.tl;try{achEv('sign');}catch(e){}
+    D.trN[s.n]=(D.trN[s.n]||0)+1;dlgNote(`Skaut sprowadził ${p.first} ${p.last} (${pos}, ${p.age} l., ocena ${rating(p)}) ${from>=0?`z ${TEAMS[from].name} za ${fmt(c.fee)}`:'jako wolnego zawodnika'} — kontrakt ${fmt(c.w)}/rok do ${ceDate(p.ce)}.`);
+    news(`✍️ ${p.first} ${p.last} dołącza do zespołu${from>=0?` z ${TEAMS[from].name} za ${fmt(c.fee)}`:' jako wolny zawodnik'} (transfer przeprowadził skaut).`);break;}}
 // ---- sponsorzy ----
 function dlgSponsors(){if(!dlg('spons'))return;const s=SPN();const n0=s.act.length;quiet(()=>{for(const k in s.off)for(const o of (s.off[k]||[]).slice()){if(k==='tit'&&s.act.some(c=>c.cat==='tit'))continue;signSponsor(k,o.id);}});
   const n=s.act.length-n0;if(n>0){ui.spMsg=null;dlgNote(`Dyrektor podpisał ${n} ${n===1?'umowę sponsorską':n<5?'umowy sponsorskie':'umów sponsorskich'}. Przychód od sponsorów: ${fmt(spMonthly())}/mies.`);}}
@@ -6936,7 +6990,7 @@ function dlgJuniors(d){if(!dlg('jr'))return;if(!d.endsWith('-07-15')&&!d.endsWit
   if(J.some(p=>!PLAYERS[p.id]))rebuildIndex();for(const p of J.slice().sort((a,b)=>rating(b)-rating(a))){if(t.players.length>=SQUAD_MAX)break;if(rating(p)>=minR-1&&p.age>=17){quiet(()=>promote(p.id));dlgNote(`Trener juniorów awansował ${p.first} ${p.last} (ocena ${rating(p)}) do pierwszej drużyny.`);}}
   if(d.endsWith('-07-15'))for(const p of agedOut()){if((p.pot||rating(p))<minR+2){p.tm=-1;p.jr=false;p.wage=0;dlgNote(`Trener juniorów rozstał się z ${p.first} ${p.last} (20 lat, bez perspektyw na pierwszą drużynę).`);}}}
 // ---- codziennie ----
-function dlgDaily(d){if(SAVE.team==null||!SAVE.world||!S())return;try{dlgPrep(d);dlgContracts(d);dlgScout();dlgJuniors(d);}catch(e){console.error(e);}
+function dlgDaily(d){if(SAVE.team==null||!SAVE.world||!S())return;try{dlgPrep(d);dlgContracts(d);dlgScout();dlgJuniors(d);dlgTransfers(d);}catch(e){console.error(e);}
   const D=DL();if(D.quiet&&(!D.wk||daysBetween(D.wk,d)>=7)){const L=D.log.filter(x=>D.wk?x.d>D.wk:true);D.wk=d;if(L.length)sendMail({cat:'klub',from:'Sztab szkoleniowy',t:`Podsumowanie tygodnia sztabu (${L.length})`,s:L[0].t.slice(0,90),b:{type:'text',x:'Co sztab zrobił za Ciebie w tym tygodniu:\n\n• '+L.map(x=>x.t).join('\n• ')},lab:'Sztab'});}}
 // ---- widok ----
 function dlgCard(){const D=DL();return `<div class="card"><h2>Obowiązki${tipQ('Przekaż zadania sztabowi tak jak w Football Managerze. Jeśli na danym stanowisku nikogo nie ma, obowiązek wraca do Ciebie. Lepszy pracownik działa skuteczniej.')}</h2>
@@ -7213,11 +7267,14 @@ function homeView(){const s=S();if(!s)return '';
 
 function hvClip(){document.querySelectorAll('.hvgl').forEach(g=>{const b=g.getBoundingClientRect().bottom;for(const c of g.children)c.style.visibility=c.getBoundingClientRect().bottom>b+1?'hidden':'';});}
 window.addEventListener('resize',()=>{if(ui.tab==='home')hvClip();});
+function vmBoot(){if(ST.mode==='idb'&&!ST.lsHad){try{const o=JSON.parse(stGet(KEY));if(o)SAVE=o;}catch(e){}rebuildIndex();restoreDefs();}
 applyCustom();
 // ================= START =================
 if(SAVE.team!=null){if(!SAVE.date&&!SAVE.world)SAVE.date=GAME_START;if(!SAVE.world)initWorld();else{syncTeams();ensureLeagues();}if(!SAVE.season)newSeason(1);migrateDates();initClub();try{ensureBg();}catch(e){console.error(e);}}
 if(SAVE.live){try{ui.match=deserMatch(SAVE.live);ui.match.log.push({t:'Wznowiono zapisany mecz — kliknij „Graj”, żeby kontynuować.',c:'sys'});}catch(e){SAVE.live=null;ui.match=null;}}
 render();
+window.vmReady=true;}
+stInit().then(vmBoot,vmBoot);
 if(document.addEventListener)document.addEventListener('click',e=>{const t=e.target;if(t&&t.closest&&!t.closest('.tsearch')){const d=document.getElementById('psd');if(d)d.classList.remove('on');}});
 
 if(document.addEventListener)document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key&&e.key.toLowerCase()==='k'){const q=document.getElementById('psq');if(q){e.preventDefault();q.focus();q.select();}return;}if(e.key==='Escape'&&ui.q){ui.q='';render();return;}if(e.code==='Space'&&ui.match&&!ui.match.over&&ui.tab==='mecz'&&!/INPUT|SELECT|TEXTAREA/.test((e.target||{}).tagName||'')){e.preventDefault();togglePause();}});

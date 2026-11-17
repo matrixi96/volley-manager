@@ -30,6 +30,11 @@ var STAFF_LIM=1;
 function staffLimitBase(){const a=SAVE.ai&&SAVE.team!=null?SAVE.ai[SAVE.team]:null;return clamp(Math.round(2+((a&&a.rep)||30)/7.5),4,13);}
 function staffLimit(){return staffLimitBase()+((SAVE.bm&&SAVE.bm.stX)||0);}
 function staffCheck(add,neu){if(SAVE.fin.bal<-300000)return 'Klub jest zadłużony — zarząd wstrzymał zatrudnianie w sztabie.';if(STAFF_LIM&&neu&&staffCount()>=staffLimit())return `Zarząd zgodził się na ${staffLimit()} etatów w sztabie i wszystkie są zajęte. Zwolnij kogoś albo poproś zarząd o dodatkowy etat (Rozmowy → Zarząd).`;if(SAVE.fin.bal<-300000)return 'Klub jest zadłużony — zarząd wstrzymał zatrudnianie w sztabie.';if(add>0&&typeof budLeft==='function'&&add>budLeft().wg)return `Brak miejsca w budżecie płacowym (zostało ${fmt(Math.max(0,budLeft().wg))}/rok, a ta pensja to ${fmt(add)}). Zwolnij kogoś, zmień podział budżetów (Finanse) albo poproś zarząd o większy budżet płacowy.`;return null;}
+// ostrzeżenie: pensje sztabu zajmują zbyt dużą część budżetu płacowego (raz na kwartał, 1. dnia miesiąca)
+function staffCostWarn(d){if(SAVE.team==null||SAVE.fired||d.slice(8)!=='01'||typeof BUD!=='function')return;const b=BUD();if(!b||!b.wg)return;const sp=staffPay(),sh=sp/b.wg;if(sh<=0.25)return;
+  if(SAVE.stWarn&&daysBetween(SAVE.stWarn,d)<85)return;SAVE.stWarn=d;const f=SAVE.staff&&SAVE.staff.fin;
+  sendMail({cat:'fin',from:f?`${f.first} ${f.last} (dyrektor finansowy)`:'Księgowość klubu',t:'Pensje sztabu są zbyt wysokie',s:`Sztab kosztuje ${fmt(sp)}/rok — ${Math.round(sh*100)}% budżetu płacowego.`,
+    b:{type:'text',x:`Pensje sztabu wynoszą ${fmt(sp)} rocznie, czyli ${Math.round(sh*100)}% całego budżetu płacowego (${fmt(b.wg)}). Bezpieczny poziom to najwyżej około 25% — reszta powinna iść na zawodników.\n\nCo można zrobić:\n• zastąpić najdroższych pracowników tańszymi (Klub → Sztab),\n• zrezygnować ze stanowisk, które najmniej pomagają (np. social media, dodatkowi skauci),\n• poprosić zarząd o większy budżet płacowy (Rozmowy → Zarząd).`},lab:'Finanse'});}
 function myInfra(){return infraOf(SAVE.team);}
 function upgradeCost(f,L){return Math.round(f.cost*Math.pow(L+1-fMin(f),1.4)/10000)*10000;}
 function upgradeDays(f,L){return Math.round(f.days*(0.7+0.3*(L+1-fMin(f))));}

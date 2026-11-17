@@ -90,7 +90,12 @@ function makeOffers(fired){const c=coach();const cur=initRepStatic(myTeam());
   // w trakcie sezonu można przejść tylko do klubu z tej samej ligi (terminarz ligi jest wspólny); inne kluby zgłoszą się po sezonie
   const mid=S()&&['spar','liga','po'].includes(S().phase);if(mid){const L=myLg();let same=TEAMS.filter(t=>t&&t.idx!==SAVE.team&&!isYT(t.idx)&&lgOf(t.idx)===L&&canTake(t.idx,c.rep));if(same.length<2)same=TEAMS.filter(t=>t&&t.idx!==SAVE.team&&!isYT(t.idx)&&lgOf(t.idx)===L).sort((a,b)=>teamStrength(a)-teamStrength(b)).slice(0,3);pool=fired?same.sort((a,b)=>teamStrength(a)-teamStrength(b)).slice(0,4):same.filter(t=>initRepStatic(t)>cur);}
   const n=fired?2+(R()<0.5?1:0):(R()<0.6?1:0)+(R()<0.3?1:0);
-  return pool.sort(()=>R()-0.5).slice(0,n).map(t=>({tm:t.idx,goal:goalFor(t.idx)}));}
+  let out=pool.sort(()=>R()-0.5).slice(0,n);
+  // po zwolnieniu zawsze jest co najmniej jedna „uczciwa” oferta: klub na miarę reputacji trenera (nie tylko najsłabsze kluby)
+  if(fired){let fair=TEAMS.filter(t=>t&&t.idx!==SAVE.team&&!isYT(t.idx)&&canTake(t.idx,c.rep)&&(!mid||lgOf(t.idx)===myLg()));
+    if(fair.length){fair.sort((a,b)=>Math.abs(initRepStatic(a)-(c.rep-8))-Math.abs(initRepStatic(b)-(c.rep-8)));const f=fair.slice(0,3)[Math.floor(R()*Math.min(3,fair.length))];
+      if(!out.includes(f))out=[f].concat(out.slice(0,Math.max(1,n-1)));}}
+  return out.map(t=>({tm:t.idx,goal:goalFor(t.idx)}));}
 function fireCoach(why){SAVE.fired={why,d:today()};SAVE.offers=makeOffers(true);news(`❌ Zostałeś zwolniony z ${myTeam().name}. ${why}`);
   coach().hist.push({n:S().n,team:SAVE.team,fired:true,d:today()});coach().rep=Math.max(0,coach().rep-5);}
 function acceptJob(ti){const old=SAVE.team;const c=coach();
