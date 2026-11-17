@@ -68,7 +68,7 @@ function myNext(){
   const s=S();
   if(s.phase==='off'){const ex=typeof extraNext==='function'?extraNext(s.sdates?s.sdates[0]:null):null;return ex?ex.ctx:null;}
   if(s.phase==='spar'){const ex0=typeof extraNext==='function'?extraNext(s.sdates?s.sdates[Math.min(s.spar.res.length,s.sdates.length-1)]:null):null;if(ex0)return ex0.ctx;const k=s.spar.res.length;if(k>=N_SPAR)return null;const o=s.spar.opps[k];return k%2===0?{kind:'spar',h:SAVE.team,a:o}:{kind:'spar',h:o,a:SAVE.team};}
-  if(s.phase==='liga'){const f=s.rounds[s.round].find(f=>f[0]===SAVE.team||f[1]===SAVE.team);const ex=typeof extraNext==='function'?extraNext(fixtureWhen(s,s.round,f).d):null;if(ex)return ex.ctx;return {kind:'liga',h:f[0],a:f[1]};}
+  if(s.phase==='liga'){const f=(s.rounds[s.round]||[]).find(f=>f[0]===SAVE.team||f[1]===SAVE.team);if(!f)return null;const ex=typeof extraNext==='function'?extraNext(fixtureWhen(s,s.round,f).d):null;if(ex)return ex.ctx;return {kind:'liga',h:f[0],a:f[1]};}
   if(s.phase==='po'){const pd=s.podates[Math.min(s.po.day,s.podates.length-1)];const ex=typeof extraNext==='function'?extraNext(pd):null;if(ex)return ex.ctx;const sr=activeSeries().find(x=>x.hi===SAVE.team||x.lo===SAVE.team);if(!sr)return null;const h=seriesHome(sr);return {kind:'po',sid:sr.id,h,a:h===sr.hi?sr.lo:sr.hi};}
   if(s.phase==='end'){const ex=typeof extraNext==='function'?extraNext(null):null;return ex?ex.ctx:null;}
   return null;
