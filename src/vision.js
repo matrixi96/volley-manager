@@ -32,13 +32,13 @@ const VIS_T={
  jun:['Szkól juniorów (trener juniorów w sztabie)',()=>SAVE.staff&&SAVE.staff.jr?(SAVE.staff.jr.skill>=12?1:0):-1],
  swoi:['Buduj drużynę wokół swoich zawodników',()=>{const c=tmCountry(SAVE.team);const ids=Object.values(myLineup()||{});const n=myTeam().players.filter(p=>ids.includes(p.id)&&pNat(p)===c).length;return n>=4?1:n>=3?0:-1;}]};
 const VIS_PROF_T={akad:['mlo','jun','st30'],handel:['mlo','st30'],gwiazdy:['zag'],lokal:['swoi','jun'],oszcz:['bezp','st30']};
-function VIS(){if(SAVE.team==null)return {};if(!SAVE.vis||SAVE.vis.tm!==SAVE.team)visInit();return SAVE.vis;}
+function VIS(){if(SAVE.team==null)return {};if(!SAVE.vis||SAVE.vis.tm!==SAVE.team)visInit(SAVE.ownClub&&SAVE.ownProf||undefined);return SAVE.vis;}
 function visInit(prof){const ti=SAVE.team;const a=SAVE.ai[ti];let h=7;for(const c of TEAMS[ti].name)h=(h*131+c.charCodeAt(0))>>>0;const rnd=mulberry32(h+(prof?S().n*977:0));
   const pool=a.rep>=60?['gwiazdy','gwiazdy','handel','oszcz','lokal']:a.rep>=35?['handel','akad','lokal','oszcz','gwiazdy']:['akad','lokal','oszcz','handel'];
   const p=prof||pool[Math.floor(rnd()*pool.length)];const old=SAVE.vis&&SAVE.vis.tm===ti?SAVE.vis:null;
   SAVE.vis={tm:ti,prof:p,goals:VIS_PROF_G[p],rules:VIS_PROF_R[p],trad:VIS_PROF_T[p],rep0:a.rep,n0:old?old.n0:S().n,log:old?old.log:[],fans:old?old.fans:55,st:{},sig:old?old.sig:[],ev:old?old.ev:null,pres:old&&old.pres||natName(tmCountry(ti)).join(' ')};visPlan();return SAVE.vis;}
 // plan pięcioletni: cel ligowy na bieżący i 4 kolejne sezony (rosnące ambicje zależne od profilu)
-function visPlan(){const V=SAVE.vis;const s=S();const g0=s.goal||goalFor(SAVE.team);const amb=V.prof==='gwiazdy'?1:V.prof==='oszcz'?0.5:0.75;const L=myLg();const up=lgUp(L)!=null;
+function visPlan(){const V=SAVE.vis;if(SAVE.ownClub&&V.plan&&V.plan.some(x=>x.own)){const s0=S().n;const keep=V.plan.filter(x=>x.n>=s0);while(keep.length<5){const l=keep[keep.length-1]||{n:s0-1,g:S().goal||goalFor(SAVE.team)};keep.push({n:l.n+1,g:l.g,txt:goalTxt(l.g,myLg()),own:1});}V.plan=keep.slice(0,5);if(V.plan[0].own&&V.plan[0].n===s0)S().goal=V.plan[0].g;return;}const s=S();const g0=s.goal||goalFor(SAVE.team);const amb=V.prof==='gwiazdy'?1:V.prof==='oszcz'?0.5:0.75;const L=myLg();const up=lgUp(L)!=null;
   const out=[{n:s.n,g:g0,txt:goalTxt(g0,L)}];let g=g0;for(let k=1;k<5;k++){const step=k*amb>=out.length-0.5?1:0;let nx=step?goalHigher(g):g;if(nx==null&&up&&k>=2){out.push({n:s.n+k,g:2,txt:'awans do wyższej ligi',up:1});continue;}if(nx!=null)g=nx;out.push({n:s.n+k,g,txt:goalTxt(g,L)});}
   if(!up&&g<=2&&[0,3,5,7].includes(L))out[4].txt+=' i gra w europejskich pucharach';V.plan=out;}
 function visPos(){const s=S();try{if(s.final&&s.final.length)return s.final.indexOf(SAVE.team)+1;if(s.phase!=='liga'&&s.phase!=='po')return null;const t=leagueTable();return t.findIndex(x=>x.i===SAVE.team)+1;}catch(e){return null;}}
@@ -49,7 +49,7 @@ function visLog(t,ok){const V=VIS();V.log.unshift({d:today(),t,ok});V.log=V.log.
 function visMonthly(){try{if(SAVE.vis&&SAVE.vis.tm===SAVE.team){const V=SAVE.vis;V.fans=Math.round((V.fans==null?55:V.fans)+(55-(V.fans==null?55:V.fans))*0.2);}}catch(e){}if(window.VIS_OFF||SAVE.team==null||!SAVE.board||!S())return;const V=VIS();const st=visEval();let dc=0;
   for(const [k,imp] of V.goals){const s=st[k];const w=imp+1;dc+=s<0?s*w*0.45:s>0?0.25*w:0;const prev=V.st[k];if(prev!=null&&prev!==s&&(s<0||prev<0)){const nm=VIS_G[k][0];visLog(s<0?`${s<=-2?'Niezadowoleni':'Zaniepokojeni'}: ${nm.toLowerCase()}.`:`Zadowoleni z poprawy: ${nm.toLowerCase()}.`,s>=0);}}
   for(const k of V.trad){const s=st['t_'+k];dc+=s<0?-0.3:s>0?0.15:0;}
-  if(!SAVE.ownClub)bAdd(Math.round(clamp(dc,-4,3)*10)/10);V.st=st;
+  if(!SAVE.ownClub)bAdd(Math.round(clamp(dc,-4,3)*10)/10);else visFans(clamp(dc*1.2,-4,3));V.st=st;
   if(V.ev&&V.ev.until<today())V.ev=null;}
 // zasady kontraktowe: sprawdzane przy podpisywaniu i przedłużaniu
 function visCheckContract(p){if(SAVE.team==null||!p||p.tm!==SAVE.team||p.ce==null)return;const V=VIS();const s=S();const y=p.ce-(s.phase==='off'?s.n-1:s.n);
@@ -72,20 +72,20 @@ function visSeason(){if(SAVE.team==null)return;const V=VIS();V.rep0=SAVE.ai[SAVE
 // ---- widok ----
 function stPill(s){const x=ST_N[s>1?1:s<-2?-2:s]||ST_N[0];return `<span class="vpill ${x[1]}">${s>0?'👍 ':s<0?'⚠ ':''}${x[0]}</span>`;}
 function jobSt(){if(SAVE.ownClub)return ['Właściciel klubu','good'];const c=bConf();const u=SAVE.bm&&SAVE.bm.ult;return u||c<30?['Zagrożona','bad']:c<50?['Niepewna','warn']:c<75?['Stabilna','']:['Bardzo stabilna','good'];}
-function visView(){const V=VIS();const st=visEval();const tab=ui.visTab||'zarzad';const c=bConf();const op=c>=80?5:c>=65?4:c>=45?3:c>=30?2:1;
-  const opTxt=['','zarząd rozważa zmianę trenera','zarząd jest rozczarowany Twoją pracą','zarząd ocenia Twoją pracę jako przeciętną','zarząd jest zadowolony z kierunku, w którym prowadzisz zespół','zarząd jest zachwycony Twoją pracą'][op];
+function visView(){const V=VIS();const st=visEval();const tab=ui.visTab||'zarzad';const c=SAVE.ownClub?(V.fans==null?55:V.fans):bConf();const op=c>=80?5:c>=65?4:c>=45?3:c>=30?2:1;
+  const opTxt=(SAVE.ownClub?['','kibice odwracają się od klubu','kibice są rozczarowani','kibice czekają na efekty','kibice wierzą w Twój projekt','kibice są zachwyceni Twoim klubem']:['','zarząd rozważa zmianę trenera','zarząd jest rozczarowany Twoją pracą','zarząd ocenia Twoją pracę jako przeciętną','zarząd jest zadowolony z kierunku, w którym prowadzisz zespół','zarząd jest zachwycony Twoją pracą'])[op];
   const js=jobSt();const s=S();
-  const row=(nm,imp,typ,sv)=>`<tr><td class="l">${esc(nm)}</td><td class="l small">${IMP_N[imp]}</td><td class="l small mut">${typ}</td><td class="l">${stPill(sv)}</td></tr>`;
+  const row=(nm,imp,typ,sv)=>`<tr><td class="l">${esc(nm)}<div class="small mut">${typ}</div></td><td class="l small">${IMP_N[imp]}</td><td class="l">${stPill(sv)}</td></tr>`;
   const left=`<div class="card">${V.ev?`<div style="background:#7e22ce;color:#fff;border-radius:8px;padding:10px 14px;margin-bottom:12px"><b>${esc(V.ev.t)}</b><div class="small">${esc(V.ev.x)}</div></div>`:''}
    <h2>Strategia zarządu</h2><p class="small mut">Kierunek klubu: <b>${VIS_PROF[V.prof][0]}</b> — ${VIS_PROF[V.prof][1]}${SAVE.ownClub?' Jesteś właścicielem: cele są Twoim planem i nie wpływają na posadę.':''}</p>
-   <h3>Cele do realizacji</h3><div class="tw"><table><thead><tr><th class="l">Cel</th><th class="l">Znaczenie</th><th class="l">Typ</th><th class="l">Status</th></tr></thead><tbody>${V.goals.map(([k,imp])=>row(VIS_G[k][0],imp,VIS_G[k][1],st[k])).join('')}</tbody></table></div>
-   <h3>Zasady kontraktowe</h3><div class="tw"><table><thead><tr><th class="l">Zasada</th><th class="l">Znaczenie</th><th class="l">Typ</th><th class="l">Status</th></tr></thead><tbody>${V.rules.map(([k,imp])=>{const bad=V.log.some(x=>!x.ok&&x.t.includes(VIS_R[k][0].toLowerCase()));return `<tr><td class="l">${esc(VIS_R[k][0])}</td><td class="l small">${IMP_N[imp]}</td><td class="l small mut">Transfery</td><td class="l">${bad?stPill(-1):'<span class="vpill">Bez oceny</span>'}</td></tr>`;}).join('')}</tbody></table></div>
+   <h3>Cele do realizacji</h3><div class="tw"><table><thead><tr><th class="l">Cel</th><th class="l">Znaczenie</th><th class="l">Status</th></tr></thead><tbody>${V.goals.map(([k,imp])=>row(VIS_G[k][0],imp,VIS_G[k][1],st[k])).join('')}</tbody></table></div>
+   <h3>Zasady kontraktowe</h3><div class="tw"><table><thead><tr><th class="l">Zasada</th><th class="l">Znaczenie</th><th class="l">Status</th></tr></thead><tbody>${V.rules.map(([k,imp])=>{const bad=V.log.some(x=>!x.ok&&x.t.includes(VIS_R[k][0].toLowerCase()));return `<tr><td class="l">${esc(VIS_R[k][0])}</td><td class="l small">${IMP_N[imp]}</td><td class="l">${bad?stPill(-1):'<span class="vpill">Bez oceny</span>'}</td></tr>`;}).join('')}</tbody></table></div>
    <h3>Plan pięcioletni</h3><div class="tw"><table><thead><tr><th class="l">Sezon</th><th class="l">Cel w lidze</th><th class="l">Status</th></tr></thead><tbody>${V.plan.map((p,i)=>`<tr><td class="l">${i===0?'<b>Bieżący sezon</b>':sLabel(p.n)}</td><td class="l">${esc(p.txt)}</td><td class="l">${i===0?stPill(st.plan):'<span class="vpill">Bez oceny</span>'}</td></tr>`).join('')}</tbody></table></div>
    <p class="small mut">Statusy celów co miesiąc wpływają na zaufanie zarządu — najmocniej cele „Wymagane”. Złamanie zasady kontraktowej przy podpisie od razu obniża zaufanie.</p></div>`;
   const fv=favPlayer();const fans=V.fans==null?55:V.fans;
   const right=`<div class="card"><div class="seg"><button class="${tab==='zarzad'?'on':''}" onclick="ui.visTab='zarzad';render()">🏛️ Zarząd</button><button class="${tab==='kibice'?'on':''}" onclick="ui.visTab='kibice';render()">📣 Kibice</button></div>
    ${tab==='zarzad'?`<h3>Opinia zarządu</h3><p class="small mut">Przygotował ${esc(V.pres||'prezes klubu')} (prezes)</p><div style="background:#eab308;color:#111;border-radius:8px;padding:10px 14px;margin:6px 0"><b style="display:inline-block;border:2px solid #111;border-radius:50%;width:24px;text-align:center;margin-right:8px">${op}</b><b>Krótko mówiąc, ${opTxt}.</b></div>
-     <h3>Tradycje zarządu</h3><div class="tw"><table><tbody>${V.trad.map(k=>`<tr><td class="l">${esc(VIS_T[k][0])}</td><td class="l small">Oczekiwany</td><td class="l">${stPill(st['t_'+k])}</td></tr>`).join('')}</tbody></table></div>
+     <h3>Tradycje zarządu</h3><div class="tw"><table><tbody>${V.trad.map(k=>`<tr><td class="l">${esc(VIS_T[k][0])}</td><td class="l">${stPill(st["t_"+k])}</td></tr>`).join('')}</tbody></table></div>
      <h3>Sukcesy</h3>${V.log.filter(x=>x.ok).slice(0,5).map(x=>`<div class="res small">👍 <span class="mut">${fmtShort(x.d)}</span> ${esc(x.t)}</div>`).join('')||'<p class="mut small">Jeszcze brak.</p>'}
      <h3>Porażki</h3>${V.log.filter(x=>!x.ok).slice(0,5).map(x=>`<div class="res small">👎 <span class="mut">${fmtShort(x.d)}</span> ${esc(x.t)}</div>`).join('')||'<p class="mut small">Brak.</p>'}
      <button class="ghost" style="margin-top:8px" onclick="ui.ixTab='zarzad';go('rozmowy')">💬 Prośba do zarządu</button>`
@@ -97,3 +97,23 @@ function visView(){const V=VIS();const st=visEval();const tab=ui.visTab||'zarzad
    <div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);gap:12px;align-items:start" class="visgrid">${left}${right}</div>`;}
 
 {const _mp=movePlayer;movePlayer=function(p,tm){try{if(SAVE.vis&&SAVE.team!=null&&p&&p.tm===SAVE.team&&tm!==SAVE.team&&tm>=0){const f=favPlayer();if(f&&f.p.id===p.id){visFans(-8);visLog(`Kibice wściekli po odejściu ulubieńca: ${p.first} ${p.last}.`,false);}}}catch(e){}return _mp.apply(this,arguments);};}
+
+// ---- kibice: wpływ na frekwencję i sponsorów ----
+function fansK(){const v=SAVE.vis&&SAVE.vis.tm===SAVE.team&&SAVE.vis.fans!=null?SAVE.vis.fans:55;return 0.85+v/100*0.3;}
+{const _q=spQuality;spQuality=function(){const v=SAVE.vis&&SAVE.vis.tm===SAVE.team&&SAVE.vis.fans!=null?SAVE.vis.fans:55;return _q.apply(this,arguments)*(0.94+v/100*0.12);};}
+// ---- własny klub: właściciel wybiera charakter i plan ----
+{const _fc=foundClub;foundClub=function(){const pr=(ui.oc&&ui.oc.prof)||'lokal';const r=_fc.apply(this,arguments);try{if(SAVE.ownClub){SAVE.ownProf=pr;SAVE.vis=null;}}catch(e){}return r;};}
+function visCanProf(){const s=S();const V=VIS();return SAVE.ownClub&&(V.profN!==s.n)&&(s.phase==='off'||s.phase==='spar'||(s.phase==='liga'&&s.round<1));}
+function visSetProf(k){if(!SAVE.ownClub||!VIS_PROF[k])return;const s=S();const V0=VIS();if(V0.prof===k)return;if(!visCanProf()){ui.visMsg='Charakter klubu możesz zmienić raz na sezon, przed startem ligi.';render();return;}
+  const keepPlan=V0.plan;SAVE.ownProf=k;visInit(k);const V=SAVE.vis;V.profN=s.n;if(keepPlan&&keepPlan.some(x=>x.own))V.plan=keepPlan;visLog(`Nowy kierunek klubu: ${VIS_PROF[k][0]}.`,true);ui.visMsg=null;save();render();}
+function goalOpts(){const n=lgIds(myLg()).length;return [2,4,8,10,n-2,n].filter((x,i,a)=>x>0&&x<=n&&a.indexOf(x)===i).sort((a,b)=>a-b);}
+function visPlanSet(i,g){if(!SAVE.ownClub)return;const V=VIS();const s=S();const P=V.plan[i];if(!P)return;
+  if(i===0&&!(s.phase==='off'||s.phase==='spar'||(s.phase==='liga'&&s.round<6))){ui.visMsg='Cel na bieżący sezon można zmienić do 6. kolejki.';render();return;}
+  V.plan=V.plan.map(x=>Object.assign({},x,{own:1}));V.plan[i].g=+g;V.plan[i].txt=goalTxt(+g,myLg());if(i===0)s.goal=+g;ui.visMsg=null;save();render();}
+{const _vv=visView;visView=function(){let h=_vv.apply(this,arguments);if(!SAVE.ownClub)return h;const V=VIS();const can=visCanProf();
+  const pick=`<div class="card"><h2>Twój klub — Twoja strategia</h2><p class="small mut">Jesteś właścicielem: sam wybierasz charakter klubu i plan. Nikt Cię nie zwolni, ale kibice rozliczają za cele — ich nastrój zmienia frekwencję (±15% widzów) i oferty sponsorów (±6%). Charakter zmienisz raz na sezon, przed startem ligi.</p>
+   <div class="opts">${Object.entries(VIS_PROF).map(([k,v])=>`<button class="opt ${V.prof===k?'on':''}" ${!can&&V.prof!==k?'disabled':''} onclick="visSetProf('${k}')"><b>${v[0]}</b><small>${v[1]}</small></button>`).join('')}</div>
+   <h3>Twój plan pięcioletni</h3>${V.plan.map((p,i)=>`<div class="res row wrap" style="gap:8px;align-items:center"><span style="min-width:120px">${i===0?'<b>Bieżący sezon</b>':sLabel(p.n)}</span><select onchange="visPlanSet(${i},this.value)">${goalOpts().map(g=>`<option value="${g}" ${p.g===g?'selected':''}>${esc(goalTxt(g,myLg()))}</option>`).join('')}</select></div>`).join('')}
+   ${ui.visMsg?`<p class="small bad">${esc(ui.visMsg)}</p>`:''}</div>`;
+  h=h.replace('<h2>Strategia zarządu</h2>','<h2>Cele klubu</h2>').replace('🏛️ Zarząd','🏛️ Ocena').replace(/<button class="ghost" style="margin-top:8px" onclick="ui.ixTab='zarzad';go\('rozmowy'\)">💬 Prośba do zarządu<\/button>/,'').replace('wpływają na zaufanie zarządu — najmocniej cele „Wymagane”. Złamanie zasady kontraktowej przy podpisie od razu obniża zaufanie.','wpływają na nastrój kibiców — najmocniej cele „Wymagane”.').replace('<h3>Tradycje zarządu</h3>','<h3>Tradycje klubu</h3>').replace('<h3>Opinia zarządu</h3>','<h3>Nastroje wokół klubu</h3>').replace(/Przygotował [^<]*\(prezes\)/,'Ocena na podstawie Twojej pracy');
+  const i=h.indexOf('<div style="display:grid');return i>0?h.slice(0,i)+pick+h.slice(i):pick+h;};}
