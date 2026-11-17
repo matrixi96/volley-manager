@@ -347,7 +347,7 @@ function financeView(){
   const proj=sp+tvRound()*nRounds()+md.tot*Math.ceil(nRounds()/2)+shp+kh-pay-stp-mnt;
   const cats=['Sponsor','Prawa TV','Bilety','Karnety','Gastronomia','Parking','Sklep','Obóz','Nagrody','Transfery','Pensje','Sztab','Utrzymanie','Infrastruktura','Marketing','Odprawy'];
   const row=(o)=>cats.map(c=>`<tr><td class="l">${c}</td><td class="${(o[c]||0)<0?'bad':(o[c]||0)>0?'good':''}">${o[c]?fmt(o[c]):'—'}</td></tr>`).join('')+`<tr><td class="l"><b>Razem</b></td><td><b>${fmt(cats.reduce((s,c)=>s+(o[c]||0),0))}</b></td></tr>`;
-  const spFree=typeof spSlots==='function'?Object.entries(spSlots()).reduce((a,[k,n])=>a+Math.max(0,n-spUsed(k)),0):0;
+  const spFree=typeof spFreeN==='function'?spFreeN():0;
   return `<div class="card fin"><div class="big ${f.bal<0?'bad':''}">${fmtFull(f.bal)}</div><div class="mut">Saldo klubu${f.bal<0?' — jesteś na minusie! Dopuszczalny debet to 500 tys. zł, poniżej nie kupisz zawodników.':''}</div></div>
   ${typeof budgetCard==='function'?budgetCard():''}
   <div class="card"><h2>Budżet roczny</h2><table class="cmp"><tbody>
@@ -359,7 +359,7 @@ function financeView(){
    <tr><td class="l">Prawa TV (${fmt(tvRound())} za kolejkę, ${LG_N[myLg()]})</td><td class="good">+${fmt(tvRound()*nRounds())}</td></tr>
    <tr><td class="l">Mecze u siebie: bilety, jedzenie, parking (ok. ${fmt(md.tot)} za mecz)</td><td class="good">~ +${fmt(md.tot*Math.ceil(nRounds()/2))}</td></tr>${kh?`<tr><td class="l">Karnety (sprzedane w tym sezonie)</td><td class="good">+${fmt(kh)}</td></tr>`:''}
    <tr><td class="l"><b>Prognoza bilansu (bez transferów i nagród)</b></td><td class="${proj<0?'bad':'good'}"><b>${proj>=0?'+':''}${fmt(proj)}</b></td></tr></tbody></table>
-   ${spFree?`<p class="small" style="color:var(--acc)">Masz ${spFree} wolnych miejsc dla sponsorów — podpisz umowy w zakładce <button class="link" onclick="go('sponsorzy')">Sponsorzy</button>, żeby poprawić bilans.</p>`:''}<p class="mut small">Pensje i sponsorzy rozliczają się co miesiąc (1. dnia), prawa TV co kolejkę ligową, bilety po każdym meczu u siebie. Nagrody za miejsce w sezonie: od 50 tys. do 1 mln zł. Lepsze wyniki podnoszą renomę, a ta podnosi sponsorów i frekwencję.</p></div>${pricesCard()}${mdTableCard()}
+   ${spFree?`<p class="small" style="color:var(--acc)">Czeka ${spFree} ${spFree===1?'oferta sponsorska':spFree<5?'oferty sponsorskie':'ofert sponsorskich'} — podpisz umowy w zakładce <button class="link" onclick="go('sponsorzy')">Sponsorzy</button>, żeby poprawić bilans.</p>`:''}<p class="mut small">Pensje i sponsorzy rozliczają się co miesiąc (1. dnia), prawa TV co kolejkę ligową, bilety po każdym meczu u siebie. Nagrody za miejsce w sezonie: od 50 tys. do 1 mln zł. Lepsze wyniki podnoszą renomę, a ta podnosi sponsorów i frekwencję.</p></div>${pricesCard()}${mdTableCard()}
   <div class="card"><h2>Sezon ${sLabel(S().n)}</h2><table class="cmp"><tbody>${row(f.sea)}</tbody></table>${f.prev?`<h3>Poprzedni sezon</h3><table class="cmp"><tbody>${row(f.prev)}</tbody></table>`:''}</div>
   <div class="card"><h2>Historia operacji</h2>${f.log.length?f.log.slice(0,30).map(x=>`<div class="res row"><span class="mut small">${x.d?fmtDMY(x.d):''}</span> ${esc(x.t)}<span class="sp"></span><b class="${x.a<0?'bad':'good'}">${x.a>=0?'+':''}${fmt(x.a)}</b></div>`).join(''):'<p class="mut">Brak operacji.</p>'}</div>`;
 }

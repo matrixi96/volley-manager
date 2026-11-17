@@ -5,7 +5,7 @@ function finSk(){return SAVE.staff&&SAVE.staff.fin?SAVE.staff.fin.skill:0;}
 function finName(){const s=SAVE.staff&&SAVE.staff.fin;return s?`${s.first} ${s.last}`:null;}
 // prognoza rocznych przychodów (sponsorzy, TV, dzień meczowy, sklep, karnety)
 // sponsorzy: podpisane umowy albo (gdy są wolne miejsca) typowa wartość ofert, które klub może podpisać
-function spPotential(){try{const sl=spSlots();const q=spQuality();let t=0;for(const [k,,sh] of SP_CAT){const act=SPN().act.filter(c=>c.cat===k);const sig=act.reduce((a,c)=>a+c.m,0);const free=Math.max(0,sl[k]-act.length);t+=sig+free*SP_BASE*sh*q*LG_ECO[myLg()]*0.85;}return t*12;}catch(e){return sponsorAmt();}}
+function spPotential(){try{const q=spQuality();const sig=spMonthly();const free=Math.max(0,spCap()-spNonTit());const avgSh=0.2*0.2+0.12*0.09+0.33*0.045+0.35*0.016;let t=sig+free*SP_BASE*avgSh*q*LG_ECO[myLg()]*0.85;if(!spUsed('tit'))t+=SP_BASE*0.38*q*LG_ECO[myLg()]*0.85;return t*12;}catch(e){return sponsorAmt();}}
 function revForecast(){try{const md=matchday(1,null,null,true);const kh=ECO().karS&&ECO().karS.season===S().n?ECO().karS.inc:0;
   return Math.max(sponsorAmt(),spPotential())+tvRound()*nRounds()+md.tot*Math.ceil(nRounds()/2)+shopIncome(myInfra().sklep)*12+kh;}catch(e){return 3000000;}}
 // bez dyrektora zarząd planuje ostrożnie (85% prognozy); dobry dyrektor do 100%
