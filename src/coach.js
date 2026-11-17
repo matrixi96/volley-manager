@@ -72,7 +72,7 @@ function boardAfterMatch(res){const b=SAVE.board;if(!b||!coach())return;
   const s=S();if(b.conf<8&&s.phase==='liga'&&s.round>=8&&!SAVE.fired&&!SAVE.ownClub&&!(SAVE.bm&&(SAVE.bm.ult||SAVE.bm.q.some(q=>q.k==='ult')||SAVE.bm.ultN!==s.n)))fireCoach('Zarząd stracił zaufanie po serii słabych wyników w trakcie sezonu.');}
 function seasonEvaluation(){const s=S(),c=coach();if(!c||!s.final)return;const place=s.final.indexOf(SAVE.team)+1;const g=s.goal||goalFor(SAVE.team);const b=SAVE.board;
   const met=place<=g;const diff=g-place;
-  b.conf=clamp(b.conf+(met?15+Math.min(15,diff*4):-10*Math.min(4,1-diff)),0,100);
+  const nT=lgIds(myLg()).length;const rel=!met&&lgDown(myLg())!=null&&place>=nT-1&&g<nT-1;b.conf=clamp(b.conf+(met?15+Math.min(15,diff*4):-Math.min(28,4+5*(-diff))-(rel?15:0)),0,100);
   let dr=diff*1.5+(place===1?8:place<=3?3:0)+(met?3:-3);if(dr>0)dr*=0.85+cA('aut')/66;c.rep=Math.round(clamp(c.rep+dr,0,100));
   c.seasons++;c.hist.push({n:s.n,team:SAVE.team,place,goal:g,met,league:s.seed.indexOf(SAVE.team)+1});
   if(place===1)c.trophies.push(`🏆 ${LG_LV[myLg()]===0?'Mistrzostwo '+COUNTRIES[tmCountry(SAVE.team)].gen:'Mistrzostwo: '+LG_N[myLg()]} ${sLabel(s.n)} (${TEAMS[SAVE.team].name})`);
