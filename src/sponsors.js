@@ -31,7 +31,7 @@ function spOffer(cat,crowd){const s=SPN();const sh=SP_CAT.find(x=>x[0]===cat)[2]
   return {id:'sp'+(s.nid++),cat,n:spName(cat),col:SP_COL[Math.floor(R()*SP_COL.length)],m,mo,t};}
 function genSpOffers(){const s=SPN();s.off={};for(const [k] of SP_CAT)s.off[k]=[];
   const tit=s.act.find(c=>c.cat==='tit');const nt=tit?(tit.left<=2?2:R()<0.4?1:0):2+(R()<0.5?1:0);for(let i=0;i<nt;i++)s.off.tit.push(spOffer('tit',1));
-  const free=Math.max(0,spCap()-spNonTit());const k=Math.min(6,free+(R()<0.3?1:0));const crowd=1/(1+0.035*spNonTit());
+  const free=Math.max(0,spCap()-spNonTit());const k=Math.min(6,free+(R()<0.3?1:0));const crowd=1;
   const W=[['main',0.2],['tech',0.12],['mid',0.33],['small',0.35]];
   for(let i=0;i<k;i++){let r=R(),c='small';for(const [cat,w] of W){r-=w;if(r<=0){c=cat;break;}}s.off[c].push(spOffer(c,crowd));}
   for(const kk in s.off)s.off[kk].sort((a,b)=>b.m-a.m);s.ref=(SAVE._now||today()).slice(0,7);}
@@ -84,4 +84,4 @@ function sponsorView(){initSponsors();const s=SPN();const q=spQuality();const [s
       return `<tr><td class="l"><span class="fcell">${spBadge(o)}<b>${esc(o.n)}</b></span><div class="small mut">${SP_TIER_N[o.t]}</div></td><td>${spStars(o.t)}</td><td><b>${fmt(o.m)}</b></td><td>${o.mo} mies.<div class="small mut">razem ${fmtShort2(o.m*o.mo)}</div></td>
       <td class="small">${typeof spBudTxt==='function'?spBudTxt(o.m,o.mo,k):''}</td>
       <td><button class="btn sm" onclick="signSponsor('${k}','${o.id}')">${cur?(conf?`Na pewno? Kara za zerwanie obecnej: ${fmt(spPenalty(cur))}`:'Zerwij obecną i podpisz'):'Podpisz'}</button></td></tr>`;}).join('')}</tbody></table></div>`:`<p class="mut small">${k==='tit'?'Brak nowych ofert tytularnych w tym miesiącu.':'Brak nowych ofert w tym miesiącu.'}</p>`}</div>`;}).join('')}
-  <p class="small mut">Sponsor sam proponuje kwotę i długość umowy — możesz przyjąć albo czekać na lepszą ofertę. Liczba chętnych sponsorów i ich poziom (1–5 gwiazdek) zależą od renomy klubu, miejsca w tabeli, gwiazd w składzie, siedziby i social mediów. Każdy kolejny sponsor płaci trochę mniej (mniej miejsca na reklamy). Zerwanie umowy kosztuje 40% wartości pozostałych rat (co najmniej jedną ratę) i na kilka miesięcy obniża przyszłe oferty.</p>`;}
+  <p class="small mut">Sponsor sam proponuje kwotę i długość umowy — możesz przyjąć albo czekać na lepszą ofertę. Liczba chętnych sponsorów i ich poziom (1–5 gwiazdek) zależą od renomy klubu, miejsca w tabeli, gwiazd w składzie, siedziby i social mediów. Zerwanie umowy kosztuje 40% wartości pozostałych rat (co najmniej jedną ratę) i na kilka miesięcy obniża przyszłe oferty.</p>`;}
