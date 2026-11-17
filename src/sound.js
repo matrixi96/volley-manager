@@ -84,11 +84,11 @@ function sndMail(important){if(!sndOk('ui'))return;const now=performance.now();i
 setInterval(()=>{if(SND.amb&&(!ui.match||ui.match.over&&!SND.timers.length||ui.tab!=='mecz'||ui.match.paused&&ui.to==null))sndAmbStop();},1000);
 // --- ustawienia ---
 function sndBtn(){const c=sndCfg();return `<button class="ghost sm" title="Dźwięk" onclick="sndInit();sndSet('on',${c.on?0:1})">${c.on?'🔊':'🔇'}</button>`;}
-function sndCard(){const c=sndCfg();return `<div class="card"><h2>Dźwięk</h2>
-  <div class="row wrap" style="gap:14px;align-items:center"><label class="row" style="gap:6px"><input type="checkbox" ${c.on?'checked':''} onchange="sndInit();sndSet('on',this.checked?1:0)"> Dźwięk włączony</label>
-  <label class="row" style="gap:6px">Głośność <input type="range" min="0" max="100" value="${Math.round(c.vol*100)}" onchange="sndSet('vol',this.value/100)"></label></div>
-  <div class="row wrap" style="gap:14px;margin-top:8px"><label class="row" style="gap:6px"><input type="checkbox" ${c.match?'checked':''} onchange="sndSet('match',this.checked?1:0)"> Dźwięki meczu (piłka, gwizdek, kibice)</label>
-  <label class="row" style="gap:6px"><input type="checkbox" ${c.ui?'checked':''} onchange="sndSet('ui',this.checked?1:0)"> Powiadomienia (nowa wiadomość)</label>
-  <button class="ghost sm" onclick="sndInit();setTimeout(()=>{sndHit('serve');setTimeout(()=>sndHit('bump'),500);setTimeout(()=>sndHit('set'),900);setTimeout(()=>sndHit('spike'),1300);setTimeout(()=>sndHit('floor'),1650);setTimeout(()=>sndWhistle(0.3),1900);setTimeout(()=>sndCheer(1,25),2100);},50)">▶ Posłuchaj</button></div>
-  <p class="small mut">Dźwięki są generowane w grze. Szybka symulacja meczu jest cicha.</p></div>`;}
+function sndCard(){const c=sndCfg();return `<div class="card"><h2>${_t('Dźwięk')}</h2>
+  <div class="row wrap" style="gap:14px;align-items:center"><label class="row" style="gap:6px"><input type="checkbox" ${c.on?'checked':''} onchange="sndInit();sndSet('on',this.checked?1:0)">${' '+_t('Dźwięk włączony')}</label>
+  <label class="row" style="gap:6px">${_t('Głośność')} <input type="range" min="0" max="100" value="${Math.round(c.vol*100)}" onchange="sndSet('vol',this.value/100)"></label></div>
+  <div class="row wrap" style="gap:14px;margin-top:8px"><label class="row" style="gap:6px"><input type="checkbox" ${c.match?'checked':''} onchange="sndSet('match',this.checked?1:0)">${' '+_t('Dźwięki meczu (piłka, gwizdek, kibice)')}</label>
+  <label class="row" style="gap:6px"><input type="checkbox" ${c.ui?'checked':''} onchange="sndSet('ui',this.checked?1:0)">${' '+_t('Powiadomienia (nowa wiadomość)')}</label>
+  <button class="ghost sm" onclick="sndInit();setTimeout(()=>{sndHit('serve');setTimeout(()=>sndHit('bump'),500);setTimeout(()=>sndHit('set'),900);setTimeout(()=>sndHit('spike'),1300);setTimeout(()=>sndHit('floor'),1650);setTimeout(()=>sndWhistle(0.3),1900);setTimeout(()=>sndCheer(1,25),2100);},50)">${_t('▶ Posłuchaj')}</button></div>
+  <p class="small mut">${_t('Dźwięki są generowane w grze. Szybka symulacja meczu jest cicha.')}</p></div>`;}
 {const _sv=saveView;saveView=function(){return sndCard()+_sv.apply(this,arguments);};}

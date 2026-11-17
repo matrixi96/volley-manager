@@ -753,6 +753,58 @@ body.th-fm .tabb.on{border-bottom-color:#fff;color:#fff}body.th-fm .seg button.o
 @media(max-width:820px){.smpanel{right:50%;transform:translate(50%,-50%);padding:28px 20px 14px}.smcoach{display:none}.smlogo{font-size:34px}}
 </style></head><body><div id="app"></div>
 <script>
+// ================= JĘZYK GRY (polski / angielski) =================
+// _t('Polski tekst', a0, a1…) → tłumaczenie ze słownika EN (gdy język = en), {0} {1} = wstawione wartości. Brak w słowniku = tekst polski.
+var LANG=(function(){try{return localStorage.getItem('vm_lang')||'pl';}catch(e){return 'pl';}})();
+const EN={
+ // menu boczne
+ 'Przegląd':'Overview','Drużyna':'Team','Rekrutacja':'Recruitment','Klub':'Club','Świat':'World',
+ 'Ekran główny':'Home','Poczta':'Inbox','Rozmowy':'Conversations','Mecz i sezon':'Match & season','Terminarz':'Schedule',
+ 'Skład':'Squad','Taktyka':'Tactics','Centrum danych':'Data hub','Trening':'Training','Juniorzy':'Youth',
+ 'Skauting':'Scouting','Transfery':'Transfers','Sztab':'Staff','Infrastruktura':'Facilities','Sponsorzy':'Sponsors','Social media':'Social media',
+ 'Finanse':'Finances','Strategia klubu':'Club vision','Trener':'Manager','Tabela':'Tables','Reprezentacja':'National team','Statystyki':'Statistics',
+ 'Historia':'History','Osiągnięcia':'Achievements','Zapis gry':'Save game','Test silnika':'Engine test','Kalendarz':'Calendar',
+ // górny pasek i pasek kontekstu
+ 'Szukaj zawodnika…':'Search player…','NASTĘPNY DZIEŃ':'NEXT DAY','Przejdź do następnego dnia':'Go to the next day','WRÓĆ DO MECZU':'BACK TO MATCH','GRAJ MECZ':'PLAY MATCH','DALEJ':'CONTINUE',
+ 'Sezon':'Season','Sparingi':'Friendlies','Przerwa':'Off-season','Koniec sezonu':'End of season','Play-off':'Play-offs',
+ 'Rozgrywki':'Competition','Następny rywal':'Next opponent','Morale':'Morale','Zgranie':'Cohesion','Zarząd':'Board','Kibice':'Fans','Pozycja':'Position','Budżet':'Balance',
+ 'Sparing {0}/{1}':'Friendly {0}/{1}','{0} · {1}. kolejka':'{0} · round {1}','wolny':'free agent','Brak zawodników.':'No players.',
+ // pozycje
+ 'Rozgrywający':'Setter','Atakujący':'Opposite','Przyjmujący':'Outside hitter','Środkowy':'Middle blocker','Libero':'Libero',
+ 'ROZ':'SET','ATA':'OPP','PRZ':'OH','ŚRO':'MB','LIB':'LIB',
+ // ligi
+ '1. Liga':'1st League','2. Liga':'2nd League',
+ // ekran startowy
+ 'OSTATNIA':'LATEST','Kontynuuj: {0}':'Continue: {0}','sezon {0}':'season {0}','ROZPOCZNIJ NOWĄ GRĘ':'START NEW GAME','NA PEWNO? OBECNA KARIERA ZOSTANIE ZASTĄPIONA':'ARE YOU SURE? YOUR CURRENT CAREER WILL BE REPLACED',
+ 'Jeśli chcesz ją zachować, najpierw zapisz ją w slocie (Ustawienia i zapis gry).':'To keep it, save it to a slot first (Settings & save).','Anuluj':'Cancel','WCZYTAJ GRĘ':'LOAD GAME','Ustawienia':'Settings','Instrukcja':'Guide',
+ 'Co nowego w v{0} ↗':'What\'s new in v{0} ↗','Wyjście':'Exit','Slot {0}':'Slot {0}','Wczytaj':'Load','Albo wklej kod zapisu:':'Or paste a save code:','Wczytaj z kodu':'Load from code','← Wróć':'← Back',
+ 'INSTRUKCJA':'GUIDE','CO NOWEGO':'WHAT\'S NEW','Pokaż samouczek w grze':'Show the in-game tutorial','pusty':'empty',
+ 'Menu główne':'Main menu','⏏ Menu główne':'⏏ Main menu','Ustawienia i zapis gry':'Settings & save game',
+ // ustawienia wyglądu i języka
+ 'Wygląd':'Appearance','Motyw:':'Theme:','Grafit (jak FM)':'Graphite (FM style)','Klasyczny (złoty)':'Classic (gold)','Kolejność menu bocznego':'Side menu order',
+ 'Na komputerze możesz po prostu przeciągać pozycje w menu po lewej. Tutaj — strzałkami (działa też na telefonie).':'On a computer just drag items in the left menu. Here you can use the arrows (works on phones too).',
+ 'Przywróć domyślną kolejność':'Restore default order','Język':'Language','Język / Language':'Language / Język',
+ 'Tłumaczenie na angielski jest w trakcie — część ekranów jest jeszcze po polsku.':'The English translation is in progress — some screens are still in Polish.',
+ ' — przeciągnij, żeby zmienić kolejność':' — drag to reorder','VOLLEY MANAGER':'VOLLEY MANAGER',
+ // dźwięk
+ 'Dźwięk':'Sound','Dźwięk włączony':'Sound on','Głośność':'Volume','Dźwięki meczu (piłka, gwizdek, kibice)':'Match sounds (ball, whistle, crowd)','Powiadomienia (nowa wiadomość)':'Notifications (new message)','▶ Posłuchaj':'▶ Listen',
+ 'Dźwięki są generowane w grze. Szybka symulacja meczu jest cicha.':'Sounds are generated in-game. Quick match simulation is silent.',
+};
+function _t(s){let r=(LANG==='en'&&EN[s]!=null)?EN[s]:s;for(let i=1;i<arguments.length;i++)r=r.split('{'+(i-1)+'}').join(arguments[i]);return r;}
+function langSet(l){try{localStorage.setItem('vm_lang',l);}catch(e){}location.reload();}
+function langBtns(){return `<div class="seg"><button class="${LANG==='pl'?'on':''}" onclick="langSet('pl')">🇵🇱 Polski</button><button class="${LANG==='en'?'on':''}" onclick="langSet('en')">🇬🇧 English</button></div>`;}
+// stałe nazwy (pozycje, dni, miesiące, ligi) podmieniane raz przy starcie
+function i18nApply(){if(LANG!=='en')return;
+  for(const k in POS_NAMES)POS_NAMES[k]=_t(POS_NAMES[k]);for(const k in POS_SHORT)POS_SHORT[k]=_t(POS_SHORT[k]);
+  if(typeof DOW!=='undefined')DOW.splice(0,7,'Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday');
+  if(typeof DOW_S!=='undefined')DOW_S.splice(0,7,'Sun','Mon','Tue','Wed','Thu','Fri','Sat');
+  if(typeof MON_GEN!=='undefined')MON_GEN.splice(0,12,'January','February','March','April','May','June','July','August','September','October','November','December');
+  if(typeof MON_NOM!=='undefined')MON_NOM.splice(0,12,'January','February','March','April','May','June','July','August','September','October','November','December');
+  if(typeof MON_S!=='undefined')MON_S.splice(0,12,'jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec');
+  if(typeof LG_N!=='undefined')for(let i=0;i<LG_N.length;i++)LG_N[i]=_t(LG_N[i]);
+  if(typeof PHASE_NAMES!=='undefined')Object.assign(PHASE_NAMES,{off:'Transfer window',spar:'Pre-season',liga:'Regular season',po:'Play-offs',end:'End of season'});
+  if(typeof NAV_L!=='undefined')for(const k in NAV_L)NAV_L[k]=_t(NAV_L[k]);
+  try{document.documentElement.lang='en';}catch(e){}}
 'use strict';
 // ================= SILNIK GRY =================
 function R(){return Math.random();}
@@ -3393,7 +3445,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=147').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=148').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
@@ -7588,13 +7640,13 @@ function sndMail(important){if(!sndOk('ui'))return;const now=performance.now();i
 setInterval(()=>{if(SND.amb&&(!ui.match||ui.match.over&&!SND.timers.length||ui.tab!=='mecz'||ui.match.paused&&ui.to==null))sndAmbStop();},1000);
 // --- ustawienia ---
 function sndBtn(){const c=sndCfg();return `<button class="ghost sm" title="Dźwięk" onclick="sndInit();sndSet('on',${c.on?0:1})">${c.on?'🔊':'🔇'}</button>`;}
-function sndCard(){const c=sndCfg();return `<div class="card"><h2>Dźwięk</h2>
-  <div class="row wrap" style="gap:14px;align-items:center"><label class="row" style="gap:6px"><input type="checkbox" ${c.on?'checked':''} onchange="sndInit();sndSet('on',this.checked?1:0)"> Dźwięk włączony</label>
-  <label class="row" style="gap:6px">Głośność <input type="range" min="0" max="100" value="${Math.round(c.vol*100)}" onchange="sndSet('vol',this.value/100)"></label></div>
-  <div class="row wrap" style="gap:14px;margin-top:8px"><label class="row" style="gap:6px"><input type="checkbox" ${c.match?'checked':''} onchange="sndSet('match',this.checked?1:0)"> Dźwięki meczu (piłka, gwizdek, kibice)</label>
-  <label class="row" style="gap:6px"><input type="checkbox" ${c.ui?'checked':''} onchange="sndSet('ui',this.checked?1:0)"> Powiadomienia (nowa wiadomość)</label>
-  <button class="ghost sm" onclick="sndInit();setTimeout(()=>{sndHit('serve');setTimeout(()=>sndHit('bump'),500);setTimeout(()=>sndHit('set'),900);setTimeout(()=>sndHit('spike'),1300);setTimeout(()=>sndHit('floor'),1650);setTimeout(()=>sndWhistle(0.3),1900);setTimeout(()=>sndCheer(1,25),2100);},50)">▶ Posłuchaj</button></div>
-  <p class="small mut">Dźwięki są generowane w grze. Szybka symulacja meczu jest cicha.</p></div>`;}
+function sndCard(){const c=sndCfg();return `<div class="card"><h2>${_t('Dźwięk')}</h2>
+  <div class="row wrap" style="gap:14px;align-items:center"><label class="row" style="gap:6px"><input type="checkbox" ${c.on?'checked':''} onchange="sndInit();sndSet('on',this.checked?1:0)">${' '+_t('Dźwięk włączony')}</label>
+  <label class="row" style="gap:6px">${_t('Głośność')} <input type="range" min="0" max="100" value="${Math.round(c.vol*100)}" onchange="sndSet('vol',this.value/100)"></label></div>
+  <div class="row wrap" style="gap:14px;margin-top:8px"><label class="row" style="gap:6px"><input type="checkbox" ${c.match?'checked':''} onchange="sndSet('match',this.checked?1:0)">${' '+_t('Dźwięki meczu (piłka, gwizdek, kibice)')}</label>
+  <label class="row" style="gap:6px"><input type="checkbox" ${c.ui?'checked':''} onchange="sndSet('ui',this.checked?1:0)">${' '+_t('Powiadomienia (nowa wiadomość)')}</label>
+  <button class="ghost sm" onclick="sndInit();setTimeout(()=>{sndHit('serve');setTimeout(()=>sndHit('bump'),500);setTimeout(()=>sndHit('set'),900);setTimeout(()=>sndHit('spike'),1300);setTimeout(()=>sndHit('floor'),1650);setTimeout(()=>sndWhistle(0.3),1900);setTimeout(()=>sndCheer(1,25),2100);},50)">${_t('▶ Posłuchaj')}</button></div>
+  <p class="small mut">${_t('Dźwięki są generowane w grze. Szybka symulacja meczu jest cicha.')}</p></div>`;}
 {const _sv=saveView;saveView=function(){return sndCard()+_sv.apply(this,arguments);};}
 // ================= SZKIELET INTERFEJSU: MENU BOCZNE, PASEK KLUBU, EKRAN GŁÓWNY =================
 const NAV=[['home','🏠','Ekran główny'],['mecz','🏐','Mecz i sezon'],['sklad','👥','Skład'],['taktyka','📋','Taktyka'],['trening','🏋️','Trening'],['kalendarz','📅','Terminarz'],['tabela','🏆','Tabela'],['staty','📈','Statystyki'],['transfery','🔁','Transfery'],['finanse','💰','Finanse'],['sztab','🧑‍🏫','Sztab'],['juniorzy','🌱','Juniorzy'],['klub','🏟️','Infrastruktura'],['trener','🎓','Trener']];
@@ -7637,22 +7689,22 @@ function sideNav(){const mini=ui.tab==='mecz'&&liveMatch();const newsN=typeof un
   </aside>${ui.navOpen?'<div class="navshade" onclick="ui.navOpen=false;render()"></div>':''}`;}
 // ---- pasek górny ----
 function myLineupPlayers(){const t=myTeam();const lu=SAVE.lineup||{};return Object.values(lu).map(id=>t.players.find(p=>p.id===id)).filter(Boolean);}
-function phaseName(s){return !s?'':s.phase==='spar'?'Sparingi':s.phase==='liga'?LG_N[myLg()]:s.phase==='po'?'Play-off':s.phase==='off'?'Przerwa':'Koniec sezonu';}
-function actLabel(){if(liveMatch())return 'WRÓĆ DO MECZU';const e=nextEvent();const c=myNext();if(e&&e.d<=today()&&c)return 'GRAJ MECZ';return 'DALEJ';}
+function phaseName(s){return !s?'':s.phase==='spar'?_t('Sparingi'):s.phase==='liga'?LG_N[myLg()]:s.phase==='po'?_t('Play-off'):s.phase==='off'?_t('Przerwa'):_t('Koniec sezonu');}
+function actLabel(){if(liveMatch())return _t('WRÓĆ DO MECZU');const e=nextEvent();const c=myNext();if(e&&e.d<=today()&&c)return _t('GRAJ MECZ');return _t('DALEJ');}
 function topBar(){const t=myTeam();const s=S();const d=today();
   return `<div class="topbar">
    <button class="burger" onclick="ui.navOpen=!ui.navOpen;render()" aria-label="Menu">☰</button>
    <div class="tclub" onclick="go('home')"><span class="tcr">${teamCrest(SAVE.team,36)}</span><span class="tcn"><b>${esc(t.name)}</b><small>${s?''+LG_N[myLg()]+' · '+sLabel(s.n):''}</small></span></div>
    <div class="tpage">${esc((NAV_L[ui.tab]||'').toUpperCase())}</div>
-   <div class="tsearch">${ico('search',16)}<input id="psq" placeholder="Szukaj zawodnika…" value="${esc(ui.q||'')}" oninput="ui.q=this.value;searchDrop()" onfocus="searchDrop()" autocomplete="off"><kbd>Ctrl + K</kbd><div id="psd" class="psd"></div></div>
+   <div class="tsearch">${ico('search',16)}<input id="psq" placeholder="${_t('Szukaj zawodnika…')}" value="${esc(ui.q||'')}" oninput="ui.q=this.value;searchDrop()" onfocus="searchDrop()" autocomplete="off"><kbd>Ctrl + K</kbd><div id="psd" class="psd"></div></div>
    <span class="sp"></span>
-   <div class="tdate"><span class="lab">${s?'Sezon '+sLabel(s.n)+' · '+esc(phaseName(s)):''}</span><b>${DOW[dow(d)].replace(/^./,c=>c.toUpperCase())}, ${fmtDMY(d)}</b></div>
-   <button class="tbtn" onclick="nextDay()" title="Przejdź do następnego dnia">NASTĘPNY DZIEŃ</button>
+   <div class="tdate"><span class="lab">${s?_t('Sezon')+' '+sLabel(s.n)+' · '+esc(phaseName(s)):''}</span><b>${DOW[dow(d)].replace(/^./,c=>c.toUpperCase())}, ${fmtDMY(d)}</b></div>
+   <button class="tbtn" onclick="nextDay()" title="${_t('Przejdź do następnego dnia')}">${_t('NASTĘPNY DZIEŃ')}</button>
    <button class="tplay" onclick="nextAction()">${ico('play',15)} ${actLabel()}</button>
   </div>`;}
 function searchDrop(){const el=document.getElementById('psd');if(!el)return;const q=(ui.q||'').trim().toLowerCase();if(q.length<2){el.innerHTML='';el.classList.remove('on');return;}
   const res=W().players.filter(p=>(p.first+' '+p.last).toLowerCase().includes(q)).sort((a,b)=>(b.tm===SAVE.team)-(a.tm===SAVE.team)||rating(b)-rating(a)).slice(0,8);
-  el.innerHTML=res.length?res.map(p=>`<button onclick="ui.q='';openPop('${p.id}')">${pFace(p,24)}<span><b>${esc(p.first)} ${esc(p.last)}</b><small>${pTag(p.pos)} · ${p.age} l. · ${p.tm>=0?esc(TEAMS[p.tm].short)+(p.jr?' U20':''):'wolny'}</small></span><em>${rating(p)}</em></button>`).join(''):'<div class="small mut" style="padding:8px">Brak zawodników.</div>';el.classList.add('on');}
+  el.innerHTML=res.length?res.map(p=>`<button onclick="ui.q='';openPop('${p.id}')">${pFace(p,24)}<span><b>${esc(p.first)} ${esc(p.last)}</b><small>${pTag(p.pos)} · ${p.age} l. · ${p.tm>=0?esc(TEAMS[p.tm].short)+(p.jr?' U20':''):_t('wolny')}</small></span><em>${rating(p)}</em></button>`).join(''):'<div class="small mut" style="padding:8px">'+_t('Brak zawodników.')+'</div>';el.classList.add('on');}
 // pasek kontekstu pod górnym paskiem: rozgrywki, następny rywal, stan drużyny
 function ctxBar(){if(ui.tab==='mecz'&&liveMatch())return '';const t=myTeam();const s=S();const ps=t.players;
   const mor=Math.round(ps.reduce((a,p)=>a+(p.mor==null?60:p.mor),0)/Math.max(1,ps.length));
@@ -7660,11 +7712,11 @@ function ctxBar(){if(ui.tab==='mecz'&&liveMatch())return '';const t=myTeam();con
   const okLu=validLineup(t,SAVE.lineup)&&!myLineupPlayers().some(p=>p.inj);
   let pos='—';if(s&&(s.phase==='liga'||s.phase==='po'||s.phase==='end')){const tb=leagueTable();pos=(tb.findIndex(x=>x.i===SAVE.team)+1)+'.';}
   const c=s?myNext():null;const e=nextEvent();const op=c?(c.h===SAVE.team?c.a:c.h):null;
-  const comp=!s?'':s.phase==='spar'?`Sparing ${s.spar.res.length+1}/${N_SPAR}`:s.phase==='liga'?`${LG_N[myLg()]} · ${s.round+1}. kolejka`:s.phase==='po'?'Play-off':phaseName(s);
-  const st=(l,v,col,go)=>`<div class="cst" ${go?`onclick="go('${go}')"`:''}><span>${l}</span><b style="${col?'color:'+col:''}">${v}</b></div>`;
+  const comp=!s?'':s.phase==='spar'?_t('Sparing {0}/{1}',s.spar.res.length+1,N_SPAR):s.phase==='liga'?_t('{0} · {1}. kolejka',LG_N[myLg()],s.round+1):s.phase==='po'?_t('Play-off'):phaseName(s);
+  const st=(l,v,col,go)=>`<div class="cst" ${go?`onclick="go('${go}')"`:''}><span>${_t(l)}</span><b style="${col?'color:'+col:''}">${v}</b></div>`;
   const pc=v=>v>=70?'var(--good)':v>=45?'var(--acc)':'var(--bad)';
-  return `<div class="ctx"><div class="cpair"><span class="clab">Rozgrywki</span><b>${esc(comp)}</b></div>
-   ${op!=null?`<div class="cpair"><span class="clab">Następny rywal</span><span class="ccr" onclick="openTeam(${op})">${teamCrest(op,22)}</span><b>${esc(TEAMS[op].name)}</b><span class="mut">${e?fmtMid(e.d)+(e.t?', '+e.t:''):''}</span></div>`:''}
+  return `<div class="ctx"><div class="cpair"><span class="clab">${_t('Rozgrywki')}</span><b>${esc(comp)}</b></div>
+   ${op!=null?`<div class="cpair"><span class="clab">${_t('Następny rywal')}</span><span class="ccr" onclick="openTeam(${op})">${teamCrest(op,22)}</span><b>${esc(TEAMS[op].name)}</b><span class="mut">${e?fmtMid(e.d)+(e.t?', '+e.t:''):''}</span></div>`:''}
    <span class="sp"></span>${st('Morale',mor+'%',pc(mor))}${st('Zgranie',chem+'%',pc(chem),'sklad')}${SAVE.ownClub&&SAVE.vis?st('Kibice',(SAVE.vis.fans==null?55:SAVE.vis.fans)+'%',pc(SAVE.vis.fans==null?55:SAVE.vis.fans),'strategia'):st('Zarząd',conf+'%',pc(conf),'trener')}${st('Skład',okLu?'OK':'!',okLu?'var(--good)':'var(--bad)','sklad')}${st('Pozycja',pos,null,'tabela')}${st('Budżet',fmt(SAVE.fin?SAVE.fin.bal:0),null,'finanse')}</div>`;}
 // ---- czas gry ----
 function nextAction(){if(liveMatch()){go('mecz');return;}const s=S();if(!s||SAVE.fired){go('mecz');return;}
@@ -7788,7 +7840,8 @@ function homeView(){const s=S();if(!s)return '';
 function hvClip(){document.querySelectorAll('.hvgl').forEach(g=>{const b=g.getBoundingClientRect().bottom;for(const c of g.children)c.style.visibility=c.getBoundingClientRect().bottom>b+1?'hidden':'';});}
 window.addEventListener('resize',()=>{if(ui.tab==='home')hvClip();});
 // ================= WYGLĄD: motyw w stylu FM, przestawiane menu boczne, ekran startowy =================
-const APPV='147';
+const APPV='148';
+const HELP_EN='• You run a volleyball club as the manager: pick the squad, tactics and training, then watch matches live or simulate them.<br>• <b>Continue</b> (top right) moves time to the next event.<br>• Inbox and Conversations hold issues from players, the board, media and agents.<br>• Club → Staff: hire staff and delegate duties.<br>• Club → Club vision: what the board expects.<br>• Finances: budgets, bank loan and league licence.<br>• The game saves automatically; extra slots and save codes are in “Save game”.<br>• You can reorder the left menu by dragging items.';
 // ---- motyw ----
 function uiPref(k,d){try{const v=localStorage.getItem('vm_'+k);return v==null?d:v;}catch(e){return d;}}
 function uiPrefSet(k,v){try{localStorage.setItem('vm_'+k,v);}catch(e){}}
@@ -7810,22 +7863,22 @@ function navDO(e){e.preventDefault();const t=e.currentTarget;t.classList.add('nd
 function navDL(e){e.currentTarget.classList.remove('ndrop');}
 function navDrop(e,g,k){e.preventDefault();e.currentTarget.classList.remove('ndrop');const d=NAV_DRAG;NAV_DRAG=null;if(!d||d===k)return;navMove(d,g,k);}
 sideNav=function(){const mini=ui.tab==='mecz'&&liveMatch();const newsN=typeof unreadN==='function'?unreadN():0;const dr=!mini;
-  const item=(k,g)=>`<button class="nav ${ui.tab===k?'on':''}" ${dr&&g?`draggable="true" ondragstart="navDS(event,'${k}')" ondragover="navDO(event)" ondragleave="navDL(event)" ondrop="navDrop(event,'${g}','${k}')"`:''} onclick="ui.navOpen=false;go('${k}')" title="${NAV_L[k]}${dr&&g?' — przeciągnij, żeby zmienić kolejność':''}"><span class="ic">${ico(k)}</span><span class="tx">${NAV_L[k]}</span>${k==='poczta'&&newsN?`<span class="nbad">${newsN}</span>`:''}${k==='rozmowy'&&typeof rozN==='function'&&rozN()?`<span class="nbad">${rozN()}</span>`:''}${k==='osiagniecia'&&typeof achFreshN==='function'&&achFreshN()?`<span class="nbad">${achFreshN()}</span>`:''}</button>`;
+  const item=(k,g)=>`<button class="nav ${ui.tab===k?'on':''}" ${dr&&g?`draggable="true" ondragstart="navDS(event,'${k}')" ondragover="navDO(event)" ondragleave="navDL(event)" ondrop="navDrop(event,'${g}','${k}')"`:''} onclick="ui.navOpen=false;go('${k}')" title="${NAV_L[k]}${dr&&g?_t(' — przeciągnij, żeby zmienić kolejność'):''}"><span class="ic">${ico(k)}</span><span class="tx">${NAV_L[k]}</span>${k==='poczta'&&newsN?`<span class="nbad">${newsN}</span>`:''}${k==='rozmowy'&&typeof rozN==='function'&&rozN()?`<span class="nbad">${rozN()}</span>`:''}${k==='osiagniecia'&&typeof achFreshN==='function'&&achFreshN()?`<span class="nbad">${achFreshN()}</span>`:''}</button>`;
   return `<aside class="side ${mini?'mini':''} ${ui.navOpen?'open':''}">
-   <div class="sbrand" onclick="ui.start=true;render()" style="cursor:pointer" title="Menu główne"><span class="sbm">${ico('mecz',20)}</span><span class="tx">VOLLEY MANAGER</span></div>
-   ${navGroups().map(([g,ks])=>`<div class="ngh tx" ${dr?`ondragover="navDO(event)" ondragleave="navDL(event)" ondrop="navDrop(event,'${g}',null)"`:''}>${g}</div>${ks.map(k=>item(k,g)).join('')}`).join('')}
+   <div class="sbrand" onclick="ui.start=true;render()" style="cursor:pointer" title="${_t('Menu główne')}"><span class="sbm">${ico('mecz',20)}</span><span class="tx">VOLLEY MANAGER</span></div>
+   ${navGroups().map(([g,ks])=>`<div class="ngh tx" ${dr?`ondragover="navDO(event)" ondragleave="navDL(event)" ondrop="navDrop(event,'${g}',null)"`:''}>${_t(g)}</div>${ks.map(k=>item(k,g)).join('')}`).join('')}
    <div class="navgap"></div>
-   <div class="nfoot">${item('zapis')}<button class="nav small ${ui.tab==='test'?'on':''}" onclick="ui.navOpen=false;go('test')" title="Test silnika"><span class="ic">${ico('test')}</span><span class="tx">Test silnika</span></button></div>
+   <div class="nfoot">${item('zapis')}<button class="nav small ${ui.tab==='test'?'on':''}" onclick="ui.navOpen=false;go('test')" title="${_t('Test silnika')}"><span class="ic">${ico('test')}</span><span class="tx">${_t('Test silnika')}</span></button></div>
   </aside>${ui.navOpen?'<div class="navshade" onclick="ui.navOpen=false;render()"></div>':''}`;};
 // ---- karta ustawień wyglądu (w Zapis gry / Ustawienia) ----
 function looksCard(){const th=uiPref('theme','fm');const G=navGroups();
-  return `<div class="card"><h2>Wygląd</h2><div class="row wrap" style="gap:10px;align-items:center"><span>Motyw:</span><div class="seg"><button class="${th==='fm'?'on':''}" onclick="themeSet('fm')">Grafit (jak FM)</button><button class="${th!=='fm'?'on':''}" onclick="themeSet('classic')">Klasyczny (złoty)</button></div></div>
-   <details style="margin-top:10px"><summary>Kolejność menu bocznego</summary><p class="small mut">Na komputerze możesz po prostu przeciągać pozycje w menu po lewej. Tutaj — strzałkami (działa też na telefonie).</p>
-   ${G.map(([g,ks])=>`<div class="small mut" style="margin-top:6px">${g}</div>${ks.map(k=>`<div class="res row small" style="gap:6px"><span>${NAV_L[k]}</span><span class="sp"></span><button class="ghost sm" onclick="navStep('${k}',-1)">▲</button><button class="ghost sm" onclick="navStep('${k}',1)">▼</button></div>`).join('')}`).join('')}
-   <button class="ghost sm" style="margin-top:8px" onclick="navReset()">Przywróć domyślną kolejność</button></details></div>`;}
-{const _sv=saveView;saveView=function(){return `<div class="card row wrap" style="gap:8px;align-items:center"><span>Ustawienia i zapis gry</span><span class="sp"></span><button class="ghost" onclick="ui.start=true;render()">⏏ Menu główne</button></div>`+looksCard()+_sv.apply(this,arguments);};}
+  return `<div class="card"><h2>${_t('Wygląd')}</h2><div class="row wrap" style="gap:10px;align-items:center"><span>${_t('Język / Language')}</span>${langBtns()}</div>${LANG==='en'?`<p class="small mut">${_t('Tłumaczenie na angielski jest w trakcie — część ekranów jest jeszcze po polsku.')}</p>`:''}<div class="row wrap" style="gap:10px;align-items:center;margin-top:8px"><span>${_t('Motyw:')}</span><div class="seg"><button class="${th==='fm'?'on':''}" onclick="themeSet('fm')">${_t('Grafit (jak FM)')}</button><button class="${th!=='fm'?'on':''}" onclick="themeSet('classic')">${_t('Klasyczny (złoty)')}</button></div></div>
+   <details style="margin-top:10px"><summary>${_t('Kolejność menu bocznego')}</summary><p class="small mut">${_t('Na komputerze możesz po prostu przeciągać pozycje w menu po lewej. Tutaj — strzałkami (działa też na telefonie).')}</p>
+   ${G.map(([g,ks])=>`<div class="small mut" style="margin-top:6px">${_t(g)}</div>${ks.map(k=>`<div class="res row small" style="gap:6px"><span>${NAV_L[k]}</span><span class="sp"></span><button class="ghost sm" onclick="navStep('${k}',-1)">▲</button><button class="ghost sm" onclick="navStep('${k}',1)">▼</button></div>`).join('')}`).join('')}
+   <button class="ghost sm" style="margin-top:8px" onclick="navReset()">${_t('Przywróć domyślną kolejność')}</button></details></div>`;}
+{const _sv=saveView;saveView=function(){return `<div class="card row wrap" style="gap:8px;align-items:center"><span>${_t('Ustawienia i zapis gry')}</span><span class="sp"></span><button class="ghost" onclick="ui.start=true;render()">${_t('⏏ Menu główne')}</button></div>`+looksCard()+_sv.apply(this,arguments);};}
 // ================= EKRAN STARTOWY =================
-const CHANGES=[['v147','Transfery: zakładki Wypożyczenia i Historia transferów'],['v146','Analiza rywala na ekranie głównym, zakładki na starszych ekranach'],['v145','Balans treningu „mocniej”, łagodniejsza ocena zarządu po sezonie, kibice na pasku we własnym klubie'],['v143','Własny klub: sam wybierasz charakter i plan, kibice wpływają na frekwencję i sponsorów'],['v142','Ekran startowy, motyw grafitowy jak w FM, przestawiane menu'],['v141','Strategia klubu: cele zarządu, plan pięcioletni, kibice'],['v140','Finanse: wykresy, kredyt bankowy, licencja ligowa, prognoza'],['v139','Trening: indywidualny, mentoring, odpoczynek, reżimy, trenerzy'],['v138','Wyższe limity sztabu, skauci osobno, własny klub bez limitu'],['v137','Dźwięki meczu i powiadomień, wersja na Windows'],['v136','Zapisy w IndexedDB, delegowanie transferów']];
+const CHANGES=[['v148','Język angielski — etap 1: menu, ekran startowy, górny pasek, pozycje, daty'],['v147','Transfery: zakładki Wypożyczenia i Historia transferów'],['v146','Analiza rywala na ekranie głównym, zakładki na starszych ekranach'],['v145','Balans treningu „mocniej”, łagodniejsza ocena zarządu po sezonie, kibice na pasku we własnym klubie'],['v143','Własny klub: sam wybierasz charakter i plan, kibice wpływają na frekwencję i sponsorów'],['v142','Ekran startowy, motyw grafitowy jak w FM, przestawiane menu'],['v141','Strategia klubu: cele zarządu, plan pięcioletni, kibice'],['v140','Finanse: wykresy, kredyt bankowy, licencja ligowa, prognoza'],['v139','Trening: indywidualny, mentoring, odpoczynek, reżimy, trenerzy'],['v138','Wyższe limity sztabu, skauci osobno, własny klub bez limitu'],['v137','Dźwięki meczu i powiadomień, wersja na Windows'],['v136','Zapisy w IndexedDB, delegowanie transferów']];
 ui.start=true;
 function smHasSave(){return SAVE.team!=null&&!!SAVE.coach;}
 function smCont(){ui.start=false;ui.sm=null;render();}
@@ -7846,23 +7899,23 @@ function smBg(){const c=SAVE.coach;const col=SAVE.team!=null?TEAMS[SAVE.team].co
    <rect width="1600" height="900" fill="url(#smL)"/></svg>
    <div class="smcoach">${c?coachFace(c,300):typeof faceSvg==='function'?faceSvg('menu',{size:300,kind:'coach',color:col}):''}</div>`;}
 function startMenuView(){const has=smHasSave();const s=has&&S()?S():null;const sm=ui.sm;
-  const last=has?`<button class="smlast" onclick="smCont()"><span class="smcr">${teamCrest(SAVE.team,54)}</span><span><b>OSTATNIA</b><small>Kontynuuj: ${esc(TEAMS[SAVE.team].name)}${s?` · sezon ${sLabel(s.n)}`:''} · ${fmtDMY(today())}</small></span></button>`:'';
+  const last=has?`<button class="smlast" onclick="smCont()"><span class="smcr">${teamCrest(SAVE.team,54)}</span><span><b>${_t('OSTATNIA')}</b><small>${_t('Kontynuuj: {0}',esc(TEAMS[SAVE.team].name))}${s?' · '+_t('sezon {0}',sLabel(s.n)):''} · ${fmtDMY(today())}</small></span></button>`:'';
   let inner;
-  if(sm==='load'){inner=`<div class="smsub"><b>WCZYTAJ GRĘ</b>${[1,2,3].map(i=>{const o=slotInfo(i);return `<div class="smslot"><span><b>Slot ${i}</b><small>${descSave(o)}</small></span>${o?`<button class="smbtn sm" onclick="smLoad(${i})">Wczytaj</button>`:''}</div>`;}).join('')}
-     <div class="small mut" style="margin:10px 0 4px">Albo wklej kod zapisu:</div><textarea id="imp" rows="3" style="width:100%"></textarea><button class="smbtn sm" onclick="smImport()">Wczytaj z kodu</button>${ui.msg?`<div class="small" style="margin-top:6px">${esc(ui.msg)}</div>`:''}
-     <button class="smlink" onclick="ui.sm=null;render()">← Wróć</button></div>`;}
-  else if(sm==='set'){inner=`<div class="smsub smset">${typeof sndCard==='function'?sndCard():''}${looksCard()}<button class="smlink" onclick="ui.sm=null;render()">← Wróć</button></div>`;}
-  else if(sm==='help'){inner=`<div class="smsub"><b>INSTRUKCJA</b><div class="small" style="line-height:1.6;margin-top:6px">• Prowadzisz klub siatkarski jako trener: ustalasz skład, taktykę i trening, a mecze oglądasz na żywo albo symulujesz.<br>• <b>Dalej</b> (prawy górny róg) przesuwa czas do następnego wydarzenia.<br>• Poczta i Rozmowy to sprawy od zawodników, zarządu, mediów i agentów.<br>• Klub → Sztab: zatrudniasz pracowników i przekazujesz im obowiązki.<br>• Klub → Strategia klubu: czego oczekuje zarząd.<br>• Finanse: budżety, kredyt i licencja ligowa.<br>• Gra zapisuje się sama; dodatkowe sloty i kod zapisu w „Zapis gry”.<br>• Menu po lewej możesz przestawiać, przeciągając pozycje.</div>
-     ${has?`<button class="smbtn sm" onclick="smCont();setTimeout(()=>{if(typeof tutReset==='function')tutReset();},50)">Pokaż samouczek w grze</button>`:''}<button class="smlink" onclick="ui.sm=null;render()">← Wróć</button></div>`;}
-  else if(sm==='news'){inner=`<div class="smsub"><b>CO NOWEGO</b>${CHANGES.map(([v,t])=>`<div class="smslot"><span><b>${v}</b><small>${esc(t)}</small></span></div>`).join('')}<button class="smlink" onclick="ui.sm=null;render()">← Wróć</button></div>`;}
+  if(sm==='load'){inner=`<div class="smsub"><b>${_t('WCZYTAJ GRĘ')}</b>${[1,2,3].map(i=>{const o=slotInfo(i);return `<div class="smslot"><span><b>${_t('Slot {0}',i)}</b><small>${o?descSave(o):_t('pusty')}</small></span>${o?`<button class="smbtn sm" onclick="smLoad(${i})">${_t('Wczytaj')}</button>`:''}</div>`;}).join('')}
+     <div class="small mut" style="margin:10px 0 4px">${_t('Albo wklej kod zapisu:')}</div><textarea id="imp" rows="3" style="width:100%"></textarea><button class="smbtn sm" onclick="smImport()">${_t('Wczytaj z kodu')}</button>${ui.msg?`<div class="small" style="margin-top:6px">${esc(ui.msg)}</div>`:''}
+     <button class="smlink" onclick="ui.sm=null;render()">${_t('← Wróć')}</button></div>`;}
+  else if(sm==='set'){inner=`<div class="smsub smset">${looksCard()}${typeof sndCard==='function'?sndCard():''}<button class="smlink" onclick="ui.sm=null;render()">${_t('← Wróć')}</button></div>`;}
+  else if(sm==='help'){inner=`<div class="smsub"><b>${_t('INSTRUKCJA')}</b><div class="small" style="line-height:1.6;margin-top:6px">${LANG==='en'?HELP_EN:`• Prowadzisz klub siatkarski jako trener: ustalasz skład, taktykę i trening, a mecze oglądasz na żywo albo symulujesz.<br>• <b>Dalej</b> (prawy górny róg) przesuwa czas do następnego wydarzenia.<br>• Poczta i Rozmowy to sprawy od zawodników, zarządu, mediów i agentów.<br>• Klub → Sztab: zatrudniasz pracowników i przekazujesz im obowiązki.<br>• Klub → Strategia klubu: czego oczekuje zarząd.<br>• Finanse: budżety, kredyt i licencja ligowa.<br>• Gra zapisuje się sama; dodatkowe sloty i kod zapisu w „Zapis gry”.<br>• Menu po lewej możesz przestawiać, przeciągając pozycje.`}</div>
+     ${has?`<button class="smbtn sm" onclick="smCont();setTimeout(()=>{if(typeof tutReset==='function')tutReset();},50)">${_t('Pokaż samouczek w grze')}</button>`:''}<button class="smlink" onclick="ui.sm=null;render()">${_t('← Wróć')}</button></div>`;}
+  else if(sm==='news'){inner=`<div class="smsub"><b>${_t('CO NOWEGO')}</b>${CHANGES.map(([v,t])=>`<div class="smslot"><span><b>${v}</b><small>${esc(t)}</small></span></div>`).join('')}<button class="smlink" onclick="ui.sm=null;render()">${_t('← Wróć')}</button></div>`;}
   else inner=`${last}
-    <button class="smbig" onclick="smNew()">${ui.confirm==='smnew'?'NA PEWNO? OBECNA KARIERA ZOSTANIE ZASTĄPIONA':'ROZPOCZNIJ NOWĄ GRĘ'}</button>${ui.confirm==='smnew'?`<div class="small mut" style="margin:-4px 0 8px">Jeśli chcesz ją zachować, najpierw zapisz ją w slocie (Ustawienia i zapis gry). <button class="smlink" onclick="ui.confirm=null;render()">Anuluj</button></div>`:''}
-    <button class="smbig" onclick="ui.sm='load';ui.msg=null;render()">WCZYTAJ GRĘ</button>
+    <button class="smbig" onclick="smNew()">${ui.confirm==='smnew'?_t('NA PEWNO? OBECNA KARIERA ZOSTANIE ZASTĄPIONA'):_t('ROZPOCZNIJ NOWĄ GRĘ')}</button>${ui.confirm==='smnew'?`<div class="small mut" style="margin:-4px 0 8px">${_t('Jeśli chcesz ją zachować, najpierw zapisz ją w slocie (Ustawienia i zapis gry).')} <button class="smlink" onclick="ui.confirm=null;render()">${_t('Anuluj')}</button></div>`:''}
+    <button class="smbig" onclick="ui.sm='load';ui.msg=null;render()">${_t('WCZYTAJ GRĘ')}</button>
     <div class="smsep"></div>
-    <div class="row" style="gap:8px"><button class="smbtn sm" onclick="sndInit&&sndInit();ui.sm='set';render()">Ustawienia</button><button class="smbtn sm" onclick="ui.sm='help';render()">Instrukcja</button></div>`;
+    <div class="row" style="gap:8px"><button class="smbtn sm" onclick="sndInit&&sndInit();ui.sm='set';render()">${_t('Ustawienia')}</button><button class="smbtn sm" onclick="ui.sm='help';render()">${_t('Instrukcja')}</button></div>`;
   return `<div class="smwrap">${smBg()}<div class="smpanel"><div class="smlogo"><span>VOLLEY</span><span>MANAGER</span><i>2026</i></div>
-   ${sm?'':`<button class="smnews" onclick="ui.sm='news';render()">Co nowego w v${APPV} ↗</button>`}${inner}
-   <div class="smfoot"><span class="mut small">v${APPV}</span>${location.protocol==='app:'?`<button class="smbtn sm" onclick="smQuit()">Wyjście</button>`:''}</div></div></div>`;}
+   ${sm?'':`<button class="smnews" onclick="ui.sm='news';render()">${_t('Co nowego w v{0} ↗',APPV)}</button>`}${inner}
+   <div class="smfoot"><span class="mut small">v${APPV}</span>${sm?'':langBtns()}${location.protocol==='app:'?`<button class="smbtn sm" onclick="smQuit()">${_t('Wyjście')}</button>`:''}</div></div></div>`;}
 {const _r=render;render=function(){if(ui.start){const app=$('#app');if(app){app.innerHTML=startMenuView();return;}}return _r.apply(this,arguments);};}
 
 {const _go=go;go=function(){ui.start=false;return _go.apply(this,arguments);};}
@@ -7912,6 +7965,8 @@ function trHistTab(){const H=TRH();const f=ui.trhF||'all';const xs=H.filter(x=>f
    ${xs.length?`<div class="tw"><table><thead><tr><th class="l">Data</th><th class="l">Zawodnik</th><th>Wiek</th><th>Ocena</th><th class="l">${f==='out'?'Dokąd':f==='in'?'Skąd':'Skąd / dokąd'}</th><th>Kwota</th></tr></thead><tbody>
    ${xs.map(x=>`<tr><td class="l small">${fmtDMY(x.d)}</td><td class="l">${x.inn?'<span class="good">⬅</span>':'<span class="bad">➡</span>'} ${PLAYERS[x.id]?`<button class="link pn" onclick="openCard('${x.id}')">${esc(x.nm)}</button>`:esc(x.nm)} <small class="mut">${pTag(x.pos)}</small></td><td>${x.age}</td><td>${x.r}</td><td class="l">${x.o>=0&&TEAMS[x.o]?tDot(x.o)+tName(x.o):'<span class="mut">bez klubu</span>'}${x.loan?' <small class="mut">(wypożyczenie)</small>':''}</td><td>${x.fee?fmt(x.fee):'—'}</td></tr>`).join('')}</tbody></table></div>`
    :'<p class="mut">Historia zbiera się od tej wersji gry — pojawią się tu wszystkie transfery do i z Twojego klubu.</p>'}</div>`;}
+
+try{i18nApply();}catch(e){console.error(e);}
 function vmBoot(){if(ST.mode==='idb'&&!ST.lsHad){try{const o=JSON.parse(stGet(KEY));if(o)SAVE=o;}catch(e){}rebuildIndex();restoreDefs();}
 applyCustom();
 // ================= START =================
