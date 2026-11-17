@@ -111,8 +111,8 @@ function v3dSubs(m,list,M,then){const mk=m.sides.map(x=>x.team.name).join('|');c
 function v3dPlay(m,pre,ev,steps,label,sf,done){const M=V3D.mod;const srv=ev.seq[0]&&ev.seq[0].k==='srv'?String(ev.seq[0].id):null;const so=pre.find(o=>String(o.id)===srv);
   const kc=kitColors(m);
   M.bench(v3dBench(m,pre));
-  v3dSubs(m,v3dList(m,pre),M,()=>M.play({pre:v3dList(m,pre),srv,jump:v3dJump(so),steps:steps.map(x=>Object.assign({},x,{id:x.id!=null?String(x.id):null,moves:x.moves.map(v=>Object.assign({},v,{id:String(v.id)}))})),winner:ev.winner,label,wcol:kc[ev.winner],sig:{type:ev.type,how:((ev.seq||[]).find(x=>x.srv)||{}).how||null},short:ui.speed<1600,sb:v3dSb(m),
-    onPh:t=>{const e=document.getElementById('mph');if(e&&t)e.textContent=t;},paused:()=>!!m.paused,done}));}
+  v3dSubs(m,v3dList(m,pre),M,()=>{const dl=typeof sndServeWhistle==='function'?sndServeWhistle(m):0;setTimeout(()=>M.play({pre:v3dList(m,pre),srv,jump:v3dJump(so),steps:steps.map(x=>Object.assign({},x,{id:x.id!=null?String(x.id):null,moves:x.moves.map(v=>Object.assign({},v,{id:String(v.id)}))})),winner:ev.winner,label,wcol:kc[ev.winner],sig:{type:ev.type,how:((ev.seq||[]).find(x=>x.srv)||{}).how||null},short:ui.speed<1600,sb:v3dSb(m),
+    onPh:t=>{const e=document.getElementById('mph');if(e&&t)e.textContent=t;try{if(typeof sndPh==='function')sndPh(t,label);}catch(x){}},paused:()=>!!m.paused,done:()=>{try{if(typeof sndDone==='function')sndDone();}catch(x){}done();}}),dl);});}
 function v3dStatic(m){const el=document.getElementById('m3d');if(!el)return;
   v3dLoad().then(M=>{if(!M||!document.getElementById('m3d'))return;const box=document.getElementById('m3d');box.classList.add('on');M.mount(box);const cv=document.getElementById('mcv');if(cv)cv.style.display='none';
     if(ui.to&&!M.busy()){const back=ui.to.returning||!ui.to.end;const sc=back?formation(m):benchScene(m,formation(m));M.idle({pre:v3dList(m,sc),srv:null,huddle:!back,sb:v3dSb(m)});return;}
@@ -219,7 +219,7 @@ function hallAnim(m,pre,ev,done){
     if(s.k==='net')steps.push({to:{x:to.x+(to.x<9?-0.5:0.5),y:to.y,h:0},peak:0,dur:320*sf,moves:[],ph});
     if(s.k==='ace'&&s.sh){const rs=s.s;const lx=R()<0.5?-1.2:2+R()*5,ly=lx<0?2+R()*5:(cy(o)<4.5?-1:10);const [X,Y]=gl(rs,lx,ly);steps.push({to:{x:X,y:Y,h:0},peak:2.2,dur:700*sf,moves:[],ph:'Przyjęcie poza boisko — as!'});}}
   const sErr=(ev.seq||[]).find(x=>x.srv);const label={ace:'AS!',block:'BLOK!',kill:'PUNKT',serr:sErr?(sErr.how==='net'?'ZAGRYWKA W SIATKĘ':'ZAGRYWKA W AUT'):'BŁĄD ZAGRYWKI',attErr:'BŁĄD ATAKU',setErr:'BŁĄD',mix:'NIEPOROZUMIENIE',blockout:'PO BLOKU!',netTouch:'SIATKA W BLOKU!',f3m:'BŁĄD 3 M'}[ev.type]||'PUNKT';
-  try{if(typeof sndSteps==='function')sndSteps(m,ev,steps);}catch(e){}
+  try{if(typeof sndSteps==='function')sndSteps(m,ev,steps,!!(v3dOn()&&V3D.mod));}catch(e){}
   if(v3dOn()&&V3D.mod){v3dPlay(m,pre,ev,steps,label,sf,done);return;}
   let k=0;const phEl=()=>document.getElementById('mph');
   const run=()=>{if(!document.getElementById('mcv')){done();return;}
@@ -231,5 +231,5 @@ function hallAnim(m,pre,ev,done){
       for(const o of scene){const mv=tgt[o.id];if(!mv){o.j=0;continue;}const f=fromP[o.id];o.x=f[0]+(mv.x-f[0])*e;o.y=f[1]+(mv.y-f[1])*e;o.j=mv.j?Math.sin(Math.PI*Math.min(1,t*1.15))*mv.j:0;}
       if(t>=1&&st.touch)ui._touch={id:st.touch.id,n:st.touch.n,t0:performance.now()};drawHall(m,scene,ball,null);if(t<1)requestAnimationFrame(fr);else run();};
     requestAnimationFrame(fr);};
-  run();
+  {const dl=typeof sndServeWhistle==='function'?sndServeWhistle(m):0;if(dl)setTimeout(run,dl);else run();}
 }
