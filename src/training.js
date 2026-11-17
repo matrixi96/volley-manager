@@ -67,27 +67,29 @@ function asstPlan(d,md){const sk=staffSkill('asy');const rnd=mulberry32(hashStr(
   const ALL=TR_ORDER;for(let i=0;i<3;i++){if(p[i]==null)continue;if(rnd()<(1-q)*0.45)p[i]=ALL[Math.floor(rnd()*ALL.length)];}
   return p;}
 function dayPlan(d,md){const t=ensTrn();if(t.mode==='own'){const w=t.week[(dow(d)+6)%7];return md.has(d)?[w[0],null,null]:w.slice();}return asstPlan(d,md);}
-function devSession(p,U,intI,mods){const r=rating(p);const gap=(p.pot||r)-r;if(gap<=0||!U.k.length)return;
+function devSession(p,U,intI,mods,mult){const r=rating(p);const gap=(p.pot||r)-r;if(gap<=0||!U.k.length)return;
   const af=p.age<=20?1:p.age<=23?0.75:p.age<=26?0.45:p.age<=29?0.2:0.05;
   const tm=(hasT(p,'amb')?1.15:1)*(hasT(p,'pra')?1.2:1)*(hasT(p,'len')?0.78:1)*(hasT(p,'pro')?1.05:1);
-  const fr=frOf(p);const pts=tm*af*TRAIN_INT[intI][1]*Math.min(1.5,0.5+gap/20)*SESS_K*mods.all*(fr<40?0.6:fr<60?0.85:1)*(0.9+fmOf(p)/600);
+  const fr=frOf(p);const pts=(mult||1)*tm*af*TRAIN_INT[intI][1]*Math.min(1.5,0.5+gap/20)*SESS_K*mods.all*(fr<40?0.6:fr<60?0.85:1)*(0.9+fmOf(p)/600);
   const pw=WEIGHTS[p.pos];const n=U.k.length;p.xp=p.xp||{};
   U.k.forEach((k,j)=>{if(p[k]>=20)return;const sh=n===1?0.6:j===0?0.5:0.5/(n-1);const v=(p.xp[k]||0)+pts*sh*(pw[k]?1:0.4)*(mods[GRP[k]]||1);
     if(v>=1){p[k]++;p.xp[k]=Math.round((v-1)*100)/100;}else p.xp[k]=Math.round(v*1000)/1000;});}
 function trainDay(d,md){const t=myTeam();if(!t)return;const trn=ensTrn();const isM=md.has(d);
   const plan=dayPlan(d,md);const units=plan.filter(Boolean);const intI=SAVE.training.int;const lm=[0.75,1,1.3][intI];const mods=clubMods(SAVE.team);
   const rp={};const rk=regenK();// raport dnia dla każdego zawodnika
-  for(const p of t.players){let fr=frOf(p)+6*rk;const fm0=fmOf(p);
+  for(const p of t.players){let fr=frOf(p)+6*rk;const fm0=fmOf(p);const it=itrOf(p);const iL=IND_INT[it.i];
+    if(p.restUntil&&p.restUntil>=d&&!isM&&!(p.inj&&(!p.injUntil||p.injUntil>d))){p.fr=Math.round(clamp(fr+12*rk,0,100));formAdd(p,(60-fm0)*0.02);rp[p.id]={rest:1,fr:p.fr,f:[Math.round(fm0),Math.round(fmOf(p))]};continue;}
     if(p.inj&&(!p.injUntil||p.injUntil>d)){p.fr=Math.round(clamp(fr+6*rk,0,100));rp[p.id]={i:1,fr:p.fr,f:[Math.round(fm0),Math.round(fm0)]};continue;}
     const a0={},x0={};for(const k of ALL_KEYS){a0[k]=p[k];x0[k]=(p.xp&&p.xp[k])||0;}const scs=[];let inj=0,n=0;const why={};
     for(const u of units){const U=TR_UNITS[u];
-      if(U.load>0)fr-=U.load*lm*(1.25-p.kon/20*0.5);else fr-=U.load*rk;
-      if(U.k.length)devSession(p,U,intI,mods);
+      if(U.load>0)fr-=U.load*lm*iL.l*(1.25-p.kon/20*0.5);else fr-=U.load*rk;
+      if(U.k.length)devSession(p,U,intI,mods,iL.d*mentorK(p));
       if(U.load>0){n++;const f=trFactors(p,U,fr,d);const sc=(p.trB&&p.trB.until>=d?p.trB.v*10:0)+60+nz()*(hasT(p,'pro')?6:10)+f.v;for(const k of f.w)why[k]=(why[k]||0)+1;scs.push(sc);formAdd(p,(sc-fmOf(p))*0.035);}
       if(u==='int'){if(p.tcTm!==SAVE.team){p.tcTm=SAVE.team;p.tc=0;}p.tc=Math.min(60,(p.tc||0)+0.3);formAdd(p,hasT(p,'kap')||hasT(p,'ind')?1.5:0.5);if(p.unh>0&&R()<0.3)p.unh--;}
       if(u==='off')formAdd(p,(60-fmOf(p))*0.02);
-      if(U.load>3&&R()<0.0004*U.load/6*TRAIN_INT[intI][2]*mods.injChance*(fr<40?2.2:fr<60?1.4:1)*(1.3-p.kon/20*0.6)*reinjF(p)){
+      if(U.load>3&&R()<0.0004*U.load/6*TRAIN_INT[intI][2]*mods.injChance*(fr<40?2.2:fr<60?1.4:1)*(1.3-p.kon/20*0.6)*reinjF(p)*iL.r){
         const days=Math.max(2,Math.round((3+R()*R()*18)*mods.injDur));p.inj=days;p.injUntil=addDays(d,days);p.injN=injName(days);p.injD=days;inj=days;news(`🚑 ${p.first} ${p.last} doznał urazu na treningu (${U.n.toLowerCase()}): ${p.injN.toLowerCase()} — przerwa ok. ${days} dni.`);break;}}
+    if(it.f&&!inj&&!isM&&n>0&&TR_UNITS[it.f]){devSession(p,TR_UNITS[it.f],intI,mods,0.45*iL.d*mentorK(p));fr-=2.5*iL.l;}
     p.fr=Math.round(clamp(fr,0,100));
     const g={},up=[];for(const k of ALL_KEYS){const dv=(p[k]-a0[k])+(((p.xp&&p.xp[k])||0)-x0[k]);if(dv>0.0005)g[k]=Math.round(dv*1000)/1000;if(p[k]>a0[k])up.push(k);}
     const r={fr:p.fr,f:[Math.round(fm0),Math.round(fmOf(p))],n};if(scs.length)r.s=Math.round(clamp((scs.reduce((a,b)=>a+b,0)/scs.length+7)/10,1,10)*10)/10;
