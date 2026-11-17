@@ -91,7 +91,7 @@ function hashId(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return ((
 // ---- juniorzy ----
 const JR_PLAN=['R','R','A','A','P','P','P','S','S','S','L','L'];
 function genJunior(ti,age,pos){const t=TEAMS[ti];const inf=infraOf(ti);const mine=ti===SAVE.team;
-  const jq=teamQ(t)-2.5-4.5+0.4*inf.akad+((mine?staffSkill('jr'):aiStaff(ti))-10)*0.06+(mine&&SAVE.coach?(cA('mlo')-10)*0.04:0)+(age-16)*0.6;
+  const jq=teamQ(t)-2.5-4.5+0.4*inf.akad+((mine?staffSkill('jr'):aiStaff(ti))-10)*0.06+(mine&&SAVE.coach?(cA('mlo')-10)*0.04:0)+(mine&&SAVE.bm&&SAVE.bm.jrBoost===S().n-1?1.5:0)+(age-16)*0.6;
   const hc=tmCountry(ti);const p=genPlayer(pos||randPos(),jq+R()*1.2,age,R()<0.88?hc:natPick(R,hc));p.tm=ti;p.jr=true;p.inj=0;p.xp={};p.wage=0;p.ce=0;
   p.pot=Math.min(92,Math.round(rating(p)+(BAL2?3+R()*9:4+R()*12)+inf.akad));p.base=snap(p);assignNum(p,ti);return p;}
 function initClub(){

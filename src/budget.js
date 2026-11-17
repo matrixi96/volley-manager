@@ -37,7 +37,7 @@ function budCan(kind,amt){const L=budLeft();if(kind==='tr'&&amt>L.tr)return `Bra
   if(kind==='op'&&amt>L.op)return `Brak środków w budżecie operacyjnym (zostało ${fmt(Math.max(0,L.op))}). Zmień podział budżetów w Finanse → Budżety.`;return null;}
 function budWageOver(dw){const L=budLeft();if(dw>0&&dw>L.wg){if(SAVE.board){SAVE.board.conf=Math.max(0,SAVE.board.conf-3);}news(`💼 Pensje przekroczyły budżet płacowy o ${fmt(dw-Math.max(0,L.wg))} — zarząd jest niezadowolony.`);}}
 // prośba do zarządu: +25% budżetu transferowego, raz na sezon, kosztem zaufania
-function budAsk(){const b=BUD();if(!b||b.extra)return;const add=round5k(Math.max(150000,b.tr*0.25));if(SAVE.fin.bal-add<-500000)return tradeMsg(false,'Zarząd odmawia: klub nie ma pieniędzy na dodatkowe transfery.');
+function budAsk(){if(typeof bmView==='function'){ui.ixTab='zarzad';go('rozmowy');return;}const b=BUD();if(!b||b.extra)return;const add=round5k(Math.max(150000,b.tr*0.25));if(SAVE.fin.bal-add<-500000)return tradeMsg(false,'Zarząd odmawia: klub nie ma pieniędzy na dodatkowe transfery.');
   b.extra=add;if(SAVE.board)SAVE.board.conf=Math.max(0,SAVE.board.conf-6);news(`🏦 Zarząd dołożył ${fmt(add)} do budżetu transferowego, ale oczekuje wyników.`);save();render();}
 // zarząd nie planuje pensji poniżej obecnych zobowiązań ani utrzymania poniżej kosztów obiektów — reszta dzielona według proporcji
 function budSplitAmt(pool,sp,res){const wb=wageBill(),mn=maintenance()*12;let wg=Math.max(pool*sp.wg,wb+Math.max(150000,wb*0.04));let op=Math.max(pool*sp.op,mn+50000);let tr=pool-wg-op;

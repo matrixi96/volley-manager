@@ -46,7 +46,7 @@ function render(){
   else if(ui.tab==='zapis')body=saveView();
   else if(ui.tab==='osiagniecia')body=achView();
   else if(ui.tab==='historia')body=historyView();
-  else if(ui.tab==='rozmowy')body=ixView();
+  else if(ui.tab==='rozmowy')body=rozmowyView();
   const wide=ui.tab==='mecz'&&ui.match&&!(ui.match.over&&ui.view==='post');
   const _ks={};for(const s of ['.mitems','.side','.nglog'])  {const e=document.querySelector(s);if(e)_ks[s]=e.scrollTop;}
   app.innerHTML=`<div class="shell ${wide?'live':''}">${topBar()}${sideNav()}<main class="${wide?'wide':''}">${ctxBar()}${wide||typeof tutBar!=='function'?'':tutBar()}${body}</main></div>`+(typeof achToastHtml==='function'?achToastHtml():'')+(ui.neg?negModal():ui.roleP&&typeof roleModal==='function'?roleModal():ui.talk?talkModal():ui.card?cardModal():ui.pop?popModal():ui.teamPop!=null?teamModal():'');
