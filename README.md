@@ -4,6 +4,8 @@ Manager siatkówki na PC i telefon, działający offline.
 
 **Zagraj:** https://matrixi96.github.io/volley-manager/
 
+**Windows:** https://github.com/matrixi96/volley-manager/releases/tag/windows-latest — `VolleyManager-Setup.exe` (instalator) albo `VolleyManager-Portable.exe` (bez instalacji). Aplikacja (Electron, katalog `desktop/`) buduje się automatycznie po każdej zmianie gry; F11 = pełny ekran, Ctrl +/− = powiększenie.
+
 **Android (APK):** https://github.com/matrixi96/volley-manager/releases/tag/android-latest — pobierz `VolleyManager.apk` na telefonie i zainstaluj. Plik buduje się automatycznie (GitHub Actions, Capacitor) po każdej zmianie gry; nowa wersja instaluje się na starą i zapis zostaje. Klucz w `android/debug.keystore` służy tylko do podpisywania tej prywatnej wersji (nie do Sklepu Play).
 
 ## Co jest w grze
@@ -34,7 +36,7 @@ Po pierwszym otwarciu gra działa bez internetu.
 
 ## Dla twórcy
 Źródła są w katalogu `src/`. Po zmianach zbuduj grę: `python src/build.py` (tworzy `index.html`).
-Przy większych aktualizacjach podbij nazwę cache w `sw.js` (np. `volley-manager-v135` → `v136`), żeby telefony szybciej pobrały nową wersję.
+Przy większych aktualizacjach podbij nazwę cache w `sw.js` (np. `volley-manager-v136` → `v137`), żeby telefony szybciej pobrały nową wersję.
 
 ## Testy
 

@@ -1,0 +1,55 @@
+{
+  "name": "volley-manager",
+  "productName": "Volley Manager",
+  "version": "1.0.0",
+  "description": "Volley Manager — menedżer siatkówki",
+  "author": "matrixi96",
+  "main": "main.js",
+  "build": {
+    "appId": "io.github.matrixi96.volleymanager",
+    "productName": "Volley Manager",
+    "files": [
+      "main.js",
+      "www/**/*"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "www/icon-512.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "VolleyManager-Setup.exe",
+      "shortcutName": "Volley Manager",
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "VolleyManager-Portable.exe"
+    },
+    "linux": {
+      "target": [
+        "dir"
+      ],
+      "icon": "www/icon-512.png"
+    }
+  },
+  "dependencies": {
+    "electron": "^45.3.3"
+  }
+}

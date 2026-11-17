@@ -218,6 +218,7 @@ function hallAnim(m,pre,ev,done){
     if(s.k==='net')steps.push({to:{x:to.x+(to.x<9?-0.5:0.5),y:to.y,h:0},peak:0,dur:320*sf,moves:[],ph});
     if(s.k==='ace'&&s.sh){const rs=s.s;const lx=R()<0.5?-1.2:2+R()*5,ly=lx<0?2+R()*5:(cy(o)<4.5?-1:10);const [X,Y]=gl(rs,lx,ly);steps.push({to:{x:X,y:Y,h:0},peak:2.2,dur:700*sf,moves:[],ph:'Przyjęcie poza boisko — as!'});}}
   const sErr=(ev.seq||[]).find(x=>x.srv);const label={ace:'AS!',block:'BLOK!',kill:'PUNKT',serr:sErr?(sErr.how==='net'?'ZAGRYWKA W SIATKĘ':'ZAGRYWKA W AUT'):'BŁĄD ZAGRYWKI',attErr:'BŁĄD ATAKU',setErr:'BŁĄD',mix:'NIEPOROZUMIENIE',blockout:'PO BLOKU!',netTouch:'SIATKA W BLOKU!',f3m:'BŁĄD 3 M'}[ev.type]||'PUNKT';
+  try{if(typeof sndSteps==='function')sndSteps(m,ev,steps);}catch(e){}
   if(v3dOn()&&V3D.mod){v3dPlay(m,pre,ev,steps,label,sf,done);return;}
   let k=0;const phEl=()=>document.getElementById('mph');
   const run=()=>{if(!document.getElementById('mcv')){done();return;}
