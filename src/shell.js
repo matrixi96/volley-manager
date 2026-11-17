@@ -67,7 +67,7 @@ function ctxBar(){if(ui.tab==='mecz'&&liveMatch())return '';const t=myTeam();con
   const pc=v=>v>=70?'var(--good)':v>=45?'var(--acc)':'var(--bad)';
   return `<div class="ctx"><div class="cpair"><span class="clab">Rozgrywki</span><b>${esc(comp)}</b></div>
    ${op!=null?`<div class="cpair"><span class="clab">Następny rywal</span><span class="ccr" onclick="openTeam(${op})">${teamCrest(op,22)}</span><b>${esc(TEAMS[op].name)}</b><span class="mut">${e?fmtMid(e.d)+(e.t?', '+e.t:''):''}</span></div>`:''}
-   <span class="sp"></span>${st('Morale',mor+'%',pc(mor))}${st('Zgranie',chem+'%',pc(chem),'sklad')}${st('Zarząd',conf+'%',pc(conf),'trener')}${st('Skład',okLu?'OK':'!',okLu?'var(--good)':'var(--bad)','sklad')}${st('Pozycja',pos,null,'tabela')}${st('Budżet',fmt(SAVE.fin?SAVE.fin.bal:0),null,'finanse')}</div>`;}
+   <span class="sp"></span>${st('Morale',mor+'%',pc(mor))}${st('Zgranie',chem+'%',pc(chem),'sklad')}${SAVE.ownClub&&SAVE.vis?st('Kibice',(SAVE.vis.fans==null?55:SAVE.vis.fans)+'%',pc(SAVE.vis.fans==null?55:SAVE.vis.fans),'strategia'):st('Zarząd',conf+'%',pc(conf),'trener')}${st('Skład',okLu?'OK':'!',okLu?'var(--good)':'var(--bad)','sklad')}${st('Pozycja',pos,null,'tabela')}${st('Budżet',fmt(SAVE.fin?SAVE.fin.bal:0),null,'finanse')}</div>`;}
 // ---- czas gry ----
 function nextAction(){if(liveMatch()){go('mecz');return;}const s=S();if(!s||SAVE.fired){go('mecz');return;}
   const e=nextEvent();if(!e){go('mecz');return;}

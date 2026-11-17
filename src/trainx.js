@@ -1,6 +1,6 @@
 // ================= TRENING W STYLU FM: zakładki, intensywność dnia, zadowolenie, postawa, indywidualny, mentoring, odpoczynek, trenerzy =================
 // p.itr={f:jednostka|null,i:0/1/2} — trening indywidualny; p.restUntil — wolne do dnia; SAVE.trn.ment=[[id,...]] — grupy mentorskie; SAVE.trn.ar — automatyczny odpoczynek
-const IND_INT=[{n:'Lżej',l:0.75,d:0.85,r:0.7},{n:'Normalnie',l:1,d:1,r:1},{n:'Mocniej',l:1.25,d:1.15,r:1.35}];
+const IND_INT=[{n:'Lżej',l:0.7,d:0.88,r:0.6},{n:'Normalnie',l:1,d:1,r:1},{n:'Mocniej',l:1.25,d:1.15,r:1.8}];
 const IND_FOCUS=['zag','prz','ata','blo','obr','roz','sil','tak'];
 const IND_SUG={R:'roz',A:'ata',P:'prz',S:'blo',L:'obr'};
 function itrOf(p){const i=p.itr||{};return {f:i.f||null,i:i.i==null?1:i.i};}
