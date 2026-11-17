@@ -38,7 +38,7 @@ function preTipsData(opI){const o=RSC()[opI];if(!o||!o.m)return null;const out=[
   else out.push({g:'Analiza',t:'Bez dobrego analityka znamy tylko przyjęcie rywala.',why:'Analityk (Sztab) z umiejętnością 6+ policzy, w które kierunki atakuje rywal, i podpowie ustawienie bloku. 10+ dokładniej, 15+ najdokładniej.'});
   return out;}
 // zapamiętanie zastosowanych rad, żeby po meczu je rozliczyć
-function preRemember(ev){if(!ev)return;const c=typeof myNext==='function'?myNext():null;if(!c)return;const op=c.h===SAVE.team?c.a:c.h;const P=SAVE.preAp&&SAVE.preAp.op===op&&SAVE.preAp.d===today()?SAVE.preAp:(SAVE.preAp={op,d:today(),it:[]});
+function preRemember(ev){if(!ev||window._dlgPrep)return;const c=typeof myNext==='function'?myNext():null;if(!c)return;const op=c.h===SAVE.team?c.a:c.h;const P=SAVE.preAp&&SAVE.preAp.op===op&&SAVE.preAp.d===today()?SAVE.preAp:(SAVE.preAp={op,d:today(),it:[]});
   if(!P.it.some(x=>x.k===ev.k))P.it.push(ev);save();}
 // po meczu: czy rady zadziałały
 function preEvaluate(m){const P=SAVE.preAp;if(!P||!m||!m.sides)return;SAVE.preAp=null;const me=m.sides.findIndex(s=>s.team.idx===SAVE.team);if(me<0)return;const op=m.sides[1-me];if(op.team.idx!==P.op)return;
