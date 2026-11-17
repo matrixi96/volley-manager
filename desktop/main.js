@@ -16,7 +16,8 @@ app.whenReady().then(()=>{
   const s=loadState();
   win=new BrowserWindow({width:s.width||1440,height:s.height||900,x:s.x,y:s.y,minWidth:960,minHeight:620,backgroundColor:'#0b1220',title:'Volley Manager',
     icon:path.join(ROOT,'icon-512.png'),autoHideMenuBar:true,show:false,webPreferences:{contextIsolation:true,sandbox:true,spellcheck:false}});
-  if(s.max)win.maximize();if(s.full)win.setFullScreen(true);
+  // gra zawsze startuje na całym ekranie (zmaksymalizowane okno); jeśli ostatnio był tryb pełnoekranowy (F11) — wraca do niego
+  win.maximize();if(s.full)win.setFullScreen(true);
   win.once('ready-to-show',()=>{win.show();setTimeout(checkUpdate,4000);});
   win.setTitle('Volley Manager '+app.getVersion());win.on('page-title-updated',e=>e.preventDefault());
   win.loadURL('app://gra/index.html');
