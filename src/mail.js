@@ -133,7 +133,7 @@ function mailBodyHtml(m){const b=m.b||{};
   if(b.type==='ix'){const q=SAVE.ix&&SAVE.ix.q.find(x=>x.id===b.id);if(!q)return '<p>Sprawa została już rozstrzygnięta. Historia rozmów i obietnice: zakładka Rozmowy.</p>';const P=PLAYERS[q.pid];return `<p>${P?esc(IX_T[q.k].x(P.p,q)):''}</p><p><button class="btn" onclick="ui.ixTab=null;go('rozmowy')">Przejdź do rozmowy</button></p>`;}
   if(b.type==='match')return matchMailHtml(b);
   if(b.type==='train')return trainMailHtml(b);
-  if(typeof scoutMailHtml==='function'&&/^(scout|opp|market)$/.test(b.type))return scoutMailHtml(m);
+  if(typeof scoutMailHtml==='function'&&/^(scout|opp|market|recs)$/.test(b.type))return scoutMailHtml(m);
   if(typeof sponsMailHtml==='function'&&/^(spons|spexp)$/.test(b.type))return sponsMailHtml(m);
   if(b.type==='offer')return offerMailHtml(m);
   if(b.type==='fin')return finMailHtml(b);
