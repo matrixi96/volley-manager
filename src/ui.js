@@ -46,9 +46,10 @@ function render(){
   else if(ui.tab==='zapis')body=saveView();
   else if(ui.tab==='osiagniecia')body=achView();
   else if(ui.tab==='historia')body=historyView();
+  else if(ui.tab==='rozmowy')body=ixView();
   const wide=ui.tab==='mecz'&&ui.match&&!(ui.match.over&&ui.view==='post');
   const _ks={};for(const s of ['.mitems','.side','.nglog'])  {const e=document.querySelector(s);if(e)_ks[s]=e.scrollTop;}
-  app.innerHTML=`<div class="shell ${wide?'live':''}">${topBar()}${sideNav()}<main class="${wide?'wide':''}">${ctxBar()}${wide||typeof tutBar!=='function'?'':tutBar()}${body}</main></div>`+(typeof achToastHtml==='function'?achToastHtml():'')+(ui.neg?negModal():ui.talk?talkModal():ui.card?cardModal():ui.pop?popModal():ui.teamPop!=null?teamModal():'');
+  app.innerHTML=`<div class="shell ${wide?'live':''}">${topBar()}${sideNav()}<main class="${wide?'wide':''}">${ctxBar()}${wide||typeof tutBar!=='function'?'':tutBar()}${body}</main></div>`+(typeof achToastHtml==='function'?achToastHtml():'')+(ui.neg?negModal():ui.roleP&&typeof roleModal==='function'?roleModal():ui.talk?talkModal():ui.card?cardModal():ui.pop?popModal():ui.teamPop!=null?teamModal():'');
   for(const s in _ks){const e=document.querySelector(s);if(e)e.scrollTop=_ks[s];}
   if(ui.tab==='home'&&typeof hvClip==='function')hvClip();
   if(ui.tab==='klub'&&typeof v3Mount==='function')try{v3Mount();}catch(e){console.error(e);}

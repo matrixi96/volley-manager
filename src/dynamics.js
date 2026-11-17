@@ -28,6 +28,8 @@ function pSat(p,t){t=t||TEAMS[p.tm];const r=[];let s=50+((p.mor==null?60:p.mor)-
   const yrs=S()?S().n-(p.jn||S().n):0;if(hasT(p,'loj')&&yrs>=2){s+=6;r.push(['Przywiązanie do klubu',6]);}
   if(p.ce!=null&&S()&&p.ce<=S().n&&!hasT(p,'loj')){s-=5;r.push(['Kończący się kontrakt',-5]);}
   if(t.players.some(x=>x!==p&&hasT(x,'oby'))){s+=3;r.push(['Wzór w szatni',3]);}
+  if(t.idx===SAVE.team&&p.rel!=null&&p.rel!==50){const v=Math.round((p.rel-50)*0.2);s+=v;r.push(['Relacja z trenerem',v]);}
+  if(t.idx===SAVE.team&&p.wantOut===(S()&&S().n)){s-=8;r.push(['Chce odejść',-8]);}
   return {v:Math.round(clamp(s,0,100)),r};}
 // ---- hierarchia: wpływ w szatni ----
 function hScore(p,t){const yrs=S()?Math.max(0,S().n-(p.jn||S().n)):0;let v=rating(p)*0.6+Math.min(p.age,34)*0.6+yrs*3;if(hasT(p,'lid'))v+=10;if(hasT(p,'sta'))v+=6;if(hasT(p,'oby'))v+=3;if(hasT(p,'kap')||hasT(p,'len'))v-=4;
