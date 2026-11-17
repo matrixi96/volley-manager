@@ -721,6 +721,7 @@ body.th-fm .nav.on{background:#26282d;color:#fff;box-shadow:inset 3px 0 0 #fff}
 body.th-fm h3,body.th-fm .pan .ttl,body.th-fm .topbar .lab,body.th-fm .hsum .lab{color:#e8eaee}
 body.th-fm select,body.th-fm input,body.th-fm textarea{background:#151619;border-color:#34363c}
 body.th-fm a,body.th-fm .link{color:#8fc0ff}
+body.th-fm .tabb.on{border-bottom-color:#fff;color:#fff}body.th-fm .seg button.on{background:#e9ebee;color:#15171a}
 .nav.ndrop,.ngh.ndrop{box-shadow:inset 0 3px 0 #7cb4ff!important}
 .nav[draggable=true]{cursor:pointer}
 /* ================= ZAKŁADKI SEKCJI I ANALIZA RYWALA ================= */
@@ -3392,7 +3393,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=146').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=147').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
@@ -4897,8 +4898,8 @@ function transferView(){const o=windowOpen();const f=ui.mf||(ui.mf={pos:'',src:'
   const s=S();const free=SQUAD_MAX-myTeam().players.length;
   return `<div class="kstrip"><div><span>Dostępne na transfery</span><b class="acc">${fmt(Math.max(0,SAVE.fin.bal+500000))}</b><small>saldo ${fmt(SAVE.fin.bal)} + dopuszczalny debet 500 tys.</small></div><div><span>Pensje kadry</span><b>${fmt(payroll())}</b><small>rocznie, płatne co miesiąc</small></div><div><span>Kadra</span><b>${myTeam().players.length}/${SQUAD_MAX}</b><small>${free>0?free+' wolnych miejsc':'kadra pełna'}</small></div><div><span>Okno transferowe</span><b class="${o?'good':'bad'}">${o?'otwarte':'zamknięte'}</b><small>${s&&s.sdates?`od 1 czerwca do ${fmtDMY(s.sdates[N_SPAR-1])}`:''}</small></div></div>
   ${ui.tmsg?`<div class="card tmsg ${ui.tmsg.ok?'ok':'no'}">${esc(ui.tmsg.t)}</div>`:''}${ui.scMsg?`<div class="card tmsg ok">${esc(ui.scMsg)}</div>`:''}
-  <div class="ptabs">${[['market','Rynek',''],['short','Obserwowani',SC().short.length],['offers','Oferty za moich',inbox.length]].map(([k,l,n])=>`<button class="tabb ${tab===k?'on':''}" onclick="ui.mt='${k}';ui.scMsg=null;render()">${l}${n?` <small class="mut">${n}</small>`:''}</button>`).join('')}</div>
-  ${tab==='offers'?`<div class="card"><h2>Oferty za moich zawodników</h2>${inbox.length?inbox.map(x=>offerRow(x,o)).join(''):'<p class="mut small">Brak ofert. Wystaw zawodnika na listę transferową w jego karcie, żeby kluby zaczęły składać oferty.</p>'}</div><div class="card"><h2>Lista transferowa</h2>${myTeam().players.filter(p=>p.tl).map(p=>`<div class="row wrap offer">${pFace(p,26)}<button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} ${esc(p.last)}</button> ${pTag(p.pos)} <span class="small mut">wartość ${fmt(pValue(p))}</span><span class="sp"></span><span>cena <b>${fmt(p.tl.price)}</b></span><button class="link" onclick="tlOff('${p.id}')">Zdejmij</button></div>`).join('')||'<p class="mut small">Nikt nie jest wystawiony. Otwórz kartę swojego zawodnika i ustaw cenę.</p>'}</div>`
+  <div class="ptabs">${[['market','Rynek',''],['short','Obserwowani',SC().short.length],['offers','Oferty za moich',inbox.length],['loans','Wypożyczenia',''],['hist','Historia transferów','']].map(([k,l,n])=>`<button class="tabb ${tab===k?'on':''}" onclick="ui.mt='${k}';ui.scMsg=null;render()">${l}${n?` <small class="mut">${n}</small>`:''}</button>`).join('')}</div>
+  ${tab==='loans'?trLoansTab():tab==='hist'?trHistTab():tab==='offers'?`<div class="card"><h2>Oferty za moich zawodników</h2>${inbox.length?inbox.map(x=>offerRow(x,o)).join(''):'<p class="mut small">Brak ofert. Wystaw zawodnika na listę transferową w jego karcie, żeby kluby zaczęły składać oferty.</p>'}</div><div class="card"><h2>Lista transferowa</h2>${myTeam().players.filter(p=>p.tl).map(p=>`<div class="row wrap offer">${pFace(p,26)}<button class="link pn" onclick="openCard('${p.id}')">${esc(p.first)} ${esc(p.last)}</button> ${pTag(p.pos)} <span class="small mut">wartość ${fmt(pValue(p))}</span><span class="sp"></span><span>cena <b>${fmt(p.tl.price)}</b></span><button class="link" onclick="tlOff('${p.id}')">Zdejmij</button></div>`).join('')||'<p class="mut small">Nikt nie jest wystawiony. Otwórz kartę swojego zawodnika i ustaw cenę.</p>'}</div>`
   :`<div class="card">${tab==='market'?`<div class="filters2"><label class="flt"><span>Szukaj</span><input placeholder="Nazwisko…" value="${esc(f.q||'')}" onchange="ui.mf.q=this.value;ui.mf.pg=0;render()"></label>
     ${sel('pos','Pozycja',[['','Każda'],['R','Rozgrywający'],['A','Atakujący'],['P','Przyjmujący'],['S','Środkowy'],['L','Libero']])}${sel('src','Skąd',[['all','Kluby i wolni'],['club','Tylko z klubów'],['fa','Tylko wolni']])}
     ${sel('maxAge','Maks. wiek',[[40,'Każdy'],[21,'21'],[23,'23'],[27,'27'],[30,'30']])}${sel('maxVal','Maks. wartość',[[0,'Bez limitu'],[200000,'200 tys.'],[500000,'500 tys.'],[1000000,'1 mln'],[2000000,'2 mln']])}
@@ -7787,7 +7788,7 @@ function homeView(){const s=S();if(!s)return '';
 function hvClip(){document.querySelectorAll('.hvgl').forEach(g=>{const b=g.getBoundingClientRect().bottom;for(const c of g.children)c.style.visibility=c.getBoundingClientRect().bottom>b+1?'hidden':'';});}
 window.addEventListener('resize',()=>{if(ui.tab==='home')hvClip();});
 // ================= WYGLĄD: motyw w stylu FM, przestawiane menu boczne, ekran startowy =================
-const APPV='146';
+const APPV='147';
 // ---- motyw ----
 function uiPref(k,d){try{const v=localStorage.getItem('vm_'+k);return v==null?d:v;}catch(e){return d;}}
 function uiPrefSet(k,v){try{localStorage.setItem('vm_'+k,v);}catch(e){}}
@@ -7824,7 +7825,7 @@ function looksCard(){const th=uiPref('theme','fm');const G=navGroups();
    <button class="ghost sm" style="margin-top:8px" onclick="navReset()">Przywróć domyślną kolejność</button></details></div>`;}
 {const _sv=saveView;saveView=function(){return `<div class="card row wrap" style="gap:8px;align-items:center"><span>Ustawienia i zapis gry</span><span class="sp"></span><button class="ghost" onclick="ui.start=true;render()">⏏ Menu główne</button></div>`+looksCard()+_sv.apply(this,arguments);};}
 // ================= EKRAN STARTOWY =================
-const CHANGES=[['v146','Analiza rywala na ekranie głównym, zakładki na starszych ekranach'],['v145','Balans treningu „mocniej”, łagodniejsza ocena zarządu po sezonie, kibice na pasku we własnym klubie'],['v143','Własny klub: sam wybierasz charakter i plan, kibice wpływają na frekwencję i sponsorów'],['v142','Ekran startowy, motyw grafitowy jak w FM, przestawiane menu'],['v141','Strategia klubu: cele zarządu, plan pięcioletni, kibice'],['v140','Finanse: wykresy, kredyt bankowy, licencja ligowa, prognoza'],['v139','Trening: indywidualny, mentoring, odpoczynek, reżimy, trenerzy'],['v138','Wyższe limity sztabu, skauci osobno, własny klub bez limitu'],['v137','Dźwięki meczu i powiadomień, wersja na Windows'],['v136','Zapisy w IndexedDB, delegowanie transferów']];
+const CHANGES=[['v147','Transfery: zakładki Wypożyczenia i Historia transferów'],['v146','Analiza rywala na ekranie głównym, zakładki na starszych ekranach'],['v145','Balans treningu „mocniej”, łagodniejsza ocena zarządu po sezonie, kibice na pasku we własnym klubie'],['v143','Własny klub: sam wybierasz charakter i plan, kibice wpływają na frekwencję i sponsorów'],['v142','Ekran startowy, motyw grafitowy jak w FM, przestawiane menu'],['v141','Strategia klubu: cele zarządu, plan pięcioletni, kibice'],['v140','Finanse: wykresy, kredyt bankowy, licencja ligowa, prognoza'],['v139','Trening: indywidualny, mentoring, odpoczynek, reżimy, trenerzy'],['v138','Wyższe limity sztabu, skauci osobno, własny klub bez limitu'],['v137','Dźwięki meczu i powiadomień, wersja na Windows'],['v136','Zapisy w IndexedDB, delegowanie transferów']];
 ui.start=true;
 function smHasSave(){return SAVE.team!=null&&!!SAVE.coach;}
 function smCont(){ui.start=false;ui.sm=null;render();}
@@ -7899,6 +7900,18 @@ function subTabs(){const tab=ui.tab;const D=SUBT[tab];const main=document.queryS
   const bar=document.createElement('div');bar.className='subtabs';bar.innerHTML=D.map(([k,l])=>`<button class="${k===cur?'on':''}" onclick="ui.sub=ui.sub||{};ui.sub['${tab}']='${k}';render()">${l}</button>`).join('');
   const ctx=main.querySelector('.ctx');if(ctx&&ctx.nextSibling)main.insertBefore(bar,ctx.nextSibling);else main.insertBefore(bar,main.firstChild);}
 {const _r2=render;render=function(){const r=_r2.apply(this,arguments);try{subTabs();}catch(e){console.error(e);}return r;};}
+
+// ================= TRANSFERY: wypożyczenia i historia transferów =================
+function TRH(){return SAVE.trh||(SAVE.trh=[]);}
+{const _mp=movePlayer;movePlayer=function(p,tm){try{if(SAVE.team!=null&&p&&!p.jr&&(p.tm===SAVE.team||tm===SAVE.team)&&p.tm!==tm&&S()){const inn=tm===SAVE.team;const other=inn?p.tm:tm;
+  const lg=(SAVE.fin&&SAVE.fin.log||[]).find(x=>x.d===today()&&x.t.includes(p.last));TRH().unshift({d:today(),n:S().n,id:p.id,nm:p.first+' '+p.last,pos:p.pos,age:p.age,r:rating(p),inn,o:other,fee:lg?Math.abs(lg.a):0,loan:!!(p.loan||(lg&&/Wypożycz/.test(lg.t)))});SAVE.trh=TRH().slice(0,80);}}catch(e){}return _mp.apply(this,arguments);};}
+function trLoansTab(){const lc=typeof loansCard==='function'?loansCard():'';return (lc||`<div class="card"><h2>Wypożyczenia</h2><p class="mut">Nie masz teraz zawodników wypożyczonych ani wypożyczonych do klubu.</p></div>`)+
+  `<div class="card"><h2>Jak wypożyczać?</h2><p class="small">Wypożyczyć do siebie możesz rezerwowego z innego klubu — otwórz kartę zawodnika (Rynek lub Skauting) i wybierz „Wypożyczenie do nas”. Swojego zawodnika oddasz na wypożyczenie z jego karty („Wypożycz”). Wypożyczenia trwają do końca sezonu, a pensja dzieli się między kluby. Działa tylko w oknie transferowym.</p></div>`;}
+function trHistTab(){const H=TRH();const f=ui.trhF||'all';const xs=H.filter(x=>f==='all'||(f==='in'?x.inn:!x.inn));
+  return `<div class="card"><div class="row wrap" style="gap:10px"><h2 style="margin:0">Historia transferów</h2><span class="sp"></span><div class="seg">${[['all','Wszystkie'],['in','Przyszli'],['out','Odeszli']].map(([k,l])=>`<button class="${f===k?'on':''}" onclick="ui.trhF='${k}';render()">${l}</button>`).join('')}</div></div>
+   ${xs.length?`<div class="tw"><table><thead><tr><th class="l">Data</th><th class="l">Zawodnik</th><th>Wiek</th><th>Ocena</th><th class="l">${f==='out'?'Dokąd':f==='in'?'Skąd':'Skąd / dokąd'}</th><th>Kwota</th></tr></thead><tbody>
+   ${xs.map(x=>`<tr><td class="l small">${fmtDMY(x.d)}</td><td class="l">${x.inn?'<span class="good">⬅</span>':'<span class="bad">➡</span>'} ${PLAYERS[x.id]?`<button class="link pn" onclick="openCard('${x.id}')">${esc(x.nm)}</button>`:esc(x.nm)} <small class="mut">${pTag(x.pos)}</small></td><td>${x.age}</td><td>${x.r}</td><td class="l">${x.o>=0&&TEAMS[x.o]?tDot(x.o)+tName(x.o):'<span class="mut">bez klubu</span>'}${x.loan?' <small class="mut">(wypożyczenie)</small>':''}</td><td>${x.fee?fmt(x.fee):'—'}</td></tr>`).join('')}</tbody></table></div>`
+   :'<p class="mut">Historia zbiera się od tej wersji gry — pojawią się tu wszystkie transfery do i z Twojego klubu.</p>'}</div>`;}
 function vmBoot(){if(ST.mode==='idb'&&!ST.lsHad){try{const o=JSON.parse(stGet(KEY));if(o)SAVE=o;}catch(e){}rebuildIndex();restoreDefs();}
 applyCustom();
 // ================= START =================
