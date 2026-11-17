@@ -1,0 +1,70 @@
+name: Windows (aplikacja na komputer)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - '3d/**'
+      - 'desktop/**'
+      - '.github/workflows/desktop.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-win
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Pliki gry
+        shell: bash
+        run: |
+          cd desktop
+          mkdir -p www
+          # gra bez service workera: w aplikacji pliki są lokalne (protokół app://)
+          cp ../index.html ../manifest.webmanifest ../*.png www/
+          cp -r ../3d www/
+
+      - name: Wersja
+        shell: bash
+        run: |
+          cd desktop
+          npm version "1.0.${{ github.run_number }}" --no-git-tag-version
+
+      - name: Zbuduj instalator i wersję przenośną
+        shell: bash
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: |
+          cd desktop
+          npm install --no-audit --no-fund --save-dev electron@latest electron-builder@latest
+          npx electron-builder --win --publish never
+          ls dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VolleyManager-windows
+          path: |
+            desktop/dist/VolleyManager-Setup.exe
+            desktop/dist/VolleyManager-Portable.exe
+
+      - name: Opublikuj w Releases (stały link)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete windows-latest -y --cleanup-tag || true
+          gh release create windows-latest desktop/dist/VolleyManager-Setup.exe desktop/dist/VolleyManager-Portable.exe \
+            --title "Volley Manager – Windows (wersja 1.0.${{ github.run_number }})" \
+            --notes "VolleyManager-Setup.exe – instalator (skrót na pulpicie i w menu Start). VolleyManager-Portable.exe – wersja bez instalacji, uruchamiasz od razu. Przy pierwszym uruchomieniu Windows może pokazać „System Windows ochronił ten komputer” – kliknij „Więcej informacji” → „Uruchom mimo to” (plik nie ma płatnego certyfikatu wydawcy). Zapisy są trzymane w aplikacji; zapis z przeglądarki przeniesiesz kodem zapisu (Zapis gry → eksport/import)."

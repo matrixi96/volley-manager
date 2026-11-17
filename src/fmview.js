@@ -124,7 +124,7 @@ function fmPanel(m){const a=m.sides[0];
     <div class="tacgrid">${tgtTacHtml(m)}${srvTacRows(a.tactics,a.pl)}${shieldTacHtml(a.tactics,a.pl)}${freeTacHtml(a.tactics)}${p1TacHtml(a.tactics)}</div><div class="tacgrid wide">${blockTacHtml(a.tactics)}</div>${rotCard(m)}</div>`;
   if(ui.fmPanel==='more')return `<div class="card fmpanel"><div class="row wrap" style="gap:6px">
     <button class="ghost sm" onclick="ui.fmPanel=null;simToSetEnd()">⏭ Do końca seta</button><button class="ghost sm" onclick="ui.fmPanel=null;simToEnd()">⏭⏭ Do końca meczu</button>
-    <button class="ghost sm" onclick="ui.mview=ui.mview==='klasyczny'?'hala':'klasyczny';ui.fmPanel=null;render()">${ui.mview==='klasyczny'?'🏟️ Widok hali':'▦ Widok klasyczny'}</button>${v3dCan()&&ui.mview!=='klasyczny'?`<button class="ghost sm" onclick="v3dToggle()" title="Przełącz widok hali: 3D / 2D">${ui.v3d?'🏐 Hala 2D':'🎮 Hala 3D'}</button>`:''}
+    ${typeof sndBtn==='function'?sndBtn():''}<button class="ghost sm" onclick="ui.mview=ui.mview==='klasyczny'?'hala':'klasyczny';ui.fmPanel=null;render()">${ui.mview==='klasyczny'?'🏟️ Widok hali':'▦ Widok klasyczny'}</button>${v3dCan()&&ui.mview!=='klasyczny'?`<button class="ghost sm" onclick="v3dToggle()" title="Przełącz widok hali: 3D / 2D">${ui.v3d?'🏐 Hala 2D':'🎮 Hala 3D'}</button>`:''}
     <button class="ghost sm ${ui.anim!==false?'on':''}" onclick="ui.anim=ui.anim===false;render()">🏐 Animacja: ${ui.anim!==false?'wł.':'wył.'}</button>
     <span class="small mut">Libero: <b style="color:var(--txt)">${esc(a.libero.last)}</b> <button class="link" onclick="selSub('L')">zmień</button></span></div></div>`;
   if(ui.fmPanel==='asst'){ui.fmPanel=null;ui.asstOpen=1;}
