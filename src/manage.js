@@ -149,6 +149,7 @@ function roundTick(kind,home,att,opp){
     if(p.tm<0)continue;const mine=p.tm===SAVE.team;
     if(mine&&!p.jr){if(ROUND_PLAYED.has(p.id))develop(p,'bal',tr.int,true,mm(p.tm),false,0.3);continue;}// reszta rozwoju: codzienne treningi (training.js)
     develop(p,mine?(tr.focus||'bal'):'bal',mine?tr.int:1,ROUND_PLAYED.has(p.id),mm(p.tm),p.jr);}
+  if((kind==='liga'||kind==='po')&&typeof ixRound==='function')try{ixRound();}catch(e){console.error(e);}
   if(kind==='liga'||kind==='po')for(const p of myTeam().players){if(ROUND_PLAYED.has(p.id)){p.unh=0;continue;}if(p.inj)continue;p.unh=(p.unh||0)+1;
     if(hasT(p,'kap')&&p.unh===3)news(`😤 ${p.first} ${p.last} jest wściekły, że nie gra. Psuje atmosferę w szatni (niższe morale drużyny).`);
     if(hasT(p,'amb')&&p.unh===4)news(`📢 ${p.first} ${p.last} (ambitny) chce więcej grać. Jeśli nadal będzie siedział na ławce, straci humor.`);}

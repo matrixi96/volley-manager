@@ -3,7 +3,7 @@ Użycie: python src/build.py"""
 import pathlib
 src = pathlib.Path(__file__).parent
 root = src.parent
-parts = [(src / f).read_text(encoding='utf-8') for f in ['head.html', 'engine.js', 'world.js', 'ui.js', 'season.js', 'manage.js', 'calendar.js', 'club.js', 'faces.js', 'coach.js', 'ownclub.js', 'matchview.js', 'livepanels.js', 'fmview.js', 'people.js', 'shouts.js', 'training.js', 'mail.js', 'talk.js', 'nego.js', 'camp.js', 'scout.js', 'sponsors.js', 'economy.js', 'budget.js', 'social.js', 'cup.js', 'euro.js', 'dynamics.js', 'loans.js', 'nt.js', 'bld3d.js', 'datacenter.js', 'tacfam.js', 'achievements.js', 'tutorial.js', 'rivals.js', 'history.js', 'shell.js', 'boot.js']]
+parts = [(src / f).read_text(encoding='utf-8') for f in ['head.html', 'engine.js', 'world.js', 'ui.js', 'season.js', 'manage.js', 'calendar.js', 'club.js', 'faces.js', 'coach.js', 'ownclub.js', 'matchview.js', 'livepanels.js', 'fmview.js', 'people.js', 'shouts.js', 'training.js', 'mail.js', 'talk.js', 'nego.js', 'camp.js', 'scout.js', 'sponsors.js', 'economy.js', 'budget.js', 'social.js', 'cup.js', 'euro.js', 'dynamics.js', 'loans.js', 'nt.js', 'bld3d.js', 'datacenter.js', 'tacfam.js', 'achievements.js', 'tutorial.js', 'rivals.js', 'interact.js', 'history.js', 'shell.js', 'boot.js']]
 html = ''.join(parts) + '\n</script></body></html>\n'
 html = html.replace('<title>Volley Manager — prototyp</title>', '''<title>Volley Manager</title>
 <link rel="manifest" href="manifest.webmanifest">
