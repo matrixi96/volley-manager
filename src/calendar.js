@@ -45,7 +45,7 @@ function updateAges(){if(!SAVE.world)return;const d=today();for(const p of W().p
 function updateInjuries(){if(!SAVE.world)return;const d=today();
   for(const p of W().players){if(!p.injUntil){if(p.inj>0){p.injUntil=addDays(d,p.inj*7);p.inj=daysBetween(d,p.injUntil);}continue;}
     const rem=daysBetween(d,p.injUntil);if(rem<=0){p.inj=0;delete p.injUntil;p.injLast={n:p.injN||'Uraz',days:p.injD||'?',back:d};delete p.injN;delete p.injD;if(p.tm===SAVE.team)news(`✅ ${p.first} ${p.last} wrócił do zdrowia.${(p.injLast.days|0)>=7?' Przez ok. 3 tygodnie ryzyko odnowienia urazu jest większe — nie przeciążaj go.':''}`);}else p.inj=rem;}}
-function monthly(d){if(!SAVE.fin||SAVE.team==null)return;const m=+d.slice(5,7);const pay=payroll()/12,sp=sponsorAmt()/12;
+function monthly(d){if(!SAVE.fin||SAVE.team==null)return;try{if(typeof mdMonthly==='function')mdMonthly();}catch(e){}const m=+d.slice(5,7);const pay=payroll()/12,sp=sponsorAmt()/12;
   const stp=staffPay()/12,mnt=maintenance();const shm=shopMonth(myInfra().sklep,false);const shp=shm.tot;SAVE.eco.shopLast={m:(m+10)%12+1,rows:shm.rows,tot:shm.tot,rev:shm.rev};
   const spd=typeof sponsorsMonth==='function'?sponsorsMonth(d):null;const spm=spd?spd.inc:sp;
   money(-pay,'Pensje');money(spm,'Sponsor');money(-stp,'Sztab');money(-mnt,'Utrzymanie');money(shp,'Sklep');const f=SAVE.fin;f.log.unshift({d,t:`${MON_NOM[m-1]}: pensje zawodników (−${fmt(pay)}) i sztabu (−${fmt(stp)}), utrzymanie (−${fmt(mnt)}), sponsorzy (+${fmt(spm)}), sklep (+${fmt(shp)})`,a:spm+shp-pay-stp-mnt});f.log=f.log.slice(0,80);

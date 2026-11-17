@@ -79,7 +79,7 @@ function seasonEvaluation(){const s=S(),c=coach();if(!c||!s.final)return;const p
   if(place===2)c.trophies.push(`🥈 Wicemistrzostwo ${sLabel(s.n)} (${TEAMS[SAVE.team].name})`);
   if(place===3)c.trophies.push(`🥉 Brąz ${sLabel(s.n)} (${TEAMS[SAVE.team].name})`);
   if(s.jchamp===SAVE.team)c.trophies.push(`🏆 Mistrzostwo juniorów ${sLabel(s.n)} (${TEAMS[SAVE.team].name})`);
-  s.eval={place,goal:g,met,dr:Math.round(dr)};
+  s.eval={place,goal:g,met,dr:Math.round(dr)};try{if(typeof mdSeasonEnd==='function')mdSeasonEnd(place);}catch(e){console.error(e);}
   news(met?`👔 Zarząd zadowolony: cel „${goalTxt(g,lgOf(SAVE.team))}” wykonany (${place}. miejsce). Reputacja trenera: ${c.rep}.`:`👔 Zarząd rozczarowany: cel „${goalTxt(g,lgOf(SAVE.team))}” niewykonany (${place}. miejsce). Zaufanie: ${Math.round(b.conf)}%.`);
   if(b.conf<20&&!SAVE.ownClub)fireCoach('Zarząd nie przedłużył współpracy po nieudanym sezonie.');
   else if(met)SAVE.offers=makeOffers(false);}
