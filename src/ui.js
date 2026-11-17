@@ -72,7 +72,7 @@ function changeClub(){if(!ui.confirmReset){ui.confirmReset=true;render();return;
 
 // ---------- skład ----------
 function squadView(){
-  const sqT=`<div class="card"><div class="row" style="gap:6px"><button class="tabb ${ui.sqTab!=='dyn'?'on':''}" onclick="ui.sqTab=null;render()">Skład i kadra</button><button class="tabb ${ui.sqTab==='dyn'?'on':''}" onclick="ui.sqTab='dyn';render()">Dynamika zespołu</button></div></div>`;
+  const sqT=`<div class="card"><div class="row" style="gap:6px"><button class="tabb ${!ui.sqTab?'on':''}" onclick="ui.sqTab=null;render()">Skład wyjściowy</button><button class="tabb ${ui.sqTab==='kadra'?'on':''}" onclick="ui.sqTab='kadra';render()">Kadra</button><button class="tabb ${ui.sqTab==='dyn'?'on':''}" onclick="ui.sqTab='dyn';render()">Dynamika zespołu</button></div></div>`;
   if(ui.sqTab==='dyn')return sqT+dynView()+(typeof loansCard==='function'?loansCard():'');
   const t=myTeam(),lu=myLineup();
   const inLu=new Map(LINEUP_KEYS.map(([k,l])=>[lu[k],l]));
@@ -119,15 +119,19 @@ function tacSetZ(z,k,v){const t=myTac();t.atkZ=t.atkZ||{};const c=Object.assign(
 function famTag(k,i){return '';}
 function famTagOld(k,i){if(SAVE.team==null||typeof famOf!=='function'||(typeof TF_OPP!=='undefined'&&TF_OPP.has(k))||!TF_EL.some(x=>x[0]===k))return '';const v=Math.round(famOf(SAVE.team,k,i));return `<span class="famt" style="color:${v>=70?'var(--good)':v>=45?'var(--acc)':'var(--bad)'}" title="Znajomość tej opcji przez zespół">znajomość ${v}%</span>`;}
 function optGroup(name,opts,cur,fn){return `<div class="opts">${opts.map(([l,d],i)=>`<button class="opt ${cur===i?'on':''}" onclick="${fn}(${i})"><b>${l}</b><small>${d}</small>${famTag(name,i)}</button>`).join('')}</div>`;}
-function tacticsView(){const tc=myTac();const tabs='';
-  return tabs+`<div class="card"><h2>Zagrywka${tipQ('Mocniejsza zagrywka daje więcej asów, ale i więcej błędów. Bezpieczna to mniej błędów i łatwiejsze przyjęcie dla rywala.')}</h2>${optGroup('serve',SERVE_OPT,tc.serve,'setServe')}${srvTacRows(tc,myTeam().players)}</div>
-  <div class="card"><h2>Przyjęcie${tipQ('Osłona przyjmującego: libero bierze więcej zagrywek, gdy rywal celuje w słabszego lub roztrzęsionego zawodnika.')}</h2>${shieldTacHtml(tc,myTeam().players)}</div>
-  <div class="card"><h2>Rozegranie${tipQ('Do kogo rozgrywający kieruje piłki. Krótka do środka wymaga dobrego przyjęcia; po słabym przyjęciu zostają głównie skrzydła.')}</h2>${optGroup('dist',DIST_OPT,tc.dist,'setDist')}<h3 style="margin:12px 0 2px">Wariant zależnie od przyjęcia</h3>${distQHtml(tc)}</div>
-  <div class="card"><h2>Ustawienia${tipQ('Ustawienie zawodników w poszczególnych rotacjach przy przyjęciu zagrywki.')}</h2>${p1TacHtml(tc)}</div>
-  <div class="card"><h2>Atak${tipQ('Rodzaj i kierunek ataku. Atak w blok (po rękach) opłaca się przeciw wysokiemu blokowi.')}</h2>${atkTacHtml(tc)}</div>
-  <div class="card"><h2>Blok i obrona${tipQ('Gdzie stawia się blok i jak ustawia się obrona za nim. Dobrze dobrane do rywala zabiera mu ulubiony kierunek.')}</h2>${blockTacHtml(tc)}</div>
-  <div class="card"><h2>Piłki sytuacyjne${tipQ('Gdzie przebijać piłkę, gdy nie da się zaatakować: na środek, w rozgrywającego (utrudnia rozegranie) albo w środkowego (bez krótkiej).')}</h2>${freeTacHtml(tc)}</div>
-  <p class="mut small">Taktykę możesz zmieniać także w trakcie meczu. Zagrywkę w konkretnego zawodnika rywala wybierasz w meczu (📋 Taktyka).</p>`;}
+function tacticsView(){const tc=myTac();const g=ui.tacG||'srv';
+  const G=[['srv','Zagrywka i przyjęcie'],['atk','Rozegranie i atak'],['def','Blok i obrona'],['more','Więcej']];
+  const tabs=`<div class="card"><div class="row wrap" style="gap:6px">${G.map(([k,l])=>`<button class="tabb ${g===k?'on':''}" onclick="ui.tacG='${k}';render()">${l}</button>`).join('')}</div></div>`;
+  const C={
+   srv:()=>`<div class="card"><h2>Zagrywka${tipQ('Mocniejsza zagrywka daje więcej asów, ale i więcej błędów. Bezpieczna to mniej błędów i łatwiejsze przyjęcie dla rywala.')}</h2>${optGroup('serve',SERVE_OPT,tc.serve,'setServe')}${srvTacRows(tc,myTeam().players)}</div>
+  <div class="card"><h2>Przyjęcie${tipQ('Osłona przyjmującego: libero bierze więcej zagrywek, gdy rywal celuje w słabszego lub roztrzęsionego zawodnika.')}</h2>${shieldTacHtml(tc,myTeam().players)}</div>`,
+   atk:()=>`<div class="card"><h2>Rozegranie${tipQ('Do kogo rozgrywający kieruje piłki. Krótka do środka wymaga dobrego przyjęcia; po słabym przyjęciu zostają głównie skrzydła.')}</h2>${optGroup('dist',DIST_OPT,tc.dist,'setDist')}<h3 style="margin:12px 0 2px">Wariant zależnie od przyjęcia</h3>${distQHtml(tc)}</div>
+  <div class="card"><h2>Atak${tipQ('Rodzaj i kierunek ataku. Atak w blok (po rękach) opłaca się przeciw wysokiemu blokowi.')}</h2>${atkTacHtml(tc)}</div>`,
+   def:()=>`<div class="card"><h2>Blok i obrona${tipQ('Gdzie stawia się blok i jak ustawia się obrona za nim. Dobrze dobrane do rywala zabiera mu ulubiony kierunek.')}</h2>${blockTacHtml(tc)}</div>`,
+   more:()=>`<div class="card"><h2>Ustawienia${tipQ('Ustawienie zawodników w poszczególnych rotacjach przy przyjęciu zagrywki.')}</h2>${p1TacHtml(tc)}</div>
+  <div class="card"><h2>Piłki sytuacyjne${tipQ('Gdzie przebijać piłkę, gdy nie da się zaatakować: na środek, w rozgrywającego (utrudnia rozegranie) albo w środkowego (bez krótkiej).')}</h2>${freeTacHtml(tc)}</div>`,
+  };
+  return tabs+C[g]()+`<p class="mut small">Taktykę możesz zmieniać także w trakcie meczu. Zagrywkę w konkretnego zawodnika rywala wybierasz w meczu (📋 Taktyka). Odprawa przed meczem (Mecz i sezon) podpowie ustawienia na konkretnego rywala.</p>`;}
 function setServe(i){myTac().serve=i;save();if(ui.match&&!ui.match.over)ui.match.sides[0].tactics.serve=i;render();}
 const DQ_LV=[[3,'Idealne przyjęcie (#)'],[2,'Dobre przyjęcie (+)'],[1,'Słabe przyjęcie (−)']];
 function distQHtml(t){const d=t.distQ||{};return `<div class="dqrows">${DQ_LV.map(([q,l])=>`<label class="small row" style="gap:8px;margin-top:6px"><span style="min-width:170px">${l}</span><select onchange="setDistQ(${q},+this.value)"><option value="-1" ${d[q]==null||d[q]<0?'selected':''}>jak wyżej (${esc(DIST_OPT[t.dist||0][0])})</option>${DIST_OPT.map((o,i)=>`<option value="${i}" ${d[q]===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>`).join('')}<div class="small mut" style="margin-top:4px">Ten sam wybór działa też po obronie i piłce sytuacyjnej o danej jakości.</div></div>`;}

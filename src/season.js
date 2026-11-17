@@ -48,6 +48,19 @@ function recordStats(m){addTogether(m);if(typeof histAfterMatch==='function')his
     r.m++;r.kill+=x.kill;r.att+=x.att;r.attErr+=x.attErr;r.blk+=x.blk;r.ace+=x.ace;r.srvErr+=x.srvErr;r.rec+=x.rec;r.recPos+=x.recPos;r.dig+=x.dig;r.pts+=x.kill+x.blk+x.ace;{const lr=liveRating(p);if(lr!=null){r.rs=(r.rs||0)+lr;r.rn=(r.rn||0)+1;}}}
   const w=m.sides[m.winner];const mvp=w.pl.slice().sort((a,b)=>mvpScore(b)-mvpScore(a))[0];if(ps[mvp.id])ps[mvp.id].mvp++;
   injuryCheck(m,1);}
+// szybka symulacja dla drugich lig za granicą (bez statystyk zawodników) — model dopasowany do wyników silnika
+var QUICK_BG=0;// wyłączone: osłabiało drugie ligi zagraniczne w pucharach (mniej niespodzianek 13% → 9%), a zysk czasu był mały (ok. 15%)
+function quickLg(l){return !!QUICK_BG&&LG_LV[l]>0&&typeof myCountry==='function'&&lgCountry(l)!==myCountry();}
+function quickFixture(h,a){const d=teamStrength(TEAMS[h])-teamStrength(TEAMS[a]);const p=1/(1+Math.exp(-(0.23*d+0.28)));const sets=[],sw=[0,0];
+  while(sw[0]<3&&sw[1]<3){const tb=sw[0]+sw[1]===4,to=tb?15:25;const hw=R()<p;const cl=Math.abs(p-0.5);
+    let lo=Math.round((tb?11:19)-cl*(tb?4:6)+nz()*(tb?2.2:3.2));lo=clamp(lo,tb?5:10,to-2);let wi=to;
+    if(lo>=to-2&&R()<0.45){const ex=Math.floor(R()*R()*5);lo=to-2+ex+(R()<0.5?0:0);wi=lo+2;}
+    sets.push(hw?[wi,lo]:[lo,wi]);sw[hw?0:1]++;}
+  // skutki meczu bez symulacji akcji: zgranie (wspólne mecze) i forma podstawowych zawodników
+  [h,a].forEach((ti,k)=>{const t=TEAMS[ti];const lu=autoLineup(t);const won=sw[k]>sw[1-k];for(const id of Object.values(lu)){const p=t.players.find(x=>x.id===id);if(!p)continue;
+    if(p.tcTm!==ti){p.tcTm=ti;p.tc=0;}p.tc=(p.tc||0)+1;if(typeof formAdd==='function')formAdd(p,(won?1.5:-1.5)*0.6+nz()*4+(60-fmOf(p))*0.12);}});
+  try{if(typeof famAdd==='function')[h,a].forEach(ti=>{const t=tacOf(ti);for(const [k] of TF_EL)famAdd(ti,k+':'+tfVal(t,k),(sets.length*42)*0.03);});}catch(e){}
+  const r={h,a,sets,sw,q:1};try{if(typeof aiSocResult==='function'){const hw=sw[0]>sw[1],s0=Math.min(sw[0],sw[1])===0;aiSocResult(h,hw,s0);aiSocResult(a,!hw,s0);}}catch(e){}return r;}
 function simFixture(h,a,stats){const m=simMatch(participant(h,true),participant(a,false));if(stats)recordStats(m);return resultOf(m,h,a);}
 
 // ---- mecz użytkownika ----
@@ -72,6 +85,7 @@ function playNext(){if(SAVE.fired)return;syncDate();const c=myNext();if(!c)retur
 function simNext(){if(SAVE.fired)return;syncDate();const c=myNext();if(!c)return;const m=buildMatch(c);m.quick=true;while(!m.over)doRally(m);ui.match=m;ui.view='post';ui.tab='mecz';render();}
 function finishMatch(m){
   if(m.recorded||!m.ctx)return;m.recorded=true;const c=m.ctx,s=S();
+  {const T=myTac();if(T.tgtOnce){delete T.tgt;delete T.tgtOnce;}}
   if(c.kind==='nt'){const r=Object.assign(resultOf(m,c.h,c.a),{d:today()});ntInj(m);ntMyResult(c,r);const won=m.winner===0;news(`🎌 ${natN(myNT())} – ${natN(ntCode(c.h))} ${r.sw[1]}:${r.sw[0]}${won?' — wygrywamy!':''}`);save();return;}
   achMatch(m,c);
   const res=resultOf(m,c.h,c.a);res.me=true;res.d=today();
@@ -148,7 +162,7 @@ function bgInit(s){s.oth={};for(const l of allLgs()){if(l===myLg())continue;cons
 function ensureBg(){const s=SAVE&&SAVE.season;if(!s||s.oth||!SAVE.lg||!s.rounds||s.phase==='end')return;bgInit(s);const n=Math.min((s.results||[]).length,s.rounds.length);for(let r=0;r<n;r++)bgRound(r);if(s.po)for(let d=0;d<(s.po.day||0);d++)bgPoDay();}
 function bgTable(L){return tableFrom(L.results,L.ids);}
 function bgRound(r){const s=S();if(!s.oth)return;for(const k in s.oth){const L=s.oth[k];if(L.results.length>r||!L.rounds[r])continue;
-  L.results.push(L.rounds[r].map(([h,a])=>{const g=simFixture(h,a,true);g.d=today();return g;}));if(L.results.length===L.rounds.length&&!L.po)bgStartPo(L);}}
+  L.results.push(L.rounds[r].map(([h,a])=>{const g=quickLg(lgOf(h))?quickFixture(h,a):simFixture(h,a,true);g.d=today();return g;}));if(L.results.length===L.rounds.length&&!L.po)bgStartPo(L);}}
 function bgSer(L,st,a,b,need){const hi=L.seed.indexOf(a)<L.seed.indexOf(b)?a:b,lo=hi===a?b:a;return {id:st+'-'+hi+'-'+lo,st,hi,lo,need,w:[0,0],games:[]};}
 function bgStartPo(L){const t=poSeed(bgTable(L).map(x=>x.i));L.seed=t;L.po=poFirst(t,lgCfg(L.lg!=null?L.lg:lgOf(t[0])).po,(st,a,b,n)=>bgSer(L,st,a,b,n));}
 function bgActive(L){if(!L.po)return [];const st=L.po.stage;return L.po.series.filter(x=>(st==='FB'?(x.st==='F'||x.st==='B'):x.st===st)&&!seriesDone(x));}
@@ -158,7 +172,7 @@ function bgAdvance(L){if(bgActive(L).length)return;const po=L.po,r=i=>L.seed.ind
   else if(po.stage==='SF'){const sf=po.series.filter(x=>x.st==='SF');po.series.push(bgSer(L,'F',seriesWinner(sf[0]),seriesWinner(sf[1]),c.f));if(c.b)po.series.push(bgSer(L,'B',seriesLoser(sf[0]),seriesLoser(sf[1]),c.b));po.stage='FB';}
   else if(po.stage==='FB'){L.final=poFinal(po,L.seed,lgCfg(lg));if(lgCfg(lg).playout)playout(L.final,lg);po.stage='done';}}
 function bgPoDay(){const s=S();if(!s.oth)return;for(const k in s.oth){const L=s.oth[k];if(!L.po||L.final)continue;
-  for(const sr of bgActive(L)){const h=seriesHome(sr);const g=simFixture(h,h===sr.hi?sr.lo:sr.hi,true);g.d=today();addGame(sr,g);}L.po.day++;bgAdvance(L);}}
+  for(const sr of bgActive(L)){const h=seriesHome(sr);const o=h===sr.hi?sr.lo:sr.hi;const g=quickLg(lgOf(h))?quickFixture(h,o):simFixture(h,o,true);g.d=today();addGame(sr,g);}L.po.day++;bgAdvance(L);}}
 function bgFinishAll(){const s=S();if(!s.oth)return;for(const k in s.oth){const L=s.oth[k];while(L.results.length<L.rounds.length)bgRound(L.results.length);if(!L.po)bgStartPo(L);}
   for(let g=0;g<40&&Object.values(s.oth).some(L=>!L.final);g++)bgPoDay();}
 // awanse i spadki: 2 w górę (finaliści play-off niższej ligi), 2 w dół (miejsca 11–12 wyższej ligi)
@@ -195,7 +209,7 @@ function nextCard(c,title){
   const w=nextEvent();const when=w?`<div class="when">📅 ${w.d===today()?'Dziś, ':''}${fmtLong(w.d)}${w.t?' · godz. '+w.t:''}</div>`:'';
   return `<div class="card nextm"><div class="mut small">${title}</div>${when}<div class="vs"><span style="--c:${TEAMS[c.h].color}">${tName(c.h)}</span><b>vs</b><span style="--c:${TEAMS[c.a].color}">${tName(c.a)}</span></div>
   <p class="small mut">${meHome?'Mecz u siebie (lekka przewaga własnej hali)':'Mecz wyjazdowy'} · Rywal: siła ${teamStrength(op)} ${stars(teamStrength(op))} · Twój skład: ${lineupStrength(myTeam(),myLineup())} · Zagrywka: ${SERVE_OPT[myTac().serve][0]} · Rozegranie: ${DIST_OPT[myTac().dist][0]}</p>
-  ${injWarn()}<div class="row wrap"><button class="btn" onclick="playNext()">▶ Graj mecz</button><button class="ghost" onclick="simNext()">⏩ Symuluj mecz</button></div></div>`;
+  ${injWarn()}<div class="row wrap"><button class="btn" onclick="playNext()">▶ Graj mecz</button><button class="ghost" onclick="simNext()">⏩ Symuluj mecz</button></div></div>${typeof preCard==='function'&&op&&op.idx!=null&&op.idx>=0?preCard(op.idx):''}`;
 }
 function injWarn(){const h=healthyLineup(myTeam(),myLineup());return h.ch.length?`<p class="small bad">${h.ch.map(([o,n,l])=>`🚑 ${esc(o?o.last:'?')} (${l}) — zastąpi go ${esc(n.last)}`).join('<br>')}</p>`:'';}
 function tableHtml(highlightPo){const tb=leagueTable();
