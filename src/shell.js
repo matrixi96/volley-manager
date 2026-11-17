@@ -152,7 +152,7 @@ function hvHero(){const s=S();const c=myNext();const e=nextEvent();const asy=SAV
 function hvTodo(){const it=[];const t=myTeam();
   const ex=typeof expiring==='function'?expiring():[];if(ex.length)it.push([`${ex.length} ${ex.length===1?'kontrakt kończy się':'kontraktów kończy się'} w tym sezonie`,"go('transfery')"]);
   const un=mailBox().filter(m=>!m.r&&!m.ar).length;if(un)it.push([`${un} nieprzeczytanych wiadomości`,"go('poczta')"]);
-  const spFree=typeof spSlots==='function'?Object.entries(spSlots()).reduce((a,[k,n])=>a+Math.max(0,n-spUsed(k)),0):0;if(spFree)it.push([`${spFree} ${spFree===1?'wolne miejsce':'wolnych miejsc'} dla sponsorów`,"go('sponsorzy')"]);
+  const spFree=typeof spFreeN==='function'?spFreeN():0;if(spFree)it.push([`${spFree} ${spFree===1?'oferta sponsorska czeka':spFree<5?'oferty sponsorskie czekają':'ofert sponsorskich czeka'}`,"go('sponsorzy')"]);
   for(const b of BLD()){const f=INFRA.find(x=>x.k===b.k);it.push([`Trwa budowa: ${f.n.toLowerCase()} (${Math.max(0,daysBetween(today(),b.until))} dni)`,"go('klub')"]);}
   if(typeof campCanBook==='function'&&campCanBook())it.push(['Wybierz miejsce obozu przygotowawczego',S().phase==='off'?"go('mecz')":"go('trening')"]);
   const inj=t.players.filter(p=>p.inj).length;if(inj)it.push([`${inj} ${inj===1?'kontuzjowany zawodnik':'kontuzjowanych zawodników'}`,"go('sklad')"]);
