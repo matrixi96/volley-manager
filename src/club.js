@@ -25,7 +25,11 @@ function allScouts(){return [SAVE.staff&&SAVE.staff.sk].concat(SAVE.scouts||[]).
 function staffCount(){return Object.values(SAVE.staff||{}).filter(Boolean).length+(SAVE.scouts||[]).length;}
 // zatrudnianie ogranicza tylko budżet płacowy (zawodnicy + sztab); maksymalnie 6 skautów
 const SCOUT_MAX=6;
-function staffCheck(add){if(SAVE.fin.bal<-300000)return 'Klub jest zadłużony — zarząd wstrzymał zatrudnianie w sztabie.';if(add>0&&typeof budLeft==='function'&&add>budLeft().wg)return `Brak miejsca w budżecie płacowym (zostało ${fmt(Math.max(0,budLeft().wg))}/rok, a ta pensja to ${fmt(add)}). Zwolnij kogoś, zmień podział budżetów (Finanse) albo poproś zarząd o większy budżet płacowy.`;return null;}
+// limit etatów w sztabie ustala zarząd (jak w FM): zależy od renomy klubu, można go podnieść prośbą do zarządu
+var STAFF_LIM=1;
+function staffLimitBase(){const a=SAVE.ai&&SAVE.team!=null?SAVE.ai[SAVE.team]:null;return clamp(Math.round(2+((a&&a.rep)||30)/7.5),4,13);}
+function staffLimit(){return staffLimitBase()+((SAVE.bm&&SAVE.bm.stX)||0);}
+function staffCheck(add,neu){if(SAVE.fin.bal<-300000)return 'Klub jest zadłużony — zarząd wstrzymał zatrudnianie w sztabie.';if(STAFF_LIM&&neu&&staffCount()>=staffLimit())return `Zarząd zgodził się na ${staffLimit()} etatów w sztabie i wszystkie są zajęte. Zwolnij kogoś albo poproś zarząd o dodatkowy etat (Rozmowy → Zarząd).`;if(SAVE.fin.bal<-300000)return 'Klub jest zadłużony — zarząd wstrzymał zatrudnianie w sztabie.';if(add>0&&typeof budLeft==='function'&&add>budLeft().wg)return `Brak miejsca w budżecie płacowym (zostało ${fmt(Math.max(0,budLeft().wg))}/rok, a ta pensja to ${fmt(add)}). Zwolnij kogoś, zmień podział budżetów (Finanse) albo poproś zarząd o większy budżet płacowy.`;return null;}
 function myInfra(){return infraOf(SAVE.team);}
 function upgradeCost(f,L){return Math.round(f.cost*Math.pow(L+1-fMin(f),1.4)/10000)*10000;}
 function upgradeDays(f,L){return Math.round(f.days*(0.7+0.3*(L+1-fMin(f))));}
@@ -58,13 +62,16 @@ const STAFF_ROLES=[
   ['fin','Dyrektor finansowy','Planuje budżety (transferowy, płacowy, operacyjny): dokładniejsza prognoza przychodów, wyższe budżety i do +5% w ofertach sponsorów.']
 ];
 const ROLE_N=Object.fromEntries(STAFF_ROLES.map(r=>[r[0],r[1]]));
-function staffWage(sk){return round5k(30000+sk*sk*350);}
+var STAFF2=1;// pensje sztabu zależne od ligi, renomy klubu (premia dobrych specjalistów za przyjście do małego klubu) i reputacji trenera
+function staffWageBase(sk){return round5k(30000+sk*sk*350);}
+function staffWage(sk){const b=staffWageBase(sk);if(!STAFF2||SAVE.team==null||!SAVE.ai||!SAVE.ai[SAVE.team])return b;const eco=0.25+0.75*(LG_ECO[myLg()]||1);const rep=SAVE.ai[SAVE.team].rep;
+  const prem=1+Math.max(0,sk-12)*Math.max(0,60-rep)/60*0.08;const cr=clamp(1-(((SAVE.coach&&SAVE.coach.rep)||40)-40)/100*0.3,0.85,1.1);return round5k(Math.max(30000,b*eco*prem*cr));}
 function genStaff(role,sk){const id='st'+(W().nextId++);const nm=natName(SAVE.team!=null?tmCountry(SAVE.team):'PL');return {id,first:nm[0],last:nm[1],role,skill:Math.round(clamp(sk,1,20)),age:30+Math.floor(R()*30),wage:0};}
 function refreshStaffPool(){SAVE.staffPool=[];const hq=SAVE.team!=null?(myInfra().sied-1)*0.7:0;for(const [r] of STAFF_ROLES)for(let i=0;i<3;i++){const s=genStaff(r,5+R()*14+hq);s.wage=staffWage(s.skill);SAVE.staffPool.push(s);}}
 function staffSkill(r){if(r==='sk'){const a=allScouts();return a.length?Math.max(...a.map(x=>x.skill)):3;}const s=SAVE.staff&&SAVE.staff[r];return s?s.skill:3;}
 function staffPay(){return Object.values(SAVE.staff||{}).filter(Boolean).concat(SAVE.scouts||[]).reduce((a,s)=>a+s.wage,0);}
 function hireStaff(id){const c=SAVE.staffPool.find(x=>x.id===id);if(!c)return;const cur=SAVE.staff[c.role];
-  {const e=staffCheck(c.wage-(cur?cur.wage:0));if(e)return tradeMsg(false,e);}
+  {const e=staffCheck(c.wage-(cur?cur.wage:0),!cur);if(e)return tradeMsg(false,e);}
   if(cur&&ui.confirm!=='h'+id){ui.confirm='h'+id;render();return;}ui.confirm=null;
   if(cur){const sev=round5k(cur.wage/4);money(-sev,'Sztab');finLog(`Odprawa: ${cur.first} ${cur.last} (${ROLE_N[cur.role]})`,-sev);SAVE.staffPool.push(cur);}
   achEv('staff');SAVE.staff[c.role]=c;SAVE.staffPool=SAVE.staffPool.filter(x=>x.id!==id);news(`🧑‍🏫 Zatrudniono: ${c.first} ${c.last} — ${ROLE_N[c.role]} (jakość ${c.skill}/20).`);save();tradeMsg(true,`${c.first} ${c.last} dołącza do sztabu.`);}
@@ -72,7 +79,7 @@ function fireStaff(r){const cur=SAVE.staff[r];if(!cur)return;if(ui.confirm!=='f'
   const sev=round5k(cur.wage/4);money(-sev,'Sztab');finLog(`Odprawa: ${cur.first} ${cur.last} (${ROLE_N[r]})`,-sev);SAVE.staff[r]=null;news(`📄 Zwolniono: ${cur.first} ${cur.last} (${ROLE_N[r]}).`);save();tradeMsg(true,`Zwolniono. Odprawa: ${fmt(sev)}.`);}
 function hireScoutExtra(id){const c=SAVE.staffPool.find(x=>x.id===id);if(!c)return;SAVE.scouts=SAVE.scouts||[];
   if(allScouts().length>=SCOUT_MAX)return tradeMsg(false,`Dział skautingu ma już ${SCOUT_MAX} skautów — to maksimum.`);
-  {const e=staffCheck(c.wage);if(e)return tradeMsg(false,e);}
+  {const e=staffCheck(c.wage,1);if(e)return tradeMsg(false,e);}
   SAVE.scouts.push(c);SAVE.staffPool=SAVE.staffPool.filter(x=>x.id!==id);news(`🧑‍🏫 Zatrudniono: ${c.first} ${c.last} — dodatkowy skaut (jakość ${c.skill}/20).`);save();tradeMsg(true,`${c.first} ${c.last} dołącza do działu skautingu.`);}
 function fireScout(id){const i=(SAVE.scouts||[]).findIndex(x=>x.id===id);if(i<0)return;const cur=SAVE.scouts[i];if(ui.confirm!=='fs'+id){ui.confirm='fs'+id;render();return;}ui.confirm=null;
   const sev=round5k(cur.wage/4);money(-sev,'Sztab');finLog(`Odprawa: ${cur.first} ${cur.last} (skaut)`,-sev);SAVE.scouts.splice(i,1);if(typeof scoutFired==='function')scoutFired(id);news(`📄 Zwolniono: ${cur.first} ${cur.last} (skaut).`);save();tradeMsg(true,`Zwolniono. Odprawa: ${fmt(sev)}.`);}
@@ -96,7 +103,7 @@ function genJunior(ti,age,pos){const t=TEAMS[ti];const inf=infraOf(ti);const min
 function initClub(){
   if(!SAVE.ai)return;
   for(const t of TEAMS)infraOf(t.idx);
-  if(!SAVE.staff){SAVE.staff={};for(const [r] of STAFF_ROLES){if(r==='sk'||r==='sta')continue;const s=genStaff(r,7+R()*4);s.wage=staffWage(s.skill);SAVE.staff[r]=s;}SAVE.staff.sk=null;SAVE.staff.sta=null;}
+  if(!SAVE.staff){SAVE.staff={};let n0=STAFF_LIM?Math.min(7,staffLimit()):7;for(const r of ['asy','fiz','med','jr','psy','fin','soc','sk','sta'])SAVE.staff[r]=null;for(const r of ['asy','fiz','med','jr','psy','fin','soc']){if(n0--<=0)break;const s=genStaff(r,7+R()*4);s.wage=staffWage(s.skill);SAVE.staff[r]=s;}SAVE.staff.sk=null;SAVE.staff.sta=null;}
   if(!SAVE.staffPool)refreshStaffPool();
   if(!SAVE.jrInit){for(const t of TEAMS)JR_PLAN.forEach((pos,i)=>{W().players.push(genJunior(t.idx,16+(i%4),pos));});SAVE.jrInit=true;}
   syncTeams();
@@ -138,7 +145,7 @@ function staffView(){
     ${s?`<div class="row small">${sFace(s,40)}<span><b>${esc(s.first)} ${esc(s.last)}</b>, ${s.age} l. · ${fmt(s.wage)}/rok</span><span class="sp"></span><button class="link" onclick="fireStaff('${r}')">${ui.confirm==='f'+r?`Na pewno? Odprawa ${fmt(round5k(s.wage/4))}`:'Zwolnij'}</button></div>`:'<p class="small bad">Brak osoby na tym stanowisku — efekt jak przy bardzo słabym specjaliście.</p>'}
     ${r==='sk'?`${(SAVE.scouts||[]).map(x=>`<div class="row small">${sFace(x,40)}<span><b>${esc(x.first)} ${esc(x.last)}</b> <span class="sk ${aCls(x.skill)}">${x.skill}</span> · dodatkowy skaut · ${fmt(x.wage)}/rok</span><span class="sp"></span><button class="link" onclick="fireScout('${x.id}')">${ui.confirm==='fs'+x.id?`Na pewno? Odprawa ${fmt(round5k(x.wage/4))}`:'Zwolnij'}</button></div>`).join('')}<p class="small mut">Skautów: ${allScouts().length}/${SCOUT_MAX}. Każdy skaut prowadzi własne zadania (zakładka Skauting). Pensje skautów liczą się do budżetu płacowego.</p>`:''}
     <details ${s?'':'open'}><summary class="link">Kandydaci (${cands.length})</summary>${cands.map(c=>`<div class="row small cand"><span class="sk ${aCls(c.skill)}">${c.skill}</span>${sFace(c,30)}<span>${esc(c.first)} ${esc(c.last)}, ${c.age} l. · ${fmt(c.wage)}/rok${typeof budLeft==='function'?` <small class="${budLeft().wg-(c.wage-(s?s.wage:0))<0?'bad':'mut'}">· budżet płacowy po: ${fmt(budLeft().wg-(c.wage-(s?s.wage:0)))}</small>`:''}</span><span class="sp"></span>${r==='sk'&&s?`<button class="ghost" onclick="hireScoutExtra('${c.id}')">+ Dodatkowy skaut</button>`:''}<button class="ghost" onclick="hireStaff('${c.id}')">${ui.confirm==='h'+c.id?'Na pewno? (zastąpi obecnego)':s?'Zastąp':'Zatrudnij'}</button></div>`).join('')||'<p class="mut small">Brak kandydatów — nowi pojawią się w oknie transferowym.</p>'}</details></div>`;};
-  return `${ui.tmsg?`<div class="card tmsg ${ui.tmsg.ok?'ok':'no'}">${esc(ui.tmsg.t)}</div>`:''}<div class="card"><div class="row wrap"><h2 style="margin:0">Sztab szkoleniowy</h2><span class="sp"></span><span class="small">Osób w sztabie: <b>${staffCount()}</b> · pensje sztabu <b>${fmt(staffPay())}</b>/rok · wolne w budżecie płacowym <b>${fmt(Math.max(0,budLeft().wg))}</b></span></div>
+  return `${ui.tmsg?`<div class="card tmsg ${ui.tmsg.ok?'ok':'no'}">${esc(ui.tmsg.t)}</div>`:''}<div class="card"><div class="row wrap"><h2 style="margin:0">Sztab szkoleniowy</h2><span class="sp"></span><span class="small">Etaty w sztabie: <b>${staffCount()}${STAFF_LIM?'/'+staffLimit():''}</b> · pensje sztabu <b>${fmt(staffPay())}</b>/rok · wolne w budżecie płacowym <b>${fmt(Math.max(0,budLeft().wg))}</b></span></div>
   <p class="small mut">Pensje sztabu i zawodników płacisz z jednego budżetu płacowego (Finanse → Budżety) — drogi sztab to mniej pieniędzy na zawodników. Lepsza siedziba klubu przyciąga lepszych kandydatów. Zadłużony klub nie może zatrudniać.</p>
   <p class="small mut">Jakość w skali 1–20. Lepszy specjalista to silniejszy efekt, ale wyższa pensja (płatna co miesiąc). Zwolnienie kosztuje odprawę (3 miesiące pensji). Nowi kandydaci pojawiają się co roku w oknie transferowym.</p></div>
   <div class="stgrid">${STAFF_ROLES.map(card).join('')}</div>`;

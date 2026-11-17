@@ -10,6 +10,8 @@ const BM_REQ=[
    ok=>{const b=BUD();if(ok){const add=round5k(Math.max(150000,b.tr*0.25));b.extra=add;bAdd(-4);return `Zarząd dołożył ${fmt(add)} do budżetu transferowego. Oczekuje za to wyników.`;}bAdd(-2);return 'Zarząd odmówił: „Najpierw wyniki, potem pieniądze”.';}],
  ['wg','Większy budżet płacowy','+10% budżetu na pensje (łatwiej zatrzymać i kupić zawodników).',()=>null,()=>bmChance(0.45),
    ok=>{const b=BUD();if(ok){const add=round5k(b.wg*0.1);b.wg+=add;bAdd(-3);return `Budżet płacowy wzrósł o ${fmt(add)} rocznie.`;}bAdd(-2);return 'Zarząd odmówił: koszty pensji i tak są wysokie.';}],
+ ['st','Więcej miejsc w sztabie','+1 etat w sztabie (limit etatów ustala zarząd).',()=>!STAFF_LIM?'—':((BM().stX||0)>=3?'Zarząd nie zgodzi się na kolejne etaty.':null),()=>bmChance(0.45)*(budLeft().wg>0?1:0.5),
+   ok=>{const B=BM();if(ok){B.stX=(B.stX||0)+1;bAdd(-2);return `Zarząd zgodził się na dodatkowy etat. Limit sztabu: ${staffLimit()}.`;}bAdd(-1);return 'Zarząd odmówił: „Sztab jest wystarczający jak na nasz klub”.';}],
  ['inf','Dotacja na infrastrukturę','Zarząd przekazuje pieniądze na rozbudowę obiektów (Infrastruktura).',()=>null,()=>bmChance(0.4)*(SAVE.fin.bal>0?1:0.4),
    ok=>{if(ok){const add=round5k(200000+(coach().rep||40)*4000);money(add,'Dotacja zarządu');finLog('Dotacja zarządu na infrastrukturę',add);SAVE.bm.infEar=(SAVE.bm.infEar||0)+add;return `Zarząd przekazał ${fmt(add)} na inwestycje w obiekty. Wydaj je na rozbudowę (Infrastruktura).`;}bAdd(-1);return 'Zarząd odmówił: inne wydatki są teraz ważniejsze.';}],
  ['jr','Inwestycja w juniorów','Lepsi juniorzy w następnym naborze.',()=>null,()=>bmChance(0.6),
