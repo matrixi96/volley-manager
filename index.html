@@ -706,6 +706,8 @@ small .pt,.mut .pt{font-size:9px;padding:2px 5px;min-width:26px}
 .achtoast>div{display:grid;grid-template-columns:auto 1fr;column-gap:8px;padding:3px 0}.achtoast span{grid-row:span 2;font-size:20px}.achtoast small{color:var(--mut)}
 @keyframes achout{to{opacity:0;visibility:hidden}}
 @keyframes achin{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
+/* telefon: większe przyciski i pola dotykowe */
+@media (pointer:coarse),(max-width:640px){.btn,.ghost,button.opt,.seg button,.tabb,select{min-height:42px}.btn.sm,.ghost.sm{min-height:38px;padding:8px 12px}.tabb{margin-right:14px;font-size:15px}.opts{gap:8px}.tipq{width:22px!important;height:22px!important;line-height:22px!important}}
 </style></head><body><div id="app"></div>
 <script>
 'use strict';
@@ -906,7 +908,7 @@ function cfNote(m,e){if(m)(m.cfEv=m.cfEv||[]).push(Object.assign({set:m.setNo},e
 function cfUp(p,m,x){if(!MENT||!p)return;const sd=m.sides.find(s=>s.pl.includes(p));const k=1+((p.wal||10)-10)/20+(sd&&sd.cfLid?0.5:0);p.cfN=0;p.cf=clamp((p.cf||0)+x*k,-3,2);}
 function cfB(p){return MENT?(p.cf||0)*0.035:0;}
 function mentQ(p,m){return ((p.kcj||10)*0.6+(pressure(m)?(p.opa||10):(p.kcj||10))*0.4)/20;}
-var DAYV=0,SETV=0.06;
+var DAYV=0,SETV=0.06,COMEB=0.015;// COMEB: przegrany poprzedniego seta gra z większą determinacją, zwycięzca lekko odpuszcza
 var PREPV=1,PREP_AMP=0.8,PREP_K=0.5;
 // przygotowanie (taktyka, sztab, trener, analiza rywala) działa przez cały mecz; słabszy, lepiej przygotowany zespół wyciska z niego więcej
 function prepInit(m){if(m._prep)return;m._prep=1;const st=i=>{const sd=m.sides[i];const ps=sd.slots.map(x=>x.p).concat([sd.libero]).filter(Boolean);return ps.reduce((a,p)=>a+rating(p),0)/Math.max(1,ps.length);};
@@ -1212,6 +1214,7 @@ function startSet(m){
   m.setNo++;m.score=[0,0];m.run={t:-1,n:0};
   for(const i of [0,1])undoSpecialSubs(m,i,true);
   for(const s of m.sides){s.rot=baseRot(s.tactics);s.to=2;s.subs=6;s.mom=0;s.form=s.form*0.5+nz()*SETV+(s.home?0.0075:0);for(const p of s.pl)p.en=Math.min(100,p.en+12);}
+  if(COMEB&&m.sets.length){const ls=m.sets[m.sets.length-1];const L=ls[0]>ls[1]?1:0;m.sides[L].form+=COMEB;m.sides[1-L].form-=COMEB*0.5;}
   m.serving=m.setNo===5?(R()<0.5?0:1):(m.firstServe+m.setNo-1)%2;
 }
 function stepRally(m){
@@ -1528,7 +1531,7 @@ function changeClub(){if(!ui.confirmReset){ui.confirmReset=true;render();return;
 
 // ---------- skład ----------
 function squadView(){
-  const sqT=`<div class="card"><div class="row" style="gap:6px"><button class="tabb ${ui.sqTab!=='dyn'?'on':''}" onclick="ui.sqTab=null;render()">Skład i kadra</button><button class="tabb ${ui.sqTab==='dyn'?'on':''}" onclick="ui.sqTab='dyn';render()">Dynamika zespołu</button></div></div>`;
+  const sqT=`<div class="card"><div class="row" style="gap:6px"><button class="tabb ${!ui.sqTab?'on':''}" onclick="ui.sqTab=null;render()">Skład wyjściowy</button><button class="tabb ${ui.sqTab==='kadra'?'on':''}" onclick="ui.sqTab='kadra';render()">Kadra</button><button class="tabb ${ui.sqTab==='dyn'?'on':''}" onclick="ui.sqTab='dyn';render()">Dynamika zespołu</button></div></div>`;
   if(ui.sqTab==='dyn')return sqT+dynView()+(typeof loansCard==='function'?loansCard():'');
   const t=myTeam(),lu=myLineup();
   const inLu=new Map(LINEUP_KEYS.map(([k,l])=>[lu[k],l]));
@@ -1575,15 +1578,19 @@ function tacSetZ(z,k,v){const t=myTac();t.atkZ=t.atkZ||{};const c=Object.assign(
 function famTag(k,i){return '';}
 function famTagOld(k,i){if(SAVE.team==null||typeof famOf!=='function'||(typeof TF_OPP!=='undefined'&&TF_OPP.has(k))||!TF_EL.some(x=>x[0]===k))return '';const v=Math.round(famOf(SAVE.team,k,i));return `<span class="famt" style="color:${v>=70?'var(--good)':v>=45?'var(--acc)':'var(--bad)'}" title="Znajomość tej opcji przez zespół">znajomość ${v}%</span>`;}
 function optGroup(name,opts,cur,fn){return `<div class="opts">${opts.map(([l,d],i)=>`<button class="opt ${cur===i?'on':''}" onclick="${fn}(${i})"><b>${l}</b><small>${d}</small>${famTag(name,i)}</button>`).join('')}</div>`;}
-function tacticsView(){const tc=myTac();const tabs='';
-  return tabs+`<div class="card"><h2>Zagrywka${tipQ('Mocniejsza zagrywka daje więcej asów, ale i więcej błędów. Bezpieczna to mniej błędów i łatwiejsze przyjęcie dla rywala.')}</h2>${optGroup('serve',SERVE_OPT,tc.serve,'setServe')}${srvTacRows(tc,myTeam().players)}</div>
-  <div class="card"><h2>Przyjęcie${tipQ('Osłona przyjmującego: libero bierze więcej zagrywek, gdy rywal celuje w słabszego lub roztrzęsionego zawodnika.')}</h2>${shieldTacHtml(tc,myTeam().players)}</div>
-  <div class="card"><h2>Rozegranie${tipQ('Do kogo rozgrywający kieruje piłki. Krótka do środka wymaga dobrego przyjęcia; po słabym przyjęciu zostają głównie skrzydła.')}</h2>${optGroup('dist',DIST_OPT,tc.dist,'setDist')}<h3 style="margin:12px 0 2px">Wariant zależnie od przyjęcia</h3>${distQHtml(tc)}</div>
-  <div class="card"><h2>Ustawienia${tipQ('Ustawienie zawodników w poszczególnych rotacjach przy przyjęciu zagrywki.')}</h2>${p1TacHtml(tc)}</div>
-  <div class="card"><h2>Atak${tipQ('Rodzaj i kierunek ataku. Atak w blok (po rękach) opłaca się przeciw wysokiemu blokowi.')}</h2>${atkTacHtml(tc)}</div>
-  <div class="card"><h2>Blok i obrona${tipQ('Gdzie stawia się blok i jak ustawia się obrona za nim. Dobrze dobrane do rywala zabiera mu ulubiony kierunek.')}</h2>${blockTacHtml(tc)}</div>
-  <div class="card"><h2>Piłki sytuacyjne${tipQ('Gdzie przebijać piłkę, gdy nie da się zaatakować: na środek, w rozgrywającego (utrudnia rozegranie) albo w środkowego (bez krótkiej).')}</h2>${freeTacHtml(tc)}</div>
-  <p class="mut small">Taktykę możesz zmieniać także w trakcie meczu. Zagrywkę w konkretnego zawodnika rywala wybierasz w meczu (📋 Taktyka).</p>`;}
+function tacticsView(){const tc=myTac();const g=ui.tacG||'srv';
+  const G=[['srv','Zagrywka i przyjęcie'],['atk','Rozegranie i atak'],['def','Blok i obrona'],['more','Więcej']];
+  const tabs=`<div class="card"><div class="row wrap" style="gap:6px">${G.map(([k,l])=>`<button class="tabb ${g===k?'on':''}" onclick="ui.tacG='${k}';render()">${l}</button>`).join('')}</div></div>`;
+  const C={
+   srv:()=>`<div class="card"><h2>Zagrywka${tipQ('Mocniejsza zagrywka daje więcej asów, ale i więcej błędów. Bezpieczna to mniej błędów i łatwiejsze przyjęcie dla rywala.')}</h2>${optGroup('serve',SERVE_OPT,tc.serve,'setServe')}${srvTacRows(tc,myTeam().players)}</div>
+  <div class="card"><h2>Przyjęcie${tipQ('Osłona przyjmującego: libero bierze więcej zagrywek, gdy rywal celuje w słabszego lub roztrzęsionego zawodnika.')}</h2>${shieldTacHtml(tc,myTeam().players)}</div>`,
+   atk:()=>`<div class="card"><h2>Rozegranie${tipQ('Do kogo rozgrywający kieruje piłki. Krótka do środka wymaga dobrego przyjęcia; po słabym przyjęciu zostają głównie skrzydła.')}</h2>${optGroup('dist',DIST_OPT,tc.dist,'setDist')}<h3 style="margin:12px 0 2px">Wariant zależnie od przyjęcia</h3>${distQHtml(tc)}</div>
+  <div class="card"><h2>Atak${tipQ('Rodzaj i kierunek ataku. Atak w blok (po rękach) opłaca się przeciw wysokiemu blokowi.')}</h2>${atkTacHtml(tc)}</div>`,
+   def:()=>`<div class="card"><h2>Blok i obrona${tipQ('Gdzie stawia się blok i jak ustawia się obrona za nim. Dobrze dobrane do rywala zabiera mu ulubiony kierunek.')}</h2>${blockTacHtml(tc)}</div>`,
+   more:()=>`<div class="card"><h2>Ustawienia${tipQ('Ustawienie zawodników w poszczególnych rotacjach przy przyjęciu zagrywki.')}</h2>${p1TacHtml(tc)}</div>
+  <div class="card"><h2>Piłki sytuacyjne${tipQ('Gdzie przebijać piłkę, gdy nie da się zaatakować: na środek, w rozgrywającego (utrudnia rozegranie) albo w środkowego (bez krótkiej).')}</h2>${freeTacHtml(tc)}</div>`,
+  };
+  return tabs+C[g]()+`<p class="mut small">Taktykę możesz zmieniać także w trakcie meczu. Zagrywkę w konkretnego zawodnika rywala wybierasz w meczu (📋 Taktyka). Odprawa przed meczem (Mecz i sezon) podpowie ustawienia na konkretnego rywala.</p>`;}
 function setServe(i){myTac().serve=i;save();if(ui.match&&!ui.match.over)ui.match.sides[0].tactics.serve=i;render();}
 const DQ_LV=[[3,'Idealne przyjęcie (#)'],[2,'Dobre przyjęcie (+)'],[1,'Słabe przyjęcie (−)']];
 function distQHtml(t){const d=t.distQ||{};return `<div class="dqrows">${DQ_LV.map(([q,l])=>`<label class="small row" style="gap:8px;margin-top:6px"><span style="min-width:170px">${l}</span><select onchange="setDistQ(${q},+this.value)"><option value="-1" ${d[q]==null||d[q]<0?'selected':''}>jak wyżej (${esc(DIST_OPT[t.dist||0][0])})</option>${DIST_OPT.map((o,i)=>`<option value="${i}" ${d[q]===i?'selected':''}>${o[0]}</option>`).join('')}</select></label>`).join('')}<div class="small mut" style="margin-top:4px">Ten sam wybór działa też po obronie i piłce sytuacyjnej o danej jakości.</div></div>`;}
@@ -1851,6 +1858,19 @@ function recordStats(m){addTogether(m);if(typeof histAfterMatch==='function')his
     r.m++;r.kill+=x.kill;r.att+=x.att;r.attErr+=x.attErr;r.blk+=x.blk;r.ace+=x.ace;r.srvErr+=x.srvErr;r.rec+=x.rec;r.recPos+=x.recPos;r.dig+=x.dig;r.pts+=x.kill+x.blk+x.ace;{const lr=liveRating(p);if(lr!=null){r.rs=(r.rs||0)+lr;r.rn=(r.rn||0)+1;}}}
   const w=m.sides[m.winner];const mvp=w.pl.slice().sort((a,b)=>mvpScore(b)-mvpScore(a))[0];if(ps[mvp.id])ps[mvp.id].mvp++;
   injuryCheck(m,1);}
+// szybka symulacja dla drugich lig za granicą (bez statystyk zawodników) — model dopasowany do wyników silnika
+var QUICK_BG=0;// wyłączone: osłabiało drugie ligi zagraniczne w pucharach (mniej niespodzianek 13% → 9%), a zysk czasu był mały (ok. 15%)
+function quickLg(l){return !!QUICK_BG&&LG_LV[l]>0&&typeof myCountry==='function'&&lgCountry(l)!==myCountry();}
+function quickFixture(h,a){const d=teamStrength(TEAMS[h])-teamStrength(TEAMS[a]);const p=1/(1+Math.exp(-(0.23*d+0.28)));const sets=[],sw=[0,0];
+  while(sw[0]<3&&sw[1]<3){const tb=sw[0]+sw[1]===4,to=tb?15:25;const hw=R()<p;const cl=Math.abs(p-0.5);
+    let lo=Math.round((tb?11:19)-cl*(tb?4:6)+nz()*(tb?2.2:3.2));lo=clamp(lo,tb?5:10,to-2);let wi=to;
+    if(lo>=to-2&&R()<0.45){const ex=Math.floor(R()*R()*5);lo=to-2+ex+(R()<0.5?0:0);wi=lo+2;}
+    sets.push(hw?[wi,lo]:[lo,wi]);sw[hw?0:1]++;}
+  // skutki meczu bez symulacji akcji: zgranie (wspólne mecze) i forma podstawowych zawodników
+  [h,a].forEach((ti,k)=>{const t=TEAMS[ti];const lu=autoLineup(t);const won=sw[k]>sw[1-k];for(const id of Object.values(lu)){const p=t.players.find(x=>x.id===id);if(!p)continue;
+    if(p.tcTm!==ti){p.tcTm=ti;p.tc=0;}p.tc=(p.tc||0)+1;if(typeof formAdd==='function')formAdd(p,(won?1.5:-1.5)*0.6+nz()*4+(60-fmOf(p))*0.12);}});
+  try{if(typeof famAdd==='function')[h,a].forEach(ti=>{const t=tacOf(ti);for(const [k] of TF_EL)famAdd(ti,k+':'+tfVal(t,k),(sets.length*42)*0.03);});}catch(e){}
+  const r={h,a,sets,sw,q:1};try{if(typeof aiSocResult==='function'){const hw=sw[0]>sw[1],s0=Math.min(sw[0],sw[1])===0;aiSocResult(h,hw,s0);aiSocResult(a,!hw,s0);}}catch(e){}return r;}
 function simFixture(h,a,stats){const m=simMatch(participant(h,true),participant(a,false));if(stats)recordStats(m);return resultOf(m,h,a);}
 
 // ---- mecz użytkownika ----
@@ -1875,6 +1895,7 @@ function playNext(){if(SAVE.fired)return;syncDate();const c=myNext();if(!c)retur
 function simNext(){if(SAVE.fired)return;syncDate();const c=myNext();if(!c)return;const m=buildMatch(c);m.quick=true;while(!m.over)doRally(m);ui.match=m;ui.view='post';ui.tab='mecz';render();}
 function finishMatch(m){
   if(m.recorded||!m.ctx)return;m.recorded=true;const c=m.ctx,s=S();
+  {const T=myTac();if(T.tgtOnce){delete T.tgt;delete T.tgtOnce;}}
   if(c.kind==='nt'){const r=Object.assign(resultOf(m,c.h,c.a),{d:today()});ntInj(m);ntMyResult(c,r);const won=m.winner===0;news(`🎌 ${natN(myNT())} – ${natN(ntCode(c.h))} ${r.sw[1]}:${r.sw[0]}${won?' — wygrywamy!':''}`);save();return;}
   achMatch(m,c);
   const res=resultOf(m,c.h,c.a);res.me=true;res.d=today();
@@ -1951,7 +1972,7 @@ function bgInit(s){s.oth={};for(const l of allLgs()){if(l===myLg())continue;cons
 function ensureBg(){const s=SAVE&&SAVE.season;if(!s||s.oth||!SAVE.lg||!s.rounds||s.phase==='end')return;bgInit(s);const n=Math.min((s.results||[]).length,s.rounds.length);for(let r=0;r<n;r++)bgRound(r);if(s.po)for(let d=0;d<(s.po.day||0);d++)bgPoDay();}
 function bgTable(L){return tableFrom(L.results,L.ids);}
 function bgRound(r){const s=S();if(!s.oth)return;for(const k in s.oth){const L=s.oth[k];if(L.results.length>r||!L.rounds[r])continue;
-  L.results.push(L.rounds[r].map(([h,a])=>{const g=simFixture(h,a,true);g.d=today();return g;}));if(L.results.length===L.rounds.length&&!L.po)bgStartPo(L);}}
+  L.results.push(L.rounds[r].map(([h,a])=>{const g=quickLg(lgOf(h))?quickFixture(h,a):simFixture(h,a,true);g.d=today();return g;}));if(L.results.length===L.rounds.length&&!L.po)bgStartPo(L);}}
 function bgSer(L,st,a,b,need){const hi=L.seed.indexOf(a)<L.seed.indexOf(b)?a:b,lo=hi===a?b:a;return {id:st+'-'+hi+'-'+lo,st,hi,lo,need,w:[0,0],games:[]};}
 function bgStartPo(L){const t=poSeed(bgTable(L).map(x=>x.i));L.seed=t;L.po=poFirst(t,lgCfg(L.lg!=null?L.lg:lgOf(t[0])).po,(st,a,b,n)=>bgSer(L,st,a,b,n));}
 function bgActive(L){if(!L.po)return [];const st=L.po.stage;return L.po.series.filter(x=>(st==='FB'?(x.st==='F'||x.st==='B'):x.st===st)&&!seriesDone(x));}
@@ -1961,7 +1982,7 @@ function bgAdvance(L){if(bgActive(L).length)return;const po=L.po,r=i=>L.seed.ind
   else if(po.stage==='SF'){const sf=po.series.filter(x=>x.st==='SF');po.series.push(bgSer(L,'F',seriesWinner(sf[0]),seriesWinner(sf[1]),c.f));if(c.b)po.series.push(bgSer(L,'B',seriesLoser(sf[0]),seriesLoser(sf[1]),c.b));po.stage='FB';}
   else if(po.stage==='FB'){L.final=poFinal(po,L.seed,lgCfg(lg));if(lgCfg(lg).playout)playout(L.final,lg);po.stage='done';}}
 function bgPoDay(){const s=S();if(!s.oth)return;for(const k in s.oth){const L=s.oth[k];if(!L.po||L.final)continue;
-  for(const sr of bgActive(L)){const h=seriesHome(sr);const g=simFixture(h,h===sr.hi?sr.lo:sr.hi,true);g.d=today();addGame(sr,g);}L.po.day++;bgAdvance(L);}}
+  for(const sr of bgActive(L)){const h=seriesHome(sr);const o=h===sr.hi?sr.lo:sr.hi;const g=quickLg(lgOf(h))?quickFixture(h,o):simFixture(h,o,true);g.d=today();addGame(sr,g);}L.po.day++;bgAdvance(L);}}
 function bgFinishAll(){const s=S();if(!s.oth)return;for(const k in s.oth){const L=s.oth[k];while(L.results.length<L.rounds.length)bgRound(L.results.length);if(!L.po)bgStartPo(L);}
   for(let g=0;g<40&&Object.values(s.oth).some(L=>!L.final);g++)bgPoDay();}
 // awanse i spadki: 2 w górę (finaliści play-off niższej ligi), 2 w dół (miejsca 11–12 wyższej ligi)
@@ -1998,7 +2019,7 @@ function nextCard(c,title){
   const w=nextEvent();const when=w?`<div class="when">📅 ${w.d===today()?'Dziś, ':''}${fmtLong(w.d)}${w.t?' · godz. '+w.t:''}</div>`:'';
   return `<div class="card nextm"><div class="mut small">${title}</div>${when}<div class="vs"><span style="--c:${TEAMS[c.h].color}">${tName(c.h)}</span><b>vs</b><span style="--c:${TEAMS[c.a].color}">${tName(c.a)}</span></div>
   <p class="small mut">${meHome?'Mecz u siebie (lekka przewaga własnej hali)':'Mecz wyjazdowy'} · Rywal: siła ${teamStrength(op)} ${stars(teamStrength(op))} · Twój skład: ${lineupStrength(myTeam(),myLineup())} · Zagrywka: ${SERVE_OPT[myTac().serve][0]} · Rozegranie: ${DIST_OPT[myTac().dist][0]}</p>
-  ${injWarn()}<div class="row wrap"><button class="btn" onclick="playNext()">▶ Graj mecz</button><button class="ghost" onclick="simNext()">⏩ Symuluj mecz</button></div></div>`;
+  ${injWarn()}<div class="row wrap"><button class="btn" onclick="playNext()">▶ Graj mecz</button><button class="ghost" onclick="simNext()">⏩ Symuluj mecz</button></div></div>${typeof preCard==='function'&&op&&op.idx!=null&&op.idx>=0?preCard(op.idx):''}`;
 }
 function injWarn(){const h=healthyLineup(myTeam(),myLineup());return h.ch.length?`<p class="small bad">${h.ch.map(([o,n,l])=>`🚑 ${esc(o?o.last:'?')} (${l}) — zastąpi go ${esc(n.last)}`).join('<br>')}</p>`:'';}
 function tableHtml(highlightPo){const tb=leagueTable();
@@ -2169,7 +2190,7 @@ function restoreDefs(){TEAMS.forEach((t,i)=>{const d=TEAM_DEFS[i];t.name=d.name;
 function resetTeams(){restoreDefs();TEAMS.forEach((t,i)=>{t.players=genTeam(TEAM_DEFS[i],i).players;});rebuildIndex();}
 function hashN(id){let h=3;for(const c of String(id))h=(h*131+c.charCodeAt(0))>>>0;return h;}
 function syncTeams(){for(const p of W().players){ensTraits(p);if(p.czy==null||p.kiw==null||p.kom==null){ensAttrs(p);if(p.base){p.base.czy=p.czy;p.base.kiw=p.kiw;p.base.kom=p.kom;}}
-    if(!W().chemInit&&p.tcTm==null&&p.tm>=0&&!p.jr){p.tcTm=p.tm;p.tc=6+hashN(p.id)%35;}}W().chemInit=1;for(const t of TEAMS)t.players=W().players.filter(p=>p.tm===t.idx&&!p.jr);rebuildIndex();}
+    if(!W().chemInit&&p.tcTm==null&&p.tm>=0&&!p.jr){p.tcTm=p.tm;p.tc=6+hashN(p.id)%35;}}W().chemInit=1;const by={};for(const p of W().players)if(p.tm>=0&&!p.jr)(by[p.tm]||(by[p.tm]=[])).push(p);for(const t of TEAMS)t.players=by[t.idx]||[];rebuildIndex();}
 function initPlayerMeta(p,season,free){const r=rating(p);p.pot=Math.min(95,Math.round(r+potBonus(p.age,r)));p.inj=0;p.xp={};p.base=snap(p);
   if(free){p.wage=0;p.ce=0;}else{p.wage=round5k(wageDemand(p)*(0.85+R()*0.3));p.ce=season+(R()<0.2?0:1+Math.floor(R()*3));}}
 function randPos(){const x=R()*14;return x<2?'R':x<4?'A':x<8?'P':x<12?'S':'L';}
@@ -2300,12 +2321,13 @@ function roundTick(kind,home,att,opp){
 // ---- transfery ----
 function windowOpen(){const p=S().phase;return p==='off'||p==='spar';}
 function posCount(t,pos){return t.players.filter(p=>p.pos===pos).length;}
-function isStarter(p){if(p.tm<0)return false;const lu=autoLineup(TEAMS[p.tm]);return Object.values(lu).includes(p.id);}
+var ST_C=null;// pamięć podręczna składów na czas przerwy między sezonami
+function isStarter(p){if(p.tm<0)return false;if(ST_C){let s=ST_C[p.tm];if(!s)s=ST_C[p.tm]=new Set(Object.values(autoLineup(TEAMS[p.tm])));return s.has(p.id);}const lu=autoLineup(TEAMS[p.tm]);return Object.values(lu).includes(p.id);}
 function askingPrice(p){return Math.round(pValue(p)*(isStarter(p)?1.35:1.05)/10000)*10000;}
 function canSellAI(p){if(p.loan)return false;const t=TEAMS[p.tm];return posCount(t,p.pos)-1>=POS_MIN[p.pos]&&t.players.length-1>=SQUAD_MIN;}
 function wageNeeded(p){if(p.tm===SAVE.team)return round5k(wageDemand(p)*negF()*(1+(p.raiseReq||0)));const my=SAVE.ai[SAVE.team].rep;const cur=p.tm>=0?SAVE.ai[p.tm].rep:0;const ld=p.tm>=0?Math.max(0,myLg()-lgOf(p.tm)):0;return round5k(wageDemand(p)*(p.tm<0?0.9:cur>my+10?1.15:1)*(1+0.35*ld)*negF());}
 function contractEndFor(years){const s=S();return (s.phase==='off'?s.n-1:s.n)+years;}
-function movePlayer(p,tm){p.tm=tm;if(tm>=0&&typeof S==='function'&&S())p.jn=S().n;if(tm>=0)assignNum(p,tm);syncTeams();}
+function movePlayer(p,tm){if(ST_C){delete ST_C[p.tm];delete ST_C[tm];}p.tm=tm;if(tm>=0&&typeof S==='function'&&S())p.jn=S().n;if(tm>=0)assignNum(p,tm);syncTeams();}
 function tradeMsg(ok,t){ui.tmsg={ok,t};render();}
 function makeOffer(pid,fee,wage,years){if(SAVE.trBan)return tradeMsg(false,'Zarząd zablokował zakupy, dopóki dług klubu nie spadnie poniżej 500 tys. zł.');
   const P=PLAYERS[pid];if(!P)return;const p=P.p;const me=myTeam();
@@ -2350,8 +2372,8 @@ function renew(pid,wage,years){const p=PLAYERS[pid].p;delete p.raiseReq;const ne
 
 // ---- AI: transfery i kontrakty ----
 function aiSign(t,pos){
-  const fa=W().players.filter(p=>p.tm<0&&p.pos===pos&&!p.inj).sort((a,b)=>rating(b)-rating(a));
-  let p=fa.find(x=>rating(x)<=teamStrength(t)+4)||fa[0];
+  const fa=W().players.filter(p=>p.tm<0&&p.pos===pos&&!p.inj).map(p=>[p,rating(p)]).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+  const tS=teamStrength(t);let p=fa.find(x=>rating(x)<=tS+4)||fa[0];if(ST_C)delete ST_C[t.idx];
   if(!p){p=genPlayer(pos,teamQ(t)-2.5+R(),21+Math.floor(R()*10));initPlayerMeta(p,S().n,true);W().players.push(p);}
   p.tm=t.idx;assignNum(p,t.idx);p.wage=wageDemand(p);p.ce=S().n+Math.floor(R()*2);
   t.players=W().players.filter(x=>x.tm===t.idx&&!x.jr);return p;}
@@ -2361,7 +2383,8 @@ function aiOffseason(){
   for(const t of TEAMS)if(isYT(t.idx))for(const p of t.players)if(p.age>21){p.tm=-1;p.wage=0;p.ce=0;}
   for(const t of TEAMS){if(t.idx===SAVE.team)continue;
     for(const p of t.players){if(p.ce<n){const keep=R()<(isStarter(p)?0.85:0.55)&&p.age<34;if(keep){p.wage=wageDemand(p);p.ce=n+Math.floor(R()*3);}else{p.tm=-1;p.wage=0;p.ce=0;}}}}
-  syncTeams();
+  syncTeams();ST_C={};
+  try{
   if(BAL3)faSignAI();
   const order=TEAMS.filter(t=>t.idx!==SAVE.team).sort(()=>R()-0.5);
   for(const t of order){
@@ -2376,8 +2399,10 @@ function aiOffseason(){
     if(pr&&FIX_PRO)promoBoost(t);
     for(const pos of ['R','A','P','S','L'])while(posCount(t,pos)<POS_STD[pos]&&t.players.length<16)aiSign(t,pos);
     while(t.players.length<SQUAD_MIN+1)aiSign(t,randPos());
+    if(ST_C)delete ST_C[t.idx];
     while(t.players.length>16){const ex=t.players.filter(p=>posCount(t,p.pos)>POS_STD[p.pos]).sort((a,b)=>rating(a)-rating(b))[0]||t.players.slice().sort((a,b)=>rating(a)-rating(b))[0];ex.tm=-1;ex.wage=0;ex.ce=0;t.players=W().players.filter(x=>x.tm===t.idx&&!x.jr);}
   }
+  }finally{ST_C=null;}
   syncTeams();
 }
 // limit płac klubu (zależny od ligi) – bogaty klub nie skupuje wszystkich gwiazd
@@ -3266,7 +3291,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=120').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=121').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
@@ -3800,7 +3825,7 @@ function startTimeout(i){const m=ui.match;if(!m||m.over||ui.to)return;
 // przerwa między setami: 30 s na przemowę i zmianę stron, statystyki seta; można przewinąć jak czas
 const SET_SEC=30;
 function startSetBreak(){const m=ui.match;if(!m||m.over||ui.to)return;const ls=m.lastSet;
-  m.paused=true;clearTimeout(timer);ui.talk=true;ui.talkRes=null;ui.talkSt=null;ui.toReq=false;
+  m.paused=true;clearTimeout(timer);ui.talk=true;ui.talkRes=null;ui.talkSt=null;ui.toReq=false;ui.asstOpen=1;
   const base=formation(m);ui.to={side:0,kind:'set',setNo:ls?ls.no:m.setNo-1,dur:SET_SEC,end:Date.now()+SET_SEC*1000,wasPlaying:true,scene:base,said:null};
   m.comm={t:`Koniec ${ui.to.setNo}. seta. Zmiana stron, trenerzy rozmawiają z zespołami.`,w:null};persistLive();render();
   const cvOk=document.getElementById('mcv');if(cvOk)animScene(m,base,benchScene(m,base),1400,()=>{});
@@ -3916,7 +3941,7 @@ function popModal(){const P=PLAYERS[ui.pop];if(!P){ui.pop=null;return '';}const 
     <div class="small mut">${pTag(p.pos)} ${POS_NAMES[p.pos]} · ${p.age} l. · ${p.h} cm · ocena <b style="color:var(--acc)">${typeof rTxt==='function'?rTxt(p):rating(p)}</b>${p.inj?` · <span class="bad">🚑 ${p.inj} dni</span>`:''}</div></div><span class="sp"></span>${mine?talkBtn(p.id):''}<button class="ghost" onclick="ui.pop=null;render()">✕</button></div>
    <div class="pkey">${ks.map(k=>`<div title="${esc((ALL_ATTRS.find(x=>x[0]===k)||[])[3]||'')}"><span>${attrName(k)}</span><i><b style="width:${(typeof aEst==='function'?(aEst(p,k)[0]+aEst(p,k)[1])/2:p[k])*5}%;background:${attrCol(p[k])}"></b></i><em style="color:${attrCol(p[k])}">${typeof aTxt==='function'?aTxt(p,k):p[k]}</em></div>`).join('')}</div>
    <div class="pmeta"><div><small>Forma</small><b>${formChip(p,true)}</b></div>${mine?`<div><small>Świeżość</small><b style="color:${frCol(frOf(p))}">${Math.round(frOf(p))}%</b></div>`:''}<div><small>Zagrywka</small><b>${SRV_T[srvType(p)]}</b></div><div><small>Kondycja</small><b style="color:${attrCol(p.kon)}">${p.kon}</b></div>${mine?`<div><small>Morale</small><b>${morEmo(mor)}</b></div>`:''}<div><small>Potencjał</small><b class="stars">${potStars(p)}</b></div><div><small>Wartość</small><b>${fmt(pValue(p))}</b></div></div>
-   <div class="ptr">${p.tr.map(k=>`<div>${trChip(k,true)}<span class="small mut">${esc(TRAITS[k][2])}</span></div>`).join('')}</div>
+   <div class="ptr">${p.tr.map(k=>`<div>${trChip(k,true)}<span class="small mut">${esc(TRAITS[k][2])}</span></div>`).join('')}</div>${typeof awTxt==='function'&&p.aw&&p.aw.length?`<div class="small" style="margin-top:6px">${awTxt(p).map(esc).join('<br>')}</div>`:''}
    <div class="row wrap" style="gap:8px;margin-top:10px"><button class="btn" onclick="const i=ui.pop;ui.pop=null;openCard(i)">Pełna karta zawodnika</button>
     ${mine&&!p.jr?(isCap(p)?'<span class="small mut">To jest kapitan drużyny.</span>':`<button class="ghost" onclick="ui.pop=null;setCaptain('${p.id}')">©️ Mianuj kapitanem</button>`):''}</div></div></div>`;}
 
@@ -6217,6 +6242,40 @@ function tutTips(d){if(SAVE.team==null||!SAVE.coach)return;const j=SAVE.coach.jo
   if(daysBetween(j,d)>=10&&tip('tac','Podpowiedź: taktyka pod rywala','Przed meczem zajrzyj do Centrum danych: widać tam, gdzie rywal atakuje i kogo warto obsługiwać zagrywką. Taktykę możesz zmienić też w trakcie meczu.'))return;}
 // ikonka „?” z krótkim objaśnieniem
 function tipQ(t){return `<span class="tipq" title="${esc(t)}" style="display:inline-block;width:16px;height:16px;line-height:16px;text-align:center;border-radius:50%;border:1px solid var(--mut,#888);font-size:11px;margin-left:6px;cursor:help;opacity:.8">?</span>`;}
+// ================= ODPRAWA PRZED MECZEM =================
+// Asystent i analityk podpowiadają decyzje na konkretnego rywala: co, dlaczego i przycisk „Zastosuj”.
+function preTips(opI){const op=TEAMS[opI];if(!op||!op.players)return [];const out=[];const t=myTac();const aSk=typeof staffSkill==='function'?staffSkill('asy'):8;const an=typeof anaSkill==='function'?anaSkill():0;
+  const lu=autoLineup(op);const P=k=>op.players.find(p=>p.id===lu[k]);const ofPos=pos=>Object.keys(lu).map(k=>P(k)).filter(p=>p&&p.pos===pos);
+  // 1. zagrywka w najsłabiej przyjmującego
+  const recs=[...ofPos('P'),...ofPos('L')];if(recs.length>=2){const so=recs.slice().sort((a,b)=>(a.prz+a.tod)-(b.prz+b.tod));const w=so[0],nx=so[1];
+    if((nx.prz+nx.tod)-(w.prz+w.tod)>=1.5&&w.pos!=='L')out.push({g:'Zagrywka',t:`Celuj zagrywką w ${w.last}.`,why:`Przyjmuje najsłabiej z ich linii przyjęcia (przyjęcie ${w.prz}, odbicie dołem ${w.tod}). Słabe przyjęcie odbiera rywalowi szybką grę środkiem.`,on:t.tgt===w.id,btn:'Zastosuj',act:`preSet('tgt','${w.id}')`});}
+  // 2. ryzyko zagrywki: słabe przyjęcie rywala → mocniej
+  if(recs.length){const avg=recs.reduce((a,p)=>a+p.prz,0)/recs.length;const my=myTeam().players.filter(p=>Object.values(myLineup()).includes(p.id));const myZ=my.length?my.reduce((a,p)=>a+p.zag,0)/my.length:10;
+    if(avg<=13.5&&myZ>=12&&t.serve!==2)out.push({g:'Zagrywka',t:'Zagrywaj ryzykownie.',why:`Rywal ma słabe przyjęcie (średnio ${avg.toFixed(1)}), a nasi zagrywający są dobrzy (${myZ.toFixed(1)}). Więcej asów i złych przyjęć wynagrodzi dodatkowe błędy.`,btn:'Zastosuj',act:`preSet('serve',2)`});
+    else if(avg>=16&&t.serve===2)out.push({g:'Zagrywka',t:'Zmniejsz ryzyko zagrywki.',why:`Rywal świetnie przyjmuje (średnio ${avg.toFixed(1)}). Ryzykowna zagrywka da głównie błędy, a mało asów.`,btn:'Zastosuj',act:`preSet('serve',1)`});}
+  // 3. rozegranie przy idealnym przyjęciu: słaby blok środkowych rywala → środek
+  const mids=ofPos('S');if(mids.length){const mb=mids.reduce((a,p)=>a+p.blo,0)/mids.length;const dq=t.distQ||{};
+    if(mb<=13&&dq[3]!==2)out.push({g:'Rozegranie',t:'Po idealnym przyjęciu graj środkiem.',why:`Środkowi rywala słabo blokują (blok średnio ${mb.toFixed(1)}). Szybka piłka po dobrym przyjęciu będzie trudna do zatrzymania.`,btn:'Zastosuj',act:`preDistQ(3,2)`});}
+  // 4–5. blok na kierunek ataku (wymaga analityka)
+  if(an>=6){const opp=ofPos('A')[0];const ps=ofPos('P').sort((a,b)=>b.ata-a.ata)[0];
+    for(const [p,key,side,who] of [[opp,'blkL','L','atakujący'],[ps,'blkR','R','najlepszy przyjmujący']]){if(!p)continue;const c=dirTend(p);const best=c>=0.62?0:c<=0.38?2:null;if(best==null||(t[key]??1)===best)continue;
+      out.push({g:'Blok',t:`Blok „${BLK_OPT[best][0].toLowerCase()}” na ${side==='L'?'lewej':'prawej'} stronie siatki.`,why:`${p.last} (${who}) najczęściej bije ${best===0?'po skosie':'po prostej'} — według analityka ok. ${Math.round((best===0?c:1-c)*100)}% ataków. Blok zamknie mu ulubiony kierunek.`,btn:'Zastosuj',act:`preSet('${key}',${best})`});}}
+  else out.push({g:'Analiza',t:'Bez analityka nie wiemy, w które kierunki atakuje rywal.',why:'Analityk (Sztab) ze skillem 6+ podpowie przed meczem, jak ustawić blok.'});
+  // kluczowy zawodnik rywala
+  const star=Object.keys(lu).map(k=>P(k)).filter(p=>p&&p.pos!=='L'&&p.pos!=='R').sort((a,b)=>rating(b)-rating(a))[0];
+  if(star)out.push({g:'Rywal',t:`Najgroźniejszy u rywala: ${star.last} (${POS_NAMES[star.pos].toLowerCase()}, ocena ${rating(star)}).`,why:star.pos==='S'?'Środkowy groźny w krótkiej — dobra zagrywka odbierze mu piłki.':'Blok i obrona powinny być gotowe na jego ataki w ważnych momentach.'});
+  if(out.every(x=>!x.btn))out.unshift({g:'Ogólnie',t:'Nasza taktyka pasuje do tego rywala.',why:'Nie widzę ustawienia, które dałoby wyraźną przewagę. Wróć do rad asystenta w trakcie meczu.'});
+  return aSk<6?out.slice(0,3):out;}
+function preSet(k,v){if(k==='tgt'){myTac().tgt=v;myTac().tgtOnce=1;save();render();return;}tacSet(k,v);}
+function preDistQ(q,i){setDistQ(q,i);}
+function preCard(opI){let L=[];try{L=preTips(opI);}catch(e){console.error(e);}if(!L.length)return '';
+  return `<div class="card"><h2>Odprawa przed meczem${tipQ('Rady asystenta i analityka na tego rywala. „Zastosuj” zmienia taktykę na ten mecz (zagrywka w zawodnika obowiązuje tylko w tym meczu, reszta zostaje w taktyce).')}</h2>
+   ${L.map(x=>`<div class="asr" style="display:flex;gap:10px;align-items:flex-start;margin:8px 0"><span class="asg" style="min-width:90px">${esc(x.g)}</span><div style="flex:1"><b>${esc(x.t)}</b><div class="small mut">Dlaczego: ${esc(x.why)}</div></div>${x.btn?`<button class="btn sm" onclick="${x.act}">✓ ${esc(x.btn)}</button>`:''}</div>`).join('')}</div>`;}
+// Skład: osobne zakładki „Skład wyjściowy” i „Kadra”, żeby ekran był krótszy (szczególnie na telefonie)
+{const _sqAll=squadView;squadView=function(){if(ui.sqTab==='dyn')return _sqAll();const h=_sqAll();
+  const M1='<div class="card"><div class="row"><h2>Skład wyjściowy',M2='<div class="card"><div class="row"><h2>Kadra (';const i1=h.indexOf(M1),i2=h.indexOf(M2);if(i1<0||i2<0)return h;
+  const tabs=`<div class="card"><div class="row wrap" style="gap:6px"><button class="tabb ${!ui.sqTab?'on':''}" onclick="ui.sqTab=null;render()">Skład wyjściowy</button><button class="tabb ${ui.sqTab==='kadra'?'on':''}" onclick="ui.sqTab='kadra';render()">Kadra</button><button class="tabb" onclick="ui.sqTab='dyn';render()">Dynamika zespołu</button></div></div>`;
+  return tabs+(ui.sqTab==='kadra'?h.slice(i2):h.slice(i1,i2));};}
 // ================= HISTORIA I REKORDY =================
 // Zbierane od momentu wprowadzenia (wcześniejszych sezonów nie da się odtworzyć).
 function HIST(){return SAVE.hist||(SAVE.hist={seasons:[],rec:{},str:{},club:{}});}
@@ -6238,6 +6297,7 @@ function histSeasonEnd(){const H=HIST();const s=S();if(!s||s.phase!=='end'||H.se
       const el=L.filter(r=>r.m>=mx*0.5);const av=r=>(r.rs||0)/(r.rn||1);const mvp=el.slice().sort((a,b)=>(b.mvp-a.mvp)||(av(b)-av(a)))[0];const top=L.slice().sort((a,b)=>b.pts-a.pts)[0];
       if(mvp)row.mvp[k]={id:mvp.id,nm:pName(mvp.id),tm:PLAYERS[mvp.id]&&PLAYERS[mvp.id].t?PLAYERS[mvp.id].t.idx:null};
       if(top){row.top[k]={id:top.id,nm:pName(top.id),pts:top.pts};hRec('seasonPts',top.pts,{id:top.id,nm:pName(top.id),tm:PLAYERS[top.id]&&PLAYERS[top.id].t?PLAYERS[top.id].t.idx:null});}}catch(e){}}
+  try{row.aw=histAwards(s,lf);}catch(e){console.error(e);}
   H.seasons.push(row);
   // tytuły mistrza (najwyższe ligi)
   const tc={};for(const r of H.seasons)for(const k in r.lg)if(LG_LV[+k]===0&&r.lg[k][0]!=null)tc[r.lg[k][0]]=(tc[r.lg[k][0]]||0)+1;
@@ -6257,7 +6317,7 @@ function historyView(){const H=HIST();const tab=ui.hTab||'mistrz';
       ${Object.keys(r.lg).map(k=>`<tr><td class="l">${esc(lgFull(+k))}</td>${[0,1,2].map(j=>`<td class="l">${r.lg[k][j]===SAVE.team?'<b>':''}${esc(tmN(r.lg[k][j]))}${r.lg[k][j]===SAVE.team?'</b>':''}</td>`).join('')}<td class="l">${r.mvp[k]?esc(r.mvp[k].nm):'—'}</td></tr>`).join('')}
       ${Object.keys(r.cup).map(c=>`<tr><td class="l">${esc(typeof cupName==='function'?cupName(c):'Puchar '+c)}</td><td class="l">${esc(tmN(r.cup[c]))}</td><td></td><td></td><td></td></tr>`).join('')}
       ${r.cl!=null?`<tr><td class="l">Liga Mistrzów</td><td class="l">${esc(tmN(r.cl))}</td><td></td><td></td><td></td></tr>`:''}${r.cev!=null?`<tr><td class="l">Puchar CEV</td><td class="l">${esc(tmN(r.cev))}</td><td></td><td></td><td></td></tr>`:''}
-      </tbody></table></div></div>`).join(''):`<div class="card">${empty}</div>`;}
+      </tbody></table></div>${r.aw&&Object.keys(r.aw).length?`<h3 style="margin-top:10px">Nagrody indywidualne</h3><div class="tw"><table><thead><tr><th class="l">Liga</th>${Object.keys(AW_L).map(k=>`<th class="l">${AW_L[k].replace('Najlepszy ','').replace('Najlepsze ','')}</th>`).join('')}</tr></thead><tbody>${Object.keys(r.aw).map(k=>`<tr><td class="l">${esc(lgFull(+k))}</td>${Object.keys(AW_L).map(pos=>{const x=r.aw[k][pos];return `<td class="l">${x?`${x.tm===SAVE.team?'<b>':''}${esc(x.nm)}${x.tm===SAVE.team?'</b>':''} <small class="mut">${esc(TEAMS[x.tm]?TEAMS[x.tm].short:'')}</small>`:'—'}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div>`:''}</div>`).join(''):`<div class="card">${empty}</div>`;}
   else if(tab==='rek'){const R=H.rec;const ks=Object.keys(REC_L).filter(k=>R[k]);
     body=`<div class="card"><h2>Rekordy</h2>${ks.length?`<div class="tw"><table><thead><tr><th class="l">Rekord</th><th>Wartość</th><th class="l">Kto</th><th class="l">Kiedy</th></tr></thead><tbody>${ks.map(k=>{const r=R[k];const who=r.nm?`${esc(r.nm)} (${esc(tmN(r.tm))})${r.vs!=null?' vs '+esc(tmN(r.vs)):''}`:esc(tmN(r.tm));return `<tr><td class="l">${REC_L[k]}</td><td><b>${r.v}</b></td><td class="l">${who}</td><td class="l">${k==='titles'?'—':esc(r.d||sLabel(r.n))}</td></tr>`;}).join('')}</tbody></table></div>`:empty}</div>`;}
   else if(tab==='leg'){const L=Object.entries(H.club).filter(([,c])=>c.s>=1).sort((a,b)=>(b[1].s*10+b[1].tr*15+b[1].pts/40)-(a[1].s*10+a[1].tr*15+a[1].pts/40)).slice(0,25);
@@ -6267,6 +6327,22 @@ function historyView(){const H=HIST();const tab=ui.hTab||'mistrz';
       <h3 style="margin-top:12px">Trofea</h3>${(c.trophies||[]).length?`<div>${c.trophies.map(t=>`<div class="small">${esc(t)}</div>`).join('')}</div>`:'<p class="mut small">Jeszcze bez trofeów.</p>'}
       <p class="small mut" style="margin-top:8px">Oferty pracy przychodzą także z klubów z innych krajów (Niemcy, Włochy, Turcja), jeśli Twoja reputacja na to pozwala.</p></div>`;}
   return head+body;}
+
+// nagrody sezonu według pozycji (ligi ze statystykami zawodników)
+const AW_L={A:'Najlepszy atakujący',P:'Najlepszy przyjmujący',S:'Najlepszy środkowy',R:'Najlepszy rozgrywający',L:'Najlepsze libero'};
+function histAwards(s,lf){const out={};const ps=s.ps||{};
+  for(const k in lf){const l=+k;const L=Object.entries(ps).filter(([id])=>{const P=PLAYERS[id];return P&&P.t&&lgOf(P.t.idx)===l;}).map(([id,r])=>Object.assign({id,p:PLAYERS[id].p,tm:PLAYERS[id].t.idx},r));if(L.length<10)continue;
+    const mx=Math.max(...L.map(r=>r.m));const el=L.filter(r=>r.m>=mx*0.5);const place=i=>{const x=lf[k].indexOf(i);return x<0?lf[k].length:x;};const N=lf[k].length;
+    const sc={A:r=>r.pts/r.m,P:r=>r.rec>=r.m*3?r.pts/r.m*0.6+r.recPos/r.rec*30:-1,S:r=>(r.blk*1.5+r.kill)/r.m,L:r=>r.rec>=r.m*3?r.recPos/r.rec*100+r.dig/r.m*2:-1,R:r=>r.p.roz+(N-place(r.tm))*0.5};
+    const A={};for(const pos in sc){const c=el.filter(r=>r.p.pos===pos).map(r=>[r,sc[pos](r)]).filter(x=>x[1]>=0).sort((a,b)=>b[1]-a[1])[0];if(!c)continue;const r=c[0];
+      A[pos]={id:r.id,nm:pName(r.id),tm:r.tm};const p=r.p;(p.aw=p.aw||[]).push({k:pos,n:s.n,l});
+      if(r.tm===SAVE.team)news(`🏅 ${p.first} ${p.last}: ${AW_L[pos].toLowerCase()} ${lgFull(l)} w sezonie ${sLabel(s.n)}!`);}
+    out[k]=A;}
+  return out;}
+// nagrody podnoszą wartość zawodnika (do +15% przez dwa kolejne sezony)
+function awBonus(p){if(!p.aw||!p.aw.length||!S())return 0;const n=S().n;return Math.min(0.15,p.aw.filter(a=>n-a.n<=2).length*0.06);}
+{const _pv=pValue;pValue=function(p){const v=_pv(p);const b=awBonus(p);return b?Math.round(v*(1+b)/10000)*10000:v;};}
+function awTxt(p){return (p.aw||[]).map(a=>`🏅 ${AW_L[a.k]} — ${LG_N[a.l]} ${sLabel(a.n)}`);}
 // ================= SZKIELET INTERFEJSU: MENU BOCZNE, PASEK KLUBU, EKRAN GŁÓWNY =================
 const NAV=[['home','🏠','Ekran główny'],['mecz','🏐','Mecz i sezon'],['sklad','👥','Skład'],['taktyka','📋','Taktyka'],['trening','🏋️','Trening'],['kalendarz','📅','Terminarz'],['tabela','🏆','Tabela'],['staty','📈','Statystyki'],['transfery','🔁','Transfery'],['finanse','💰','Finanse'],['sztab','🧑‍🏫','Sztab'],['juniorzy','🌱','Juniorzy'],['klub','🏟️','Infrastruktura'],['trener','🎓','Trener']];
 function teamCrest(i,size){if(i<=-100&&typeof ntCode==='function')return `<span style="font-size:${Math.round((size||16)*0.9)}px;line-height:1">${natFl(ntCode(i))}</span>`;const t=TEAMS[i];if(!t)return '';if(SAVE.custom&&SAVE.custom.idx===i)return crestSvg(t.name,t.short,t.color,size,SAVE.custom.crest);return crestSvg(t.name,t.short,t.color,size,CLUB_CRESTS[i]||(i*7+3)%20);}

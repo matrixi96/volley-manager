@@ -196,7 +196,7 @@ function cfNote(m,e){if(m)(m.cfEv=m.cfEv||[]).push(Object.assign({set:m.setNo},e
 function cfUp(p,m,x){if(!MENT||!p)return;const sd=m.sides.find(s=>s.pl.includes(p));const k=1+((p.wal||10)-10)/20+(sd&&sd.cfLid?0.5:0);p.cfN=0;p.cf=clamp((p.cf||0)+x*k,-3,2);}
 function cfB(p){return MENT?(p.cf||0)*0.035:0;}
 function mentQ(p,m){return ((p.kcj||10)*0.6+(pressure(m)?(p.opa||10):(p.kcj||10))*0.4)/20;}
-var DAYV=0,SETV=0.06;
+var DAYV=0,SETV=0.06,COMEB=0.015;// COMEB: przegrany poprzedniego seta gra z większą determinacją, zwycięzca lekko odpuszcza
 var PREPV=1,PREP_AMP=0.8,PREP_K=0.5;
 // przygotowanie (taktyka, sztab, trener, analiza rywala) działa przez cały mecz; słabszy, lepiej przygotowany zespół wyciska z niego więcej
 function prepInit(m){if(m._prep)return;m._prep=1;const st=i=>{const sd=m.sides[i];const ps=sd.slots.map(x=>x.p).concat([sd.libero]).filter(Boolean);return ps.reduce((a,p)=>a+rating(p),0)/Math.max(1,ps.length);};
@@ -502,6 +502,7 @@ function startSet(m){
   m.setNo++;m.score=[0,0];m.run={t:-1,n:0};
   for(const i of [0,1])undoSpecialSubs(m,i,true);
   for(const s of m.sides){s.rot=baseRot(s.tactics);s.to=2;s.subs=6;s.mom=0;s.form=s.form*0.5+nz()*SETV+(s.home?0.0075:0);for(const p of s.pl)p.en=Math.min(100,p.en+12);}
+  if(COMEB&&m.sets.length){const ls=m.sets[m.sets.length-1];const L=ls[0]>ls[1]?1:0;m.sides[L].form+=COMEB;m.sides[1-L].form-=COMEB*0.5;}
   m.serving=m.setNo===5?(R()<0.5?0:1):(m.firstServe+m.setNo-1)%2;
 }
 function stepRally(m){

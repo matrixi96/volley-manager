@@ -299,7 +299,7 @@ function startTimeout(i){const m=ui.match;if(!m||m.over||ui.to)return;
 // przerwa między setami: 30 s na przemowę i zmianę stron, statystyki seta; można przewinąć jak czas
 const SET_SEC=30;
 function startSetBreak(){const m=ui.match;if(!m||m.over||ui.to)return;const ls=m.lastSet;
-  m.paused=true;clearTimeout(timer);ui.talk=true;ui.talkRes=null;ui.talkSt=null;ui.toReq=false;
+  m.paused=true;clearTimeout(timer);ui.talk=true;ui.talkRes=null;ui.talkSt=null;ui.toReq=false;ui.asstOpen=1;
   const base=formation(m);ui.to={side:0,kind:'set',setNo:ls?ls.no:m.setNo-1,dur:SET_SEC,end:Date.now()+SET_SEC*1000,wasPlaying:true,scene:base,said:null};
   m.comm={t:`Koniec ${ui.to.setNo}. seta. Zmiana stron, trenerzy rozmawiają z zespołami.`,w:null};persistLive();render();
   const cvOk=document.getElementById('mcv');if(cvOk)animScene(m,base,benchScene(m,base),1400,()=>{});
