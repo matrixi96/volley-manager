@@ -345,7 +345,7 @@ function financeView(){
   const f=SAVE.fin;const pay=payroll(),sp=sponsorAmt();const rep=SAVE.ai[SAVE.team].rep;
   const stp=staffPay(),mnt=maintenance()*12,shp=shopIncome(myInfra().sklep)*12;const md=matchday(1,null,null,true);const kh=ECO().karS.season===S().n?ECO().karS.inc:0;
   const proj=sp+tvRound()*nRounds()+md.tot*Math.ceil(nRounds()/2)+shp+kh-pay-stp-mnt;
-  const cats=['Sponsor','Prawa TV','Bilety','Karnety','Gastronomia','Parking','Sklep','Obóz','Nagrody','Transfery','Pensje','Sztab','Utrzymanie','Infrastruktura','Marketing','Odprawy'];
+  const cats=['Sponsor','Prawa TV','Bilety','Karnety','Gastronomia','Parking','Sklep','Obóz','Nagrody','Transfery','Pensje','Sztab','Utrzymanie','Infrastruktura','Marketing','Odprawy','Kredyt','Kary'];
   const row=(o)=>cats.map(c=>`<tr><td class="l">${c}</td><td class="${(o[c]||0)<0?'bad':(o[c]||0)>0?'good':''}">${o[c]?fmt(o[c]):'—'}</td></tr>`).join('')+`<tr><td class="l"><b>Razem</b></td><td><b>${fmt(cats.reduce((s,c)=>s+(o[c]||0),0))}</b></td></tr>`;
   const spFree=typeof spFreeN==='function'?spFreeN():0;
   return `<div class="card fin"><div class="big ${f.bal<0?'bad':''}">${fmtFull(f.bal)}</div><div class="mut">Saldo klubu${f.bal<0?' — jesteś na minusie! Dopuszczalny debet to 500 tys. zł, poniżej nie kupisz zawodników.':''}</div></div>
