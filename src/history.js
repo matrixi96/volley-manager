@@ -20,6 +20,7 @@ function histSeasonEnd(){const H=HIST();const s=S();if(!s||s.phase!=='end'||H.se
       if(mvp)row.mvp[k]={id:mvp.id,nm:pName(mvp.id),tm:PLAYERS[mvp.id]&&PLAYERS[mvp.id].t?PLAYERS[mvp.id].t.idx:null};
       if(top){row.top[k]={id:top.id,nm:pName(top.id),pts:top.pts};hRec('seasonPts',top.pts,{id:top.id,nm:pName(top.id),tm:PLAYERS[top.id]&&PLAYERS[top.id].t?PLAYERS[top.id].t.idx:null});}}catch(e){}}
   try{row.aw=histAwards(s,lf);}catch(e){console.error(e);}
+  try{domWageBonus(lf);}catch(e){console.error(e);}
   H.seasons.push(row);
   // tytuły mistrza (najwyższe ligi)
   const tc={};for(const r of H.seasons)for(const k in r.lg)if(LG_LV[+k]===0&&r.lg[k][0]!=null)tc[r.lg[k][0]]=(tc[r.lg[k][0]]||0)+1;
@@ -65,3 +66,13 @@ function histAwards(s,lf){const out={};const ps=s.ps||{};
 function awBonus(p){if(!p.aw||!p.aw.length||!S())return 0;const n=S().n;return Math.min(0.15,p.aw.filter(a=>n-a.n<=2).length*0.06);}
 {const _pv=pValue;pValue=function(p){const v=_pv(p);const b=awBonus(p);return b?Math.round(v*(1+b)/10000)*10000:v;};}
 function awTxt(p){return (p.aw||[]).map(a=>`🏅 ${AW_L[a.k]} — ${LG_N[a.l]} ${sLabel(a.n)}`);}
+
+// ---- dominujące kluby płacą więcej: tytuły w ostatnich 3 sezonach i renoma podnoszą oczekiwania kluczowych zawodników ----
+function domTitles(ti){const H=SAVE.hist;if(!H||!H.seasons)return 0;const n=S()?S().n:0;return H.seasons.filter(r=>n-r.n<=3).reduce((a,r)=>{for(const k in r.lg)if(r.lg[k][0]===ti&&LG_LV[+k]===0)return a+1;return a;},0);}
+let DOM_C=null;function domInfo(ti){const d=(SAVE&&SAVE.date)||'';if(!DOM_C||DOM_C.d!==d)DOM_C={d,m:{}};let x=DOM_C.m[ti];if(!x){const rep=SAVE.ai[ti].rep||0;const tt=domTitles(ti);x=DOM_C.m[ti]={rep,tt,ts:(tt||rep>=80)?teamStrength(TEAMS[ti]):0};}return x;}
+function domPrem(p){if(!p||p.tm==null||p.tm<0||!TEAMS[p.tm]||!SAVE.ai||!SAVE.ai[p.tm])return 0;const I=domInfo(p.tm);const rep=I.rep,tt=I.tt;if(!tt&&rep<80)return 0;
+  if(rating(p)<I.ts-2)return 0;return clamp(0.07*tt+Math.max(0,rep-80)*0.005,0,0.3);}
+// premie kontraktowe za mistrzostwo i wicemistrzostwo (najwyższe ligi): pensje kluczowych zawodników rosną od razu
+function domWageBonus(lf){const out=[];for(const k in lf){if(LG_LV[+k]!==0)continue;[[lf[k][0],0.08],[lf[k][1],0.04]].forEach(([ti,f])=>{const t=TEAMS[ti];if(!t||!t.players)return;const ts=teamStrength(t);
+    for(const p of t.players){if(p.jr||!p.wage||rating(p)<ts-2)continue;p.wage=round5k(p.wage*(1+f));if(ti===SAVE.team)out.push(p);}});}
+  if(out.length)news(`💰 Premie kontraktowe za medal mistrzostw: pensje ${out.length} kluczowych zawodników wzrosły (mistrz +8%, wicemistrz +4%).`);}

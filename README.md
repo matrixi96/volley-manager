@@ -34,7 +34,7 @@ Po pierwszym otwarciu gra działa bez internetu.
 
 ## Dla twórcy
 Źródła są w katalogu `src/`. Po zmianach zbuduj grę: `python src/build.py` (tworzy `index.html`).
-Przy większych aktualizacjach podbij nazwę cache w `sw.js` (np. `volley-manager-v129` → `v130`), żeby telefony szybciej pobrały nową wersję.
+Przy większych aktualizacjach podbij nazwę cache w `sw.js` (np. `volley-manager-v130` → `v131`), żeby telefony szybciej pobrały nową wersję.
 
 ## Testy
 

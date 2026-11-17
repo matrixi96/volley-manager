@@ -23,7 +23,7 @@ function traitVal(p){if(!p.tr)ensTraits(p);return clamp(p.tr.reduce((s,k)=>s+(TR
 function pValueBase(p){const r=rating(p);const af=p.age<=22?1.35:p.age<=28?1.1:p.age<=31?0.85:p.age<=33?0.55:0.3;const pf=1+Math.max(0,(p.pot||r)-r)/35;return Math.pow(Math.max(0,r-50)/40,2.5)*1500000*af*pf;}
 function pValue(p){return Math.max(10000,Math.round(pValueBase(p)*(1+seasonForm(p).f)*(1+traitVal(p))/10000)*10000);}
 function valTip(p){const sf=seasonForm(p),tv=traitVal(p);const a=[];if(sf.n)a.push(`forma sezonu ${sf.f>=0?'+':''}${String(Math.round(sf.f*1000)/10).replace('.',',')}% (śr. ocena ${sf.avg!=null?String(sf.avg).replace('.',','):'?'} w ${sf.n} meczach)`);if(tv)a.push(`charakter ${tv>0?'+':''}${String(Math.round(tv*1000)/10).replace('.',',')}%`);return a.join(' · ');}
-function wageDemand(p){const r=rating(p);return round5k(Math.max(40000,Math.pow(Math.max(0,r-45)/45,2)*700000)*(p.age>=33?0.8:1)*(p.tr&&p.tr.includes('loj')&&p.tm===SAVE.team?0.92:1)*(p.tr&&p.tr.includes('sta')?1.05:1));}
+function wageDemand(p){const r=rating(p);return round5k(Math.max(40000,Math.pow(Math.max(0,r-45)/45,2)*700000)*(p.age>=33?0.8:1)*(1+domPrem(p))*(p.tr&&p.tr.includes('loj')&&p.tm===SAVE.team?0.92:1)*(p.tr&&p.tr.includes('sta')?1.05:1));}
 function snap(p){const o={};for(const k of ALL_KEYS)o[k]=p[k];return o;}
 function baseRating(p){return p.base?rating(Object.assign({},p,p.base)):rating(p);}
 function potBonus(age,r){const k=r>=85?0.5:r>=80?0.75:1;return BAL2?k*(age<=21?2+R()*9:age<=24?1+R()*5:age<=27?R()*2:0):k*(age<=21?3+R()*12:age<=24?2+R()*7:age<=27?R()*3:0);}
@@ -226,7 +226,7 @@ function aiOffseason(){
   // kadra młodzieżowa: zawodnicy po 21. roku życia odchodzą z zespołu
   for(const t of TEAMS)if(isYT(t.idx))for(const p of t.players)if(p.age>21){p.tm=-1;p.wage=0;p.ce=0;}
   for(const t of TEAMS){if(t.idx===SAVE.team)continue;
-    for(const p of t.players){if(p.ce<n){const keep=R()<(isStarter(p)?0.85:0.55)&&p.age<34;if(keep){p.wage=wageDemand(p);p.ce=n+Math.floor(R()*3);}else{p.tm=-1;p.wage=0;p.ce=0;}}}}
+    for(const p of t.players){if(p.ce<n){const over=teamWages(t.idx)>wageCap(t.idx);const keep=R()<(isStarter(p)?0.85:0.55)*(over?0.6:1)&&p.age<34;if(keep){p.wage=wageDemand(p);p.ce=n+Math.floor(R()*3);}else{p.tm=-1;p.wage=0;p.ce=0;}}}}
   syncTeams();ST_C={};
   try{
   if(BAL3)faSignAI();

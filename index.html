@@ -2183,7 +2183,7 @@ function traitVal(p){if(!p.tr)ensTraits(p);return clamp(p.tr.reduce((s,k)=>s+(TR
 function pValueBase(p){const r=rating(p);const af=p.age<=22?1.35:p.age<=28?1.1:p.age<=31?0.85:p.age<=33?0.55:0.3;const pf=1+Math.max(0,(p.pot||r)-r)/35;return Math.pow(Math.max(0,r-50)/40,2.5)*1500000*af*pf;}
 function pValue(p){return Math.max(10000,Math.round(pValueBase(p)*(1+seasonForm(p).f)*(1+traitVal(p))/10000)*10000);}
 function valTip(p){const sf=seasonForm(p),tv=traitVal(p);const a=[];if(sf.n)a.push(`forma sezonu ${sf.f>=0?'+':''}${String(Math.round(sf.f*1000)/10).replace('.',',')}% (śr. ocena ${sf.avg!=null?String(sf.avg).replace('.',','):'?'} w ${sf.n} meczach)`);if(tv)a.push(`charakter ${tv>0?'+':''}${String(Math.round(tv*1000)/10).replace('.',',')}%`);return a.join(' · ');}
-function wageDemand(p){const r=rating(p);return round5k(Math.max(40000,Math.pow(Math.max(0,r-45)/45,2)*700000)*(p.age>=33?0.8:1)*(p.tr&&p.tr.includes('loj')&&p.tm===SAVE.team?0.92:1)*(p.tr&&p.tr.includes('sta')?1.05:1));}
+function wageDemand(p){const r=rating(p);return round5k(Math.max(40000,Math.pow(Math.max(0,r-45)/45,2)*700000)*(p.age>=33?0.8:1)*(1+domPrem(p))*(p.tr&&p.tr.includes('loj')&&p.tm===SAVE.team?0.92:1)*(p.tr&&p.tr.includes('sta')?1.05:1));}
 function snap(p){const o={};for(const k of ALL_KEYS)o[k]=p[k];return o;}
 function baseRating(p){return p.base?rating(Object.assign({},p,p.base)):rating(p);}
 function potBonus(age,r){const k=r>=85?0.5:r>=80?0.75:1;return BAL2?k*(age<=21?2+R()*9:age<=24?1+R()*5:age<=27?R()*2:0):k*(age<=21?3+R()*12:age<=24?2+R()*7:age<=27?R()*3:0);}
@@ -2386,7 +2386,7 @@ function aiOffseason(){
   // kadra młodzieżowa: zawodnicy po 21. roku życia odchodzą z zespołu
   for(const t of TEAMS)if(isYT(t.idx))for(const p of t.players)if(p.age>21){p.tm=-1;p.wage=0;p.ce=0;}
   for(const t of TEAMS){if(t.idx===SAVE.team)continue;
-    for(const p of t.players){if(p.ce<n){const keep=R()<(isStarter(p)?0.85:0.55)&&p.age<34;if(keep){p.wage=wageDemand(p);p.ce=n+Math.floor(R()*3);}else{p.tm=-1;p.wage=0;p.ce=0;}}}}
+    for(const p of t.players){if(p.ce<n){const over=teamWages(t.idx)>wageCap(t.idx);const keep=R()<(isStarter(p)?0.85:0.55)*(over?0.6:1)&&p.age<34;if(keep){p.wage=wageDemand(p);p.ce=n+Math.floor(R()*3);}else{p.tm=-1;p.wage=0;p.ce=0;}}}}
   syncTeams();ST_C={};
   try{
   if(BAL3)faSignAI();
@@ -3297,7 +3297,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=130').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=131').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
@@ -6870,6 +6870,7 @@ function histSeasonEnd(){const H=HIST();const s=S();if(!s||s.phase!=='end'||H.se
       if(mvp)row.mvp[k]={id:mvp.id,nm:pName(mvp.id),tm:PLAYERS[mvp.id]&&PLAYERS[mvp.id].t?PLAYERS[mvp.id].t.idx:null};
       if(top){row.top[k]={id:top.id,nm:pName(top.id),pts:top.pts};hRec('seasonPts',top.pts,{id:top.id,nm:pName(top.id),tm:PLAYERS[top.id]&&PLAYERS[top.id].t?PLAYERS[top.id].t.idx:null});}}catch(e){}}
   try{row.aw=histAwards(s,lf);}catch(e){console.error(e);}
+  try{domWageBonus(lf);}catch(e){console.error(e);}
   H.seasons.push(row);
   // tytuły mistrza (najwyższe ligi)
   const tc={};for(const r of H.seasons)for(const k in r.lg)if(LG_LV[+k]===0&&r.lg[k][0]!=null)tc[r.lg[k][0]]=(tc[r.lg[k][0]]||0)+1;
@@ -6915,6 +6916,16 @@ function histAwards(s,lf){const out={};const ps=s.ps||{};
 function awBonus(p){if(!p.aw||!p.aw.length||!S())return 0;const n=S().n;return Math.min(0.15,p.aw.filter(a=>n-a.n<=2).length*0.06);}
 {const _pv=pValue;pValue=function(p){const v=_pv(p);const b=awBonus(p);return b?Math.round(v*(1+b)/10000)*10000:v;};}
 function awTxt(p){return (p.aw||[]).map(a=>`🏅 ${AW_L[a.k]} — ${LG_N[a.l]} ${sLabel(a.n)}`);}
+
+// ---- dominujące kluby płacą więcej: tytuły w ostatnich 3 sezonach i renoma podnoszą oczekiwania kluczowych zawodników ----
+function domTitles(ti){const H=SAVE.hist;if(!H||!H.seasons)return 0;const n=S()?S().n:0;return H.seasons.filter(r=>n-r.n<=3).reduce((a,r)=>{for(const k in r.lg)if(r.lg[k][0]===ti&&LG_LV[+k]===0)return a+1;return a;},0);}
+let DOM_C=null;function domInfo(ti){const d=(SAVE&&SAVE.date)||'';if(!DOM_C||DOM_C.d!==d)DOM_C={d,m:{}};let x=DOM_C.m[ti];if(!x){const rep=SAVE.ai[ti].rep||0;const tt=domTitles(ti);x=DOM_C.m[ti]={rep,tt,ts:(tt||rep>=80)?teamStrength(TEAMS[ti]):0};}return x;}
+function domPrem(p){if(!p||p.tm==null||p.tm<0||!TEAMS[p.tm]||!SAVE.ai||!SAVE.ai[p.tm])return 0;const I=domInfo(p.tm);const rep=I.rep,tt=I.tt;if(!tt&&rep<80)return 0;
+  if(rating(p)<I.ts-2)return 0;return clamp(0.07*tt+Math.max(0,rep-80)*0.005,0,0.3);}
+// premie kontraktowe za mistrzostwo i wicemistrzostwo (najwyższe ligi): pensje kluczowych zawodników rosną od razu
+function domWageBonus(lf){const out=[];for(const k in lf){if(LG_LV[+k]!==0)continue;[[lf[k][0],0.08],[lf[k][1],0.04]].forEach(([ti,f])=>{const t=TEAMS[ti];if(!t||!t.players)return;const ts=teamStrength(t);
+    for(const p of t.players){if(p.jr||!p.wage||rating(p)<ts-2)continue;p.wage=round5k(p.wage*(1+f));if(ti===SAVE.team)out.push(p);}});}
+  if(out.length)news(`💰 Premie kontraktowe za medal mistrzostw: pensje ${out.length} kluczowych zawodników wzrosły (mistrz +8%, wicemistrz +4%).`);}
 // ================= SZKIELET INTERFEJSU: MENU BOCZNE, PASEK KLUBU, EKRAN GŁÓWNY =================
 const NAV=[['home','🏠','Ekran główny'],['mecz','🏐','Mecz i sezon'],['sklad','👥','Skład'],['taktyka','📋','Taktyka'],['trening','🏋️','Trening'],['kalendarz','📅','Terminarz'],['tabela','🏆','Tabela'],['staty','📈','Statystyki'],['transfery','🔁','Transfery'],['finanse','💰','Finanse'],['sztab','🧑‍🏫','Sztab'],['juniorzy','🌱','Juniorzy'],['klub','🏟️','Infrastruktura'],['trener','🎓','Trener']];
 function teamCrest(i,size){if(i<=-100&&typeof ntCode==='function')return `<span style="font-size:${Math.round((size||16)*0.9)}px;line-height:1">${natFl(ntCode(i))}</span>`;const t=TEAMS[i];if(!t)return '';if(SAVE.custom&&SAVE.custom.idx===i)return crestSvg(t.name,t.short,t.color,size,SAVE.custom.crest);return crestSvg(t.name,t.short,t.color,size,CLUB_CRESTS[i]||(i*7+3)%20);}
