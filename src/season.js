@@ -87,6 +87,7 @@ function finishMatch(m){
   if(m.recorded||!m.ctx)return;m.recorded=true;const c=m.ctx,s=S();
   {const T=myTac();if(T.tgtOnce){delete T.tgt;delete T.tgtOnce;}}
   try{if(typeof preEvaluate==='function')preEvaluate(m);}catch(e){console.error(e);}
+  try{if(typeof mdAfterMatch==='function')mdAfterMatch(m,c);}catch(e){console.error(e);}
   if(c.kind==='nt'){const r=Object.assign(resultOf(m,c.h,c.a),{d:today()});ntInj(m);ntMyResult(c,r);const won=m.winner===0;news(`🎌 ${natN(myNT())} – ${natN(ntCode(c.h))} ${r.sw[1]}:${r.sw[0]}${won?' — wygrywamy!':''}`);save();return;}
   achMatch(m,c);
   const res=resultOf(m,c.h,c.a);res.me=true;res.d=today();
@@ -210,7 +211,7 @@ function nextCard(c,title){
   const w=nextEvent();const when=w?`<div class="when">📅 ${w.d===today()?'Dziś, ':''}${fmtLong(w.d)}${w.t?' · godz. '+w.t:''}</div>`:'';
   return `<div class="card nextm"><div class="mut small">${title}</div>${when}<div class="vs"><span style="--c:${TEAMS[c.h].color}">${tName(c.h)}</span><b>vs</b><span style="--c:${TEAMS[c.a].color}">${tName(c.a)}</span></div>
   <p class="small mut">${meHome?'Mecz u siebie (lekka przewaga własnej hali)':'Mecz wyjazdowy'} · Rywal: siła ${teamStrength(op)} ${stars(teamStrength(op))} · Twój skład: ${lineupStrength(myTeam(),myLineup())} · Zagrywka: ${SERVE_OPT[myTac().serve][0]} · Rozegranie: ${DIST_OPT[myTac().dist][0]}</p>
-  ${injWarn()}${typeof ixN==='function'&&ixN()?`<div class="card" style="border:1px solid var(--acc);margin:8px 0">💬 ${ixN()===1?'Zawodnik czeka':'Zawodnicy czekają'} na rozmowę (${ixN()}). Po meczu bez odpowiedzi poczują się zlekceważeni. <button class="ghost sm" onclick="go('rozmowy')">Rozmowy</button></div>`:''}<div class="row wrap"><button class="btn" onclick="playNext()">▶ Graj mecz</button><button class="ghost" onclick="simNext()">⏩ Symuluj mecz</button></div></div>${typeof preCard==='function'&&op&&op.idx!=null&&op.idx>=0?preCard(op.idx):''}`;
+  ${injWarn()}${typeof ixN==='function'&&ixN()?`<div class="card" style="border:1px solid var(--acc);margin:8px 0">💬 ${ixN()===1?'Zawodnik czeka':'Zawodnicy czekają'} na rozmowę (${ixN()}). Po meczu bez odpowiedzi poczują się zlekceważeni. <button class="ghost sm" onclick="go('rozmowy')">Rozmowy</button></div>`:''}<div class="row wrap"><button class="btn" onclick="playNext()">▶ Graj mecz</button><button class="ghost" onclick="simNext()">⏩ Symuluj mecz</button></div></div>${typeof preCard==='function'&&op&&op.idx!=null&&op.idx>=0?preCard(op.idx):''}${typeof mdPreCard==='function'?mdPreCard(c):''}`;
 }
 function injWarn(){const h=healthyLineup(myTeam(),myLineup());return h.ch.length?`<p class="small bad">${h.ch.map(([o,n,l])=>`🚑 ${esc(o?o.last:'?')} (${l}) — zastąpi go ${esc(n.last)}`).join('<br>')}</p>`:'';}
 function tableHtml(highlightPo){const tb=leagueTable();
