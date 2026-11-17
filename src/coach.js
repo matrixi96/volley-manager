@@ -87,6 +87,8 @@ function makeOffers(fired){const c=coach();const cur=initRepStatic(myTeam());
   let pool=TEAMS.filter(t=>t.idx!==SAVE.team&&!isYT(t.idx)&&canTake(t.idx,c.rep));
   pool=fired?pool.sort((a,b)=>teamStrength(a)-teamStrength(b)).slice(0,4):pool.filter(t=>initRepStatic(t)>cur).sort(()=>R()-0.5);
   if(fired&&pool.length<2)pool=TEAMS.filter(t=>t.idx!==SAVE.team).sort((a,b)=>teamStrength(a)-teamStrength(b)).slice(0,3);
+  // w trakcie sezonu można przejść tylko do klubu z tej samej ligi (terminarz ligi jest wspólny); inne kluby zgłoszą się po sezonie
+  const mid=S()&&['spar','liga','po'].includes(S().phase);if(mid){const L=myLg();let same=TEAMS.filter(t=>t&&t.idx!==SAVE.team&&!isYT(t.idx)&&lgOf(t.idx)===L&&canTake(t.idx,c.rep));if(same.length<2)same=TEAMS.filter(t=>t&&t.idx!==SAVE.team&&!isYT(t.idx)&&lgOf(t.idx)===L).sort((a,b)=>teamStrength(a)-teamStrength(b)).slice(0,3);pool=fired?same.sort((a,b)=>teamStrength(a)-teamStrength(b)).slice(0,4):same.filter(t=>initRepStatic(t)>cur);}
   const n=fired?2+(R()<0.5?1:0):(R()<0.6?1:0)+(R()<0.3?1:0);
   return pool.sort(()=>R()-0.5).slice(0,n).map(t=>({tm:t.idx,goal:goalFor(t.idx)}));}
 function fireCoach(why){SAVE.fired={why,d:today()};SAVE.offers=makeOffers(true);news(`❌ Zostałeś zwolniony z ${myTeam().name}. ${why}`);

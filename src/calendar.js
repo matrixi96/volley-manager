@@ -33,7 +33,7 @@ function poTime(d){return dow(d)===6?'17:30':'20:30';}
 function nextEvent(){const s=S();if(!s)return null;ensureDates(s);
   if(s.phase==='off'){if(typeof ntInit==='function')ntInit();const ex=typeof extraNext==='function'?extraNext(s.sdates?s.sdates[0]:null):null;if(ex)return {d:ex.d<today()?today():ex.d,t:'20:00'};return {d:s.offDate};}
   if(s.phase==='spar'){const k=s.spar.res.length;return k<N_SPAR?{d:s.sdates[k],t:'18:00'}:null;}
-  if(s.phase==='liga'){const f=s.rounds[s.round].find(f=>f[0]===SAVE.team||f[1]===SAVE.team);const w=fixtureWhen(s,s.round,f);const ex=typeof extraNext==='function'?extraNext(w.d):null;return ex?{d:ex.d,t:'20:30'}:w;}
+  if(s.phase==='liga'){const f=(s.rounds[s.round]||[]).find(f=>f[0]===SAVE.team||f[1]===SAVE.team);if(!f)return null;const w=fixtureWhen(s,s.round,f);const ex=typeof extraNext==='function'?extraNext(w.d):null;return ex?{d:ex.d,t:'20:30'}:w;}
   if(s.phase==='po'){const d=s.podates[Math.min(s.po.day,s.podates.length-1)];const ex=typeof extraNext==='function'?extraNext(d):null;return ex?{d:ex.d,t:'20:30'}:{d,t:poTime(d)};}
   if(s.phase==='end'){const ex=typeof extraNext==='function'?extraNext(null):null;if(ex)return {d:ex.d,t:'20:30'};return {d:s.endDate||addDays(s.podates[Math.max(0,(s.po?s.po.day:1)-1)],3)};}
   return null;}
@@ -85,7 +85,7 @@ function migrateDates(){fixNaNBal();
 function myEvents(){
   const s=S();ensureDates(s);const ev={};const add=(d,o)=>(ev[d]=ev[d]||[]).push(o);
   s.spar.opps.forEach((o,k)=>{const home=k%2===0;const r=s.spar.res[k];if(s.phase!=='spar'&&!r)return;add(s.sdates[k],{kind:'spar',op:o,home,t:'18:00',r});});
-  s.rounds.forEach((rd,r)=>{const f=rd.find(x=>x[0]===SAVE.team||x[1]===SAVE.team);const w=fixtureWhen(s,r,f);const res=s.results[r]&&s.results[r].find(x=>x.me);add(w.d,{kind:'liga',op:f[0]===SAVE.team?f[1]:f[0],home:f[0]===SAVE.team,t:w.t,r:res,k:r+1});});
+  s.rounds.forEach((rd,r)=>{const f=rd.find(x=>x[0]===SAVE.team||x[1]===SAVE.team);if(!f)return;const w=fixtureWhen(s,r,f);const res=s.results[r]&&s.results[r].find(x=>x.me);add(w.d,{kind:'liga',op:f[0]===SAVE.team?f[1]:f[0],home:f[0]===SAVE.team,t:w.t,r:res,k:r+1});});
   if(s.po)for(const sr of s.po.series)for(const g of sr.games)if(g.me&&g.d)add(g.d,{kind:'po',op:g.h===SAVE.team?g.a:g.h,home:g.h===SAVE.team,r:g,st:sr.st});
   if(s.cups&&s.cups[myCountry()]){const C=s.cups[myCountry()];C.rounds.forEach((rd,i)=>{const t=rd.ties.find(x=>x.h===SAVE.team||x.a===SAVE.team);if(t)add(C.dates[i],{kind:'cup',op:t.h===SAVE.team?t.a:t.h,home:t.h===SAVE.team&&!t.neutral,t:'20:30',r:t.res?Object.assign({me:1},t.res):null});});}
   if(s.euro&&typeof euroMine==='function')for(const x of euroMine())add(x.d,{kind:'euro',op:x.ctx.h===SAVE.team?x.ctx.a:x.ctx.h,home:x.ctx.h===SAVE.team&&!x.ctx.neutral,t:'20:30',r:null});
