@@ -9,6 +9,7 @@ const DLG=[
  ['spons','Sponsorzy','fin','Dyrektor podpisuje oferty sponsorów (tytularnego, gdy go brak). Nigdy nie zrywa umów.'],
  ['agents','Kontakty agentów','fin','Dyrektor odpowiada agentom: zgadza się na rozmowy o kontraktach ważnych zawodników, inne prośby grzecznie odrzuca.'],
  ['scout','Przydziały skautów','sk','Skaut sam rozpoczyna przydziały pod najsłabsze pozycje w kadrze, gdy ma wolne miejsce.'],
+ ['trans','Transfery (uzupełnianie kadry)','sk','W oknie transferowym główny skaut (jak dyrektor sportowy) uzupełnia brakujące pozycje: najpierw szuka wolnych zawodników, potem tańszych rezerwowych z innych klubów. Mieści się w budżetach, kupuje najwyżej 3 zawodników na okno i nikogo nie sprzedaje. Słabszy skaut gorzej ocenia kandydatów.'],
  ['jr','Juniorzy','jr','Trener juniorów promuje do pierwszej drużyny gotowych juniorów (gdy jest miejsce) i zwalnia 20-latków bez perspektyw.'],
 ];
 function DL(){if(!SAVE.dlg){SAVE.dlg={on:{},quiet:0,log:[],wk:null};try{if(ensTrn().mode==='asy')SAVE.dlg.on.train=1;}catch(e){}}return SAVE.dlg;}
@@ -39,6 +40,22 @@ function dlgContracts(d){if(!dlg('contr'))return;const s=S();if(!s)return;const 
     if(rating(p)>=avg&&p.age<=32){const w=wageNeeded(p);const dw=w-(p.wage||0);if(dw>0&&dw>budLeft().wg){dlgNote(`Dyrektor nie przedłużył ${p.first} ${p.last}: brak miejsca w budżecie płacowym (potrzeba ${fmt(w)}).`);continue;}
       dlgRenew(p,1);dlgNote(`Dyrektor przedłużył kontrakt: ${p.first} ${p.last} do ${ceDate(p.ce)} (${fmt(w)}/rok).`);}
     else if(md==='05-01'){p.noExt=s.n;dlgNote(`Dyrektor nie przedłuży umowy ${p.first} ${p.last} (odejdzie po sezonie).`);}}}
+// ---- transfery: uzupełnianie brakujących pozycji ----
+function dlgTransfers(d){if(!dlg('trans')||!windowOpen())return;const D=DL();const s=S();if(D.trLast&&daysBetween(D.trLast,d)<3)return;D.trLast=d;
+  D.trN=D.trN||{};if((D.trN[s.n]||0)>=3)return;const t=myTeam();const mine=t.players.filter(p=>!p.jr&&!(p.loan&&p.loan.from===SAVE.team&&p.tm!==SAVE.team));if(t.players.length>=SQUAD_MAX)return;
+  const need=Object.keys(POS_STD).filter(k=>mine.filter(p=>p.pos===k).length<POS_STD[k]).sort((a,b)=>(mine.filter(p=>p.pos===a).length-POS_STD[a])-(mine.filter(p=>p.pos===b).length-POS_STD[b]));if(!need.length)return;
+  const top=mine.map(p=>rating(p)).sort((a,b)=>b-a).slice(0,12);const avg=top.reduce((a,b)=>a+b,0)/Math.max(1,top.length);const sk=dlgSk('trans');const myRep=SAVE.ai[SAVE.team].rep;const miss=need.reduce((a,k)=>a+POS_STD[k]-mine.filter(p=>p.pos===k).length,0);const maxW=budLeft().wg*(miss>1?Math.max(0.35,1/miss*1.3):1);
+  for(const pos of need){const posR=mine.filter(p=>p.pos===pos).map(p=>rating(p));const bar=Math.min(avg-6,posR.length?Math.max(...posR)-2:avg-6);
+    const cands=[];for(const p of W().players){if(p.pos!==pos||p.jr||p.retired||p.inj>0||p.tm===SAVE.team||p.loan||p.age<19||p.age>32)continue;
+      if(p.tm>=0){if(isYT(p.tm)||(isStarter(p)&&!p.tl)||TEAMS[p.tm].players.length<=SQUAD_MIN+1||SAVE.ai[p.tm].rep>myRep+15)continue;}
+      const est=rating(p)+(R()-0.5)*(20-sk)/2;if(est<bar)continue;const fee=p.tm<0?0:Math.round(pValue(p)*(p.tl?1:1.15)/10000)*10000;const w=wageNeeded(p);
+      if(fee>0&&(budCan('tr',fee)||SAVE.fin.bal-fee<0))continue;if(w>maxW)continue;cands.push({p,est,fee,w,sc:est+(p.tm<0?3:0)-fee/250000});}
+    if(!cands.length){if(!D.trMiss||D.trMiss[pos]!==s.n){D.trMiss=D.trMiss||{};D.trMiss[pos]=s.n;dlgNote(`Skaut nie znalazł nikogo na pozycję ${POS_NAMES[pos]||pos}, kto zmieściłby się w budżetach i podniósł poziom kadry.`);}continue;}
+    cands.sort((a,b)=>b.sc-a.sc);const c=cands[0];const p=c.p;const from=p.tm;
+    if(c.fee){money(-c.fee,'Transfery');SAVE.ai[from].bud+=c.fee;finLog(`Zakup (skaut): ${p.first} ${p.last} (${TEAMS[from].short})`,-c.fee);}
+    if(typeof budWageOver==='function')budWageOver(c.w);movePlayer(p,SAVE.team);p.wage=c.w;p.ce=contractEndFor(prefYears(p));delete p.tl;try{achEv('sign');}catch(e){}
+    D.trN[s.n]=(D.trN[s.n]||0)+1;dlgNote(`Skaut sprowadził ${p.first} ${p.last} (${pos}, ${p.age} l., ocena ${rating(p)}) ${from>=0?`z ${TEAMS[from].name} za ${fmt(c.fee)}`:'jako wolnego zawodnika'} — kontrakt ${fmt(c.w)}/rok do ${ceDate(p.ce)}.`);
+    news(`✍️ ${p.first} ${p.last} dołącza do zespołu${from>=0?` z ${TEAMS[from].name} za ${fmt(c.fee)}`:' jako wolny zawodnik'} (transfer przeprowadził skaut).`);break;}}
 // ---- sponsorzy ----
 function dlgSponsors(){if(!dlg('spons'))return;const s=SPN();const n0=s.act.length;quiet(()=>{for(const k in s.off)for(const o of (s.off[k]||[]).slice()){if(k==='tit'&&s.act.some(c=>c.cat==='tit'))continue;signSponsor(k,o.id);}});
   const n=s.act.length-n0;if(n>0){ui.spMsg=null;dlgNote(`Dyrektor podpisał ${n} ${n===1?'umowę sponsorską':n<5?'umowy sponsorskie':'umów sponsorskich'}. Przychód od sponsorów: ${fmt(spMonthly())}/mies.`);}}
@@ -61,7 +78,7 @@ function dlgJuniors(d){if(!dlg('jr'))return;if(!d.endsWith('-07-15')&&!d.endsWit
   if(J.some(p=>!PLAYERS[p.id]))rebuildIndex();for(const p of J.slice().sort((a,b)=>rating(b)-rating(a))){if(t.players.length>=SQUAD_MAX)break;if(rating(p)>=minR-1&&p.age>=17){quiet(()=>promote(p.id));dlgNote(`Trener juniorów awansował ${p.first} ${p.last} (ocena ${rating(p)}) do pierwszej drużyny.`);}}
   if(d.endsWith('-07-15'))for(const p of agedOut()){if((p.pot||rating(p))<minR+2){p.tm=-1;p.jr=false;p.wage=0;dlgNote(`Trener juniorów rozstał się z ${p.first} ${p.last} (20 lat, bez perspektyw na pierwszą drużynę).`);}}}
 // ---- codziennie ----
-function dlgDaily(d){if(SAVE.team==null||!SAVE.world||!S())return;try{dlgPrep(d);dlgContracts(d);dlgScout();dlgJuniors(d);}catch(e){console.error(e);}
+function dlgDaily(d){if(SAVE.team==null||!SAVE.world||!S())return;try{dlgPrep(d);dlgContracts(d);dlgScout();dlgJuniors(d);dlgTransfers(d);}catch(e){console.error(e);}
   const D=DL();if(D.quiet&&(!D.wk||daysBetween(D.wk,d)>=7)){const L=D.log.filter(x=>D.wk?x.d>D.wk:true);D.wk=d;if(L.length)sendMail({cat:'klub',from:'Sztab szkoleniowy',t:`Podsumowanie tygodnia sztabu (${L.length})`,s:L[0].t.slice(0,90),b:{type:'text',x:'Co sztab zrobił za Ciebie w tym tygodniu:\n\n• '+L.map(x=>x.t).join('\n• ')},lab:'Sztab'});}}
 // ---- widok ----
 function dlgCard(){const D=DL();return `<div class="card"><h2>Obowiązki${tipQ('Przekaż zadania sztabowi tak jak w Football Managerze. Jeśli na danym stanowisku nikogo nie ma, obowiązek wraca do Ciebie. Lepszy pracownik działa skuteczniej.')}</h2>

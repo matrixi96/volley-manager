@@ -297,21 +297,48 @@ function deserMatch(o){const m=Object.assign({},o,{over:false,paused:true,hl:[]}
   return m;}
 function persistLive(){const m=ui.match;SAVE.live=m&&!m.over&&m.ctx?serMatch(m):null;save();}
 let storageOk=true;
-function save(){try{if(typeof achCheck==='function')achCheck();}catch(e){console.error(e);}try{localStorage.setItem(KEY,JSON.stringify(SAVE));storageOk=true;}catch(e){storageOk=false;}}
+// ---- pamięć zapisów: IndexedDB (bez limitu ~5 MB localStorage), z kopią w pamięci i awaryjnym localStorage ----
+const ST={c:{},db:null,ready:false,mode:'ls',pend:{},busy:false,err:null};
+function stGet(k){if(k in ST.c)return ST.c[k];try{return localStorage.getItem(k);}catch(e){return null;}}
+function stLsSet(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v);return true;}catch(e){return false;}}
+function stSet(k,v){if(!ST.ready)return true;ST.c[k]=v;if(ST.mode!=='idb')return stLsSet(k,v);ST.pend[k]=v;stFlush();return true;}
+function stDel(k){delete ST.c[k];stLsSet(k,null);if(ST.mode==='idb'&&ST.ready){ST.pend[k]=null;stFlush();}}
+function stFlush(){if(ST.busy||!ST.db)return;const ks=Object.keys(ST.pend);if(!ks.length)return;ST.busy=true;const batch=ST.pend;ST.pend={};
+  try{const tx=ST.db.transaction('kv','readwrite');const os=tx.objectStore('kv');for(const k of ks){if(batch[k]==null)os.delete(k);else os.put(batch[k],k);}
+    tx.oncomplete=()=>{ST.busy=false;storageOk=true;stFlush();};
+    tx.onerror=tx.onabort=()=>{ST.busy=false;ST.err=String(tx.error||'błąd');for(const k of ks)if(!(k in ST.pend))ST.pend[k]=batch[k];storageOk=false;ST.mode='ls';for(const k in ST.pend)stLsSet(k,ST.pend[k]);};}
+  catch(e){ST.busy=false;ST.mode='ls';for(const k of ks)stLsSet(k,batch[k]);}}
+function stKeys(){return [KEY,KEY+'_slot1',KEY+'_slot2',KEY+'_slot3'];}
+function stInit(){return new Promise(res=>{const done=()=>{ST.ready=true;res();};
+  let req;try{if(!window.indexedDB)return done();req=indexedDB.open('volley-manager',1);}catch(e){return done();}
+  const to=setTimeout(()=>{ST.db=null;done();},4000);
+  req.onupgradeneeded=()=>{req.result.createObjectStore('kv');};
+  req.onerror=()=>{clearTimeout(to);done();};
+  req.onsuccess=()=>{const db=req.result;const tx=db.transaction('kv','readonly');const os=tx.objectStore('kv');const got={};
+    for(const k of stKeys()){const g=os.get(k);g.onsuccess=()=>{if(g.result!=null)got[k]=g.result;};}
+    tx.oncomplete=()=>{clearTimeout(to);ST.db=db;ST.mode='idb';
+      // migracja z localStorage: nowsze dane z localStorage (np. po awaryjnym zapisie) mają pierwszeństwo
+      const mig={};ST.lsHad=false;for(const k of stKeys()){let ls=null;try{ls=localStorage.getItem(k);}catch(e){}if(ls!=null){mig[k]=ls;got[k]=ls;if(k===KEY)ST.lsHad=true;}}
+      Object.assign(ST.c,got);ST.ready=true;
+      const mk=Object.keys(mig);if(mk.length){const t2=db.transaction('kv','readwrite');const o2=t2.objectStore('kv');for(const k of mk)o2.put(mig[k],k);t2.oncomplete=()=>{for(const k of mk)stLsSet(k,null);};}
+      try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});}catch(e){}
+      res();};
+    tx.onerror=()=>{clearTimeout(to);done();};};});}
+function save(){try{if(typeof achCheck==='function')achCheck();}catch(e){console.error(e);}try{storageOk=stSet(KEY,JSON.stringify(SAVE))!==false;}catch(e){storageOk=false;}}
 function slotKey(i){return KEY+'_slot'+i;}
-function slotInfo(i){try{const o=JSON.parse(localStorage.getItem(slotKey(i)));return o;}catch(e){return null;}}
+function slotInfo(i){try{const o=JSON.parse(stGet(slotKey(i)));return o;}catch(e){return null;}}
 function descSave(o){if(!o||o.team==null)return 'pusty';const s=o.season;return `${esc(TEAMS[o.team].name)} · sezon ${s?sLabel(s.n):''} · ${s?PHASE_NAMES[s.phase]:''}${s&&s.phase==='liga'?' (kolejka '+(s.round+1)+')':''}${o.savedAt?' · '+esc(o.savedAt):''}`;}
-function saveSlot(i){persistLive();const o=Object.assign({},SAVE,{savedAt:new Date().toLocaleString('pl-PL')});try{localStorage.setItem(slotKey(i),JSON.stringify(o));ui.msg=`Zapisano w slocie ${i}.`;}catch(e){ui.msg='Nie udało się zapisać — przeglądarka blokuje pamięć. Użyj kodu zapisu.';}render();}
+function saveSlot(i){persistLive();const o=Object.assign({},SAVE,{savedAt:new Date().toLocaleString('pl-PL')});try{if(stSet(slotKey(i),JSON.stringify(o))===false)throw 0;ui.msg=`Zapisano w slocie ${i}.`;}catch(e){ui.msg='Nie udało się zapisać — przeglądarka blokuje pamięć. Użyj kodu zapisu.';}render();}
 function loadObj(o){clearTimeout(timer);SAVE=o;delete SAVE.savedAt;restoreDefs();if(!SAVE.world)initWorld();else{syncTeams();ensureLeagues();}migrateDates();initClub();try{ensureBg();}catch(e){console.error(e);}ui.match=SAVE.live?deserMatch(SAVE.live):null;ui.confirm=null;ui.card=null;save();}
 function loadSlot(i){const o=slotInfo(i);if(!o)return;loadObj(o);ui.msg=`Wczytano slot ${i}.`;ui.tab='mecz';render();}
-function delSlot(i){if(ui.confirm!=='del'+i){ui.confirm='del'+i;render();return;}try{localStorage.removeItem(slotKey(i));}catch(e){}ui.confirm=null;ui.msg=`Usunięto slot ${i}.`;render();}
+function delSlot(i){if(ui.confirm!=='del'+i){ui.confirm='del'+i;render();return;}try{stDel(slotKey(i));}catch(e){}ui.confirm=null;ui.msg=`Usunięto slot ${i}.`;render();}
 function exportCode(){persistLive();ui.code=btoa(unescape(encodeURIComponent(JSON.stringify(SAVE))));render();}
 function copyCode(){const t=ui.code;try{navigator.clipboard.writeText(t).then(()=>{ui.msg='Skopiowano kod zapisu.';render();},()=>{ui.msg='Nie udało się skopiować — zaznacz kod i skopiuj ręcznie.';render();});}catch(e){ui.msg='Nie udało się skopiować — zaznacz kod i skopiuj ręcznie.';render();}}
 function importCode(){const v=($('#imp')||{}).value||'';try{const o=JSON.parse(decodeURIComponent(escape(atob(v.trim()))));if(o.team==null||!o.season)throw 0;loadObj(o);ui.msg='Wczytano grę z kodu.';ui.code=null;ui.tab='mecz';}catch(e){ui.msg='Ten kod zapisu jest nieprawidłowy.';}render();}
 function newGame(){if(ui.confirm!=='new'){ui.confirm='new';render();return;}clearTimeout(timer);SAVE={};resetTeams();ui.match=null;ui.confirm=null;save();render();}
 function saveView(){
   return `${ui.msg?`<div class="card msg">${ui.msg}</div>`:''}
-  <div class="card"><h2>Zapis gry</h2><p>${storageOk?'✅ Gra zapisuje się automatycznie po każdym meczu i w trakcie meczu, więc po zamknięciu strony wrócisz w to samo miejsce.':'⚠️ Ta przeglądarka nie pozwala na zapis. Używaj kodu zapisu poniżej.'}</p>
+  <div class="card"><h2>Zapis gry</h2><p>${storageOk?'✅ Gra zapisuje się automatycznie po każdym meczu i w trakcie meczu, więc po zamknięciu strony wrócisz w to samo miejsce.':'⚠️ Ta przeglądarka nie pozwala na zapis. Używaj kodu zapisu poniżej.'}</p><p class="small mut">${ST.mode==='idb'?'Zapisy trzymane są w bazie przeglądarki (IndexedDB) — bez limitu 5 MB, więc długie kariery mieszczą się bez problemu.':'Zapisy trzymane są w localStorage (limit ok. 5 MB). Przy bardzo długiej karierze zapisuj kopię kodem zapisu.'} Rozmiar zapisu: ${(((stGet(KEY)||'').length)/1048576).toFixed(1)} MB.</p>
   <p class="mut small">Zapis jest w tej przeglądarce na tym urządzeniu. Żeby przenieść grę na inne urządzenie, użyj kodu zapisu.</p></div>
   <div class="card"><h2>Sloty</h2>${[1,2,3].map(i=>{const o=slotInfo(i);return `<div class="slot"><b>Slot ${i}</b><span class="mut small">${descSave(o)}</span><span class="sp"></span><button class="ghost" onclick="saveSlot(${i})">Zapisz</button>${o?`<button class="ghost" onclick="loadSlot(${i})">Wczytaj</button><button class="ghost" onclick="delSlot(${i})">${ui.confirm==='del'+i?'Na pewno usunąć?':'Usuń'}</button>`:''}</div>`;}).join('')}</div>
   <div class="card"><h2>Kod zapisu</h2><p class="mut small">Kod to cała gra zapisana jako tekst. Skopiuj go (np. do notatek albo wiadomości do siebie) i wklej na innym urządzeniu.</p>
