@@ -5,7 +5,7 @@ const MAIL_CAT={mecz:['Mecze','#e8b73a'],trening:['Trening','#38bdf8'],skaut:['S
 const MAIL_MAX=300;
 function mailBox(){return SAVE.mail||(SAVE.mail=[]);}
 function mailOpts(){return SAVE.mailOpt||(SAVE.mailOpt={trD:1,trW:1,trM:1});}
-function sendMail(o){if(SAVE.team==null)return null;const box=mailBox();SAVE.mailN=(SAVE.mailN||0)+1;
+function sendMail(o){if(SAVE.team==null)return null;if(o&&o.cat==='med'&&!o.weekly){(SAVE.medBuf=SAVE.medBuf||[]).push({d:SAVE._now||today(),t:o.t,s:o.s});SAVE.medBuf=SAVE.medBuf.slice(-40);return null;}const box=mailBox();SAVE.mailN=(SAVE.mailN||0)+1;
   const m=Object.assign({id:'m'+SAVE.mailN,d:SAVE._now||today(),cat:'klub',from:'Klub',t:'',s:'',b:{type:'text'},r:0,st:0,ar:0,act:0},o);if(!m.tm)m.tm=mailTime(m);box.unshift(m);
   if(box.length>MAIL_MAX){// najpierw wyrzucamy najstarsze przeczytane, potem najstarsze w ogóle
     let i=box.length-1;while(box.length>MAIL_MAX&&i>=0){if(box[i].r&&!box[i].st)box.splice(i,1);i--;}while(box.length>MAIL_MAX)box.pop();}
@@ -48,7 +48,20 @@ function mailTraining(kind,days){if(!days.length||kind==='D')return;const o=mail
   const sn=`${top.length?`Wyróżnili się: ${top.map(x=>trWho(x,true)).join(', ')}.`:'Nikt wyraźnie się nie wyróżnił.'}${low.length?` Poniżej oczekiwań: ${low.map(x=>trWho(x,false)).join(', ')}.`:''}${ups.length?` Podniesione atrybuty: ${ups.length} zawodn.`:''}${tired.length?` Zmęczeni: ${tired.length}.`:''}`;
   sendMail({cat:'trening',from:asyName(),t:ttl,s:sn,b:{type:'train',k:kind,sm},lab:kind==='D'?'Raport dzienny':kind==='W'?'Raport tygodniowy':'Raport miesięczny'});}
 // codziennie: raporty tygodniowe (poniedziałek) i miesięczne (1. dnia)
-function mailDaily(d){const rep=(SAVE.trn&&SAVE.trn.rep)||[];try{fitMail(d);}catch(e){console.error(e);}try{if(typeof tutTips==='function')tutTips(d);}catch(e){console.error(e);}try{if(typeof ixDaily==='function')ixDaily(d);}catch(e){console.error(e);}try{if(typeof bmDaily==='function')bmDaily(d);}catch(e){console.error(e);}try{if(typeof agDaily==='function')agDaily(d);}catch(e){console.error(e);}try{if(typeof dlgDaily==='function')dlgDaily(d);}catch(e){console.error(e);}
+// ---- raport medyczny co poniedziałek: zdarzenia z tygodnia + stan kadry ----
+function medWeekly(d){if(SAVE.team==null||!SAVE.world||dow(d)!==1)return;if(SAVE.medWk===d)return;SAVE.medWk=d;const ev=(SAVE.medBuf||[]).filter(x=>x.t!=='Testy wydolności przed meczem');SAVE.medBuf=[];
+  const t=myTeam();const inj=t.players.filter(p=>p.inj>0).map(p=>({id:p.id,n:p.first+' '+p.last,pos:p.pos,what:p.injN||'uraz',back:p.injUntil||addDays(d,p.inj),days:p.inj}));
+  const back=t.players.filter(p=>!p.inj&&p.injLast&&p.injLast.back&&daysBetween(p.injLast.back,d)>=0&&daysBetween(p.injLast.back,d)<=21&&(+p.injLast.days||0)>=7).map(p=>({id:p.id,n:p.first+' '+p.last,pos:p.pos,since:daysBetween(p.injLast.back,d),fr:Math.round(frOf(p)),rf:typeof reinjF==='function'?Math.round((reinjF(p)-1)*100):0}));
+  const tired=t.players.filter(p=>!p.inj&&!p.jr&&frOf(p)<60).map(p=>({id:p.id,n:p.first+' '+p.last,pos:p.pos,fr:Math.round(frOf(p))}));
+  if(!ev.length&&!inj.length&&!back.length&&!tired.length)return;const med=SAVE.staff&&SAVE.staff.med;
+  sendMail({cat:'med',weekly:1,from:med?`${med.first[0]}. ${med.last} (fizjoterapeuta)`:'Pion medyczny',t:`Raport medyczny tygodnia`,s:`${inj.length?`Kontuzjowani: ${inj.length}. `:'Brak kontuzji. '}${back.length?`Po powrocie: ${back.length}. `:''}${ev.length?`Zdarzenia: ${ev.length}.`:''}`,b:{type:'medw',ev,inj,back,tired},lab:'Raport medyczny'});}
+function medWeeklyHtml(b){const sec=(h,x)=>x?`<h3>${h}</h3>${x}`:'';const tb=(head,rows)=>rows.length?`<div class="tw"><table><thead><tr>${head.map(x=>`<th class="l">${x}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`:'';
+  return `<p class="mtext">Cotygodniowy raport pionu medycznego. Pojedyncze wiadomości o kontuzjach i powrotach są zebrane tutaj.</p>
+   ${sec('Wydarzenia z ostatniego tygodnia',b.ev.length?`<ul>${b.ev.map(x=>`<li><span class="mut">${fmtShort(x.d)}</span> ${esc(x.t)}</li>`).join('')}</ul>`:'')}
+   ${sec('Kontuzjowani',tb(['Zawodnik','Uraz','Powrót'],b.inj.map(x=>`<tr><td class="l">${pLink?pLink(x.id,x.n):esc(x.n)} ${pTag(x.pos)}</td><td class="l">${esc(x.what)}</td><td class="l">${fmtShort(x.back)} (${x.days} dni)</td></tr>`)))}
+   ${sec('Po powrocie z urazu — uwaga na przeciążenie',tb(['Zawodnik','Od powrotu','Świeżość','Ryzyko odnowienia'],b.back.map(x=>`<tr><td class="l">${pLink?pLink(x.id,x.n):esc(x.n)} ${pTag(x.pos)}</td><td class="l">${x.since} dni</td><td class="l"><b style="color:${frCol(x.fr)}">${x.fr}%</b></td><td class="l">${x.rf>0?'+'+x.rf+'%':'normalne'}</td></tr>`)))}
+   ${sec('Zmęczeni (świeżość poniżej 60%)',tb(['Zawodnik','Świeżość'],b.tired.map(x=>`<tr><td class="l">${pLink?pLink(x.id,x.n):esc(x.n)} ${pTag(x.pos)}</td><td class="l"><b style="color:${frCol(x.fr)}">${x.fr}%</b></td></tr>`)))}`;}
+function mailDaily(d){try{medWeekly(d);}catch(e){console.error(e);}const rep=(SAVE.trn&&SAVE.trn.rep)||[];try{fitMail(d);}catch(e){console.error(e);}try{if(typeof tutTips==='function')tutTips(d);}catch(e){console.error(e);}try{if(typeof ixDaily==='function')ixDaily(d);}catch(e){console.error(e);}try{if(typeof bmDaily==='function')bmDaily(d);}catch(e){console.error(e);}try{if(typeof agDaily==='function')agDaily(d);}catch(e){console.error(e);}try{if(typeof dlgDaily==='function')dlgDaily(d);}catch(e){console.error(e);}
   if(dow(d)===1){const lim=addDays(d,-7);mailTraining('W',rep.filter(x=>x.d>=lim&&x.d<d));}
   if(d.endsWith('-01')){const lim=addDays(d,-31);const pm=addDays(d,-1).slice(0,7);mailTraining('M',rep.filter(x=>x.d>lim&&x.d.slice(0,7)===pm));}}
 // ---- akcje ----
@@ -128,6 +141,7 @@ function fitMailHtml(b){const op=TEAMS[b.op];const tc=t=>t==='zaliczony'?'good':
    <div class="mx2"><div><b>Testy wydolności</b><p>Zawodnicy wracający po kontuzji przechodzą test przed meczem. Wynik mówi, ile mogą zagrać i czy grozi im nawrót urazu.</p></div>
    <div><b>Porada pionu medycznego</b><p>Wystawienie zawodnika, który nie jest w pełni sił, zwiększa ryzyko pogłębienia urazu. Możesz się z tym nie zgodzić — decyzja o składzie należy do Ciebie.</p></div></div></div>`;}
 function mailBodyHtml(m){const b=m.b||{};
+  if(b.type==='medw')return medWeeklyHtml(b);
   if(b.type==='ag'){const q=SAVE.ag&&SAVE.ag.q.find(x=>x.id===b.id);const P=q&&PLAYERS[q.pid];if(!q||!P)return '<p>Sprawa została już rozstrzygnięta. Historia: Rozmowy → Agenci.</p>';return `<p>${esc(AGQ[q.k].x(P.p,q))}</p><p><button class="btn" onclick="ui.ixTab='agenci';go('rozmowy')">Przejdź do rozmowy</button></p>`;}
   if(b.type==='bm'){const q=SAVE.bm&&SAVE.bm.q.find(x=>x.id===b.id);if(!q)return '<p>Sprawa została już rozstrzygnięta. Historia: Rozmowy → Zarząd.</p>';return `<p>${esc(BMQ[q.k].x(q))}</p><p><button class="btn" onclick="ui.ixTab='zarzad';go('rozmowy')">Przejdź do rozmowy</button></p>`;}
   if(b.type==='ix'){const q=SAVE.ix&&SAVE.ix.q.find(x=>x.id===b.id);if(!q)return '<p>Sprawa została już rozstrzygnięta. Historia rozmów i obietnice: zakładka Rozmowy.</p>';const P=PLAYERS[q.pid];return `<p>${P?esc(IX_T[q.k].x(P.p,q)):''}</p><p><button class="btn" onclick="ui.ixTab=null;go('rozmowy')">Przejdź do rozmowy</button></p>`;}

@@ -18,7 +18,7 @@ const C_EXP=[
 ];
 const C_BASE=6,C_MAX=18;
 function coach(){return SAVE.coach;}
-function cA(k){return SAVE.coach?SAVE.coach.attrs[k]:10;}
+function cA(k){const v=SAVE.coach&&SAVE.coach.attrs?SAVE.coach.attrs[k]:null;return v!=null?v:10;}
 function clubReq(t){return initRepStatic(t);}
 function initRepStatic(t){return initRep(t);}
 function canTake(ti,rep){return rep>=clubReq(TEAMS[ti])-25;}
