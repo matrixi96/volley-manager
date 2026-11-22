@@ -36,7 +36,7 @@ Po pierwszym otwarciu gra działa bez internetu.
 
 ## Dla twórcy
 Źródła są w katalogu `src/`. Po zmianach zbuduj grę: `python src/build.py` (tworzy `index.html`).
-Przy większych aktualizacjach podbij nazwę cache w `sw.js` (np. `volley-manager-v173` → `v174`), żeby telefony szybciej pobrały nową wersję.
+Przy większych aktualizacjach podbij nazwę cache w `sw.js` (np. `volley-manager-v174` → `v175`), żeby telefony szybciej pobrały nową wersję.
 
 ## Testy
 
@@ -45,3 +45,4 @@ Przy większych aktualizacjach podbij nazwę cache w `sw.js` (np. `volley-manage
 ## Licencje zewnętrzne
 
 - Flagi krajów: czcionka [Twemoji Country Flags](https://github.com/talkjs/country-flag-emoji-polyfill) (MIT), grafika [Twemoji](https://github.com/twitter/twemoji) © Twitter, licencja [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+- Czcionki: [Barlow Semi Condensed i Barlow Condensed](https://github.com/jpt/barlow) © Jeremy Tribby, licencja [SIL Open Font License 1.1](https://openfontlicense.org) (pełny tekst w `src/fonts/OFL.txt`).

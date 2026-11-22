@@ -45,7 +45,7 @@ function topBar(){const t=myTeam();const s=S();const d=today();
   return `<div class="topbar">
    <button class="burger" onclick="ui.navOpen=!ui.navOpen;render()" aria-label="Menu">☰</button>
    <div class="tclub" onclick="go('home')"><span class="tcr">${teamCrest(SAVE.team,36)}</span><span class="tcn"><b>${esc(t.name)}</b><small>${s?''+LG_N[myLg()]+' · '+sLabel(s.n):''}</small></span></div>
-   <div class="tpage">${esc((NAV_L[ui.tab]||'').toUpperCase())}</div>
+   <div class="tpage">${esc(NAV_L[ui.tab]||'')}</div>
    <div class="tsearch">${ico('search',16)}<input id="psq" placeholder="${_t('Szukaj zawodnika…')}" value="${esc(ui.q||'')}" oninput="ui.q=this.value;searchDrop()" onfocus="searchDrop()" autocomplete="off"><kbd>Ctrl + K</kbd><div id="psd" class="psd"></div></div>
    <span class="sp"></span>
    <div class="tdate"><span class="lab">${s?_t('Sezon')+' '+sLabel(s.n)+' · '+esc(phaseName(s)):''}</span><b>${DOW[dow(d)].replace(/^./,c=>c.toUpperCase())}, ${fmtDMY(d)}</b></div>

@@ -3,6 +3,7 @@
 <title>Volley Manager — prototyp</title>
 <style>
 /*FLAGFONT*/
+/*FONTS*/
 /* flagi krajów: czcionka Twemoji Country Flags (grafika Twemoji, licencja CC-BY 4.0) — Windows nie wyświetla flag emoji */
 :root{--bg:#0b1220;--panel:#121a2b;--panel2:#1a2540;--line:#26344f;--txt:#e6ecf7;--mut:#8b99b6;--acc:#ffb020;--good:#22c55e;--bad:#ef4444}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 'Twemoji Country Flags',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -428,7 +429,7 @@ tr.starter td{background:#e8b73a0d}
 .topbar>div{border-right:0;padding:0}
 .tclub{flex:none;flex-direction:row!important;align-items:center!important;gap:10px;padding:0 16px!important;align-self:stretch;border-bottom:2px solid var(--acc)!important;cursor:pointer;text-align:left}
 .tclub .tcr{display:flex}.tcn{display:flex;flex-direction:column;line-height:1.2}.tcn b{font:600 16px var(--fb);text-transform:none;font-style:normal;letter-spacing:0}.tcn small{color:var(--mut);font-size:12.5px}
-.tpage{font-family:var(--fc);font-weight:700;font-size:24px;letter-spacing:.04em;white-space:nowrap}
+.tpage{text-transform:uppercase;font-family:var(--fc);font-weight:700;font-size:24px;letter-spacing:.04em;white-space:nowrap}
 .tsearch{position:relative;display:flex!important;flex-direction:row!important;align-items:center;gap:8px;background:#16181c;border:1px solid #2e3238!important;border-radius:6px;padding:0 10px!important;height:36px;width:min(300px,26vw);color:var(--mut);margin-left:14px}
 .tsearch input{background:transparent;border:0;outline:0;flex:1;min-width:0;padding:0;font-size:13.5px}
 .tsearch kbd{font:11px ui-monospace,Consolas,monospace;color:#7d828b;border:1px solid #2e3238;border-radius:4px;padding:1px 5px;white-space:nowrap}
@@ -919,5 +920,43 @@ body.th-n .ctx{background:rgba(15,21,29,.55);backdrop-filter:blur(2px)}
 .ysq{width:100%;font-size:12.5px}.ysq td,.ysq th{padding:3px 4px}
 .ycand{border-top:1px solid var(--line);padding:8px 0}.ycand.on{background:#facc1514;outline:1px solid #facc1555;padding:8px}
 .yspk{vertical-align:middle}
+/* ================= MOTYW FM26: czcionki Barlow (Semi Condensed + Condensed), grafitowo-granatowe panele ================= */
+body.th-n{--fb:'Twemoji Country Flags','Barlow Semi Condensed','Segoe UI',system-ui,sans-serif;--fc:'Twemoji Country Flags','Barlow Condensed','Barlow Semi Condensed','Arial Narrow',sans-serif;
+ --bg:#12151c;--panel:#1b1f28;--panel2:#222733;--line:#2a303c;--txt:#eef0f3;--mut:#9aa2ae;--acc:#f5c518;--good:#3fbf5f;--bad:#ef5350;--warn:#f39c34}
+body.th-n{font-family:var(--fb);font-size:15px;letter-spacing:0;background-color:#12151c}
+body.th-n .card,body.th-n .pan{background:#1b1f28eb;border:1px solid #262b35;border-radius:4px;box-shadow:0 1px 0 #0000004d}
+body.th-n h2{font:600 21px var(--fc);text-transform:none;letter-spacing:.005em;color:#fff}
+body.th-n h3{font:600 17px var(--fc);letter-spacing:.01em}
+body.th-n .pan .ttl,body.th-n .hsum .lab{font:600 15px var(--fc);text-transform:none;letter-spacing:.01em;color:var(--acc);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;font-style:normal}
+body.th-n .side{background:#161920;border-right:1px solid #0c0e12}
+body.th-n .nav{font:500 16px var(--fb);color:#e6e8ec;border-radius:3px;padding:7px 12px}
+body.th-n .nav.on{background:#272d3a;box-shadow:inset 3px 0 0 #fff;color:#fff}
+body.th-n .ngh{font:500 13px var(--fb);color:#8a919d;letter-spacing:0}
+body.th-n .sbrand{font:700 20px var(--fc);letter-spacing:.06em}
+body.th-n .tpage{font:700 28px var(--fc);text-transform:none;letter-spacing:.005em}
+body.th-n .tcn b{font:600 17px var(--fb)}
+body.th-n .tplay{font:700 18px var(--fc);letter-spacing:.02em;text-transform:none;background:#f5c518!important;border-radius:2px}
+body.th-n .tbtn{font:600 16px var(--fc);text-transform:none;letter-spacing:.02em}
+body.th-n .tdate{font-family:var(--fc)}
+body.th-n .subtabs button{font:500 17px var(--fb);color:#c3c8d0}
+body.th-n .subtabs button.on{color:#fff;border-bottom-color:#fff}
+body.th-n .subtabs{border-bottom-color:#2a303c}
+body.th-n table{font-size:14.5px}
+body.th-n th{font:600 13px var(--fc);color:#a9b0bb;text-transform:none;letter-spacing:.02em}
+body.th-n td{border-color:#262b35}
+body.th-n tr:nth-child(even) td{background:#ffffff04}body.th-n tr:hover td{background:#ffffff0b}
+body.th-n .link,body.th-n a{color:#e9ecf1}body.th-n .link.pn{color:#fff}body.th-n .link:hover{color:var(--acc)}
+body.th-n .btn{font:600 15px var(--fc);text-transform:none;letter-spacing:.02em;background:#2a3140;border:1px solid #39414f;border-radius:2px}
+body.th-n .ghost{border-radius:2px;background:#232834;border-color:#353c49}
+body.th-n .pt{font-family:var(--fc);font-weight:600;letter-spacing:.02em}
+body.th-n .cst b,body.th-n .hvs b,body.th-n .big,body.th-n .ybig{font-family:var(--fc)}
+body.th-n .ygr{font-family:var(--fc);font-size:13.5px;border-radius:9px}
+body.th-n .ygr.hi{background:#3c9d3a}
+body.th-n small,body.th-n .small{font-size:13.5px}
+body.th-n .mut{color:#9aa2ae}
+body.th-n .pth{font:600 16px var(--fc);text-transform:none;letter-spacing:.01em;border-bottom:0}
+body.th-n .pth>span:first-child,body.th-n .pth>b:first-child{color:var(--acc);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+body.th-n .card,body.th-n .pan,body.th-n .ptc{background-color:#1a1e27e0}
+body.th-n .tpage{text-transform:none}
 </style></head><body><div id="app"></div>
 <script>
