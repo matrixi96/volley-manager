@@ -74,7 +74,7 @@ function drawHall(m,scene,ball,flash){
     const tc=o.i===0?c0:c1,col=o.role==='L'?libColor(tc,o.i===0?c1:c0):tc;const ink=lum(col)>0.6?'#111827':'#fff';
     const R0=11+j*2,yy=y-j*11;
     if(o.hl){g.strokeStyle='#ffb020';g.lineWidth=3;g.beginPath();g.arc(x,yy,R0+3,0,7);g.stroke();}
-    g.fillStyle=col;g.beginPath();g.arc(x,yy,R0,0,7);g.fill();g.strokeStyle='#ffffffcc';g.lineWidth=1.5;g.stroke();
+    g.fillStyle=col;g.beginPath();g.arc(x,yy,R0,0,7);g.fill();if(typeof kitDot==='function')kitDot(g,x,yy,R0,o.role==='L'?'L'+tc:tc);g.strokeStyle='#ffffffcc';g.lineWidth=1.5;g.stroke();
     g.fillStyle=ink;g.font='700 11px system-ui,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(o.p.num,x,yy+0.5);
     g.font='600 9px system-ui,sans-serif';g.fillStyle='#fff';g.textBaseline='top';g.fillText(o.p.last.length>9?o.p.last.slice(0,8)+'.':o.p.last,x,y+13);
     const tch=ui._touch;if(tch&&tch.id===o.id&&performance.now()-tch.t0<1100){const a=1-Math.max(0,(performance.now()-tch.t0-700)/400);g.globalAlpha=a;g.strokeStyle='#fde047';g.lineWidth=3;g.beginPath();g.arc(x,yy,R0+4,0,7);g.stroke();

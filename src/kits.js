@@ -73,3 +73,11 @@ function clubKitCard(){if(SAVE.team==null)return '';const K=SAVE.kits&&SAVE.kits
 function clubKitCh0(s,f,v){myKits();clubKitCh(s,f,v);}
 {const _cv=clubView;clubView=function(){return _cv.apply(this,arguments)+clubKitCard();};}
 if(typeof SUBT!=='undefined'&&SUBT.klub)SUBT.klub.push(['st','Stroje',/Stroje klubu/i]);
+
+// widok 2D: wzór koszulki na kółku zawodnika
+function kitDot(g,x,y,R,key){const k=KIT_BY_COLOR[key];if(!k||k.p==='plain')return;g.save();g.beginPath();g.arc(x,y,R,0,7);g.clip();g.fillStyle=k.b;
+  const w=R*2;if(k.p==='v')for(let i=-1;i<=1;i++)g.fillRect(x+i*R*0.62-R*0.14,y-R,R*0.28,w);
+  else if(k.p==='h')g.fillRect(x-R,y-R*0.25,w,R*0.5);else if(k.p==='hoops'){g.fillRect(x-R,y-R*0.55,w,R*0.28);g.fillRect(x-R,y+R*0.27,w,R*0.28);}
+  else if(k.p==='half')g.fillRect(x,y-R,R,w);else if(k.p==='side'){g.fillRect(x-R,y-R,R*0.45,w);g.fillRect(x+R*0.55,y-R,R*0.45,w);}
+  else if(k.p==='sash'){g.beginPath();g.moveTo(x-R,y-R*0.6);g.lineTo(x-R*0.5,y-R);g.lineTo(x+R,y+R*0.6);g.lineTo(x+R*0.5,y+R);g.closePath();g.fill();}
+  g.restore();}
