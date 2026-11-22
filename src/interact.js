@@ -3,7 +3,8 @@
 // p.role – rola w zespole, p.rel – relacja z trenerem 0–100, p.pl8 – czy grał w ostatnich 8 kolejkach (1/0)
 function IX(){return SAVE.ix||(SAVE.ix={q:[],pr:[],cred:60,last:null,log:[]});}
 const ROLES=[['klu','Kluczowy zawodnik',0.85,'Gra prawie zawsze, od niego zależą wyniki.'],['pod','Podstawowy zawodnik',0.65,'Gra w większości meczów.'],
-  ['rot','Zawodnik rotacyjny',0.35,'Gra regularnie, ale nie co mecz.'],['rez','Rezerwowy',0.15,'Wchodzi, gdy trzeba zastąpić podstawowego.'],['per','Perspektywiczny',0.1,'Młody — uczy się, gra okazjonalnie.']];
+  ['rot','Zawodnik rotacyjny',0.35,'Gra regularnie, ale nie co mecz.'],['per','Perspektywiczny',0.1,'Młody — uczy się, gra okazjonalnie.'],['rez','Rezerwowy',0,'Wchodzi, gdy jest potrzebny — nie liczy na regularną grę.']];
+function roleExpTxt(k){const r=ROLES[ROLE_I[k]];return !r?'':r[2]>0?`oczekuje gry w ok. ${Math.round(r[2]*100)}% meczów`:'bez wymagań co do czasu gry';}
 const ROLE_I=Object.fromEntries(ROLES.map((r,i)=>[r[0],i]));
 function roleDef(p){const t=myTeam();const lu=new Set(Object.values(myLineup()));const L=t.players.filter(x=>!x.jr).slice().sort((a,b)=>rating(b)-rating(a));const k=L.indexOf(p);
   if(lu.has(p.id))return k<3?'klu':'pod';if(p.age<=21)return 'per';return k<10?'rot':'rez';}
@@ -30,7 +31,7 @@ const IX_T={
      ['zasluz','Musisz zasłużyć na to na treningach.',p=>ixChance(p,0.5,{pro:0.25,oby:0.2,amb:-0.2,kap:-0.25,ind:-0.2}),
        (p,q,ok)=>{if(ok){addMor(p,1);relAdd(p,2);p.trBoost=today();return 'Przyjął to i obiecał mocniej pracować.';}addMor(p,-8);relAdd(p,-8);return 'Uznał to za wymówkę. Jest rozżalony.';}],
      ['rola','Twoja rola w tym sezonie to zmiennik.',p=>ixChance(p,0.45,{loj:0.25,oby:0.15,pro:0.1,amb:-0.25,suk:-0.15}),
-       (p,q,ok)=>{const i=Math.min(ROLE_I[roleOf(p)]+1,3);p.role=ROLES[Math.max(i,2)][0];if(ok){addMor(p,-2);return 'Przyjął nową rolę ze spokojem. Oczekuje teraz mniej gry.';}addMor(p,-10);relAdd(p,-10);return 'Poczuł się zdegradowany. Rola zmieniona, ale relacja ucierpiała.';}],
+       (p,q,ok)=>{const i=Math.min(ROLE_I[roleOf(p)]+1,4);p.role=ROLES[Math.max(i,2)][0];if(ok){addMor(p,-2);return 'Przyjął nową rolę ze spokojem. Oczekuje teraz mniej gry.';}addMor(p,-10);relAdd(p,-10);return 'Poczuł się zdegradowany. Rola zmieniona, ale relacja ucierpiała.';}],
      ['lista','Jeśli chcesz, możesz poszukać nowego klubu.',p=>ixChance(p,0.55,{amb:0.2,suk:0.15,ind:0.1,loj:-0.4,oby:-0.1}),
        (p,q,ok)=>{if(typeof tlSet==='function')tlSet(p.id,pValue(p));p.unh=0;if(ok){addMor(p,2);relAdd(p,-2);return 'Docenił szczerość. Trafił na listę transferową.';}addMor(p,-6);relAdd(p,-12);return 'Odebrał to tak, jakby klub chciał się go pozbyć. Jest na liście transferowej i czuje się odrzucony.';}]]},
  kontrakt:{t:p=>`${p.first} ${p.last} pyta o nowy kontrakt`,
@@ -104,7 +105,7 @@ function roleModal(){const P=PLAYERS[ui.roleP];if(!P){ui.roleP=null;return '';}c
   return `<div class="modal" onclick="if(event.target===this){ui.roleP=null;ui.roleRes=null;render()}"><div class="mcard" style="max-width:560px">
    <div class="row" style="gap:12px;align-items:center">${pFace(p,56)}<div><h2 style="margin:0">Rozmowa o roli</h2><div class="small mut">${esc(p.first+' '+p.last)} · relacja z trenerem ${relOf(p)}/100${sh!=null?` · grał w ${Math.round(sh*100)}% ostatnich kolejek`:''}</div></div></div>
    ${ui.roleRes&&ui.roleRes.pid===p.id?`<div class="card" style="margin:10px 0">${esc(ui.roleRes.txt)}</div>`:''}
-   <div style="margin-top:10px">${ROLES.map(([k,l,e,ds])=>`<button class="opt ${cur===k?'on':''}" style="display:block;width:100%;text-align:left;margin:6px 0" ${cur===k?'disabled':''} onclick="roleAsk('${p.id}','${k}')"><b>${l}</b> <span class="small mut">· oczekuje gry w ok. ${Math.round(e*100)}% meczów</span><div class="small mut">${ds}</div></button>`).join('')}</div>
+   <div style="margin-top:10px">${ROLES.map(([k,l,e,ds])=>`<button class="opt ${cur===k?'on':''}" style="display:block;width:100%;text-align:left;margin:6px 0" ${cur===k?'disabled':''} onclick="roleAsk('${p.id}','${k}')"><b>${l}</b> <span class="small mut">· ${e>0?`oczekuje gry w ok. ${Math.round(e*100)}% meczów`:'bez wymagań co do czasu gry'}</span><div class="small mut">${ds}</div></button>`).join('')}</div>
    <p class="small mut">Proponowana rola wg asystenta: <b>${ROLES[ROLE_I[roleDef(p)]][1]}</b>. Obniżenie roli może go zdenerwować, ale zmniejsza oczekiwania co do gry.</p>
    <div class="row"><span class="sp"></span><button class="ghost" onclick="ui.roleP=null;ui.roleRes=null;render()">Zamknij</button></div></div></div>`;}
 // ---- widok „Rozmowy” ----

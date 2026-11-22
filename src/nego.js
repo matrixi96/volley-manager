@@ -75,7 +75,7 @@ function negModal(){const n=NG();const P=PLAYERS[n.pid];if(!P){ui.neg=null;retur
   else if(n.stage==='club')form=`<div class="ngform"><label>Kwota odstępnego <input id="ngfee" type="number" step="10000" value="${Math.round((club.ask*0.9)/10000)*10000}"></label><button class="btn" onclick="negClubOffer($('#ngfee').value)">Złóż ofertę</button></div>
      <p class="small mut">Klub żąda teraz <b>${fmt(club.ask)}</b>. Wartość zawodnika: ${fmt(pValue(p))}. Oferta poniżej 60% żądania zirytuje klub.</p>`;
   else form=`<div class="ngform"><label>Pensja / rok <input id="ngw" type="number" step="5000" value="${round5k(a.wAsk*0.92)}"></label><label>Lata <select id="ngy">${[1,2,3].map(y=>`<option ${y===a.yPref?'selected':''}>${y}</option>`).join('')}</select></label><label>Premia za podpis <input id="ngb" type="number" step="5000" value="${round5k(a.bAsk*0.7)}"></label>
-     <label>Rola w zespole (czas gry) <select id="ngr">${ROLES.map(([k,l,e])=>`<option value="${k}" ${k===(n.role||(n.kind==='renew'?roleOf(p):roleExpect(p)))?'selected':''}>${l} — ok. ${Math.round(e*100)}% meczów</option>`).join('')}</select></label>
+     <label>Rola w zespole (czas gry) <select id="ngr">${ROLES.map(([k,l,e])=>`<option value="${k}" ${k===(n.role||(n.kind==='renew'?roleOf(p):roleExpect(p)))?'selected':''}>${l} — ${e>0?`ok. ${Math.round(e*100)}% meczów`:'bez wymagań'}</option>`).join('')}</select></label>
      <button class="btn" onclick="negAgentOffer($('#ngw').value,$('#ngy').value,$('#ngb').value,$('#ngr').value)">Złóż propozycję</button></div>${rolePrefBox(p)}
      <p class="small mut">Agent żąda teraz: <b>${fmt(a.wAsk)}</b>/rok, <b>${fmt(a.bAsk)}</b> premii, najchętniej na <b>${a.yPref}</b> ${a.yPref===1?'sezon':'sezony'} (inna długość = wyższe żądania). Wyższa premia pozwala zejść z pensji i odwrotnie.</p>`;
   const stg=[['club','Klub'],['agent','Agent'],['sign','Podpis']].filter(x=>x[0]!=='club'||n.club);const cur=n.ok&&n.terms?'sign':n.stage;
@@ -122,7 +122,7 @@ function buyAct(p){const o=windowOpen();const ag=agentOf(p);const lk=negLocked(p
 // ================= ROLA W ZESPOLE (ustalony czas gry) — wspólna z „Rozmowami” (ROLES, p.role) =================
 // Przy kontrakcie ustalasz rolę z listy ROLES (kluczowy, podstawowy, rotacyjny, rezerwowy, perspektywiczny).
 // Ta sama rola widnieje w karcie zawodnika i w rozmowach; zadowolenie z czasu gry liczy się względem niej.
-function roleLv(k){return 5-ROLE_I[k];}// klu 5 … per 1
+function roleLv(k){return 5-ROLE_I[k];}// klu 5, pod 4, rot 3, per 2, rez 1
 function roleN(k){const r=ROLES[ROLE_I[k]];return r?r[1]:'—';}
 function rolePct(k){const r=ROLES[ROLE_I[k]];return r?Math.round(r[2]*100):0;}
 function roleRank(p){const t=myTeam();const mates=t.players.filter(x=>x.id!==p.id&&!x.jr);const r=rating(p);const samePos=mates.filter(x=>x.pos===p.pos).sort((a,b)=>rating(b)-rating(a));
@@ -131,7 +131,7 @@ function roleRank(p){const t=myTeam();const mates=t.players.filter(x=>x.id!==p.i
 function roleExpect(p){const R0=roleRank(p);let k;if(R0.posRank<=R0.slots&&R0.allRank<=3)k='klu';else if(R0.posRank<=R0.slots)k='pod';else if(R0.posRank<=R0.slots+1)k='rot';else k='rez';
   let i=ROLE_I[k];if(hasT(p,'amb')&&i>0&&i<3)i--;if(p.age>=33&&i<2)i++;k=ROLES[i][0];if(k==='rez'&&p.age<=21)k='per';return k;}
 function rolePrefBox(p){const R0=roleRank(p);const ex=roleExpect(p);const rivals=R0.samePos.slice(0,3);
-  return `<div class="ngpref"><div><span class="small mut">Preferencje zawodnika</span><b>Oczekuje roli: ${roleN(ex)} (gra w ok. ${rolePct(ex)}% meczów)</b><span class="small">${hasT(p,'amb')?'Ambitny — chce grać ważną rolę. ':''}${p.age>=33?'Doświadczony — zaakceptuje mniejszą rolę. ':''}${ex==='per'?'Młody — liczy na rozwój i okazjonalną grę. ':''}Rola niższa o 1 stopień = wyższe żądania płacowe; o 2 stopnie — odmowa. Ustalona rola to obietnica czasu gry: jeśli zawodnik będzie grał mniej, spadnie mu zadowolenie.</span></div>
+  return `<div class="ngpref"><div><span class="small mut">Preferencje zawodnika</span><b>Oczekuje roli: ${roleN(ex)} (${roleExpTxt(ex)})</b><span class="small">${hasT(p,'amb')?'Ambitny — chce grać ważną rolę. ':''}${p.age>=33?'Doświadczony — zaakceptuje mniejszą rolę. ':''}${ex==='per'?'Młody — liczy na rozwój i okazjonalną grę. ':''}Rola niższa o 1 stopień = wyższe żądania płacowe; o 2 stopnie — odmowa. Ustalona rola to obietnica czasu gry: jeśli zawodnik będzie grał mniej, spadnie mu zadowolenie.</span></div>
    <div><span class="small mut">Konkurencja na pozycji ${POS_SHORT[p.pos]} w Twojej kadrze</span>${rivals.map(x=>`<span class="small">${esc(x.last)} · <b>${rating(x)}</b> · ${roleN(roleOf(x)).toLowerCase()}</span>`).join('')||'<span class="small">brak — byłby jedynym zawodnikiem na tej pozycji</span>'}<span class="small">Byłby <b>${R0.posRank}.</b> na swojej pozycji (miejsc w szóstce: ${R0.slots}) i <b>${R0.allRank}.</b> w całej kadrze.</span></div></div>`;}
 function roleSet(p,k){p.role=k;p.pl8=[];}
 // naprawa starych zapisów (v167–v169 zapisywały rolę jako obiekt)
