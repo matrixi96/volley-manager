@@ -62,7 +62,7 @@ function ctxBar(){if(ui.tab==='mecz'&&liveMatch())return '';const t=myTeam();con
   const okLu=validLineup(t,SAVE.lineup)&&!myLineupPlayers().some(p=>p.inj)&&(()=>{try{const F=typeof forInfo==='function'?forInfo():null;return !F||F.n<=F.mx;}catch(e){return true;}})();
   let pos='—';if(s&&(s.phase==='liga'||s.phase==='po'||s.phase==='end')){const tb=leagueTable();pos=(tb.findIndex(x=>x.i===SAVE.team)+1)+'.';}
   const c=s?myNext():null;const e=nextEvent();const op=c?(c.h===SAVE.team?c.a:c.h):null;
-  const comp=!s?'':s.phase==='spar'?_t('Sparing {0}/{1}',s.spar.res.length+1,N_SPAR):s.phase==='liga'?_t('{0} · {1}. kolejka',LG_N[myLg()],s.round+1):s.phase==='po'?_t('Play-off'):phaseName(s);
+  const comp=!s?'':s.phase==='spar'?_t('Sparing {0}/{1}',s.spar.res.length+1,nSpar()):s.phase==='liga'?_t('{0} · {1}. kolejka',LG_N[myLg()],s.round+1):s.phase==='po'?_t('Play-off'):phaseName(s);
   const st=(l,v,col,go)=>`<div class="cst" ${go?`onclick="go('${go}')"`:''}><span>${_t(l)}</span><b style="${col?'color:'+col:''}">${v}</b></div>`;
   const pc=v=>v>=70?'var(--good)':v>=45?'var(--acc)':'var(--bad)';
   return `<div class="ctx"><div class="cpair"><span class="clab">${_t('Rozgrywki')}</span><b>${esc(comp)}</b></div>
@@ -90,7 +90,7 @@ function hNext(){const s=S();
   const c=myNext();const e=nextEvent();
   if(!c)return `<div class="pan hnext"><div class="ttl">Następny mecz</div><div class="hvs"><b>Brak planowanych spotkań</b><div class="mut">Twoja drużyna nie gra w tej fazie.</div><button class="btn" onclick="go('mecz')">Pozostałe mecze</button></div></div>`;
   const home=c.h===SAVE.team,op=home?c.a:c.h;
-  const comp=c.kind==='nt'?(S().nt?S().nt.comps[c.ci].n:'Reprezentacja'):c.kind==='cup'?cupName(myCountry()):c.kind==='euro'?euroLab(c):s.phase==='spar'?`Sparing ${s.spar.res.length+1}/${N_SPAR}`:s.phase==='liga'?`${LG_N[myLg()]} · ${s.round+1}. kolejka`:`Play-off · ${STAGE[s.po.series.find(x=>x.id===c.sid).st]}`;
+  const comp=c.kind==='nt'?(S().nt?S().nt.comps[c.ci].n:'Reprezentacja'):c.kind==='cup'?cupName(myCountry()):c.kind==='euro'?euroLab(c):s.phase==='spar'?`Sparing ${s.spar.res.length+1}/${nSpar()}`:s.phase==='liga'?`${LG_N[myLg()]} · ${s.round+1}. kolejka`:`Play-off · ${STAGE[s.po.series.find(x=>x.id===c.sid).st]}`;
   const days=e?daysBetween(today(),e.d):0;const isDay=days<=0;
   return `<div class="pan hnext"><div class="ttl">Następny mecz</div><div class="hnx">
    <div class="hcr">${teamCrest(c.h,96)}${formDots(c.h)}</div>
@@ -143,7 +143,7 @@ function hvNotes(c,op){const out=[];const lu=SAVE.lineup||{};const t=myTeam();co
 function hvHero(){const s=S();const c=myNext();const e=nextEvent();const asy=SAVE.staff&&SAVE.staff.asy;
   if(!c)return `<div class="card hvhero"><div class="hvlab"><span class="acc">Prowadzisz</span> ${SAVE.coach?esc(SAVE.coach.first+' '+SAVE.coach.last):''}</div><div class="hvteam">${teamCrest(SAVE.team,58)}<div><div class="hvtn">${esc(myTeam().name)}</div><div class="hvsub">${hvPos(SAVE.team)} ${hvForm(SAVE.team)}</div></div></div><p class="mut">Brak zaplanowanych meczów w tej fazie sezonu.</p><button class="btn" onclick="nextAction()">Dalej</button></div>`;
   const home=c.h===SAVE.team,op=home?c.a:c.h;const days=e?daysBetween(today(),e.d):0;
-  const comp=c.kind==='nt'?(S().nt?S().nt.comps[c.ci].n:'Reprezentacja'):c.kind==='cup'?cupName(myCountry()):c.kind==='euro'?euroLab(c):s.phase==='spar'?`Sparing ${s.spar.res.length+1}/${N_SPAR}`:s.phase==='liga'?`${s.round+1}. kolejka`:`Play-off · ${STAGE[s.po.series.find(x=>x.id===c.sid).st]}`;
+  const comp=c.kind==='nt'?(S().nt?S().nt.comps[c.ci].n:'Reprezentacja'):c.kind==='cup'?cupName(myCountry()):c.kind==='euro'?euroLab(c):s.phase==='spar'?`Sparing ${s.spar.res.length+1}/${nSpar()}`:s.phase==='liga'?`${s.round+1}. kolejka`:`Play-off · ${STAGE[s.po.series.find(x=>x.id===c.sid).st]}`;
   const side=(i,right)=>`<div class="hvteam ${right?'r':''}">${right?'':teamCrest(i,58)}<div><button class="link hvtn" onclick="openTeam(${i})">${esc(TEAMS[i].name)}</button><div class="hvsub">${right?hvForm(i)+' '+hvPos(i):hvPos(i)+' '+hvForm(i)}</div></div>${right?teamCrest(i,58):''}</div>`;
   return `<div class="card hvhero"><div><div class="hvlab"><span class="acc">Prowadzisz</span> ${SAVE.coach?esc(SAVE.coach.first+' '+SAVE.coach.last):''}</div>
     <div class="hvvs">${side(SAVE.team,false)}<b class="acc hvv">vs</b>${side(op,true)}</div>

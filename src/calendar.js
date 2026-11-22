@@ -22,7 +22,7 @@ function today(){return SAVE.date||GAME_START;}
 const SLOTS=[[-1,'20:30'],[0,'14:45'],[0,'17:30'],[0,'20:30'],[1,'14:45'],[1,'17:30']];
 function ensureDates(s){
   const Y=seasonYear(s.n);
-  if(!s.sdates){let d=nextDow(`${Y}-08-15`,6);s.sdates=[];for(let k=0;k<N_SPAR;k++){s.sdates.push(d);d=addDays(d,k%2?3:4);}}
+  if(!s.sdates){let d=nextDow(`${Y}-08-15`,6);s.sdates=[];for(let k=0;k<N_SPAR;k++){s.sdates.push(d);d=addDays(d,k%2?3:4);}}if(!s.winEnd)s.winEnd=s.sdates[N_SPAR-1];
   if(!s.rdates){let d=nextDow(`${Y}-09-26`,6);s.rdates=[];const ex=Math.max(0,s.rounds.length-22);let k=0;while(s.rdates.length<s.rounds.length){const md=d.slice(5);const brk=(d.slice(0,4)==String(Y)&&md>='12-20')||(d.slice(0,4)==String(Y+1)&&md<='01-06');if(!brk){s.rdates.push(d);k++;const mid=addDays(d,4);if(k%2===0&&s.rdates.length<s.rounds.length&&s.rdates.length-k<ex)s.rdates.push(mid);}d=addDays(d,7);}}
   if(!s.podates){const st=addDays(s.rdates[s.rdates.length-1],14);s.podates=[0,4,7,11,14,18,21,25,28,32,35,39,42,46,49].map(o=>addDays(st,o));}
   if(!s.offDate)s.offDate=`${Y}-06-01`;
@@ -32,7 +32,7 @@ function fixtureWhen(s,r,f){const i=s.rounds[r].findIndex(x=>x[0]===f[0]&&x[1]==
 function poTime(d){return dow(d)===6?'17:30':'20:30';}
 function nextEvent(){const s=S();if(!s)return null;ensureDates(s);
   if(s.phase==='off'){if(typeof ntInit==='function')ntInit();const ex=typeof extraNext==='function'?extraNext(s.sdates?s.sdates[0]:null):null;if(ex)return {d:ex.d<today()?today():ex.d,t:'20:00'};return {d:s.offDate};}
-  if(s.phase==='spar'){const k=s.spar.res.length;return k<N_SPAR?{d:s.sdates[k],t:'18:00'}:null;}
+  if(s.phase==='spar'){const k=s.spar.res.length;return k<nSpar()?{d:s.sdates[k],t:'18:00'}:null;}
   if(s.phase==='liga'){const f=(s.rounds[s.round]||[]).find(f=>f[0]===SAVE.team||f[1]===SAVE.team);if(!f)return null;const w=fixtureWhen(s,s.round,f);const ex=typeof extraNext==='function'?extraNext(w.d):null;return ex?{d:ex.d,t:'20:30'}:w;}
   if(s.phase==='po'){const d=s.podates[Math.min(s.po.day,s.podates.length-1)];const ex=typeof extraNext==='function'?extraNext(d):null;return ex?{d:ex.d,t:'20:30'}:{d,t:poTime(d)};}
   if(s.phase==='end'){const ex=typeof extraNext==='function'?extraNext(null):null;if(ex)return {d:ex.d,t:'20:30'};return {d:s.endDate||addDays(s.podates[Math.max(0,(s.po?s.po.day:1)-1)],3)};}
@@ -84,7 +84,7 @@ function migrateDates(){fixNaNBal();
 // ---- widok kalendarza ----
 function myEvents(){
   const s=S();ensureDates(s);const ev={};const add=(d,o)=>(ev[d]=ev[d]||[]).push(o);
-  s.spar.opps.forEach((o,k)=>{const home=k%2===0;const r=s.spar.res[k];if(s.phase!=='spar'&&!r)return;add(s.sdates[k],{kind:'spar',op:o,home,t:'18:00',r});});
+  s.spar.opps.forEach((o,k)=>{const home=sparHome(k);const r=s.spar.res[k];if(s.phase!=='spar'&&!r)return;add(s.sdates[k],{kind:'spar',op:o,home,t:'18:00',r});});
   s.rounds.forEach((rd,r)=>{const f=rd.find(x=>x[0]===SAVE.team||x[1]===SAVE.team);if(!f)return;const w=fixtureWhen(s,r,f);const res=s.results[r]&&s.results[r].find(x=>x.me);add(w.d,{kind:'liga',op:f[0]===SAVE.team?f[1]:f[0],home:f[0]===SAVE.team,t:w.t,r:res,k:r+1});});
   if(s.po)for(const sr of s.po.series)for(const g of sr.games)if(g.me&&g.d)add(g.d,{kind:'po',op:g.h===SAVE.team?g.a:g.h,home:g.h===SAVE.team,r:g,st:sr.st});
   if(s.cups&&s.cups[myCountry()]){const C=s.cups[myCountry()];C.rounds.forEach((rd,i)=>{const t=rd.ties.find(x=>x.h===SAVE.team||x.a===SAVE.team);if(t)add(C.dates[i],{kind:'cup',op:t.h===SAVE.team?t.a:t.h,home:t.h===SAVE.team&&!t.neutral,t:'20:30',r:t.res?Object.assign({me:1},t.res):null});});}
@@ -97,7 +97,7 @@ function calView(){
   const first=`${cur}-01`;const startOff=(dow(first)+6)%7;const dim=new Date(Date.UTC(Y,M,0)).getUTCDate();
   const ev=myEvents();const td=today();
   const bd={};for(const p of myTeam().players)if(p.dob)(bd[p.dob.slice(5)]=bd[p.dob.slice(5)]||[]).push(p);
-  const winOpen=d=>(d>=s.offDate&&d<=s.sdates[N_SPAR-1]);
+  const winOpen=d=>(d>=s.offDate&&d<=(s.winEnd||s.sdates[N_SPAR-1]));
   const brk=d=>{const y=seasonYear(s.n);return (d>`${y}-12-19`&&d<`${y+1}-01-07`);};
   const shift=n=>{const t=new Date(Date.UTC(Y,M-1+n,1));return t.getUTCFullYear()+'-'+String(t.getUTCMonth()+1).padStart(2,'0');};
   let cells='';for(let i=0;i<startOff;i++)cells+='<div class="cd empty"></div>';
@@ -113,7 +113,7 @@ function calView(){
   ${keyDates()}`;
 }
 function keyDates(){const s=S();ensureDates(s);const Y=seasonYear(s.n);
-  const rows=[['Okno transferowe',`${fmtDMY(s.offDate)} – ${fmtDMY(s.sdates[N_SPAR-1])}`],['Sparingi',`${fmtDMY(s.sdates[0])} – ${fmtDMY(s.sdates[N_SPAR-1])}`],[`Faza zasadnicza (${s.rounds.length} kolejek)`,`${fmtDMY(addDays(s.rdates[0],-1))} – ${fmtDMY(addDays(s.rdates[s.rdates.length-1],1))}`],['Przerwa świąteczna',`20.12.${Y} – 06.01.${Y+1}`],['Play-off',`od ${fmtDMY(s.podates[0])}`],['Koniec sezonu i kontraktów','30.06.'+(Y+1)]];
+  const rows=[['Okno transferowe',`${fmtDMY(s.offDate)} – ${fmtDMY(s.winEnd||s.sdates[N_SPAR-1])}`],['Sparingi',s.sdates.length?`${fmtDMY(s.sdates[0])} – ${fmtDMY(s.sdates[s.sdates.length-1])}`:'brak'],[`Faza zasadnicza (${s.rounds.length} kolejek)`,`${fmtDMY(addDays(s.rdates[0],-1))} – ${fmtDMY(addDays(s.rdates[s.rdates.length-1],1))}`],['Przerwa świąteczna',`20.12.${Y} – 06.01.${Y+1}`],['Play-off',`od ${fmtDMY(s.podates[0])}`],['Koniec sezonu i kontraktów','30.06.'+(Y+1)]];
   return `<div class="card"><h2>Najważniejsze daty sezonu ${sLabel(s.n)}</h2><table class="cmp"><tbody>${rows.map(r=>`<tr><td class="l">${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</tbody></table></div>`;}
 
 // naprawa salda zepsutego przez brak nagrody za miejsca poniżej 12. (błąd do v129)

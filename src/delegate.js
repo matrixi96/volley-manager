@@ -13,7 +13,7 @@ const DLG=[
  ['jr','Juniorzy','jr','Trener juniorów promuje do pierwszej drużyny gotowych juniorów (gdy jest miejsce) i zwalnia 20-latków bez perspektyw.'],
 ];
 function DL(){if(!SAVE.dlg){SAVE.dlg={on:{},quiet:0,log:[],wk:null};try{if(ensTrn().mode==='asy')SAVE.dlg.on.train=1;}catch(e){}}return SAVE.dlg;}
-function dlgWho(k){const r=DLG.find(x=>x[0]===k);if(!r)return null;if(r[2]==='sk')return allScouts().length?allScouts().slice().sort((a,b)=>b.skill-a.skill)[0]:null;return SAVE.staff&&SAVE.staff[r[2]]||null;}
+function dlgWho(k){const r=DLG.find(x=>x[0]===k);if(!r)return null;if(r[2]==='kier')return {first:'',last:typeof kierName==='function'?kierName():'Kierownik drużyny',skill:12,role:'kier'};if(r[2]==='sk')return allScouts().length?allScouts().slice().sort((a,b)=>b.skill-a.skill)[0]:null;return SAVE.staff&&SAVE.staff[r[2]]||null;}
 function dlg(k){return !!DL().on[k]&&!!dlgWho(k);}
 function dlgSk(k){const w=dlgWho(k);return w?w.skill:0;}
 function dlgNote(t){const D=DL();D.log.unshift({d:today(),t});D.log=D.log.slice(0,60);if(!D.quiet)news('🧑‍💼 '+t);}

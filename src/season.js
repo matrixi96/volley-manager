@@ -67,7 +67,7 @@ function simFixture(h,a,stats){const m=simMatch(participant(h,true),participant(
 function myNext(){
   const s=S();
   if(s.phase==='off'){const ex=typeof extraNext==='function'?extraNext(s.sdates?s.sdates[0]:null):null;return ex?ex.ctx:null;}
-  if(s.phase==='spar'){const ex0=typeof extraNext==='function'?extraNext(s.sdates?s.sdates[Math.min(s.spar.res.length,s.sdates.length-1)]:null):null;if(ex0)return ex0.ctx;const k=s.spar.res.length;if(k>=N_SPAR)return null;const o=s.spar.opps[k];return k%2===0?{kind:'spar',h:SAVE.team,a:o}:{kind:'spar',h:o,a:SAVE.team};}
+  if(s.phase==='spar'){const ex0=typeof extraNext==='function'?extraNext(s.sdates?s.sdates[Math.min(s.spar.res.length,s.sdates.length-1)]:null):null;if(ex0)return ex0.ctx;const k=s.spar.res.length;if(k>=nSpar())return null;const o=s.spar.opps[k];return sparHome(k)?{kind:'spar',h:SAVE.team,a:o}:{kind:'spar',h:o,a:SAVE.team};}
   if(s.phase==='liga'){const f=(s.rounds[s.round]||[]).find(f=>f[0]===SAVE.team||f[1]===SAVE.team);if(!f)return null;const ex=typeof extraNext==='function'?extraNext(fixtureWhen(s,s.round,f).d):null;if(ex)return ex.ctx;return {kind:'liga',h:f[0],a:f[1]};}
   if(s.phase==='po'){const pd=s.podates[Math.min(s.po.day,s.podates.length-1)];const ex=typeof extraNext==='function'?extraNext(pd):null;if(ex)return ex.ctx;const sr=activeSeries().find(x=>x.hi===SAVE.team||x.lo===SAVE.team);if(!sr)return null;const h=seriesHome(sr);return {kind:'po',sid:sr.id,h,a:h===sr.hi?sr.lo:sr.hi};}
   if(s.phase==='end'){const ex=typeof extraNext==='function'?extraNext(null):null;return ex?ex.ctx:null;}
@@ -106,7 +106,7 @@ function storeLast(m,c){try{const me=m.sides[0];const T=teamTotals(me);const w=m
   let top=null;try{for(const p of me.pl){const lr=liveRating(p);if(lr!=null&&(!top||lr>top.r))top={n:p.last,r:Math.round(lr*10)/10};}}catch(e){}
   SAVE.lastMatch={h:c.h,a:c.a,sets:r.sets,sw:r.sw,d:today(),home:c.h===SAVE.team,att:m.att||0,mvp:mvp?mvp.last:'',top,kind:c.kind,k:c.kind==='liga'?S().round:null,atk:T.att?Math.round(T.kill/T.att*100):0,blk:T.blk,ace:T.ace};}catch(e){}}
 function skipSpar(){const s=S();s.phase='liga';syncDate();save();render();}
-function endSpar(){const s=S();if(s.phase==='spar'&&s.spar.res.length>=N_SPAR){s.phase='liga';syncDate();save();}}
+function endSpar(){const s=S();if(s.phase==='spar'&&s.spar.res.length>=nSpar()){s.phase='liga';syncDate();save();}}
 function simRound(){/* runda bez meczu użytkownika nie występuje w lidze */}
 
 // ---- play-off ----
@@ -221,12 +221,12 @@ function seasonView(){
   const s=S();let out='';
   if(SAVE.fired)return `<div class="phase">📅 <b>${fmtLong(today())}</b> · Sezon ${sLabel(s.n)}</div>`+firedView()+newsHtml();
   if(s.phase==='off'){const c0=myNext();return `<div class="phase">📅 <b>${fmtLong(today())}</b> · Sezon ${sLabel(s.n)} · ${PHASE_NAMES.off}</div>`+(c0&&c0.kind==='nt'?nextCard(c0,`🎌 ${S().nt.comps[c0.ci].n} · ${({G:'faza grupowa',QF:'ćwierćfinał',SF:'półfinał',B:'mecz o brąz',F:'finał'})[c0.st]}`):'')+offView()+newsHtml();}
-  const head=(ui.msg?`<div class="card msg">${ui.msg}</div>`:'')+`<div class="phase">📅 <b>${fmtLong(today())}</b> · Sezon ${sLabel(s.n)} · ${PHASE_NAMES[s.phase]}${s.phase==='liga'?` · kolejka ${s.round+1}/${s.rounds.length}`:''}${s.phase==='spar'?` · sparing ${Math.min(s.spar.res.length+1,N_SPAR)}/${N_SPAR}`:''}</div>`;
+  const head=(ui.msg?`<div class="card msg">${ui.msg}</div>`:'')+`<div class="phase">📅 <b>${fmtLong(today())}</b> · Sezon ${sLabel(s.n)} · ${PHASE_NAMES[s.phase]}${s.phase==='liga'?` · kolejka ${s.round+1}/${s.rounds.length}`:''}${s.phase==='spar'?` · sparing ${Math.min(s.spar.res.length+1,nSpar())}/${nSpar()}`:''}</div>`;
   const headB=head+boardCard();
   if(s.phase==='spar'){
     const c=myNext();
-    out+=c?nextCard(c,`Sparing ${s.spar.res.length+1}/${N_SPAR} — mecz towarzyski, nie liczy się do tabeli`):`<div class="card"><h2>Sparingi zakończone</h2><button class="btn" onclick="endSpar();render()">Rozpocznij ligę</button></div>`;
-    out+=`<div class="card row wrap"><span class="mut small">Sparingi służą do testowania składu i taktyki.</span><span class="sp"></span><button class="ghost" onclick="skipSpar()">Pomiń sparingi i zacznij ligę</button></div>`;
+    out+=c?nextCard(c,`Sparing ${s.spar.res.length+1}/${nSpar()} — mecz towarzyski, nie liczy się do tabeli`):`<div class="card"><h2>Sparingi zakończone</h2><button class="btn" onclick="endSpar();render()">Rozpocznij ligę</button></div>`;
+    out+=`<div class="card row wrap"><span class="mut small">Sparingi służą do testowania składu i taktyki.</span><span class="sp"></span><button class="ghost" onclick="skipSpar()">Pomiń sparingi i zacznij ligę</button></div>`;if(typeof sparCard==='function')out+=sparCard();
     if(s.spar.res.length)out+=`<div class="card"><h2>Wyniki sparingów</h2>${s.spar.res.map((g,k)=>`<div class="res me"><span class="mut small">${fmtShort(s.sdates[k])}</span> ${resTxt(g)}</div>`).join('')}</div>`;
     return headB+`<div class="card small">🔓 Okno transferowe jest otwarte do końca sparingów. <button class="link" onclick="go('transfery')">Transfery</button></div>`+out+newsHtml();
   }

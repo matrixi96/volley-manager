@@ -81,3 +81,41 @@ function kitDot(g,x,y,R,key){const k=KIT_BY_COLOR[key];if(!k||k.p==='plain')retu
   else if(k.p==='half')g.fillRect(x,y-R,R,w);else if(k.p==='side'){g.fillRect(x-R,y-R,R*0.45,w);g.fillRect(x+R*0.55,y-R,R*0.45,w);}
   else if(k.p==='sash'){g.beginPath();g.moveTo(x-R,y-R*0.6);g.lineTo(x-R*0.5,y-R);g.lineTo(x+R,y+R*0.6);g.lineTo(x+R*0.5,y+R);g.closePath();g.fill();}
   g.restore();}
+
+// ================= LOGA SPONSORÓW (generowane z nazwy) =================
+const SP_ICONS={
+ bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+ bank:'<path d="M12 2 2 7v2h20V7zM4 10h3v8H4zm6.5 0h3v8h-3zM17 10h3v8h-3zM2 19h20v3H2z"/>',
+ signal:'<path d="M12 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM7 13a7 7 0 0 1 10 0l-1.6 1.6a4.7 4.7 0 0 0-6.8 0zM3.5 9.5a12 12 0 0 1 17 0l-1.6 1.6a9.8 9.8 0 0 0-13.8 0z"/>',
+ leaf:'<path d="M20 3C9 3 4 9 4 16c0 2 .5 3.5 1 4.5C7 14 11 10 16 8c-4 3-7 7-8.5 12.5 1 .3 2 .5 3 .5C18 21 21 13 20 3z"/>',
+ shield:'<path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5z"/>',
+ wheel:'<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12zm0 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/>',
+ beam:'<path d="M4 3h16v4h-6v10h6v4H4v-4h6V7H4z"/>',
+ cross:'<path d="M9 2h6v7h7v6h-7v7H9v-7H2V9h7z"/>',
+ chip:'<path d="M8 2h2v3h4V2h2v3h3v3h3v2h-3v4h3v2h-3v3h-3v3h-2v-3h-4v3H8v-3H5v-3H2v-2h3v-4H2V8h3V5h3zm-1 5v10h10V7z"/>',
+ squares:'<path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 4a4 4 0 1 0 8 0 4 4 0 0 0-8 0z"/>',
+ house:'<path d="M12 3 2 11h3v10h5v-6h4v6h5V11h3z"/>',
+ play:'<path d="M5 3v18l15-9z"/>',
+ plane:'<path d="M21 15v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V8l-8 5v2l8-2.5V18l-2 1.5V21l3.5-1 3.5 1v-1.5L13 18v-5.5z"/>',
+ drop:'<path d="M12 2s-7 8-7 13a7 7 0 0 0 14 0c0-5-7-13-7-13z"/>',
+ flask:'<path d="M9 2h6v2h-1v5l6 10c.8 1.4-.2 3-1.8 3H5.8C4.2 22 3.2 20.4 4 19l6-10V4H9z"/>',
+ flame:'<path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 3-6 0 2 1 3 2 3 0-4-1-6 1-9z"/>',
+ wheat:'<path d="M11 22V12M11 12c-3 0-5-2-5-5 3 0 5 2 5 5zm0 0c3 0 5-2 5-5-3 0-5 2-5 5zm0-4c-2.5 0-4-1.7-4-4 2.5 0 4 1.7 4 4zm0 0c2.5 0 4-1.7 4-4-2.5 0-4 1.7-4 4z" stroke="#fff" stroke-width="2" fill="none"/>',
+ chair:'<path d="M6 2h12v9H6zM4 12h16v3h-2v7h-2v-7H8v7H6v-7H4z"/>',
+ window:'<path d="M3 3h18v18H3zm2 2v6h6V5zm8 0v6h6V5zM5 13v6h6v-6zm8 0v6h6v-6z"/>',
+ truck:'<path d="M2 5h12v10H2zm12 4h4l4 4v2h-8zM6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm11 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>',
+ ball:'<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2c1.7 0 3.3.5 4.6 1.4-2.8.3-5.4 1.8-7 4.1A9 9 0 0 1 6 5.5 8 8 0 0 1 12 4zm-8 8c0-1.6.5-3.1 1.3-4.4 1.7 1.6 4 2.6 6.4 2.7-1.2 2.7-1.2 5.8.1 8.4A8 8 0 0 1 4 12zm10 7.7c-1.6-2.4-1.9-5.4-.9-8.1 2.5.9 4.6 2.8 5.8 5.2A8 8 0 0 1 14 19.7zM20 12c0 .6-.1 1.2-.2 1.8a11 11 0 0 0-5.7-4.3c1.4-1.7 3.5-2.8 5.7-2.8.1.1.2 4.7.2 5.3z"/>',
+ swoosh:'<path d="M2 16c6 2 12-2 20-10-4 8-9 13-15 13-3 0-5-1-5-3z"/>',
+ star:'<path d="m12 2 3 7 7 .6-5.3 4.7 1.6 7.2L12 17.8 5.7 21.5l1.6-7.2L2 9.6 9 9z"/>'};
+const SP_IND={Energia:'bolt',Logistics:'truck',Bank:'bank',Telecom:'signal',Foods:'leaf',Ubezpieczenia:'shield',Motors:'wheel',Steel:'beam',Pharma:'cross',Tech:'chip',Group:'squares',Budownictwo:'house',Media:'play',Travel:'plane',Wody:'drop',Chem:'flask',Software:'chip',Paliwa:'flame',Agro:'wheat',Meble:'chair',Okna:'window',Dom:'house',Finanse:'bank',Transport:'truck',Sport:'ball',Pro:'star',Wear:'swoosh',Athletics:'swoosh',Gear:'ball',Team:'star'};
+function spHash(s){let h=2166136261;for(const c of String(s))h=Math.imul(h^c.charCodeAt(0),16777619)>>>0;return h;}
+function spMark(c,size){size=size||34;const n=String(c.n||'');const h=spHash(n);const w=n.split(' ');const ic=SP_ICONS[SP_IND[w[w.length-1]]]||SP_ICONS[['star','squares','swoosh','bolt'][h%4]];
+  const col=c.col||'#38bdf8';const col2=['#0f172a','#111827','#1e293b','#ffffff'][h%4];const shape=h%5;const id='sg'+h.toString(36)+size;
+  const bgShape=[`<circle cx="20" cy="20" r="19"/>`,`<rect x="1" y="1" width="38" height="38" rx="9"/>`,`<path d="M20 1 37 10.5v19L20 39 3 29.5v-19z"/>`,`<path d="M20 1 37 6v13c0 10-7.5 17-17 20C10.5 36 3 29 3 19V6z"/>`,`<rect x="1" y="5" width="38" height="30" rx="15"/>`][shape];
+  const fg=col2==='#ffffff'?col:'#ffffff';const bgc=col2==='#ffffff'?'#ffffff':col;
+  return `<svg class="spmark" viewBox="0 0 40 40" width="${size}" height="${size}"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${bgc}"/><stop offset="1" stop-color="${col2==='#ffffff'?'#e5e7eb':kitDark(col)}"/></linearGradient></defs>
+   <g fill="url(#${id})" stroke="${col2==='#ffffff'?col:'#ffffff33'}" stroke-width="1.5">${bgShape}</g><g transform="translate(8 8) scale(1)" fill="${fg}">${ic}</g></svg>`;}
+// logo poziome: znak + nazwa (do kart sponsorów)
+function spLogo(c,size){const n=String(c.n||'');const h=spHash(n);const w=n.split(' ');const font=['Bahnschrift,Arial Narrow,sans-serif','Georgia,serif','Arial Black,Arial,sans-serif','Trebuchet MS,sans-serif'][h%4];const ital=h%3===0?'italic':'normal';
+  return `<span class="splogo">${spMark(c,size||34)}<span class="splw" style="font-family:${font};font-style:${ital};color:${c.col}">${esc(w[0].toUpperCase())}<small>${esc(w.slice(1).join(' '))}</small></span></span>`;}
+if(typeof spBadge==='function')spBadge=function(c){return spMark(c,34);};

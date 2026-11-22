@@ -40,27 +40,28 @@ function negClubOffer(fee){const n=NG();const p=PLAYERS[n.pid].p;const c=n.club;
   const na=Math.max(c.min,Math.round((c.ask-(c.ask-fee)*(insult?0.05:0.3))/10000)*10000);c.ask=na;
   negLog('club',`${club}: „${insult?'To nie jest poważna oferta. ':''}Możemy zejść do ${fmt(na)}.${c.pat===1?' To nasza ostatnia propozycja.':''}”`);render();}
 // ---- runda z agentem ----
-function negAgentOffer(w,y,b){const n=NG();const p=PLAYERS[n.pid].p;const a=n.ag;const ag=agentOf(p);const ST=ag.S;w=round5k(+w||0);b=Math.max(0,round5k(+b||0));y=+y||2;
+function negAgentOffer(w,y,b,r){const n=NG();const p=PLAYERS[n.pid].p;const a=n.ag;const ag=agentOf(p);const ST=ag.S;w=round5k(+w||0);b=Math.max(0,round5k(+b||0));y=+y||2;r=r||roleExpect(p);const rd=roleLv(roleExpect(p))-roleLv(r);n.role=r;
+  if(rd>=2){a.pat-=1;a.mood=Math.max(0,a.mood-15);negLog('me',`Proponujemy rolę: ${roleN(r)}.`);if(a.pat<=0){n.ok=false;p.negLock=addDays(today(),14);negLog('ag',`${ag.first} ${ag.last}: „Mój klient nie przyjdzie, żeby siedzieć na ławce. Kończymy rozmowy.”`);return render();}negLog('ag',`${ag.first} ${ag.last}: „${p.first} oczekuje roli: ${roleN(roleExpect(p)).toLowerCase()}. Na rolę „${roleN(r).toLowerCase()}” się nie zgodzi.”`);return render();}
   if(n.kind!=='renew'&&SAVE.fin.bal-n.fee-b<-500000){negLog('sys','Za mało pieniędzy na kwotę odstępnego i premię.');return render();}
-  negLog('me',`Proponujemy ${fmt(w)}/rok na ${y} ${y===1?'sezon':'sezony'} i ${fmt(b)} premii.`);
-  const yAdj=y===a.yPref?0.97:1.04;const wNeed=round5k(a.wMin*yAdj),wAskY=round5k(a.wAsk*yAdj);
+  negLog('me',`Proponujemy ${fmt(w)}/rok na ${y} ${y===1?'sezon':'sezony'}, ${fmt(b)} premii i rolę: ${roleN(r).toLowerCase()}.`);
+  const yAdj=(y===a.yPref?0.97:1.04)*(rd>0?1+0.08*rd:rd<0?0.96:1);const wNeed=round5k(a.wMin*yAdj),wAskY=round5k(a.wAsk*yAdj);
   // pensja i premia mogą się wzajemnie równoważyć (premia rozłożona na lata kontraktu)
   const val=w+b/Math.max(1,y)*0.8,needV=wNeed+a.bMin/Math.max(1,y)*0.8,askV=wAskY+a.bAsk/Math.max(1,y)*0.8;
-  if(val>=askV||val>=needV&&R()<0.3+0.15*(a.pat0-a.pat)){n.terms={w,y,b};n.ok=true;a.mood=Math.min(100,a.mood+15);
+  if(val>=askV||val>=needV&&R()<0.3+0.15*(a.pat0-a.pat)){n.terms={w,y,b,r};n.ok=true;a.mood=Math.min(100,a.mood+15);
     negLog('ag',`${ag.first} ${ag.last}: „Mamy porozumienie. ${p.first} jest gotowy podpisać kontrakt.”`);return render();}
   const low=val<needV*0.8;a.pat-=low?2:1;a.mood=Math.max(0,a.mood-(low?25:12));
   if(a.pat<=0){n.ok=false;p.negLock=addDays(today(),14);negLog('ag',`${ag.first} ${ag.last}: „Marnujemy czas. Kończymy rozmowy.” Agent zerwał negocjacje na 14 dni.`);return render();}
   a.wAsk=Math.max(a.wMin,round5k(a.wAsk-(a.wAsk-w)*ST[4]*(low?0.3:1)));a.bAsk=Math.max(a.bMin,round5k(a.bAsk-(a.bAsk-b)*ST[4]*(low?0.3:1)));
   negLog('ag',`${ag.first} ${ag.last}: „${low?'To za mało, nawet nie ma o czym mówić. ':''}Możemy przyjąć ${fmt(a.wAsk)} rocznie i ${fmt(a.bAsk)} premii${y!==a.yPref?`, najlepiej na ${a.yPref} ${a.yPref===1?'sezon':'sezony'}`:''}.${a.pat===1?' Ostatnia szansa.':''}”`);render();}
 function negSign(){const n=NG();if(!n||!n.ok||!n.terms)return;const p=PLAYERS[n.pid].p;const t=n.terms;const from=p.tm;
-  if(n.kind==='renew'){if(typeof budWageOver==='function')budWageOver(t.w-p.wage);p.wage=t.w;p.ce=contractEndFor(t.y);achEv('renew');if(t.b){money(-t.b,'Transfery');finLog(`Premia za przedłużenie: ${p.first} ${p.last}`,-t.b);}
+  if(n.kind==='renew'){if(t.r)roleSet(p,t.r,t.y);if(typeof budWageOver==='function')budWageOver(t.w-p.wage);p.wage=t.w;p.ce=contractEndFor(t.y);achEv('renew');if(t.b){money(-t.b,'Transfery');finLog(`Premia za przedłużenie: ${p.first} ${p.last}`,-t.b);}
     news(`✍️ ${p.first} ${p.last} przedłużył kontrakt do ${ceDate(p.ce)} (${fmt(t.w)}/rok).`);ui.neg=null;save();return tradeMsg(true,`${p.last} przedłużył kontrakt do ${ceDate(p.ce)}.`);}
   if(!windowOpen())return tradeMsg(false,'Okno transferowe się zamknęło.');
   if(typeof budCan==='function'){const e=budCan('tr',(from>=0?n.fee:0)+(t.b||0));if(e)return tradeMsg(false,e);budWageOver(t.w);}
   achEv('sign');try{if(typeof socTransfer==='function')socTransfer(p);}catch(e){}if(from>=0){achEv('buy');achMax('buyFee',n.fee);if(p.age<=21)achEv('buyYoung');if(lgOf(from)<myLg())achMax('buyUp',1);}else achEv('free');
   if(from>=0){money(-n.fee,'Transfery');SAVE.ai[from].bud+=n.fee;finLog(`Zakup: ${p.first} ${p.last} (${TEAMS[from].short})`,-n.fee);}
   if(t.b){money(-t.b,'Transfery');finLog(`Premia za podpis: ${p.first} ${p.last}`,-t.b);}
-  movePlayer(p,SAVE.team);p.wage=t.w;p.ce=contractEndFor(t.y);delete p.tl;
+  movePlayer(p,SAVE.team);if(t.r)roleSet(p,t.r,t.y);p.wage=t.w;p.ce=contractEndFor(t.y);delete p.tl;
   news(`✍️ ${p.first} ${p.last} dołącza do zespołu${from>=0?` z ${TEAMS[from].name} za ${fmt(n.fee)}`:' jako wolny zawodnik'}.`);ui.neg=null;save();tradeMsg(true,`${p.first} ${p.last} podpisał kontrakt do ${ceDate(p.ce)}!`);}
 function patDots(cur,max){return `<span class="ngpat">${Array.from({length:max},(_,i)=>`<i class="${i<cur?'on':''}"></i>`).join('')}</span>`;}
 function negModal(){const n=NG();const P=PLAYERS[n.pid];if(!P){ui.neg=null;return '';}const p=P.p;const ag=agentOf(p);
@@ -68,13 +69,14 @@ function negModal(){const n=NG();const P=PLAYERS[n.pid];if(!P){ui.neg=null;retur
   const log=`<div class="nglog">${n.log.map(l=>`<div class="ngm ${l.who}">${l.who==='me'?'<b>Ty:</b> ':''}${esc(l.t)}</div>`).join('')}</div>`;
   let form='';
   if(n.ok===false)form=`<p class="bad">Negocjacje zerwane.</p><button class="btn" onclick="${close}">Zamknij</button>`;
-  else if(n.ok&&n.terms)form=`<div class="ngdeal"><b>Porozumienie:</b> ${n.fee?`odstępne ${fmt(n.fee)} · `:''}pensja ${fmt(n.terms.w)}/rok · ${n.terms.y} ${n.terms.y===1?'sezon':'sezony'} · premia ${fmt(n.terms.b)}</div>
+  else if(n.ok&&n.terms)form=`<div class="ngdeal"><b>Porozumienie:</b> ${n.fee?`odstępne ${fmt(n.fee)} · `:''}pensja ${fmt(n.terms.w)}/rok · ${n.terms.y} ${n.terms.y===1?'sezon':'sezony'} · premia ${fmt(n.terms.b)}${n.terms.r?` · rola: <b>${roleN(n.terms.r)}</b>`:''}</div>
      ${typeof budImpact==='function'?budImpact(n.kind==='renew'?{tr:n.terms.b||0,wg:n.terms.w-p.wage}:{tr:(n.fee||0)+(n.terms.b||0),wg:n.terms.w}):''}
      <div class="row" style="gap:8px;margin-top:10px"><button class="btn" onclick="negSign()">✍️ Podpisz kontrakt</button><button class="ghost" onclick="${close}">Wycofaj się</button></div>`;
   else if(n.stage==='club')form=`<div class="ngform"><label>Kwota odstępnego <input id="ngfee" type="number" step="10000" value="${Math.round((club.ask*0.9)/10000)*10000}"></label><button class="btn" onclick="negClubOffer($('#ngfee').value)">Złóż ofertę</button></div>
      <p class="small mut">Klub żąda teraz <b>${fmt(club.ask)}</b>. Wartość zawodnika: ${fmt(pValue(p))}. Oferta poniżej 60% żądania zirytuje klub.</p>`;
   else form=`<div class="ngform"><label>Pensja / rok <input id="ngw" type="number" step="5000" value="${round5k(a.wAsk*0.92)}"></label><label>Lata <select id="ngy">${[1,2,3].map(y=>`<option ${y===a.yPref?'selected':''}>${y}</option>`).join('')}</select></label><label>Premia za podpis <input id="ngb" type="number" step="5000" value="${round5k(a.bAsk*0.7)}"></label>
-     <button class="btn" onclick="negAgentOffer($('#ngw').value,$('#ngy').value,$('#ngb').value)">Złóż propozycję</button></div>
+     <label>Rola w zespole <select id="ngr">${SQ_ROLES.map(([k,l])=>`<option value="${k}" ${k===(n.role||roleExpect(p))?'selected':''}>${l}</option>`).join('')}</select></label>
+     <button class="btn" onclick="negAgentOffer($('#ngw').value,$('#ngy').value,$('#ngb').value,$('#ngr').value)">Złóż propozycję</button></div>${rolePrefBox(p)}
      <p class="small mut">Agent żąda teraz: <b>${fmt(a.wAsk)}</b>/rok, <b>${fmt(a.bAsk)}</b> premii, najchętniej na <b>${a.yPref}</b> ${a.yPref===1?'sezon':'sezony'} (inna długość = wyższe żądania). Wyższa premia pozwala zejść z pensji i odwrotnie.</p>`;
   const stg=[['club','Klub'],['agent','Agent'],['sign','Podpis']].filter(x=>x[0]!=='club'||n.club);const cur=n.ok&&n.terms?'sign':n.stage;
   return `<div class="modal" onclick="if(event.target===this){${close}}"><div class="mcard ngcard">
@@ -116,3 +118,25 @@ function buyAct(p){const o=windowOpen();const ag=agentOf(p);const lk=negLocked(p
     <p class="small">Agent: <b>${esc(ag.first)} ${esc(ag.last)}</b> · <span class="acc">${ag.S[0]}</span> — ${esc(ag.S[1])}</p>
     ${lk?`<p class="small bad">Rozmowy zerwane — wznowienie możliwe od ${fmtDMY(lk)}.</p>`:`<button class="btn" onclick="negOpen('${p.id}','${p.tm>=0?'buy':'free'}')">💼 Rozpocznij negocjacje</button>`}
     <p class="mut small">Saldo klubu: ${fmt(SAVE.fin.bal)} · kadra: ${myTeam().players.length}/${SQUAD_MAX}</p>`:'<p class="mut small">Okno transferowe jest zamknięte. Otwiera się przed sezonem i trwa do końca sparingów.</p>'}</div>`;}
+
+// ================= ROLA W ZESPOLE (obietnica przy kontrakcie) =================
+const SQ_ROLES=[['star','Gwiazda zespołu',5,0.8],['key','Kluczowy zawodnik',4,0.7],['first','Zawodnik pierwszej szóstki',3,0.55],['rot','Ważny rezerwowy / zmiennik',2,0.25],['back','Rezerwowy',1,0],['young','Perspektywiczny (do rozwoju)',1,0]];
+function roleLv(k){const r=SQ_ROLES.find(x=>x[0]===k);return r?r[2]:1;}
+function roleN(k){const r=SQ_ROLES.find(x=>x[0]===k);return r?r[1]:'—';}
+// gdzie zawodnik byłby w Twojej kadrze: miejsce na swojej pozycji i względem najlepszych
+function roleRank(p){const t=myTeam();const mates=t.players.filter(x=>x.id!==p.id&&!x.jr);const r=rating(p);const samePos=mates.filter(x=>x.pos===p.pos).sort((a,b)=>rating(b)-rating(a));
+  const posRank=samePos.filter(x=>rating(x)>r).length+1;const all=mates.map(x=>rating(x)).sort((a,b)=>b-a);const allRank=all.filter(x=>x>r).length+1;const slots={R:1,A:1,P:2,S:2,L:1}[p.pos]||1;return {posRank,allRank,slots,samePos};}
+function roleExpect(p){const R0=roleRank(p);let lv;if(R0.allRank===1&&R0.posRank===1)lv=5;else if(R0.posRank<=R0.slots&&R0.allRank<=3)lv=4;else if(R0.posRank<=R0.slots)lv=3;else if(R0.posRank<=R0.slots+1)lv=2;else lv=1;
+  if(hasT(p,'amb')&&lv<5&&lv>=2)lv++;if(p.age>=33&&lv>2)lv--;
+  if(lv<=1&&p.age<=21)return 'young';return (SQ_ROLES.find(x=>x[2]===lv&&x[0]!=='young')||SQ_ROLES[4])[0];}
+function rolePrefBox(p){const R0=roleRank(p);const ex=roleExpect(p);const rivals=R0.samePos.slice(0,3);
+  return `<div class="ngpref"><div><span class="small mut">Preferencje zawodnika</span><b>Oczekuje roli: ${roleN(ex)}</b><span class="small">${hasT(p,'amb')?'Ambitny — chce grać ważną rolę. ':''}${p.age>=33?'Doświadczony — zaakceptuje mniejszą rolę. ':''}${ex==='young'?'Młody — liczy na rozwój i szanse gry. ':''}Rola niższa o 1 stopień = wyższe żądania płacowe; o 2 stopnie — odmowa.</span></div>
+   <div><span class="small mut">Konkurencja na pozycji ${POS_SHORT[p.pos]} w Twojej kadrze</span>${rivals.map(x=>`<span class="small">${esc(x.last)} · <b>${rating(x)}</b>${x.role?` · ${roleN(x.role.k).toLowerCase()}`:''}</span>`).join('')||'<span class="small">brak — byłby jedynym zawodnikiem na tej pozycji</span>'}<span class="small">Byłby <b>${R0.posRank}.</b> na swojej pozycji (miejsc w szóstce: ${R0.slots}) i <b>${R0.allRank}.</b> w całej kadrze.</span></div></div>`;}
+function roleSet(p,k,y){p.role={k,set:today(),m:0,s:0};}
+// liczenie meczów i występów w podstawowym składzie
+{const _pa=participant;participant=function(i,home){const o=_pa.apply(this,arguments);try{if(i===SAVE.team){const ids=new Set(Object.values(o.lineup||{}));for(const p of TEAMS[i].players)if(p.role){p.role.m++;if(ids.has(p.id))p.role.s++;}}}catch(e){}return o;};}
+// co miesiąc: czy obietnica jest dotrzymana
+function roleMonthly(){if(SAVE.team==null)return;for(const p of myTeam().players){const r=p.role;if(!r||r.m<4)continue;const R0=SQ_ROLES.find(x=>x[0]===r.k);if(!R0||!R0[3])continue;const sh=r.s/r.m;
+  if(sh<R0[3]*0.75&&!p.inj){p.mor=Math.max(5,(p.mor||60)-8);news(`😠 ${p.first} ${p.last} jest niezadowolony: obiecano mu rolę „${R0[1].toLowerCase()}”, a w podstawowym składzie wychodzi tylko w ${Math.round(sh*100)}% meczów.`);}
+  else if(sh>=R0[3])p.mor=Math.min(100,(p.mor||60)+2);r.m=Math.round(r.m/2);r.s=Math.round(r.s/2);}}
+{const _md=mailDaily;mailDaily=function(d){try{if(String(d).endsWith('-01'))roleMonthly();}catch(e){console.error(e);}return _md.apply(this,arguments);};}

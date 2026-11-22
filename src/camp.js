@@ -14,7 +14,7 @@ const CAMPS=[
 const CAMP_FX=[['kon','Kondycja'],['zgr','Zgranie'],['tak','Taktyka'],['mor','Morale'],['reg','Świeżość'],['inj','Urazy']];
 function campCost(c){const rep=SAVE.ai?SAVE.ai[SAVE.team].rep:50;return round5k(c[5]*(0.8+rep/250)*(myTeam().players.length/14));}
 function campOf(){const c=SAVE.camp;return c&&S()&&c.season===S().n?c:null;}
-function campCanBook(){const s=S();return !campOf()&&(s.phase==='off'||s.phase==='spar'&&s.spar.res.length<N_SPAR);}
+function campCanBook(){const s=S();return !campOf()&&(s.phase==='off'||s.phase==='spar'&&s.spar.res.length<nSpar());}
 function campBook(k){const c=CAMPS.find(x=>x[0]===k);if(!c||!campCanBook())return;const cost=campCost(c);
   // obóz to jednorazowy wydatek przed sezonem, płacony z salda klubu (nie z miesięcznego budżetu operacyjnego)
   if(SAVE.fin.bal-cost<-500000){ui.campErr=`Za mało pieniędzy na obóz (${fmt(cost)}).`;render();return;}ui.campErr=null;
