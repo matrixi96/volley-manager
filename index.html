@@ -724,6 +724,8 @@ body.th-fm a,body.th-fm .link{color:#8fc0ff}
 body.th-fm .tabb.on{border-bottom-color:#fff;color:#fff}body.th-fm .seg button.on{background:#e9ebee;color:#15171a}
 .nav.ndrop,.ngh.ndrop{box-shadow:inset 0 3px 0 #7cb4ff!important}
 .nav[draggable=true]{cursor:pointer}
+/* ławka: wszyscy widoczni (zawijanie), zablokowani przez limit obcokrajowców */
+.fmbench{flex-wrap:wrap}.fmbp.forblk{opacity:.38;filter:grayscale(.7)}.forb{font-size:11px}
 /* ================= ZAKŁADKI SEKCJI I ANALIZA RYWALA ================= */
 .subtabs{display:flex;gap:22px;border-bottom:1px solid var(--line);margin:-4px 0 14px;padding:0 2px;overflow-x:auto}
 .subtabs button{background:none;border:0;color:var(--mut);padding:8px 0;font:500 14px var(--fb);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
@@ -3445,7 +3447,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=149').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=150').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
@@ -5041,7 +5043,7 @@ function sponsorAmt(){return spMonthly()*12;}
 function techBonus(){const xs=SPN().act.filter(x=>x.cat==='tech');if(!xs.length)return 0;const c=xs.sort((a,b)=>b.m-a.m)[0];return clamp(0.02+c.m/(SP_BASE*0.09)*0.03,0,0.07);}
 // kara za zerwanie: 40% wartości pozostałych rat, co najmniej jedna rata
 function spPenalty(c){return Math.max(c.m,round5k(c.m*c.left*0.4));}
-function spBudRemove(c){const b=typeof BUD==='function'?BUD():null;if(!b||typeof spMonthsLeft!=='function')return;const sub=c.m*spMonthsLeft(c.left)*budAcc();const sp=budSplit();b.pool-=round5k(sub);b.wg-=round5k(sub*sp.wg);b.op-=round5k(sub*sp.op);b.tr=Math.max(0,b.tr-round5k(sub*sp.tr));}
+function spBudRemove(c){const b=typeof BUD==='function'?BUD():null;if(!b||typeof spMonthsLeft!=='function')return;let sub=c.m*spMonthsLeft(c.left)*budAcc();const sp=typeof budFree==='function'?budFree():budSplit();if(typeof spPlanNew==='function'&&(b.spGot||0)>=sub){const pl=spPlanNew(b),g=b.spGot;b.spGot=g-sub;sub=Math.max(0,g-pl)-Math.max(0,g-sub-pl);}if(sub<=0)return;b.pool-=round5k(sub);b.wg-=round5k(sub*sp.wg);b.op-=round5k(sub*sp.op);b.tr=Math.max(0,b.tr-round5k(sub*sp.tr));}
 function breakSponsor(id,silent){const s=SPN();const c=s.act.find(x=>x.id===id);if(!c)return false;if(!silent&&ui.confirm!=='spb'+id){ui.confirm='spb'+id;render();return false;}ui.confirm=null;
   const pen=spPenalty(c);money(-pen,'Kara umowna');finLog(`Zerwanie umowy sponsorskiej: ${c.n}`,-pen);spBudRemove(c);s.act=s.act.filter(x=>x!==c);s.brk=(s.brk||0)+1;
   news(`✂️ Zerwano umowę ze sponsorem ${c.n}. Kara umowna: ${fmt(pen)}. Inni sponsorzy to zauważą (słabsze oferty przez kilka miesięcy).`);
@@ -5255,12 +5257,23 @@ function budWageOver(dw){const L=budLeft();if(dw>0&&dw>L.wg){if(SAVE.board){SAVE
 function budAsk(){if(typeof bmView==='function'){ui.ixTab='zarzad';go('rozmowy');return;}const b=BUD();if(!b||b.extra)return;const add=round5k(Math.max(150000,b.tr*0.25));if(SAVE.fin.bal-add<-500000)return tradeMsg(false,'Zarząd odmawia: klub nie ma pieniędzy na dodatkowe transfery.');
   b.extra=add;if(SAVE.board)SAVE.board.conf=Math.max(0,SAVE.board.conf-6);news(`🏦 Zarząd dołożył ${fmt(add)} do budżetu transferowego, ale oczekuje wyników.`);save();render();}
 // zarząd nie planuje pensji poniżej obecnych zobowiązań ani utrzymania poniżej kosztów obiektów — reszta dzielona według proporcji
-function budSplitAmt(pool,sp,res){const wb=wageBill(),mn=maintenance()*12;let wg=Math.max(pool*sp.wg,wb+Math.max(150000,wb*0.04));let op=Math.max(pool*sp.op,mn+50000);let tr=pool-wg-op;
-  if(tr<pool*sp.tr){const rest=Math.max(0,pool-wg);const k=sp.op+sp.tr;op=Math.max(mn+50000,rest*sp.op/k);tr=Math.max(0,rest-op);}
-  tr=Math.max(tr,(res||0)*0.25);// część oszczędności zawsze można przeznaczyć na transfery
+function budSplitAmt(pool,sp,res){const M=budMins();const free=pool-M.wg-M.op;const f=budFree();const rT=(res||0)*0.25;// ćwierć oszczędności zawsze idzie na transfery
+  if(free<=0)return {wg:round5k(M.wg),op:round5k(M.op),tr:round5k(rT)};
+  let wg=M.wg+free*f.wg,op=M.op+free*f.op,tr=free*f.tr;
   return {wg:round5k(wg),op:round5k(op),tr:round5k(Math.max(0,tr))};}
-function budSetSplit(k,v){const sp=budSplit();v=clamp(+v/100,0.05,0.85);sp[k]=v;const rest=['wg','op','tr'].filter(x=>x!==k);const sum=rest.reduce((a,x)=>a+sp[x],0);const free=1-v;
-  for(const x of rest)sp[x]=sum>0?sp[x]/sum*free:free/2;SAVE.budSplit=sp;const b=BUD();if(b){const bs=budSplitAmt(b.pool,sp,b.res);b.wg=bs.wg;b.op=bs.op;b.tr=bs.tr;}save();render();}
+// podział WOLNYCH pieniędzy (po zarezerwowaniu obecnych pensji i utrzymania): domyślnie głównie na transfery
+const BUD_FREE_DEF={wg:0.45,tr:0.35,op:0.2};
+function budFree(){return Object.assign({},BUD_FREE_DEF,SAVE.budFree||{});}
+function budSetSplit(k,v){const sp=budFree();v=clamp(+v/100,0,1);sp[k]=v;const rest=['wg','op','tr'].filter(x=>x!==k);const sum=rest.reduce((a,x)=>a+sp[x],0);const fr=1-v;
+  for(const x of rest)sp[x]=sum>0?sp[x]/sum*fr:fr/2;SAVE.budFree=sp;const b=BUD();if(b){const bs=budSplitAmt(b.pool,sp,b.res);b.wg=bs.wg;b.op=bs.op;b.tr=bs.tr;}save();render();}
+// suwaki: najpierw zarząd rezerwuje obecne pensje (+zapas) i utrzymanie obiektów; suwaki dzielą tylko to, co zostaje
+function budMins(){const wb=wageBill(),mn=maintenance()*12;return {wg:wb+Math.max(150000,wb*0.04),op:mn+50000};}
+function budSliders(b,sp0){const sp=budFree();const M=budMins();const free=b.pool-M.wg-M.op;const prev=k=>{const t=Object.assign({},sp);return budSplitAmt(b.pool,t,b.res)[k];};
+  const head=`<div class="small" style="margin:6px 0;grid-column:1/-1">Pula na sezon: <b>${fmt(b.pool)}</b> · najpierw zarezerwowane: obecne pensje z zapasem <b>${fmt(M.wg)}</b> i utrzymanie obiektów <b>${fmt(M.op)}</b> · <b class="${free>0?'good':'bad'}">wolne do podziału: ${fmt(Math.max(0,free))}</b></div>`;
+  if(free<=0)return `<div class="budsp"><b>Podział budżetu</b>${head}<div class="small bad">Suwaki są wyłączone — obecne pensje i utrzymanie obiektów zajmują całą pulę, więc nie ma czego dzielić. Budżet transferowy pochodzi teraz z oszczędności klubu (${fmt(b.tr)}).</div>
+    <div class="small mut" style="margin-top:4px">Jak to zmienić: sprzedaj lub odeślij drogich zawodników (pensje), podpisz więcej sponsorów, awansuj (wyższe wpływy) albo poproś zarząd o pieniądze.</div></div>`;
+  return `<div class="budsp"><b>Podział budżetu</b>${head}${[['tr','Transfery'],['wg','Pensje (zapas na nowe kontrakty)'],['op','Funkcjonowanie (budowy, obóz)']].map(([k,l])=>`<label>${l} <b>${Math.round(sp[k]*100)}%</b> <span class="small mut">→ ${fmt(b[k])}</span><input type="range" min="0" max="100" value="${Math.round(sp[k]*100)}" oninput="this.previousElementSibling.previousElementSibling.textContent=this.value+'%'" onchange="budSetSplit('${k}',this.value)"></label>`).join('')}
+   <div class="small mut" style="grid-column:1/-1">Przesunięcie suwaka od razu przelicza budżety (kwoty obok). Pensji i utrzymania nie da się zejść poniżej zarezerwowanego minimum.</div></div>`;}
 // raport dyrektora co miesiąc: ostrzega, gdy budżet się kończy
 function budMonthly(){const b=BUD();if(!b)return;const L=budLeft();const fs=finSk();const msg=[];
   const chk=(k,lab,tot,left)=>{if(left<tot*0.1&&!b.warn[k]){b.warn[k]=1;msg.push(`${lab}: ${left<0?`przekroczony o ${fmt(-left)}`:`zostało tylko ${fmt(left)}`}.`);}};
@@ -5274,21 +5287,23 @@ function fmtShort2(v){return v>=1e6?(Math.round(v/1e5)/10).toString().replace('.
 function budgetCard(){const b=BUD();if(!b)return '';const L=budLeft();const sp=budSplit();const fs=finSk();
   const bar=(lab,tot,used,desc)=>{const pct=Math.round(used/Math.max(1,tot)*100);return `<div class="bud"><div class="row"><b>${lab}</b><span class="sp"></span><span class="${used>tot?'bad':''}">${fmt(used)} / ${fmt(tot)}</span></div><div class="bbar big"><i class="${pct>100?'over':pct>90?'warn':''}" style="width:${Math.min(100,pct)}%"></i></div><div class="small mut">${desc} · ${used>tot?`<span class="bad">przekroczony o ${fmt(used-tot)}</span>`:`zostaje ${fmt(tot-used)}`}</div></div>`;};
   const trTot=b.tr+(b.trAdd||0)+(b.extra||0);
-  return `<div class="card"><div class="row wrap"><h2 style="margin:0">Budżety na sezon ${S().n}</h2><span class="sp"></span><span class="small mut">${fs?`Dyrektor finansowy: <b>${esc(finName())}</b> (${fs}/20) · planuje ${Math.round(budAcc()*100)}% prognozy`:'Brak dyrektora finansowego: zarząd planuje ostrożnie (85% prognozy). Zatrudnisz go w zakładce Sztab.'}</span></div>
+  return `<div class="card"><div class="row wrap"><h2 style="margin:0">Budżety na sezon ${sLabel(S().n)}</h2><span class="sp"></span><span class="small mut">${fs?`Dyrektor finansowy: <b>${esc(finName())}</b> (${fs}/20) · planuje ${Math.round(budAcc()*100)}% prognozy`:'Brak dyrektora finansowego: zarząd planuje ostrożnie (85% prognozy). Zatrudnisz go w zakładce Sztab.'}</span></div>
    <div class="small mut" style="margin:4px 0 10px">Do podziału: <b>${fmt(b.pool)}</b> (prognoza przychodów + część oszczędności).</div>
    ${bar('Transferowy',trTot,b.trUsed,`odstępne i premie za podpis${b.trAdd?` · +${fmt(b.trAdd)} ze sprzedaży`:''}${b.extra?` · +${fmt(b.extra)} od zarządu`:''}`)}
    ${bar('Płacowy (rocznie)',b.wg,wageBill(),'pensje zawodników i sztabu')}
    ${bar('Operacyjny',b.op,b.opUsed+maintenance()*12,'utrzymanie obiektów, budowy, obóz')}
-   <div class="budsp"><b>Podział budżetu</b>${[['wg','Pensje'],['tr','Transfery'],['op','Funkcjonowanie']].map(([k,l])=>`<label>${l} <b>${Math.round(sp[k]*100)}%</b><input type="range" min="5" max="85" value="${Math.round(sp[k]*100)}" onchange="budSetSplit('${k}',this.value)"></label>`).join('')}</div>
+   ${budSliders(b,sp)}
    <div class="row" style="gap:8px;margin-top:8px">${b.extra?'<span class="small mut">Zarząd dołożył już pieniądze w tym sezonie.</span>':`<button class="ghost sm" onclick="budAsk()">🏦 Poproś zarząd o +${fmt(round5k(Math.max(150000,b.tr*0.25)))} na transfery</button><span class="small mut">zaufanie zarządu −6</span>`}</div></div>`;}
 // sponsor podpisany w trakcie sezonu: jego raty do końca sezonu (czerwiec) zasilają budżety według podziału
 function spMonthsLeft(mo){const d=SAVE._now||today();const y=+d.slice(0,4),m=+d.slice(5,7);const end=m<=6?6-m:18-m;return Math.max(0,Math.min(mo,end+1));}
 // budżet zakładał typową umowę na każdym wolnym miejscu; podpis zmienia budżety o różnicę między umową a tym założeniem
 function spExp(cat){const c=SP_CAT.find(x=>x[0]===cat);return c?SP_BASE*c[2]*spQuality()*LG_ECO[myLg()]*0.85:0;}
-function spBudDelta(cat,m,mo){return (m*spMonthsLeft(mo)-spExp(cat)*spMonthsLeft(12))*budAcc();}
-function spBudAdd(m,mo,cat){const b=BUD();if(!b)return;const add=spBudDelta(cat,m,mo);const sp=budSplit();b.pool+=round5k(add);b.wg+=round5k(add*sp.wg);b.op+=round5k(add*sp.op);b.tr=Math.max(0,b.tr+round5k(add*sp.tr));}
-function spBudTxt(m,mo,cat){const sp=budSplit();const add=spBudDelta(cat,m,mo);const sg=v=>(v>=0?'+':'−')+fmt(Math.abs(round5k(v)));
-  return `<span class="${add>=0?'good':'bad'}">${sg(add)}</span> <span class="mut">względem planu</span><br><span class="mut">transfery ${sg(add*sp.tr)} · pensje ${sg(add*sp.wg)}</span>`;}
+// plan zarządu zakładał już część przychodu od nowych sponsorów (prognoza); nowe umowy najpierw „wypełniają” to założenie, nadwyżka zwiększa budżety — nigdy na minus
+function spPlanNew(b){if(b.spNew==null){let pot=0;try{pot=Math.max(0,spPotential()-sponsorAmt());}catch(e){}b.spNew=Math.round(pot*budAcc());b.spGot=0;}return b.spNew;}
+function spBudDelta(cat,m,mo){const b=BUD();if(!b)return 0;const v=m*spMonthsLeft(mo)*budAcc();const pl=spPlanNew(b);const g=b.spGot||0;return Math.max(0,g+v-pl)-Math.max(0,g-pl);}
+function spBudAdd(m,mo,cat){const b=BUD();if(!b)return;const add=spBudDelta(cat,m,mo);b.spGot=(b.spGot||0)+m*spMonthsLeft(mo)*budAcc();if(add<=0)return;const sp=budFree();b.pool+=round5k(add);b.wg+=round5k(add*sp.wg);b.op+=round5k(add*sp.op);b.tr=Math.max(0,b.tr+round5k(add*sp.tr));}
+function spBudTxt(m,mo,cat){const sp=budFree();const add=spBudDelta(cat,m,mo);const cash=m*spMonthsLeft(mo);const b=BUD();const pl=b?spPlanNew(b):0;const left=Math.max(0,pl-((b&&b.spGot)||0));
+  return `<span class="good">+${fmt(cash)}</span> <span class="mut">do kasy w tym sezonie</span><br>`+(add>=5000?`<span class="mut">budżety: transfery +${fmt(round5k(add*sp.tr))} · pensje +${fmt(round5k(add*sp.wg))}</span>`:`<span class="mut" title="Zarząd wliczył do planu jeszcze ok. ${fmt(left)} od nowych sponsorów — budżety wzrosną, gdy wpływy przekroczą tę kwotę.">budżety bez zmian — ten przychód był już w planie</span>`);}
 // ===== Kluby komputera: te same zasady — przychody, budżety (transferowy, płacowy, operacyjny), dyrektor finansowy, social media =====
 const AI_REV_LG=[5200000,2400000,1150000,2900000,950000,6200000,2100000,5900000,1500000];
 function aiStaffSk(ti,k){const a=SAVE.ai[ti];if(!a.st)a.st={};if(a.st[k]==null)a.st[k]=R()<0.25+a.rep/200?Math.round(clamp(aiStaff(ti)+(R()*6-3),3,18)):0;return a.st[k];}
@@ -7603,7 +7618,7 @@ function sndCheer(power,claps){if(!sndOk('match'))return;const p=clamp(power,0.2
 function sndGroan(power){if(!sndOk('match'))return;sNoise(SND.mb,0.9,0.05*clamp(power,0.2,1.5),'lowpass',450,0.7,null,0.15);}
 // --- przebieg akcji: kontakty z piłką zsynchronizowane z animacją (z obsługą pauzy) ---
 function sndClear(){for(const h of SND.timers)clearInterval(h);SND.timers=[];}
-function sndSteps(m,ev,steps,in3d){if(!sndOk('match')||!ev||!ev.seq)return;sndAmbStart(m);sndClear();SND.q=null;
+function sndSteps(m,ev,steps,in3d){SND.animEv=ev;SND.after=null;if(!sndOk('match')||!ev||!ev.seq)return;sndAmbStart(m);sndClear();SND.q=null;
   // lista kontaktów z piłką: [moment końca kroku, dźwięk, głośność]
   const cs=[];const s0=ev.seq[0];cs.push([0,s0&&s0.k==='srv'?'serve':null,0.9]);let t=0;
   steps.forEach((st,i)=>{t+=st.dur||0;const s=st.s||{};const k=st.k||s.k;let snd=null,g=1;
@@ -7611,7 +7626,7 @@ function sndSteps(m,ev,steps,in3d){if(!sndOk('match')||!ev||!ev.seq)return;sndAm
     else if(k==='dig')snd='bump';else if(k==='blk')snd='block';else if(k==='floor'||k==='out')snd='floor',g=k==='out'?0.6:1;else if(k==='net')snd='net';else if(k==='mix')snd='floor';
     if(!k&&i===steps.length-1)snd='floor';cs.push([t,snd,g]);});
   const home=m.ctx?m.sides.findIndex(x=>x.team&&x.team.idx===m.ctx.h):0;const homeWon=ev.winner===home;const cf=sndCrowdF(m);const big=ev.type==='ace'||ev.type==='block'||steps.length>7;
-  const fin=()=>{sndWhistle(0.28);setTimeout(()=>{if(homeWon){sndCheer(cf*(big?1.4:1),big?40:18);}else{sndGroan(cf*0.8);sndCheer(cf*0.35,6);}sndAmbLevel(1,1.5);},160);};
+  const fin=()=>{const af=SND.after;SND.after=null;if(af)setTimeout(af,700);sndWhistle(0.28);setTimeout(()=>{if(homeWon){sndCheer(cf*(big?1.4:1),big?40:18);}else{sndGroan(cf*0.8);sndCheer(cf*0.35,6);}sndAmbLevel(1,1.5);},160);};
   const play=c=>{if(c&&c[1])sndHit(c[1],c[2]);};
   if(in3d){SND.q={m,cs,j:0,fin,ended:0};return;}// w 3D dźwięki wyzwalają zdarzenia animacji (sndPh / sndDone)
   const plan=cs.map(c=>[c[0],c[1],c[2]]);plan.push([t+80,'_fin',0]);let el=-(ui.speed>=1600?750:450),last=performance.now(),k=0;const swellAt=cs[3]?cs[3][0]:1e9;let sw=0;
@@ -7638,12 +7653,15 @@ function sndMail(important){if(!sndOk('ui'))return;const now=performance.now();i
 {const _sm=sendMail;sendMail=function(o){const r=_sm.apply(this,arguments);try{if(r!==null&&o&&!(window._dlgPrep)){const imp=o.cat==='zarz'||o.cat==='trans'||!!o.act;sndMail(imp);}}catch(e){}return r;};}
 {const _dr=doRally;doRally=function(m,skipAI){const sl=m.sets.length;const r=_dr.apply(this,arguments);
   try{if(!m.quick&&ui.match===m&&SND.ctx){const now=performance.now();const fast=now-SND.lastR<250;SND.lastR=now;
-    const me=m.sides.findIndex(x=>x.team&&x.team.idx===SAVE.team);
-    if(m.over){const w0=m.sets.filter(x=>x[0]>x[1]).length;const won=(w0>m.sets.length-w0)===(me!==1);setTimeout(()=>sndMatchEnd(m,won),fast?200:1800);}
-    else if(fast)sndAmbStop();
-    else{if(!(animOn()&&ui.mview!=='klasyczny'&&document.getElementById('mcv')))sndPoint(m,r);
-      if(m.sets.length>sl){const ls=m.sets[m.sets.length-1];const won=me===1?ls[1]>ls[0]:ls[0]>ls[1];setTimeout(()=>sndSetEnd(m,won),1800);}}}}catch(e){}
+    const me=m.sides.findIndex(x=>x.team&&x.team.idx===SAVE.team);let endFn=null;
+    if(m.over){const w0=m.sets.filter(x=>x[0]>x[1]).length;const won=(w0>m.sets.length-w0)===(me!==1);endFn=()=>sndMatchEnd(m,won);}
+    else if(m.sets.length>sl){const ls=m.sets[m.sets.length-1];const won=me===1?ls[1]>ls[0]:ls[0]>ls[1];endFn=()=>sndSetEnd(m,won);}
+    if(fast){sndAmbStop();if(m.over)setTimeout(endFn,200);}
+    // czekamy chwilę: jeśli ta akcja będzie animowana (2D albo 3D), dźwięki końca zagrają dopiero po animacji
+    else setTimeout(()=>{if(SND.animEv===r){SND.after=endFn;}else{sndPoint(m,r);if(endFn)setTimeout(endFn,500);}},0);}}catch(e){}
   return r;};}
+// widok klasyczny z animacją piłki: gwizdek i reakcja kibiców dopiero po zakończeniu animacji
+{const _ar=animateRally;animateRally=function(ev,done){SND.animEv=ev;SND.after=null;const m=ui.match;return _ar.call(this,ev,function(){try{if(m&&SND.ctx){sndPoint(m,ev);const af=SND.after;SND.after=null;if(af)setTimeout(af,500);}}catch(e){}return done.apply(this,arguments);});};}
 // tło kibiców gaśnie po wyjściu z meczu
 setInterval(()=>{if(SND.amb&&(!ui.match||ui.match.over&&!SND.timers.length||ui.tab!=='mecz'||ui.match.paused&&ui.to==null))sndAmbStop();},1000);
 // --- ustawienia ---
@@ -7717,7 +7735,7 @@ function searchDrop(){const el=document.getElementById('psd');if(!el)return;cons
 function ctxBar(){if(ui.tab==='mecz'&&liveMatch())return '';const t=myTeam();const s=S();const ps=t.players;
   const mor=Math.round(ps.reduce((a,p)=>a+(p.mor==null?60:p.mor),0)/Math.max(1,ps.length));
   const chem=chemPct(chemOf(myLineupPlayers(),t.idx));const conf=SAVE.board?Math.round(SAVE.board.conf):60;
-  const okLu=validLineup(t,SAVE.lineup)&&!myLineupPlayers().some(p=>p.inj);
+  const okLu=validLineup(t,SAVE.lineup)&&!myLineupPlayers().some(p=>p.inj)&&(()=>{try{const F=typeof forInfo==='function'?forInfo():null;return !F||F.n<=F.mx;}catch(e){return true;}})();
   let pos='—';if(s&&(s.phase==='liga'||s.phase==='po'||s.phase==='end')){const tb=leagueTable();pos=(tb.findIndex(x=>x.i===SAVE.team)+1)+'.';}
   const c=s?myNext():null;const e=nextEvent();const op=c?(c.h===SAVE.team?c.a:c.h):null;
   const comp=!s?'':s.phase==='spar'?_t('Sparing {0}/{1}',s.spar.res.length+1,N_SPAR):s.phase==='liga'?_t('{0} · {1}. kolejka',LG_N[myLg()],s.round+1):s.phase==='po'?_t('Play-off'):phaseName(s);
@@ -7848,7 +7866,7 @@ function homeView(){const s=S();if(!s)return '';
 function hvClip(){document.querySelectorAll('.hvgl').forEach(g=>{const b=g.getBoundingClientRect().bottom;for(const c of g.children)c.style.visibility=c.getBoundingClientRect().bottom>b+1?'hidden':'';});}
 window.addEventListener('resize',()=>{if(ui.tab==='home')hvClip();});
 // ================= WYGLĄD: motyw w stylu FM, przestawiane menu boczne, ekran startowy =================
-const APPV='149';
+const APPV='150';
 const HELP_EN='• You run a volleyball club as the manager: pick the squad, tactics and training, then watch matches live or simulate them.<br>• <b>Continue</b> (top right) moves time to the next event.<br>• Inbox and Conversations hold issues from players, the board, media and agents.<br>• Club → Staff: hire staff and delegate duties.<br>• Club → Club vision: what the board expects.<br>• Finances: budgets, bank loan and league licence.<br>• The game saves automatically; extra slots and save codes are in “Save game”.<br>• You can reorder the left menu by dragging items.';
 // ---- motyw ----
 function uiPref(k,d){try{const v=localStorage.getItem('vm_'+k);return v==null?d:v;}catch(e){return d;}}
@@ -7886,7 +7904,7 @@ function looksCard(){const th=uiPref('theme','fm');const G=navGroups();
    <button class="ghost sm" style="margin-top:8px" onclick="navReset()">${_t('Przywróć domyślną kolejność')}</button></details></div>`;}
 {const _sv=saveView;saveView=function(){return `<div class="card row wrap" style="gap:8px;align-items:center"><span>${_t('Ustawienia i zapis gry')}</span><span class="sp"></span><button class="ghost" onclick="ui.start=true;render()">${_t('⏏ Menu główne')}</button></div>`+looksCard()+_sv.apply(this,arguments);};}
 // ================= EKRAN STARTOWY =================
-const CHANGES=[['v149','Dźwięki zgrane z animacją (także 3D), gwizdek sędziego przed zagrywką'],['v148','Język angielski — etap 1: menu, ekran startowy, górny pasek, pozycje, daty'],['v147','Transfery: zakładki Wypożyczenia i Historia transferów'],['v146','Analiza rywala na ekranie głównym, zakładki na starszych ekranach'],['v145','Balans treningu „mocniej”, łagodniejsza ocena zarządu po sezonie, kibice na pasku we własnym klubie'],['v143','Własny klub: sam wybierasz charakter i plan, kibice wpływają na frekwencję i sponsorów'],['v142','Ekran startowy, motyw grafitowy jak w FM, przestawiane menu'],['v141','Strategia klubu: cele zarządu, plan pięcioletni, kibice'],['v140','Finanse: wykresy, kredyt bankowy, licencja ligowa, prognoza'],['v139','Trening: indywidualny, mentoring, odpoczynek, reżimy, trenerzy'],['v138','Wyższe limity sztabu, skauci osobno, własny klub bez limitu'],['v137','Dźwięki meczu i powiadomień, wersja na Windows'],['v136','Zapisy w IndexedDB, delegowanie transferów']];
+const CHANGES=[['v150','Limit obcokrajowców widoczny w składzie i na ławce, dźwięki po animacji, działające suwaki budżetu, uczciwy wpływ sponsorów'],['v149','Dźwięki zgrane z animacją (także 3D), gwizdek sędziego przed zagrywką'],['v148','Język angielski — etap 1: menu, ekran startowy, górny pasek, pozycje, daty'],['v147','Transfery: zakładki Wypożyczenia i Historia transferów'],['v146','Analiza rywala na ekranie głównym, zakładki na starszych ekranach'],['v145','Balans treningu „mocniej”, łagodniejsza ocena zarządu po sezonie, kibice na pasku we własnym klubie'],['v143','Własny klub: sam wybierasz charakter i plan, kibice wpływają na frekwencję i sponsorów'],['v142','Ekran startowy, motyw grafitowy jak w FM, przestawiane menu'],['v141','Strategia klubu: cele zarządu, plan pięcioletni, kibice'],['v140','Finanse: wykresy, kredyt bankowy, licencja ligowa, prognoza'],['v139','Trening: indywidualny, mentoring, odpoczynek, reżimy, trenerzy'],['v138','Wyższe limity sztabu, skauci osobno, własny klub bez limitu'],['v137','Dźwięki meczu i powiadomień, wersja na Windows'],['v136','Zapisy w IndexedDB, delegowanie transferów']];
 ui.start=true;
 function smHasSave(){return SAVE.team!=null&&!!SAVE.coach;}
 function smCont(){ui.start=false;ui.sm=null;render();}
@@ -7975,6 +7993,33 @@ function trHistTab(){const H=TRH();const f=ui.trhF||'all';const xs=H.filter(x=>f
    :'<p class="mut">Historia zbiera się od tej wersji gry — pojawią się tu wszystkie transfery do i z Twojego klubu.</p>'}</div>`;}
 
 try{i18nApply();}catch(e){console.error(e);}
+// ================= POPRAWKI: limit obcokrajowców widoczny w składzie i w meczu =================
+function forInfo(){const t=myTeam();const mx=tmMaxF(t);if(mx==null)return null;const hl=healthyLineup(t,myLineup());const lu=hl.lu;const n=luForeign(t,lu);
+  const fx=lineupFix(t,lu);const ch=LINEUP_KEYS.filter(([k])=>fx[k]!==lu[k]).map(([k,l])=>({k,l,out:t.players.find(p=>p.id===lu[k]),inn:t.players.find(p=>p.id===fx[k])}));return {mx,n,lu,fx,ch,inj:hl.ch};}
+function forApply(){const F=forInfo();if(!F)return;SAVE.lineup=Object.assign({},F.fx);save();render();}
+function forCard(){const F=forInfo();const live=typeof liveMatch==='function'&&liveMatch();let h='';
+  if(live)h+=`<div class="card" style="border-color:#eab308"><b>⚠ Mecz właśnie trwa.</b> <span class="small">Zmiany składu tutaj obowiązują od następnego meczu. Zawodników w trwającym meczu zmieniasz w widoku meczu (kliknij zawodnika na pasku „Skład”, potem rezerwowego).</span> <button class="link" onclick="go('mecz')">Wróć do meczu →</button></div>`;
+  if(F){const bad=F.n>F.mx;h+=`<div class="card" style="${bad?'border-color:var(--bad)':''}"><div class="row wrap" style="gap:10px;align-items:center"><b>🌍 Limit obcokrajowców: ${forRuleTxt(myLg())}.</b><span class="${bad?'bad':'good'}">W Twoim składzie: <b>${F.n}</b> / ${F.mx}</span>${bad?`<span class="sp"></span><button class="btn sm" onclick="forApply()">Popraw skład zgodnie z limitem</button>`:''}</div>
+    ${bad?`<div class="small" style="margin-top:6px">Jeśli tego nie zmienisz, przed meczem asystent sam wymieni: ${F.ch.map(c=>`<b>${esc(c.out.last)}</b> → <b>${esc(c.inn.last)}</b> (${c.l})`).join(', ')}.</div>`:''}
+    <div class="small mut" style="margin-top:4px">Ten sam limit obowiązuje przy zmianach w trakcie meczu — obcokrajowca można wpuścić tylko za obcokrajowca.</div></div>`;}
+  if(F&&F.inj&&F.inj.length)h+=`<div class="card"><span class="small">🚑 Kontuzje: przed meczem wejdą ${F.inj.map(([p,c,l])=>`<b>${esc(c.last)}</b> za ${esc(p?p.last:'—')} (${l})`).join(', ')}.</span></div>`;
+  return h;}
+{const _sv=squadView;squadView=function(){const h=_sv.apply(this,arguments);if(ui.sqTab)return h;const c=forCard();if(!c)return h;const i=h.indexOf('<div class="card"><div class="row"><h2>Skład wyjściowy</h2>');return i>=0?h.slice(0,i)+c+h.slice(i):c+h;};}
+// komunikat w relacji meczu, gdy asystent poprawił skład przed meczem
+{const _pa=participant;participant=function(i,home){const n0=(SAVE.news||[]).length;const r=_pa.apply(this,arguments);try{if(i===SAVE.team){const F=forInfo();if(F&&F.ch.length)window._luFixMsg=`Asystent zmienił skład na ten mecz (limit obcokrajowców: ${F.mx} na boisku): ${F.ch.map(c=>`<b>${esc(c.inn.last)}</b> za ${esc(c.out.last)}`).join(', ')}.`;
+  const hl=healthyLineup(TEAMS[i],myLineup());if(hl.ch.length)window._luInjMsg=`Kontuzje: ${hl.ch.map(([p,c])=>`<b>${esc(c.last)}</b> za ${esc(p?p.last:'—')}`).join(', ')}.`;}}catch(e){}return r;};}
+{const _bm=buildMatch;buildMatch=function(ctx){window._luFixMsg=null;window._luInjMsg=null;const m=_bm.apply(this,arguments);try{if(window._luInjMsg)m.log.push({t:'🚑 '+window._luInjMsg,c:'sys'});if(window._luFixMsg)m.log.push({t:'🌍 '+window._luFixMsg,c:'sys'});}catch(e){}window._luFixMsg=null;window._luInjMsg=null;return m;};}
+// ławka w meczu: oznaczenie obcokrajowców i zawodników, których limit nie wpuści za wybranego
+{const _fb=fmBench;fmBench=function(m){let h=_fb.apply(this,arguments);try{const a=m.sides[0];const mx=tmMaxF(a.team);const sel=ui.subSel;if(mx==null||!h)return h;
+  const outP=sel==null||sel==='srv'?(sel==='srv'?a.slots[nextServerSlot(m,0)].p:null):(sel==='L'?a.libero:a.slots[sel].p);
+  for(const p of benchOf(a)){if(!isForeign(p,a.team))continue;const blocked=outP&&!sideForOK(a,outP,p);const key=`onclick="${''}`;
+    const re=new RegExp(`(<div class="fmbp clk[^"]*")( onclick="[^"]*'${p.id}'\\)")`);
+    h=h.replace(re,(x,a1,a2)=>blocked?`${a1.replace('fmbp clk','fmbp clk forblk')} onclick="ui.forMsg='${esc(p.last)} nie może wejść: ${forRuleTxt(myLg())}. Obcokrajowca można wpuścić tylko za obcokrajowca.';render()"`:x);
+    h=h.replace(new RegExp(`(<b class="fmnm">${esc(shortN(p)).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}</b>)`),`$1 <span title="Obcokrajowiec" class="forb">🌍</span>`);}
+  const n=benchOf(a).length;h=h.replace('<b>Ławka</b>',`<b>Ławka</b> <span class="small mut">(${n})</span>`);
+  if(ui.forMsg){h=h.replace('<div class="fmsi"><b>Ławka</b>',`<div class="fmsi"><div class="small bad" style="margin-bottom:4px">${ui.forMsg}</div><b>Ławka</b>`);}}catch(e){console.error(e);}return h;};}
+{const _ds=doSub;doSub=function(pid){ui.forMsg=null;const m=ui.match;const r=_ds.apply(this,arguments);try{const lg=m&&m.log[m.log.length-1];if(lg&&/Zmiana niemożliwa/.test(lg.t)){ui.forMsg=lg.t;render();}}catch(e){}return r;};}
+{const _ss=selSub;selSub=function(){ui.forMsg=null;return _ss.apply(this,arguments);};}
 function vmBoot(){if(ST.mode==='idb'&&!ST.lsHad){try{const o=JSON.parse(stGet(KEY));if(o)SAVE=o;}catch(e){}rebuildIndex();restoreDefs();}
 applyCustom();
 // ================= START =================

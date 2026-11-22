@@ -42,7 +42,7 @@ function sponsorAmt(){return spMonthly()*12;}
 function techBonus(){const xs=SPN().act.filter(x=>x.cat==='tech');if(!xs.length)return 0;const c=xs.sort((a,b)=>b.m-a.m)[0];return clamp(0.02+c.m/(SP_BASE*0.09)*0.03,0,0.07);}
 // kara za zerwanie: 40% wartości pozostałych rat, co najmniej jedna rata
 function spPenalty(c){return Math.max(c.m,round5k(c.m*c.left*0.4));}
-function spBudRemove(c){const b=typeof BUD==='function'?BUD():null;if(!b||typeof spMonthsLeft!=='function')return;const sub=c.m*spMonthsLeft(c.left)*budAcc();const sp=budSplit();b.pool-=round5k(sub);b.wg-=round5k(sub*sp.wg);b.op-=round5k(sub*sp.op);b.tr=Math.max(0,b.tr-round5k(sub*sp.tr));}
+function spBudRemove(c){const b=typeof BUD==='function'?BUD():null;if(!b||typeof spMonthsLeft!=='function')return;let sub=c.m*spMonthsLeft(c.left)*budAcc();const sp=typeof budFree==='function'?budFree():budSplit();if(typeof spPlanNew==='function'&&(b.spGot||0)>=sub){const pl=spPlanNew(b),g=b.spGot;b.spGot=g-sub;sub=Math.max(0,g-pl)-Math.max(0,g-sub-pl);}if(sub<=0)return;b.pool-=round5k(sub);b.wg-=round5k(sub*sp.wg);b.op-=round5k(sub*sp.op);b.tr=Math.max(0,b.tr-round5k(sub*sp.tr));}
 function breakSponsor(id,silent){const s=SPN();const c=s.act.find(x=>x.id===id);if(!c)return false;if(!silent&&ui.confirm!=='spb'+id){ui.confirm='spb'+id;render();return false;}ui.confirm=null;
   const pen=spPenalty(c);money(-pen,'Kara umowna');finLog(`Zerwanie umowy sponsorskiej: ${c.n}`,-pen);spBudRemove(c);s.act=s.act.filter(x=>x!==c);s.brk=(s.brk||0)+1;
   news(`✂️ Zerwano umowę ze sponsorem ${c.n}. Kara umowna: ${fmt(pen)}. Inni sponsorzy to zauważą (słabsze oferty przez kilka miesięcy).`);

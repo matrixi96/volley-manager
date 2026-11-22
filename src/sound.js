@@ -47,7 +47,7 @@ function sndCheer(power,claps){if(!sndOk('match'))return;const p=clamp(power,0.2
 function sndGroan(power){if(!sndOk('match'))return;sNoise(SND.mb,0.9,0.05*clamp(power,0.2,1.5),'lowpass',450,0.7,null,0.15);}
 // --- przebieg akcji: kontakty z piłką zsynchronizowane z animacją (z obsługą pauzy) ---
 function sndClear(){for(const h of SND.timers)clearInterval(h);SND.timers=[];}
-function sndSteps(m,ev,steps,in3d){if(!sndOk('match')||!ev||!ev.seq)return;sndAmbStart(m);sndClear();SND.q=null;
+function sndSteps(m,ev,steps,in3d){SND.animEv=ev;SND.after=null;if(!sndOk('match')||!ev||!ev.seq)return;sndAmbStart(m);sndClear();SND.q=null;
   // lista kontaktów z piłką: [moment końca kroku, dźwięk, głośność]
   const cs=[];const s0=ev.seq[0];cs.push([0,s0&&s0.k==='srv'?'serve':null,0.9]);let t=0;
   steps.forEach((st,i)=>{t+=st.dur||0;const s=st.s||{};const k=st.k||s.k;let snd=null,g=1;
@@ -55,7 +55,7 @@ function sndSteps(m,ev,steps,in3d){if(!sndOk('match')||!ev||!ev.seq)return;sndAm
     else if(k==='dig')snd='bump';else if(k==='blk')snd='block';else if(k==='floor'||k==='out')snd='floor',g=k==='out'?0.6:1;else if(k==='net')snd='net';else if(k==='mix')snd='floor';
     if(!k&&i===steps.length-1)snd='floor';cs.push([t,snd,g]);});
   const home=m.ctx?m.sides.findIndex(x=>x.team&&x.team.idx===m.ctx.h):0;const homeWon=ev.winner===home;const cf=sndCrowdF(m);const big=ev.type==='ace'||ev.type==='block'||steps.length>7;
-  const fin=()=>{sndWhistle(0.28);setTimeout(()=>{if(homeWon){sndCheer(cf*(big?1.4:1),big?40:18);}else{sndGroan(cf*0.8);sndCheer(cf*0.35,6);}sndAmbLevel(1,1.5);},160);};
+  const fin=()=>{const af=SND.after;SND.after=null;if(af)setTimeout(af,700);sndWhistle(0.28);setTimeout(()=>{if(homeWon){sndCheer(cf*(big?1.4:1),big?40:18);}else{sndGroan(cf*0.8);sndCheer(cf*0.35,6);}sndAmbLevel(1,1.5);},160);};
   const play=c=>{if(c&&c[1])sndHit(c[1],c[2]);};
   if(in3d){SND.q={m,cs,j:0,fin,ended:0};return;}// w 3D dźwięki wyzwalają zdarzenia animacji (sndPh / sndDone)
   const plan=cs.map(c=>[c[0],c[1],c[2]]);plan.push([t+80,'_fin',0]);let el=-(ui.speed>=1600?750:450),last=performance.now(),k=0;const swellAt=cs[3]?cs[3][0]:1e9;let sw=0;
@@ -82,12 +82,15 @@ function sndMail(important){if(!sndOk('ui'))return;const now=performance.now();i
 {const _sm=sendMail;sendMail=function(o){const r=_sm.apply(this,arguments);try{if(r!==null&&o&&!(window._dlgPrep)){const imp=o.cat==='zarz'||o.cat==='trans'||!!o.act;sndMail(imp);}}catch(e){}return r;};}
 {const _dr=doRally;doRally=function(m,skipAI){const sl=m.sets.length;const r=_dr.apply(this,arguments);
   try{if(!m.quick&&ui.match===m&&SND.ctx){const now=performance.now();const fast=now-SND.lastR<250;SND.lastR=now;
-    const me=m.sides.findIndex(x=>x.team&&x.team.idx===SAVE.team);
-    if(m.over){const w0=m.sets.filter(x=>x[0]>x[1]).length;const won=(w0>m.sets.length-w0)===(me!==1);setTimeout(()=>sndMatchEnd(m,won),fast?200:1800);}
-    else if(fast)sndAmbStop();
-    else{if(!(animOn()&&ui.mview!=='klasyczny'&&document.getElementById('mcv')))sndPoint(m,r);
-      if(m.sets.length>sl){const ls=m.sets[m.sets.length-1];const won=me===1?ls[1]>ls[0]:ls[0]>ls[1];setTimeout(()=>sndSetEnd(m,won),1800);}}}}catch(e){}
+    const me=m.sides.findIndex(x=>x.team&&x.team.idx===SAVE.team);let endFn=null;
+    if(m.over){const w0=m.sets.filter(x=>x[0]>x[1]).length;const won=(w0>m.sets.length-w0)===(me!==1);endFn=()=>sndMatchEnd(m,won);}
+    else if(m.sets.length>sl){const ls=m.sets[m.sets.length-1];const won=me===1?ls[1]>ls[0]:ls[0]>ls[1];endFn=()=>sndSetEnd(m,won);}
+    if(fast){sndAmbStop();if(m.over)setTimeout(endFn,200);}
+    // czekamy chwilę: jeśli ta akcja będzie animowana (2D albo 3D), dźwięki końca zagrają dopiero po animacji
+    else setTimeout(()=>{if(SND.animEv===r){SND.after=endFn;}else{sndPoint(m,r);if(endFn)setTimeout(endFn,500);}},0);}}catch(e){}
   return r;};}
+// widok klasyczny z animacją piłki: gwizdek i reakcja kibiców dopiero po zakończeniu animacji
+{const _ar=animateRally;animateRally=function(ev,done){SND.animEv=ev;SND.after=null;const m=ui.match;return _ar.call(this,ev,function(){try{if(m&&SND.ctx){sndPoint(m,ev);const af=SND.after;SND.after=null;if(af)setTimeout(af,500);}}catch(e){}return done.apply(this,arguments);});};}
 // tło kibiców gaśnie po wyjściu z meczu
 setInterval(()=>{if(SND.amb&&(!ui.match||ui.match.over&&!SND.timers.length||ui.tab!=='mecz'||ui.match.paused&&ui.to==null))sndAmbStop();},1000);
 // --- ustawienia ---

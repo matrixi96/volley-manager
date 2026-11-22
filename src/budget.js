@@ -40,12 +40,23 @@ function budWageOver(dw){const L=budLeft();if(dw>0&&dw>L.wg){if(SAVE.board){SAVE
 function budAsk(){if(typeof bmView==='function'){ui.ixTab='zarzad';go('rozmowy');return;}const b=BUD();if(!b||b.extra)return;const add=round5k(Math.max(150000,b.tr*0.25));if(SAVE.fin.bal-add<-500000)return tradeMsg(false,'Zarząd odmawia: klub nie ma pieniędzy na dodatkowe transfery.');
   b.extra=add;if(SAVE.board)SAVE.board.conf=Math.max(0,SAVE.board.conf-6);news(`🏦 Zarząd dołożył ${fmt(add)} do budżetu transferowego, ale oczekuje wyników.`);save();render();}
 // zarząd nie planuje pensji poniżej obecnych zobowiązań ani utrzymania poniżej kosztów obiektów — reszta dzielona według proporcji
-function budSplitAmt(pool,sp,res){const wb=wageBill(),mn=maintenance()*12;let wg=Math.max(pool*sp.wg,wb+Math.max(150000,wb*0.04));let op=Math.max(pool*sp.op,mn+50000);let tr=pool-wg-op;
-  if(tr<pool*sp.tr){const rest=Math.max(0,pool-wg);const k=sp.op+sp.tr;op=Math.max(mn+50000,rest*sp.op/k);tr=Math.max(0,rest-op);}
-  tr=Math.max(tr,(res||0)*0.25);// część oszczędności zawsze można przeznaczyć na transfery
+function budSplitAmt(pool,sp,res){const M=budMins();const free=pool-M.wg-M.op;const f=budFree();const rT=(res||0)*0.25;// ćwierć oszczędności zawsze idzie na transfery
+  if(free<=0)return {wg:round5k(M.wg),op:round5k(M.op),tr:round5k(rT)};
+  let wg=M.wg+free*f.wg,op=M.op+free*f.op,tr=free*f.tr;
   return {wg:round5k(wg),op:round5k(op),tr:round5k(Math.max(0,tr))};}
-function budSetSplit(k,v){const sp=budSplit();v=clamp(+v/100,0.05,0.85);sp[k]=v;const rest=['wg','op','tr'].filter(x=>x!==k);const sum=rest.reduce((a,x)=>a+sp[x],0);const free=1-v;
-  for(const x of rest)sp[x]=sum>0?sp[x]/sum*free:free/2;SAVE.budSplit=sp;const b=BUD();if(b){const bs=budSplitAmt(b.pool,sp,b.res);b.wg=bs.wg;b.op=bs.op;b.tr=bs.tr;}save();render();}
+// podział WOLNYCH pieniędzy (po zarezerwowaniu obecnych pensji i utrzymania): domyślnie głównie na transfery
+const BUD_FREE_DEF={wg:0.45,tr:0.35,op:0.2};
+function budFree(){return Object.assign({},BUD_FREE_DEF,SAVE.budFree||{});}
+function budSetSplit(k,v){const sp=budFree();v=clamp(+v/100,0,1);sp[k]=v;const rest=['wg','op','tr'].filter(x=>x!==k);const sum=rest.reduce((a,x)=>a+sp[x],0);const fr=1-v;
+  for(const x of rest)sp[x]=sum>0?sp[x]/sum*fr:fr/2;SAVE.budFree=sp;const b=BUD();if(b){const bs=budSplitAmt(b.pool,sp,b.res);b.wg=bs.wg;b.op=bs.op;b.tr=bs.tr;}save();render();}
+// suwaki: najpierw zarząd rezerwuje obecne pensje (+zapas) i utrzymanie obiektów; suwaki dzielą tylko to, co zostaje
+function budMins(){const wb=wageBill(),mn=maintenance()*12;return {wg:wb+Math.max(150000,wb*0.04),op:mn+50000};}
+function budSliders(b,sp0){const sp=budFree();const M=budMins();const free=b.pool-M.wg-M.op;const prev=k=>{const t=Object.assign({},sp);return budSplitAmt(b.pool,t,b.res)[k];};
+  const head=`<div class="small" style="margin:6px 0;grid-column:1/-1">Pula na sezon: <b>${fmt(b.pool)}</b> · najpierw zarezerwowane: obecne pensje z zapasem <b>${fmt(M.wg)}</b> i utrzymanie obiektów <b>${fmt(M.op)}</b> · <b class="${free>0?'good':'bad'}">wolne do podziału: ${fmt(Math.max(0,free))}</b></div>`;
+  if(free<=0)return `<div class="budsp"><b>Podział budżetu</b>${head}<div class="small bad">Suwaki są wyłączone — obecne pensje i utrzymanie obiektów zajmują całą pulę, więc nie ma czego dzielić. Budżet transferowy pochodzi teraz z oszczędności klubu (${fmt(b.tr)}).</div>
+    <div class="small mut" style="margin-top:4px">Jak to zmienić: sprzedaj lub odeślij drogich zawodników (pensje), podpisz więcej sponsorów, awansuj (wyższe wpływy) albo poproś zarząd o pieniądze.</div></div>`;
+  return `<div class="budsp"><b>Podział budżetu</b>${head}${[['tr','Transfery'],['wg','Pensje (zapas na nowe kontrakty)'],['op','Funkcjonowanie (budowy, obóz)']].map(([k,l])=>`<label>${l} <b>${Math.round(sp[k]*100)}%</b> <span class="small mut">→ ${fmt(b[k])}</span><input type="range" min="0" max="100" value="${Math.round(sp[k]*100)}" oninput="this.previousElementSibling.previousElementSibling.textContent=this.value+'%'" onchange="budSetSplit('${k}',this.value)"></label>`).join('')}
+   <div class="small mut" style="grid-column:1/-1">Przesunięcie suwaka od razu przelicza budżety (kwoty obok). Pensji i utrzymania nie da się zejść poniżej zarezerwowanego minimum.</div></div>`;}
 // raport dyrektora co miesiąc: ostrzega, gdy budżet się kończy
 function budMonthly(){const b=BUD();if(!b)return;const L=budLeft();const fs=finSk();const msg=[];
   const chk=(k,lab,tot,left)=>{if(left<tot*0.1&&!b.warn[k]){b.warn[k]=1;msg.push(`${lab}: ${left<0?`przekroczony o ${fmt(-left)}`:`zostało tylko ${fmt(left)}`}.`);}};
@@ -59,21 +70,23 @@ function fmtShort2(v){return v>=1e6?(Math.round(v/1e5)/10).toString().replace('.
 function budgetCard(){const b=BUD();if(!b)return '';const L=budLeft();const sp=budSplit();const fs=finSk();
   const bar=(lab,tot,used,desc)=>{const pct=Math.round(used/Math.max(1,tot)*100);return `<div class="bud"><div class="row"><b>${lab}</b><span class="sp"></span><span class="${used>tot?'bad':''}">${fmt(used)} / ${fmt(tot)}</span></div><div class="bbar big"><i class="${pct>100?'over':pct>90?'warn':''}" style="width:${Math.min(100,pct)}%"></i></div><div class="small mut">${desc} · ${used>tot?`<span class="bad">przekroczony o ${fmt(used-tot)}</span>`:`zostaje ${fmt(tot-used)}`}</div></div>`;};
   const trTot=b.tr+(b.trAdd||0)+(b.extra||0);
-  return `<div class="card"><div class="row wrap"><h2 style="margin:0">Budżety na sezon ${S().n}</h2><span class="sp"></span><span class="small mut">${fs?`Dyrektor finansowy: <b>${esc(finName())}</b> (${fs}/20) · planuje ${Math.round(budAcc()*100)}% prognozy`:'Brak dyrektora finansowego: zarząd planuje ostrożnie (85% prognozy). Zatrudnisz go w zakładce Sztab.'}</span></div>
+  return `<div class="card"><div class="row wrap"><h2 style="margin:0">Budżety na sezon ${sLabel(S().n)}</h2><span class="sp"></span><span class="small mut">${fs?`Dyrektor finansowy: <b>${esc(finName())}</b> (${fs}/20) · planuje ${Math.round(budAcc()*100)}% prognozy`:'Brak dyrektora finansowego: zarząd planuje ostrożnie (85% prognozy). Zatrudnisz go w zakładce Sztab.'}</span></div>
    <div class="small mut" style="margin:4px 0 10px">Do podziału: <b>${fmt(b.pool)}</b> (prognoza przychodów + część oszczędności).</div>
    ${bar('Transferowy',trTot,b.trUsed,`odstępne i premie za podpis${b.trAdd?` · +${fmt(b.trAdd)} ze sprzedaży`:''}${b.extra?` · +${fmt(b.extra)} od zarządu`:''}`)}
    ${bar('Płacowy (rocznie)',b.wg,wageBill(),'pensje zawodników i sztabu')}
    ${bar('Operacyjny',b.op,b.opUsed+maintenance()*12,'utrzymanie obiektów, budowy, obóz')}
-   <div class="budsp"><b>Podział budżetu</b>${[['wg','Pensje'],['tr','Transfery'],['op','Funkcjonowanie']].map(([k,l])=>`<label>${l} <b>${Math.round(sp[k]*100)}%</b><input type="range" min="5" max="85" value="${Math.round(sp[k]*100)}" onchange="budSetSplit('${k}',this.value)"></label>`).join('')}</div>
+   ${budSliders(b,sp)}
    <div class="row" style="gap:8px;margin-top:8px">${b.extra?'<span class="small mut">Zarząd dołożył już pieniądze w tym sezonie.</span>':`<button class="ghost sm" onclick="budAsk()">🏦 Poproś zarząd o +${fmt(round5k(Math.max(150000,b.tr*0.25)))} na transfery</button><span class="small mut">zaufanie zarządu −6</span>`}</div></div>`;}
 // sponsor podpisany w trakcie sezonu: jego raty do końca sezonu (czerwiec) zasilają budżety według podziału
 function spMonthsLeft(mo){const d=SAVE._now||today();const y=+d.slice(0,4),m=+d.slice(5,7);const end=m<=6?6-m:18-m;return Math.max(0,Math.min(mo,end+1));}
 // budżet zakładał typową umowę na każdym wolnym miejscu; podpis zmienia budżety o różnicę między umową a tym założeniem
 function spExp(cat){const c=SP_CAT.find(x=>x[0]===cat);return c?SP_BASE*c[2]*spQuality()*LG_ECO[myLg()]*0.85:0;}
-function spBudDelta(cat,m,mo){return (m*spMonthsLeft(mo)-spExp(cat)*spMonthsLeft(12))*budAcc();}
-function spBudAdd(m,mo,cat){const b=BUD();if(!b)return;const add=spBudDelta(cat,m,mo);const sp=budSplit();b.pool+=round5k(add);b.wg+=round5k(add*sp.wg);b.op+=round5k(add*sp.op);b.tr=Math.max(0,b.tr+round5k(add*sp.tr));}
-function spBudTxt(m,mo,cat){const sp=budSplit();const add=spBudDelta(cat,m,mo);const sg=v=>(v>=0?'+':'−')+fmt(Math.abs(round5k(v)));
-  return `<span class="${add>=0?'good':'bad'}">${sg(add)}</span> <span class="mut">względem planu</span><br><span class="mut">transfery ${sg(add*sp.tr)} · pensje ${sg(add*sp.wg)}</span>`;}
+// plan zarządu zakładał już część przychodu od nowych sponsorów (prognoza); nowe umowy najpierw „wypełniają” to założenie, nadwyżka zwiększa budżety — nigdy na minus
+function spPlanNew(b){if(b.spNew==null){let pot=0;try{pot=Math.max(0,spPotential()-sponsorAmt());}catch(e){}b.spNew=Math.round(pot*budAcc());b.spGot=0;}return b.spNew;}
+function spBudDelta(cat,m,mo){const b=BUD();if(!b)return 0;const v=m*spMonthsLeft(mo)*budAcc();const pl=spPlanNew(b);const g=b.spGot||0;return Math.max(0,g+v-pl)-Math.max(0,g-pl);}
+function spBudAdd(m,mo,cat){const b=BUD();if(!b)return;const add=spBudDelta(cat,m,mo);b.spGot=(b.spGot||0)+m*spMonthsLeft(mo)*budAcc();if(add<=0)return;const sp=budFree();b.pool+=round5k(add);b.wg+=round5k(add*sp.wg);b.op+=round5k(add*sp.op);b.tr=Math.max(0,b.tr+round5k(add*sp.tr));}
+function spBudTxt(m,mo,cat){const sp=budFree();const add=spBudDelta(cat,m,mo);const cash=m*spMonthsLeft(mo);const b=BUD();const pl=b?spPlanNew(b):0;const left=Math.max(0,pl-((b&&b.spGot)||0));
+  return `<span class="good">+${fmt(cash)}</span> <span class="mut">do kasy w tym sezonie</span><br>`+(add>=5000?`<span class="mut">budżety: transfery +${fmt(round5k(add*sp.tr))} · pensje +${fmt(round5k(add*sp.wg))}</span>`:`<span class="mut" title="Zarząd wliczył do planu jeszcze ok. ${fmt(left)} od nowych sponsorów — budżety wzrosną, gdy wpływy przekroczą tę kwotę.">budżety bez zmian — ten przychód był już w planie</span>`);}
 // ===== Kluby komputera: te same zasady — przychody, budżety (transferowy, płacowy, operacyjny), dyrektor finansowy, social media =====
 const AI_REV_LG=[5200000,2400000,1150000,2900000,950000,6200000,2100000,5900000,1500000];
 function aiStaffSk(ti,k){const a=SAVE.ai[ti];if(!a.st)a.st={};if(a.st[k]==null)a.st[k]=R()<0.25+a.rep/200?Math.round(clamp(aiStaff(ti)+(R()*6-3),3,18)):0;return a.st[k];}

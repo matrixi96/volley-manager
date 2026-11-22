@@ -59,7 +59,7 @@ function searchDrop(){const el=document.getElementById('psd');if(!el)return;cons
 function ctxBar(){if(ui.tab==='mecz'&&liveMatch())return '';const t=myTeam();const s=S();const ps=t.players;
   const mor=Math.round(ps.reduce((a,p)=>a+(p.mor==null?60:p.mor),0)/Math.max(1,ps.length));
   const chem=chemPct(chemOf(myLineupPlayers(),t.idx));const conf=SAVE.board?Math.round(SAVE.board.conf):60;
-  const okLu=validLineup(t,SAVE.lineup)&&!myLineupPlayers().some(p=>p.inj);
+  const okLu=validLineup(t,SAVE.lineup)&&!myLineupPlayers().some(p=>p.inj)&&(()=>{try{const F=typeof forInfo==='function'?forInfo():null;return !F||F.n<=F.mx;}catch(e){return true;}})();
   let pos='—';if(s&&(s.phase==='liga'||s.phase==='po'||s.phase==='end')){const tb=leagueTable();pos=(tb.findIndex(x=>x.i===SAVE.team)+1)+'.';}
   const c=s?myNext():null;const e=nextEvent();const op=c?(c.h===SAVE.team?c.a:c.h):null;
   const comp=!s?'':s.phase==='spar'?_t('Sparing {0}/{1}',s.spar.res.length+1,N_SPAR):s.phase==='liga'?_t('{0} · {1}. kolejka',LG_N[myLg()],s.round+1):s.phase==='po'?_t('Play-off'):phaseName(s);
