@@ -22,9 +22,10 @@ function ptFeed(){const out=[];const s=S();
   // wiadomości ligi / klubu
   for(const n of (SAVE.news||[]).slice(0,16)){const t=String(n.t);const k=/🎌|kadr|reprezent/i.test(t)?'Reprezentacja':/transfer|podpisał|sprzeda|kupi|wypożycz/i.test(t)?'Transfery':/🚑|kontuz|uraz/i.test(t)?'Medyczne':/zarząd|budżet|finans/i.test(t)?'Klub':'Liga';
     out.push({d:n.d,k,ic:newsIcon(t),t:esc(t.replace(/^\p{Extended_Pictographic}️?\s*/u,'')),go:null});}
-  out.sort((a,b)=>(a.d<b.d?1:a.d>b.d?-1:(b.big||0)-(a.big||0)));
+  try{if(typeof mdFeed==='function')out.push(...mdFeed());}catch(e){console.error(e);}
+  out.sort((a,b)=>(a.d<b.d?1:a.d>b.d?-1:(b.big||0)-(a.big||0)||(b.pr||0)-(a.pr||0)));
   const big=out.find(x=>x.big||x.nt)||out[0];const rest=out.filter(x=>x!==big).slice(0,9);
-  const tag=k=>`<span class="ptk ptk-${({Mecz:'m',Reprezentacja:'r','Social media':'s',Transfery:'t',Medyczne:'x',Klub:'k',Liga:'l'})[k]||'l'}">${k}</span>`;
+  const tag=k=>`<span class="ptk ptk-${({Mecz:'m',Reprezentacja:'r','Social media':'s',Transfery:'t',Medyczne:'x',Klub:'k',Liga:'l',Media:'md'})[k]||'l'}">${k}</span>`;
   let hero='';if(big){const sc=big.score?`<div class="pthero-sc">${teamCrest(big.score.h,54)}<b>${big.score.sw[0]} – ${big.score.sw[1]}</b>${teamCrest(big.score.a,54)}</div>`:big.nt?`<div class="pthero-sc"><span class="ptfl">${natFl(big.nt.h)}</span><b>${big.nt.sw[0]} – ${big.nt.sw[1]}</b><span class="ptfl">${natFl(big.nt.a)}</span></div>`:`<div class="pthero-sc"><span class="ptfl">${big.ic||'📰'}</span></div>`;
     hero=`<button class="pthero" ${big.go?`onclick="${big.go}"`:''}>${sc}<div class="pthero-t">${big.t}</div>${big.b?`<div class="small mut">${big.b}</div>`:''}<div class="ptmeta">🕑 ${ptAgo(big.d)} ${tag(big.k)}</div></button>`;}
   const list=rest.map(x=>`<button class="ptn" ${x.go?`onclick="${x.go}"`:''}><span class="ptni">${x.nt?natFl(x.nt.h):x.ic||'📰'}</span><span><span class="ptnt">${x.t}</span><span class="ptmeta">🕑 ${ptAgo(x.d)} ${tag(x.k)}${x.b?` · ${x.b}`:''}</span></span></button>`).join('');
