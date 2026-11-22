@@ -43,7 +43,7 @@ function sparInvAnswer(mid,yes){const m=mailBox().find(x=>x.id===mid);if(!m||!m.
   if(yes){if(sparTaken(b.d)||b.d<sparFirst()||b.d>sparLast()){ui.mailMsg='Ten termin jest już zajęty — nie można przyjąć.';}else{sparInsert(b.op,b.d,b.home);news(`📋 Przyjęto zaproszenie na sparing z ${TEAMS[b.op].name} (${fmtShort(b.d)}).`);}}
   else news(`📋 Odrzucono zaproszenie na sparing od ${TEAMS[b.op].name}.`);b.done=yes?'ok':'no';save();render();}
 {const _mb=mailBodyHtml;mailBodyHtml=function(m){const b=m.b||{};if(b.type==='sparinv'){const T=TEAMS[b.op];return `<p>${esc(T.name)} (${esc(LG_N[lgOf(b.op)])}, siła składu ${teamStrength(T)}) zaprasza na sparing <b>${fmtDMY(b.d)}</b> o 18:00 ${b.home?'u nas':'na wyjeździe'}.</p>${b.done?`<p class="mut">${b.done==='ok'?'Przyjęte.':'Odrzucone.'}</p>`:`<div class="mact"><button class="btn" onclick="sparInvAnswer('${m.id}',true)">Przyjmij</button><button class="ghost" onclick="sparInvAnswer('${m.id}',false)">Odrzuć</button></div>`}`;}
-  if(b.type==='text')return `<p>${esc(b.txt||'')}</p>`;return _mb.apply(this,arguments);};}
+  if(b.type==='text')return `<p>${esc(b.txt||'').replace(/\n/g,'<br>')}</p>`;return _mb.apply(this,arguments);};}
 {const _md=mailDaily;mailDaily=function(d){try{sparDaily(d);}catch(e){console.error(e);}return _md.apply(this,arguments);};}
 if(typeof DLG!=='undefined'&&!DLG.some(x=>x[0]==='spar'))DLG.push(['spar','Organizacja sparingów','kier','Kierownik drużyny sam zaprasza rywali o podobnej sile na sparingi przed sezonem (mniej więcej co 4 dni, łącznie do 10) i przyjmuje zaproszenia od innych klubów.']);
 // --- karta planowania sparingów (Mecz i sezon, przed ligą) ---

@@ -125,7 +125,7 @@ function simJrRound(r){const s=S();s.jres=s.jres||[];s.jps=s.jps||{};const rd=[]
   for(const [h,a] of s.rounds[r]){ensureJuniors(h);ensureJuniors(a);
     const P=(i,home)=>{const jt=jTeam(i);return {team:jt,lineup:autoLineup(jt),tactics:{serve:1,dist:0},home,x:{hb:0.015,fat:1,sb:0}};};
     const m=simMatch(P(h,true),P(a,false));
-    for(const sd of m.sides)for(const cp of sd.pl){const x=cp.st;if(x.srv+x.rec+x.att+x.dig+x.blk===0)continue;ROUND_PLAYED.add(cp.id);const r2=s.jps[cp.id]||(s.jps[cp.id]={m:0,pts:0,kill:0,att:0});r2.m++;r2.pts+=x.kill+x.blk+x.ace;r2.kill+=x.kill;r2.att+=x.att;}
+    for(const sd of m.sides)for(const cp of sd.pl){const x=cp.st;if(x.srv+x.rec+x.att+x.dig+x.blk===0)continue;ROUND_PLAYED.add(cp.id);const r2=s.jps[cp.id]||(s.jps[cp.id]={m:0,pts:0,kill:0,att:0});r2.m++;r2.pts+=x.kill+x.blk+x.ace;r2.kill+=x.kill;r2.att+=x.att;{const lr=liveRating(cp);if(lr!=null){r2.rs=(r2.rs||0)+lr;r2.rn=(r2.rn||0)+1;}}}
     const g=resultOf(m,h,a);if(h===SAVE.team||a===SAVE.team)g.me=true;rd.push(g);}
   s.jres.push(rd);
   if(s.jres.length===s.rounds.length){const ch=tableFrom(s.jres)[0].i;news(`🏆 Mistrzem ligi juniorów sezonu ${sLabel(s.n)} zostaje ${TEAMS[ch].name} U20${ch===SAVE.team?' — to Twoi juniorzy!':''}.`);s.jchamp=ch;}}
