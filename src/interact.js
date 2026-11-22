@@ -3,12 +3,12 @@
 // p.role – rola w zespole, p.rel – relacja z trenerem 0–100, p.pl8 – czas gry w ostatnich 8 kolejkach (0–1, patrz niżej: CZAS GRY)
 function IX(){return SAVE.ix||(SAVE.ix={q:[],pr:[],cred:60,last:null,log:[]});}
 const ROLES=[['klu','Kluczowy zawodnik',0.85,'Gra prawie zawsze, od niego zależą wyniki.'],['pod','Podstawowy zawodnik',0.65,'Gra w większości meczów.'],
-  ['rot','Zawodnik rotacyjny',0.35,'Gra regularnie, ale nie co mecz.'],['per','Perspektywiczny',0.1,'Młody — uczy się, gra okazjonalnie.'],['rez','Rezerwowy',0,'Wchodzi, gdy jest potrzebny — nie liczy na regularną grę.']];
+  ['per','Perspektywiczny',0.1,'Młody — uczy się, gra okazjonalnie.'],['rez','Rezerwowy',0,'Wchodzi, gdy jest potrzebny — nie liczy na regularną grę.']];
 function roleExpTxt(k){const r=ROLES[ROLE_I[k]];return !r?'':r[2]>0?`oczekuje gry w ok. ${Math.round(r[2]*100)}% meczów`:'bez wymagań co do czasu gry';}
 const ROLE_I=Object.fromEntries(ROLES.map((r,i)=>[r[0],i]));
 function roleDef(p){const t=myTeam();const lu=new Set(Object.values(myLineup()));const L=t.players.filter(x=>!x.jr).slice().sort((a,b)=>rating(b)-rating(a));const k=L.indexOf(p);
-  if(lu.has(p.id))return k<3?'klu':'pod';if(p.age<=21)return 'per';return k<10?'rot':'rez';}
-function roleOf(p){return p.role||roleDef(p);}
+  if(lu.has(p.id))return k<3?'klu':'pod';if(p.age<=21)return 'per';return 'rez';}
+function roleOf(p){if(p.role&&ROLE_I[p.role]==null)delete p.role;return p.role||roleDef(p);}
 function roleExp(p){return ROLES[ROLE_I[roleOf(p)]][2];}
 function relOf(p){return p.rel==null?50:p.rel;}
 function relAdd(p,d){p.rel=Math.round(clamp(relOf(p)+d,0,100));}
@@ -31,7 +31,7 @@ const IX_T={
      ['zasluz','Musisz zasłużyć na to na treningach.',p=>ixChance(p,0.5,{pro:0.25,oby:0.2,amb:-0.2,kap:-0.25,ind:-0.2}),
        (p,q,ok)=>{if(ok){addMor(p,1);relAdd(p,2);p.trBoost=today();return 'Przyjął to i obiecał mocniej pracować.';}addMor(p,-8);relAdd(p,-8);return 'Uznał to za wymówkę. Jest rozżalony.';}],
      ['rola','Twoja rola w tym sezonie to zmiennik.',p=>ixChance(p,0.45,{loj:0.25,oby:0.15,pro:0.1,amb:-0.25,suk:-0.15}),
-       (p,q,ok)=>{const i=Math.min(ROLE_I[roleOf(p)]+1,4);p.role=ROLES[Math.max(i,2)][0];if(ok){addMor(p,-2);return 'Przyjął nową rolę ze spokojem. Oczekuje teraz mniej gry.';}addMor(p,-10);relAdd(p,-10);return 'Poczuł się zdegradowany. Rola zmieniona, ale relacja ucierpiała.';}],
+       (p,q,ok)=>{const i=Math.min(ROLE_I[roleOf(p)]+1,ROLES.length-1);p.role=ROLES[Math.max(i,2)][0];if(ok){addMor(p,-2);return 'Przyjął nową rolę ze spokojem. Oczekuje teraz mniej gry.';}addMor(p,-10);relAdd(p,-10);return 'Poczuł się zdegradowany. Rola zmieniona, ale relacja ucierpiała.';}],
      ['lista','Jeśli chcesz, możesz poszukać nowego klubu.',p=>ixChance(p,0.55,{amb:0.2,suk:0.15,ind:0.1,loj:-0.4,oby:-0.1}),
        (p,q,ok)=>{if(typeof tlSet==='function')tlSet(p.id,pValue(p));p.unh=0;if(ok){addMor(p,2);relAdd(p,-2);return 'Docenił szczerość. Trafił na listę transferową.';}addMor(p,-6);relAdd(p,-12);return 'Odebrał to tak, jakby klub chciał się go pozbyć. Jest na liście transferowej i czuje się odrzucony.';}]]},
  kontrakt:{t:p=>`${p.first} ${p.last} pyta o nowy kontrakt`,

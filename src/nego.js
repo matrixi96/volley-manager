@@ -40,7 +40,7 @@ function negClubOffer(fee){const n=NG();const p=PLAYERS[n.pid].p;const c=n.club;
   const na=Math.max(c.min,Math.round((c.ask-(c.ask-fee)*(insult?0.05:0.3))/10000)*10000);c.ask=na;
   negLog('club',`${club}: „${insult?'To nie jest poważna oferta. ':''}Możemy zejść do ${fmt(na)}.${c.pat===1?' To nasza ostatnia propozycja.':''}”`);render();}
 // ---- runda z agentem ----
-function negAgentOffer(w,y,b,r){const n=NG();const p=PLAYERS[n.pid].p;const a=n.ag;const ag=agentOf(p);const ST=ag.S;w=round5k(+w||0);b=Math.max(0,round5k(+b||0));y=+y||2;const rEx=n.kind==='renew'?roleOf(p):roleExpect(p);r=r||rEx;const rd=roleLv(rEx)-roleLv(r);n.role=r;
+function negAgentOffer(w,y,b,r){const n=NG();const p=PLAYERS[n.pid].p;const a=n.ag;const ag=agentOf(p);const ST=ag.S;w=round5k(+w||0);b=Math.max(0,round5k(+b||0));y=+y||2;const rEx=n.kind==='renew'?roleOf(p):roleExpect(p);r=r&&ROLE_I[r]!=null?r:rEx;const rd=roleLv(rEx)-roleLv(r);n.role=r;
   if(rd>=2){a.pat-=1;a.mood=Math.max(0,a.mood-15);negLog('me',`Proponujemy rolę: ${roleN(r)}.`);if(a.pat<=0){n.ok=false;p.negLock=addDays(today(),14);negLog('ag',`${ag.first} ${ag.last}: „Mój klient nie przyjdzie, żeby siedzieć na ławce. Kończymy rozmowy.”`);return render();}negLog('ag',`${ag.first} ${ag.last}: „${p.first} oczekuje roli: ${roleN(rEx).toLowerCase()}. Na rolę „${roleN(r).toLowerCase()}” się nie zgodzi.”`);return render();}
   if(n.kind!=='renew'&&SAVE.fin.bal-n.fee-b<-500000){negLog('sys','Za mało pieniędzy na kwotę odstępnego i premię.');return render();}
   negLog('me',`Proponujemy ${fmt(w)}/rok na ${y} ${y===1?'sezon':'sezony'}, ${fmt(b)} premii i rolę: ${roleN(r).toLowerCase()}.`);
@@ -122,17 +122,17 @@ function buyAct(p){const o=windowOpen();const ag=agentOf(p);const lk=negLocked(p
 // ================= ROLA W ZESPOLE (ustalony czas gry) — wspólna z „Rozmowami” (ROLES, p.role) =================
 // Przy kontrakcie ustalasz rolę z listy ROLES (kluczowy, podstawowy, rotacyjny, rezerwowy, perspektywiczny).
 // Ta sama rola widnieje w karcie zawodnika i w rozmowach; zadowolenie z czasu gry liczy się względem niej.
-function roleLv(k){return 5-ROLE_I[k];}// klu 5, pod 4, rot 3, per 2, rez 1
+function roleLv(k){return 4-ROLE_I[k];}// klu 4, pod 3, per 2, rez 1
 function roleN(k){const r=ROLES[ROLE_I[k]];return r?r[1]:'—';}
 function rolePct(k){const r=ROLES[ROLE_I[k]];return r?Math.round(r[2]*100):0;}
 function roleRank(p){const t=myTeam();const mates=t.players.filter(x=>x.id!==p.id&&!x.jr);const r=rating(p);const samePos=mates.filter(x=>x.pos===p.pos).sort((a,b)=>rating(b)-rating(a));
   const posRank=samePos.filter(x=>rating(x)>r).length+1;const all=mates.map(x=>rating(x)).sort((a,b)=>b-a);const allRank=all.filter(x=>x>r).length+1;const slots={R:1,A:1,P:2,S:2,L:1}[p.pos]||1;return {posRank,allRank,slots,samePos};}
 // jakiej roli oczekuje zawodnik, przychodząc do Twojego klubu
-function roleExpect(p){const R0=roleRank(p);let k;if(R0.posRank<=R0.slots&&R0.allRank<=3)k='klu';else if(R0.posRank<=R0.slots)k='pod';else if(R0.posRank<=R0.slots+1)k='rot';else k='rez';
-  let i=ROLE_I[k];if(hasT(p,'amb')&&i>0&&i<3)i--;if(p.age>=33&&i<2)i++;k=ROLES[i][0];if(k==='rez'&&p.age<=21)k='per';return k;}
+function roleExpect(p){const R0=roleRank(p);let k;if(R0.posRank<=R0.slots&&R0.allRank<=3)k='klu';else if(R0.posRank<=R0.slots)k='pod';else if(R0.posRank<=R0.slots+1&&p.age<=24)k='per';else k='rez';
+  if(hasT(p,'amb')&&k==='pod')k='klu';if(p.age>=33&&k==='klu')k='pod';if(k==='rez'&&p.age<=21)k='per';return k;}
 function rolePrefBox(p){const R0=roleRank(p);const ex=roleExpect(p);const rivals=R0.samePos.slice(0,3);
   return `<div class="ngpref"><div><span class="small mut">Preferencje zawodnika</span><b>Oczekuje roli: ${roleN(ex)} (${roleExpTxt(ex)})</b><span class="small">${hasT(p,'amb')?'Ambitny — chce grać ważną rolę. ':''}${p.age>=33?'Doświadczony — zaakceptuje mniejszą rolę. ':''}${ex==='per'?'Młody — liczy na rozwój i okazjonalną grę. ':''}Rola niższa o 1 stopień = wyższe żądania płacowe; o 2 stopnie — odmowa. Ustalona rola to obietnica czasu gry: jeśli zawodnik będzie grał mniej, spadnie mu zadowolenie.</span></div>
    <div><span class="small mut">Konkurencja na pozycji ${POS_SHORT[p.pos]} w Twojej kadrze</span>${rivals.map(x=>`<span class="small">${esc(x.last)} · <b>${rating(x)}</b> · ${roleN(roleOf(x)).toLowerCase()}</span>`).join('')||'<span class="small">brak — byłby jedynym zawodnikiem na tej pozycji</span>'}<span class="small">Byłby <b>${R0.posRank}.</b> na swojej pozycji (miejsc w szóstce: ${R0.slots}) i <b>${R0.allRank}.</b> w całej kadrze.</span></div></div>`;}
 function roleSet(p,k){p.role=k;p.pl8=[];}
 // naprawa starych zapisów (v167–v169 zapisywały rolę jako obiekt)
-function roleFix(){if(!SAVE.world)return;const map={star:'klu',key:'klu',first:'pod',rot:'rot',back:'rez',young:'per'};for(const p of W().players)if(p.role&&typeof p.role==='object'){p.role=map[p.role.k]||null;if(!p.role)delete p.role;}}
+function roleFix(){if(!SAVE.world)return;const map={star:'klu',key:'klu',first:'pod',rot:'rez',back:'rez',young:'per'};for(const p of W().players)if(p.role&&typeof p.role==='object'){p.role=map[p.role.k]||null;if(!p.role)delete p.role;}}
