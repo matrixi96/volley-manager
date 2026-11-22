@@ -101,7 +101,7 @@ function roleAsk(pid,k){const P=PLAYERS[pid];if(!P)return;const p=P.p;const cur=
   else{const ok=R()<ixChance(p,nw<=def?0.75:0.45,{loj:0.2,oby:0.15,pro:0.1,amb:-0.25,suk:-0.15,kap:-0.15});if(ok){addMor(p,-2);txt=`${p.last} przyjął nową rolę ze zrozumieniem.`;}else{addMor(p,-9);relAdd(p,-8);txt=`${p.last} jest niezadowolony ze zmiany roli.`;}}
   p.role=k;ui.roleRes={pid,txt};save();render();}
 function roleModal(){const P=PLAYERS[ui.roleP];if(!P){ui.roleP=null;return '';}const p=P.p;const cur=roleOf(p);const sh=plShare(p);
-  return `<div class="modal" onclick="if(event.target===this){ui.roleP=null;ui.roleRes=null;render()}"><div class="mbox" style="max-width:520px">
+  return `<div class="modal" onclick="if(event.target===this){ui.roleP=null;ui.roleRes=null;render()}"><div class="mcard" style="max-width:560px">
    <div class="row" style="gap:12px;align-items:center">${pFace(p,56)}<div><h2 style="margin:0">Rozmowa o roli</h2><div class="small mut">${esc(p.first+' '+p.last)} · relacja z trenerem ${relOf(p)}/100${sh!=null?` · grał w ${Math.round(sh*100)}% ostatnich kolejek`:''}</div></div></div>
    ${ui.roleRes&&ui.roleRes.pid===p.id?`<div class="card" style="margin:10px 0">${esc(ui.roleRes.txt)}</div>`:''}
    <div style="margin-top:10px">${ROLES.map(([k,l,e,ds])=>`<button class="opt ${cur===k?'on':''}" style="display:block;width:100%;text-align:left;margin:6px 0" ${cur===k?'disabled':''} onclick="roleAsk('${p.id}','${k}')"><b>${l}</b> <span class="small mut">· oczekuje gry w ok. ${Math.round(e*100)}% meczów</span><div class="small mut">${ds}</div></button>`).join('')}</div>
