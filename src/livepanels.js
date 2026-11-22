@@ -66,7 +66,7 @@ function talkCard(m){const to=ui.to;const st=talkState();const opp=onCourt(m.sid
   const dur=5+Math.floor(cA('tak')/4);
   const isSet=to&&to.kind==='set';
   return `<div class="card talk"><div class="row"><h3 style="margin:0">${isSet?`🔄 Przerwa po ${to.setNo}. secie — zmiana stron`:`⏱ ${to&&to.side===1?`Czas dla ${esc(m.sides[1].team.short)} — możesz porozmawiać ze swoimi`:'Czas — co mówisz zawodnikom?'}`}</h3>${to?`<span class="tobar" style="width:140px;margin-left:10px"><i style="width:${Math.max(0,(to.end-Date.now())/(10*(to.dur||15)))}%"></i></span><b class="tocount" style="margin-left:6px">${Math.max(0,Math.ceil((to.end-Date.now())/1000))} s</b>`:''}<span class="sp"></span><button class="ghost" onclick="ui.talk=false;render()">${st.tone||st.hint?'Zamknij':'Bez przemowy'}</button>${to?`<button class="btn" onclick="endTimeout()">${isSet?`⏩ Zaczynamy ${m.setNo}. seta`:'↩ Wracamy na boisko'}</button>`:''}</div>
-  ${isSet?setSummary(m):''}
+  ${isSet?setSummary(m)+setLuPanel(m):''}
   <p class="small mut">Wybierz <b>ton przemowy</b> i <b>wskazówkę do gry</b> (po jednej na przerwę). Każdy zawodnik reaguje inaczej — zależy od jego charakteru i Twoich atrybutów trenera. Reakcje zobaczysz przy nazwiskach w panelu.</p>
   <div class="tsec">1. Ton przemowy${st.tone?` <span class="good">✓ ${TALK_TONE.find(x=>x[0]===st.tone)[1]}</span>`:''}</div><div class="opts tone4">${tone}</div>
   <div class="tsec">2. Wskazówka do gry <small class="mut">(działa ${dur} akcji)</small>${st.hint?' <span class="good">✓ wydana</span>':''}</div>

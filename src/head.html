@@ -960,5 +960,22 @@ body.th-n .card,body.th-n .pan,body.th-n .ptc{background-color:#1a1e27e0}
 body.th-n .tpage{text-transform:none}
 /* pasek nagłówka wiadomości przykleja się przy przewijaniu — musi mieć pełne tło, inaczej treść prześwituje pod nim */
 .mail2 .mxph{background:#1d2026}body.th-n .mail2 .mxph{background:#1f2834;box-shadow:0 4px 8px -4px #0008}
+
+/* v177: raport charakteru, dynamika meczu, stan zawodnika, skład przed setem */
+.chh{margin:14px 0 6px;font-size:14px;color:var(--acc)}.chtrs{display:grid;gap:8px}
+.chtr{border:1px solid var(--line);border-left:4px solid var(--tc);border-radius:4px;padding:8px 10px;background:#ffffff06}.chtr p{margin:4px 0 0}
+.chms{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:4px 16px}.chm{display:grid;grid-template-columns:110px 1fr 24px;gap:8px;align-items:center;font-size:13px}.chm b{text-align:right}
+.chv{margin:4px 0 8px 18px;padding:0}.chv li{margin:3px 0;font-size:13.5px}
+.dmset{display:grid;grid-template-columns:64px 1fr;gap:8px;align-items:center;margin:6px 0}.dmsn{font-size:12px;color:var(--mut);display:flex;flex-direction:column}.dmsn b{color:var(--txt);font-size:14px}
+.dmrow{display:flex;flex-wrap:nowrap;gap:1px;align-items:stretch;min-height:34px;border-top:1px solid #ffffff14;border-bottom:1px solid #ffffff14;background:linear-gradient(#0000 49.5%,#ffffff22 50%,#0000 50.5%)}.dmc{display:flex;flex-direction:column;justify-content:flex-start;flex:1 1 0;min-width:0;max-width:15px;height:34px}.dmc.b{justify-content:flex-end}
+.dmc i{display:block;width:100%;height:16px;overflow:hidden;border-radius:2px;font:700 9px/16px var(--fc,system-ui);text-align:center;font-style:normal}
+.dmlegs{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:8px;font-size:12.5px;color:var(--mut)}.dmleg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.cfb{display:inline-block;font:700 10.5px/1 var(--fc,system-ui);letter-spacing:.04em;padding:3px 6px;border-radius:3px;margin-top:3px;white-space:nowrap}
+.cfb.dn{background:#dc2626;color:#fff;animation:cfp 1.2s ease-in-out infinite}.cfb.up{background:#f97316;color:#fff}
+@keyframes cfp{50%{opacity:.6}}
+.fmz.cfdn,.fmsp.cfdn{box-shadow:inset 0 0 0 2px #ef4444,0 0 10px #ef444466}.fmz.cfup,.fmsp.cfup{box-shadow:inset 0 0 0 2px #fb923c,0 0 10px #fb923c55}
+.setlu{margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:4px;background:#ffffff05}
+.slugrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:6px;margin-top:8px}.slu{display:flex;gap:6px;align-items:center}.slu select{flex:1;min-width:0}
+.tkgrp{flex-wrap:wrap}.tkkv{flex-wrap:wrap}
 </style></head><body><div id="app"></div>
 <script>

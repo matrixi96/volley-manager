@@ -980,6 +980,23 @@ body.th-n .card,body.th-n .pan,body.th-n .ptc{background-color:#1a1e27e0}
 body.th-n .tpage{text-transform:none}
 /* pasek nagłówka wiadomości przykleja się przy przewijaniu — musi mieć pełne tło, inaczej treść prześwituje pod nim */
 .mail2 .mxph{background:#1d2026}body.th-n .mail2 .mxph{background:#1f2834;box-shadow:0 4px 8px -4px #0008}
+
+/* v177: raport charakteru, dynamika meczu, stan zawodnika, skład przed setem */
+.chh{margin:14px 0 6px;font-size:14px;color:var(--acc)}.chtrs{display:grid;gap:8px}
+.chtr{border:1px solid var(--line);border-left:4px solid var(--tc);border-radius:4px;padding:8px 10px;background:#ffffff06}.chtr p{margin:4px 0 0}
+.chms{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:4px 16px}.chm{display:grid;grid-template-columns:110px 1fr 24px;gap:8px;align-items:center;font-size:13px}.chm b{text-align:right}
+.chv{margin:4px 0 8px 18px;padding:0}.chv li{margin:3px 0;font-size:13.5px}
+.dmset{display:grid;grid-template-columns:64px 1fr;gap:8px;align-items:center;margin:6px 0}.dmsn{font-size:12px;color:var(--mut);display:flex;flex-direction:column}.dmsn b{color:var(--txt);font-size:14px}
+.dmrow{display:flex;flex-wrap:nowrap;gap:1px;align-items:stretch;min-height:34px;border-top:1px solid #ffffff14;border-bottom:1px solid #ffffff14;background:linear-gradient(#0000 49.5%,#ffffff22 50%,#0000 50.5%)}.dmc{display:flex;flex-direction:column;justify-content:flex-start;flex:1 1 0;min-width:0;max-width:15px;height:34px}.dmc.b{justify-content:flex-end}
+.dmc i{display:block;width:100%;height:16px;overflow:hidden;border-radius:2px;font:700 9px/16px var(--fc,system-ui);text-align:center;font-style:normal}
+.dmlegs{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:8px;font-size:12.5px;color:var(--mut)}.dmleg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.cfb{display:inline-block;font:700 10.5px/1 var(--fc,system-ui);letter-spacing:.04em;padding:3px 6px;border-radius:3px;margin-top:3px;white-space:nowrap}
+.cfb.dn{background:#dc2626;color:#fff;animation:cfp 1.2s ease-in-out infinite}.cfb.up{background:#f97316;color:#fff}
+@keyframes cfp{50%{opacity:.6}}
+.fmz.cfdn,.fmsp.cfdn{box-shadow:inset 0 0 0 2px #ef4444,0 0 10px #ef444466}.fmz.cfup,.fmsp.cfup{box-shadow:inset 0 0 0 2px #fb923c,0 0 10px #fb923c55}
+.setlu{margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:4px;background:#ffffff05}
+.slugrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:6px;margin-top:8px}.slu{display:flex;gap:6px;align-items:center}.slu select{flex:1;min-width:0}
+.tkgrp{flex-wrap:wrap}.tkkv{flex-wrap:wrap}
 </style></head><body><div id="app"></div>
 <script>
 // ================= JĘZYK GRY (polski / angielski) =================
@@ -1551,7 +1568,7 @@ function stepRally(m){
    const tu=m.tu||(m.tu=[{},{}]);for(const i of [0,1]){const t=m.sides[i].tactics;for(const k of TFK){const key=k+':'+tfV(t,k);tu[i][key]=(tu[i][key]||0)+1;}}}
   fatigue(m,ex.n);
   if(MENT)for(const sd of m.sides)for(const p of sd.pl)if(p.cf)p.cf=Math.abs(p.cf)<0.05?0:p.cf*(p.cf<0?(sd.cfLid?0.86:0.9)+clamp(cfK(p)-1,0,1)*0.04:0.85);
-  const w=r.winner;m.score[w]++;(m.hist=m.hist||[]).push([m.setNo,m.score[0],m.score[1]]);
+  const w=r.winner;m.score[w]++;(m.hist=m.hist||[]).push([m.setNo,m.score[0],m.score[1],w,r.type]);
   if(m.run.t===w)m.run.n++;else m.run={t:w,n:1};
   const ws=m.sides[w],ls=m.sides[1-w];ws.mom=Math.min(3,Math.max(0,ws.mom)+1+(ws.wer&&R()<0.15?1:0));ls.mom=0;
   if(w!==m.serving){m.serving=w;ws.rot.push(ws.rot.shift());}
@@ -2853,7 +2870,7 @@ function cardModal(){
    <div><span class="mut small">Ocena${mine?'':' (wiedza '+knowOf(p)+'%)'}</span><b>${mine?r:rTxt(p)}${mine&&r!==br?` <small class="${r>br?'good':'bad'}">${r>br?'+':''}${r-br}</small>`:''}</b></div><div><span class="mut small">Potencjał${p.tm!==SAVE.team?' (wg skauta)':''}</span><b class="stars">${potStars(p)}</b></div><div><span class="mut small">Wartość</span><b>${fmt(pValue(p))}</b>${valTip(p)?`<small class="mut" style="display:block;font-size:10.5px">${esc(valTip(p))}</small>`:''}</div>
    <div><span class="mut small">Pensja</span><b>${p.tm>=0?fmt(p.wage)+'/rok':'—'}</b></div><div><span class="mut small">Kontrakt do</span><b>${p.tm>=0?ceDate(p.ce):'—'}</b></div><div><span class="mut small">Forma</span><b>${formChip(p,true)} <small class="fmhs">${fmHist(p)}</small></b></div>${mine?`<div><span class="mut small">Świeżość</span><b style="color:${frCol(frOf(p))}">${Math.round(frOf(p))}%</b></div>`:''}<div><span class="mut small">Zdrowie</span><b>${p.inj?`🚑 do ${p.injUntil?fmtDMY(p.injUntil):'?'} (${p.inj} dni)`:'✅ zdrowy'}</b></div>${p.tm===SAVE.team&&typeof roleOf==='function'?`<div class="pcrole"><span class="mut small">Ustalona rola (czas gry)</span><b>${roleN(roleOf(p))}${p.role?'':' <small class="mut">(domyślna)</small>'}</b><small class="mut">${roleExpTxt(roleOf(p))}${plShare(p)!=null?` · czas gry ${Math.round(plShare(p)*100)}% (ost. 8 kolejek)`:''}</small><button class="link small" onclick="ui.roleP='${p.id}';render()">Porozmawiaj o roli →</button></div>`:''}</div>
    <div class="ptr" style="margin:8px 0">${typeof trKnown==='function'&&!trKnown(p)?'<div class="small mut">Charakter nieznany — skaut może go sprawdzić.</div>':''}${(ensTraits(p),typeof trKnown==='function'&&!trKnown(p)?[]:p.tr).map(k=>`<div>${trChip(k,true)}<span class="small mut">${esc(TRAITS[k][2])}</span></div>`).join('')}${mine&&!p.jr?(isCap(p)?'<div><span class="capb">C</span> <span class="small">Kapitan drużyny</span></div>':`<div><button class="link" onclick="setCaptain('${p.id}')">©️ Mianuj kapitanem</button></div>`):''}</div><div class="cgrid">${grp('Techniczne',ATTRS)}${grp('Fizyczne',PHYS)}${grp('Mentalne',MENTAL)}</div>
-   <p class="mut small">${mine?'Małe liczby przy atrybutach to zmiana od początku sezonu.':`Zakresy (np. 12–15) to szacunek skautów — wiedza o zawodniku ${knowOf(p)}%. ${SC().tasks.some(t=>t.pid===p.id)?'Skaut właśnie go obserwuje.':`<button class="link" onclick="ui.card=null;observe('${p.id}')">Zleć obserwację</button>`} · <button class="link" onclick="toggleShort('${p.id}')">${isShort(p.id)?'★ obserwowany':'☆ dodaj do obserwowanych'}</button>`}</p>
+   <p class="mut small">${mine?'Małe liczby przy atrybutach to zmiana od początku sezonu.':`Zakresy (np. 12–15) to szacunek skautów — wiedza o zawodniku ${knowOf(p)}%. ${SC().tasks.some(t=>t.pid===p.id)?'Skaut właśnie go obserwuje.':`<button class="link" onclick="ui.card=null;observe('${p.id}')">Zleć obserwację</button>`} ${typeof fullObsBtn==='function'?fullObsBtn(p,'link'):''} · <button class="link" onclick="toggleShort('${p.id}')">${isShort(p.id)?'★ obserwowany':'☆ dodaj do obserwowanych'}</button>`}</p>
    ${st?`<p class="small">Sezon ${sLabel(S().n)}: <b>${st.m}</b> meczów · <b>${st.pts}</b> pkt · atak ${pc(st.kill,st.att)} · bloki ${st.blk} · asy ${st.ace} · MVP ${st.mvp}</p>`:''}
    ${act}</div></div>`;
 }
@@ -3689,7 +3706,7 @@ function drawHall(m,scene,ball,flash){
     const R0=11+j*2,yy=y-j*11;
     if(o.hl){g.strokeStyle='#ffb020';g.lineWidth=3;g.beginPath();g.arc(x,yy,R0+3,0,7);g.stroke();}
     g.fillStyle=col;g.beginPath();g.arc(x,yy,R0,0,7);g.fill();if(typeof kitDot==='function')kitDot(g,x,yy,R0,o.role==='L'?'L'+tc:tc);g.strokeStyle='#ffffffcc';g.lineWidth=1.5;g.stroke();
-    g.fillStyle=ink;g.font='700 11px system-ui,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(o.p.num,x,yy+0.5);
+    g.fillStyle=ink;g.font='700 11px system-ui,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(o.p.num,x,yy+0.5);if(typeof cfState==='function'){const cs=cfState(o.p);if(cs){g.save();g.strokeStyle=cs<0?'#ef4444':'#fb923c';g.lineWidth=3;g.setLineDash(cs<0?[4,3]:[]);g.beginPath();g.arc(x,yy,R0+4,0,7);g.stroke();g.setLineDash([]);g.fillStyle=cs<0?'#ef4444':'#fb923c';g.beginPath();g.arc(x+R0,yy-R0,6.5,0,7);g.fill();g.fillStyle='#fff';g.font='700 9px system-ui,sans-serif';g.textBaseline='middle';g.fillText(cs<0?'▼':'▲',x+R0,yy-R0+0.5);g.restore();}}
     g.font='600 9px system-ui,sans-serif';g.fillStyle='#fff';g.textBaseline='top';g.fillText(o.p.last.length>9?o.p.last.slice(0,8)+'.':o.p.last,x,y+13);
     const tch=ui._touch;if(tch&&tch.id===o.id&&performance.now()-tch.t0<1100){const a=1-Math.max(0,(performance.now()-tch.t0-700)/400);g.globalAlpha=a;g.strokeStyle='#fde047';g.lineWidth=3;g.beginPath();g.arc(x,yy,R0+4,0,7);g.stroke();
       const bx2=x+13,by2=yy-17;g.fillStyle=tch.n==='B'?'#38bdf8':'#fde047';g.beginPath();g.arc(bx2,by2,8.5,0,7);g.fill();g.fillStyle='#111';g.font='900 11px system-ui,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(tch.n,bx2,by2+0.5);g.globalAlpha=1;g.textBaseline='top';}
@@ -3706,7 +3723,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=176').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=177').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
@@ -3915,7 +3932,7 @@ function talkCard(m){const to=ui.to;const st=talkState();const opp=onCourt(m.sid
   const dur=5+Math.floor(cA('tak')/4);
   const isSet=to&&to.kind==='set';
   return `<div class="card talk"><div class="row"><h3 style="margin:0">${isSet?`🔄 Przerwa po ${to.setNo}. secie — zmiana stron`:`⏱ ${to&&to.side===1?`Czas dla ${esc(m.sides[1].team.short)} — możesz porozmawiać ze swoimi`:'Czas — co mówisz zawodnikom?'}`}</h3>${to?`<span class="tobar" style="width:140px;margin-left:10px"><i style="width:${Math.max(0,(to.end-Date.now())/(10*(to.dur||15)))}%"></i></span><b class="tocount" style="margin-left:6px">${Math.max(0,Math.ceil((to.end-Date.now())/1000))} s</b>`:''}<span class="sp"></span><button class="ghost" onclick="ui.talk=false;render()">${st.tone||st.hint?'Zamknij':'Bez przemowy'}</button>${to?`<button class="btn" onclick="endTimeout()">${isSet?`⏩ Zaczynamy ${m.setNo}. seta`:'↩ Wracamy na boisko'}</button>`:''}</div>
-  ${isSet?setSummary(m):''}
+  ${isSet?setSummary(m)+setLuPanel(m):''}
   <p class="small mut">Wybierz <b>ton przemowy</b> i <b>wskazówkę do gry</b> (po jednej na przerwę). Każdy zawodnik reaguje inaczej — zależy od jego charakteru i Twoich atrybutów trenera. Reakcje zobaczysz przy nazwiskach w panelu.</p>
   <div class="tsec">1. Ton przemowy${st.tone?` <span class="good">✓ ${TALK_TONE.find(x=>x[0]===st.tone)[1]}</span>`:''}</div><div class="opts tone4">${tone}</div>
   <div class="tsec">2. Wskazówka do gry <small class="mut">(działa ${dur} akcji)</small>${st.hint?' <span class="good">✓ wydana</span>':''}</div>
@@ -3957,9 +3974,9 @@ function fmFormation(m,i){const sd=m.sides[i],mine=i===0,sv=m.serving===i;const 
   const cell=z=>{const e=oc.find(x=>x.zone===z-1);if(!e)return '<div class="fmz"></div>';const p=e.p;const r=liveRating(p);
     const click=mine&&!m.over?`onclick="selSub(${e.slot==='L'?"'L'":e.slot})"`:'';
     const d=ui.talkRes&&mine&&ui.talkRes.del?ui.talkRes.del[p.id]:null;
-    return `<div class="fmz ${click?'clk':''} ${ui.subSel!=null&&mine&&(ui.subSel===e.slot)?'sel':''}" ${click} title="Strefa ${z}: ${esc(p.first+' '+p.last)} · ${POS_NAMES[e.role]} · energia ${Math.round(p.en)}%">
+    return `<div class="fmz ${click?'clk':''} ${cfState(p)<0?'cfdn':cfState(p)>0?'cfup':''} ${ui.subSel!=null&&mine&&(ui.subSel===e.slot)?'sel':''}" ${click} title="Strefa ${z}: ${esc(p.first+' '+p.last)} · ${POS_NAMES[e.role]} · energia ${Math.round(p.en)}%">
       ${fmJersey(m,i,e)}<span class="fmrt ${rCls(r)}">${fmtR(r)}</span><span class="fmps">${pTag(e.role)}</span>
-      <div class="fmnr"><b class="fmnm">${esc(shortN(p))}</b>${typeof MENT!=='undefined'&&MENT&&(p.cf||0)<=-1?'<span class="cfi" title="Roztrzęsiony po błędach: gra słabiej. Pomoże przerwa na żądanie.">🔻</span>':typeof MENT!=='undefined'&&MENT&&(p.cf||0)>=1?'<span class="cfi" title="W gazie: gra pewniej">🔥</span>':''}</div>${d?`<span class="dlt ${d>0?'good':'bad'}" title="Reakcja na przemowę (morale)">${d>0?'+':''}${d}</span>`:''}
+      <div class="fmnr"><b class="fmnm">${esc(shortN(p))}</b></div>${cfBadge(p)}${d?`<span class="dlt ${d>0?'good':'bad'}" title="Reakcja na przemowę (morale)">${d>0?'+':''}${d}</span>`:''}
       <span class="fmen"><i style="width:${Math.round(p.en)}%;background:${energyCol(p.en)}"></i></span></div>`;};
   const back=oc.filter(e=>!isFrontZ(e.zone));
   return `<div class="card fmcard" style="border-top:3px solid ${kc}">
@@ -4037,8 +4054,8 @@ function fmTeamStats(m,i){const t=teamTotals(m.sides[i]),o=teamTotals(m.sides[1-
 function fmStrip(m){const a=m.sides[0];const oc=onCourt(a,m.serving===0);const ord={R:0,A:1,P:2,S:3,L:4};
   const on=oc.slice().sort((x,y)=>ord[x.role]-ord[y.role]||x.zone-y.zone);
   const mine=e=>{const p=e.p,r=liveRating(p),mor=p.mor==null?60:p.mor;const click=!m.over?`onclick="selSub(${e.slot==='L'?"'L'":e.slot})"`:'';
-    return `<div class="fmsp ${click?'clk':''} ${ui.subSel===e.slot?'sel':''}" ${click} title="${esc(p.first+' '+p.last)} · energia ${Math.round(p.en)}% · morale ${mor}">
-      <span class="fmps2">${pTag(e.role)}</span>${fmJersey(m,0,e,28)}<b class="fmnm">${esc(shortN(p))}</b><span class="fmps2">ogólna <b style="color:var(--acc)">${rating(p)}</b></span>
+    return `<div class="fmsp ${click?'clk':''} ${cfState(p)<0?'cfdn':cfState(p)>0?'cfup':''} ${ui.subSel===e.slot?'sel':''}" ${click} title="${esc(p.first+' '+p.last)} · energia ${Math.round(p.en)}% · morale ${mor}">
+      <span class="fmps2">${pTag(e.role)}</span>${fmJersey(m,0,e,28)}<b class="fmnm">${esc(shortN(p))}</b>${cfBadge(p)}<span class="fmps2">ogólna <b style="color:var(--acc)">${rating(p)}</b></span>
       <span class="fmrow"><span class="fmrt ${rCls(r)}">${fmtR(r)}</span><span>${mor>=62?'😀':mor>=45?'😐':'😟'}</span>${formChip(p)}</span>
       <span class="fmen"><i style="width:${Math.round(p.en)}%;background:${energyCol(p.en)}"></i></span></div>`;};
   return `<div class="card fmstrip"><div class="fmsi"><b>Skład</b><div class="small mut">Zmian zostało <b style="color:var(--txt)">${a.subs}</b></div><div class="small mut">Czasów zostało <b style="color:var(--txt)">${a.to}</b></div><div class="small mut">Kliknij, by zmienić</div></div>${on.map(mine).join('')}</div>`;}
@@ -4076,7 +4093,7 @@ function fmPanel(m){const a=m.sides[0];
   return '';}
 function fmLiveView(subPanel){const m=ui.match;
   return `${fmTop(m)}${fmPanel(m)}
-  ${ui.talk&&!m.over?talkCard(m):ui.to&&ui.to.kind==='set'&&!m.over?`<div class="card talk"><div class="row"><h3 style="margin:0">🔄 Przerwa po ${ui.to.setNo}. secie</h3><span class="sp"></span><button class="ghost" onclick="ui.talk=true;render()">🗣️ Przemowa</button><button class="btn" onclick="endTimeout()">⏩ Zaczynamy ${m.setNo}. seta</button></div>${setSummary(m)}</div>`:''}
+  ${ui.talk&&!m.over?talkCard(m):ui.to&&ui.to.kind==='set'&&!m.over?`<div class="card talk"><div class="row"><h3 style="margin:0">🔄 Przerwa po ${ui.to.setNo}. secie</h3><span class="sp"></span><button class="ghost" onclick="ui.talk=true;render()">🗣️ Przemowa</button><button class="btn" onclick="endTimeout()">⏩ Zaczynamy ${m.setNo}. seta</button></div>${setSummary(m)}${setLuPanel(m)}</div>`:''}
   ${m.over?`<div class="card row"><b>Mecz zakończony: ${esc(m.sides[m.winner].team.name)} wygrywa ${Math.max(...m.setsWon)}:${Math.min(...m.setsWon)}</b><span class="sp"></span><button class="btn" onclick="ui.view='post';render()">Podsumowanie</button><button class="ghost" onclick="ui.match=null;render()">Dalej</button></div>`:''}
   <div class="fmwrap"><div class="fmlay">
    <div class="fml">${fmFormation(m,0)}${fmAssistant(m)}${fmAnalyst(m)}</div>
@@ -4359,7 +4376,7 @@ function popModal(){const P=PLAYERS[ui.pop];if(!P){ui.pop=null;return '';}const 
    <div class="pkey">${ks.map(k=>`<div title="${esc((ALL_ATTRS.find(x=>x[0]===k)||[])[3]||'')}"><span>${attrName(k)}</span><i><b style="width:${(typeof aEst==='function'?(aEst(p,k)[0]+aEst(p,k)[1])/2:p[k])*5}%;background:${attrCol(p[k])}"></b></i><em style="color:${attrCol(p[k])}">${typeof aTxt==='function'?aTxt(p,k):p[k]}</em></div>`).join('')}</div>
    <div class="pmeta"><div><small>Forma</small><b>${formChip(p,true)}</b></div>${mine?`<div><small>Świeżość</small><b style="color:${frCol(frOf(p))}">${Math.round(frOf(p))}%</b></div>`:''}<div><small>Zagrywka</small><b>${SRV_T[srvType(p)]}</b></div><div><small>Kondycja</small><b style="color:${attrCol(p.kon)}">${p.kon}</b></div>${mine?`<div><small>Morale</small><b>${morEmo(mor)}</b></div>`:''}<div><small>Potencjał</small><b class="stars">${potStars(p)}</b></div><div><small>Wartość</small><b>${fmt(pValue(p))}</b></div></div>
    <div class="ptr">${typeof trKnown==='function'&&!trKnown(p)?`<div class="small mut">Charakter nieznany — skaut może go sprawdzić. <button class="link small" onclick="chrCheck('${p.id}')">Sprawdź charakter</button></div>`:p.tr.map(k=>`<div>${trChip(k,true)}<span class="small mut">${esc(TRAITS[k][2])}</span></div>`).join('')}</div>${typeof awTxt==='function'&&p.aw&&p.aw.length?`<div class="small" style="margin-top:6px">${awTxt(p).map(esc).join('<br>')}</div>`:''}
-   <div class="row wrap" style="gap:8px;margin-top:10px"><button class="btn" onclick="const i=ui.pop;ui.pop=null;openCard(i)">Pełna karta zawodnika</button>
+   <div class="row wrap" style="gap:8px;margin-top:10px"><button class="btn" onclick="const i=ui.pop;ui.pop=null;openCard(i)">Pełna karta zawodnika</button>${!mine&&typeof fullObsBtn==='function'?fullObsBtn(p,'ghost'):''}
     ${mine&&!p.jr?(isCap(p)?'<span class="small mut">To jest kapitan drużyny.</span>':`<button class="ghost" onclick="ui.pop=null;setCaptain('${p.id}')">©️ Mianuj kapitanem</button>`):''}</div></div></div>`;}
 
 // ---- boisko w zakładce Skład: cała siódemka z twarzami ----
@@ -7199,7 +7216,7 @@ function agDaily(d){if(SAVE.team==null||!SAVE.world||!S())return;const X=AG();
   if(X.q.length>=2)return;if(X.last&&daysBetween(X.last,d)<18)return;if(R()>0.12)return;
   const t=myTeam();const ph=S().phase;const cand=[];const avg=t.players.reduce((a,p)=>a+rating(p),0)/Math.max(1,t.players.length);
   for(const p of t.players){if(p.jr||p.loan||p.tl)continue;if(p.agD&&daysBetween(p.agD,d)<90)continue;
-    const fair=wageDemand(p);if(p.wage&&fair&&p.wage<fair*0.9&&p.ce>S().n&&rating(p)>=avg)cand.push([2,{k:'pod',pid:p.id,fair:round5k(fair),club:typeof ixSuitor==='function'?ixSuitor(p):null}]);
+    const fair=wageDemand(p);if(p.wage&&fair&&p.wage<fair*0.9&&p.ce>S().n&&rating(p)>=avg&&!(typeof newSign==='function'&&newSign(p)))cand.push([2,{k:'pod',pid:p.id,fair:round5k(fair),club:typeof ixSuitor==='function'?ixSuitor(p):null}]);
     if(p.ce!=null&&p.ce<=S().n&&p.noExt!==S().n&&(ph==='liga'||ph==='po')&&S().round>=Math.floor((S().rounds||[]).length*0.33)&&rating(p)>=avg-2)cand.push([2,{k:'kon',pid:p.id}]);}
   // klient do pozyskania: wolny zawodnik albo niezadowolony z innego klubu, wyraźnie lepszy od zmiennika na tej pozycji
   const pos=['P','A','S','R','L'][Math.floor(R()*5)];const mine=t.players.filter(p=>p.pos===pos&&!p.jr).map(p=>rating(p)).sort((a,b)=>b-a);const bar=(mine[1]!=null?mine[1]:mine[0]||60)+2;
@@ -8195,7 +8212,7 @@ function homeView(){const s=S();if(!s)return '';
 function hvClip(){document.querySelectorAll('.hvgl').forEach(g=>{const b=g.getBoundingClientRect().bottom;for(const c of g.children)c.style.visibility=c.getBoundingClientRect().bottom>b+1?'hidden':'';});}
 window.addEventListener('resize',()=>{if(ui.tab==='home')hvClip();});
 // ================= WYGLĄD: motyw w stylu FM, przestawiane menu boczne, ekran startowy =================
-const APPV='176';
+const APPV='177';
 const HELP_EN='• You run a volleyball club as the manager: pick the squad, tactics and training, then watch matches live or simulate them.<br>• <b>Continue</b> (top right) moves time to the next event.<br>• Inbox and Conversations hold issues from players, the board, media and agents.<br>• Club → Staff: hire staff and delegate duties.<br>• Club → Club vision: what the board expects.<br>• Finances: budgets, bank loan and league licence.<br>• The game saves automatically; extra slots and save codes are in “Save game”.<br>• You can reorder the left menu by dragging items.';
 // ---- motyw ----
 function uiPref(k,d){try{const v=localStorage.getItem('vm_'+k);return v==null?d:v;}catch(e){return d;}}
@@ -8238,7 +8255,7 @@ function looksCard(){const th=themeCur();const G=navGroups();
    <button class="ghost sm" style="margin-top:8px" onclick="navReset()">${_t('Przywróć domyślną kolejność')}</button></details></div>`;}
 {const _sv=saveView;saveView=function(){return `<div class="card row wrap" style="gap:8px;align-items:center"><span>${_t('Ustawienia i zapis gry')}</span><span class="sp"></span><button class="ghost" onclick="ui.start=true;render()">${_t('⏏ Menu główne')}</button></div>`+looksCard()+_sv.apply(this,arguments);};}
 // ================= EKRAN STARTOWY =================
-const CHANGES=[['v176','Poczta: nagłówek otwartej wiadomości (nadawca, tytuł) ma pełne tło — treść nie prześwituje już pod nim przy przewijaniu.'],['v175','Nowy wygląd w stylu FM: wbudowana czcionka Barlow (tekst Semi Condensed, nagłówki i liczby Condensed — wszędzie taka sama, też offline), grafitowo-granatowe panele, żółte podkreślone tytuły paneli, białe linki, tytuły ekranów i kart pisane normalnie zamiast wielkimi literami.'],['v174','Juniorzy jak w FM: Widok ogólny (kandydaci do pierwszego zespołu z radami trenera juniorów, terminarz i liga U20, akademia, nabór), Widok ogólny: Juniorzy (wykres postępów, ocena treningu i meczowa, opinie), Wypożyczenia (raporty co miesiąc, wypożyczanie juniorów 18–19 lat). Juniorzy trenują teraz w akademii co miesiąc i naprawdę się rozwijają.'],['v173','Usunięto rolę Zawodnik rotacyjny (zostają: kluczowy, podstawowy, perspektywiczny, rezerwowy)'],['v172','Czas gry liczony z czasu na boisku (wyjście w szóstce = min. 75%, zmiana w trakcie meczu kosztuje mało, krótkie wejście ok. 10%); rezerwowi i perspektywiczni nie złoszczą się o brak gry'],['v171','Rezerwowy bez wymagań co do czasu gry, na końcu listy ról (za perspektywicznym)'],['v170','Ustalony czas gry widoczny w karcie zawodnika i w Dynamice; zadowolenie z gry liczone względem ustalonej roli; jedna wspólna lista ról w negocjacjach i rozmowach'],['v169','Tło hali; rola w zespole przy negocjacjach; loga sponsorów; trening indywidualny jednej cechy; własne sparingi z zaproszeniami (kierownik drużyny może je organizować)'],['v166','Nowy ekran główny w stylu Portalu FM (skrzynka, wiadomości z ligi/kadry/social mediów, terminarz, tabela, statystyki, widżety) i rozbudowany profil drużyny'],['v165','Reprezentacja: kliknij kraj, żeby zobaczyć skład kadry; wzory strojów widoczne na zawodnikach w meczu 2D'],['v164','Budżety: obóz poza budżetem operacyjnym, mniejsze rezerwy zarządu, pula rośnie z prognozą; karnety pokazują cenę za mecz; wiadomość o obozie od kierownika drużyny'],['v163','Nowa zakładka Trening (Przegląd, Zespół, Indywidualny, Raporty, Medyczne, Trenerzy); obóz wybierasz w wiadomości (z terminem wyjazdu); zawodnicy na kadrze nieobecni w klubie, wracają zmęczeni; obóz i powroty w terminarzu'],['v162','Obóz przygotowawczy znowu da się wybrać (płatny z salda klubu, nie z budżetu operacyjnego)'],['v159','Mecz: gwizdek, dźwięk piłki i opis wyniku akcji dopiero, gdy piłka spadnie (3D i 2D)'],['v158','Limit obcokrajowców liczony jak w przepisach PZPS: ilu jest naraz na boisku (libero tylko z jednym środkowym)'],['v155','Dźwięki w 3D: gwizdek i reakcja kibiców w chwili, gdy piłka spada (także przy pauzie), głośniejszy gwizdek przed zagrywką; ławka w meczu wyjaśnia, kto gra poza pozycją przez limit obcokrajowców'],['v153','Stroje klubu (domowy, wyjazdowy, libero; 7 wzorów) w kreatorze i w zakładce Klub, widoczne na twarzach i w meczu; nowe, bardziej realistyczne twarze'],['v152','Motyw granatowy jak w FM (pasek w kolorze klubu, żółty Kontynuuj), flagi krajów działają na Windows, obcokrajowcy w Transferach, samouczki we wszystkich zakładkach'],['v151','Ekran wczytywania gry: szczegóły zapisu, czas gry, ostatnia szóstka, wskazówki'],['v150','Limit obcokrajowców widoczny w składzie i na ławce, dźwięki po animacji, działające suwaki budżetu, uczciwy wpływ sponsorów'],['v149','Dźwięki zgrane z animacją (także 3D), gwizdek sędziego przed zagrywką'],['v148','Język angielski — etap 1: menu, ekran startowy, górny pasek, pozycje, daty'],['v147','Transfery: zakładki Wypożyczenia i Historia transferów'],['v146','Analiza rywala na ekranie głównym, zakładki na starszych ekranach'],['v145','Balans treningu „mocniej”, łagodniejsza ocena zarządu po sezonie, kibice na pasku we własnym klubie'],['v143','Własny klub: sam wybierasz charakter i plan, kibice wpływają na frekwencję i sponsorów'],['v142','Ekran startowy, motyw grafitowy jak w FM, przestawiane menu'],['v141','Strategia klubu: cele zarządu, plan pięcioletni, kibice'],['v140','Finanse: wykresy, kredyt bankowy, licencja ligowa, prognoza'],['v139','Trening: indywidualny, mentoring, odpoczynek, reżimy, trenerzy'],['v138','Wyższe limity sztabu, skauci osobno, własny klub bez limitu'],['v137','Dźwięki meczu i powiadomień, wersja na Windows'],['v136','Zapisy w IndexedDB, delegowanie transferów']];
+const CHANGES=[['v177','Skauting: pełny raport charakteru (cechy z opisem, cechy mentalne, ocena skauta, chęć przejścia) i pełna obserwacja (wiedza 100% + charakter). Nowo sprowadzeni zawodnicy przez pół roku bez ofert innych klubów i próśb agentów o podwyżkę. Rozmowy: forma w meczach i kontrakt (zapewnienie o przyszłości, przedłużenie, oczekiwania). Dynamika meczu punkt po punkcie z rodzajem punktu. Komputer zmienia zawodników, którym nie idzie, i bierze czas, gdy rywal ucieka. Wyraźne oznaczenia ZAŁAMANY i W GAZIE. Wybór składu i ustawienia przed każdym setem.'],['v176','Poczta: nagłówek otwartej wiadomości (nadawca, tytuł) ma pełne tło — treść nie prześwituje już pod nim przy przewijaniu.'],['v175','Nowy wygląd w stylu FM: wbudowana czcionka Barlow (tekst Semi Condensed, nagłówki i liczby Condensed — wszędzie taka sama, też offline), grafitowo-granatowe panele, żółte podkreślone tytuły paneli, białe linki, tytuły ekranów i kart pisane normalnie zamiast wielkimi literami.'],['v174','Juniorzy jak w FM: Widok ogólny (kandydaci do pierwszego zespołu z radami trenera juniorów, terminarz i liga U20, akademia, nabór), Widok ogólny: Juniorzy (wykres postępów, ocena treningu i meczowa, opinie), Wypożyczenia (raporty co miesiąc, wypożyczanie juniorów 18–19 lat). Juniorzy trenują teraz w akademii co miesiąc i naprawdę się rozwijają.'],['v173','Usunięto rolę Zawodnik rotacyjny (zostają: kluczowy, podstawowy, perspektywiczny, rezerwowy)'],['v172','Czas gry liczony z czasu na boisku (wyjście w szóstce = min. 75%, zmiana w trakcie meczu kosztuje mało, krótkie wejście ok. 10%); rezerwowi i perspektywiczni nie złoszczą się o brak gry'],['v171','Rezerwowy bez wymagań co do czasu gry, na końcu listy ról (za perspektywicznym)'],['v170','Ustalony czas gry widoczny w karcie zawodnika i w Dynamice; zadowolenie z gry liczone względem ustalonej roli; jedna wspólna lista ról w negocjacjach i rozmowach'],['v169','Tło hali; rola w zespole przy negocjacjach; loga sponsorów; trening indywidualny jednej cechy; własne sparingi z zaproszeniami (kierownik drużyny może je organizować)'],['v166','Nowy ekran główny w stylu Portalu FM (skrzynka, wiadomości z ligi/kadry/social mediów, terminarz, tabela, statystyki, widżety) i rozbudowany profil drużyny'],['v165','Reprezentacja: kliknij kraj, żeby zobaczyć skład kadry; wzory strojów widoczne na zawodnikach w meczu 2D'],['v164','Budżety: obóz poza budżetem operacyjnym, mniejsze rezerwy zarządu, pula rośnie z prognozą; karnety pokazują cenę za mecz; wiadomość o obozie od kierownika drużyny'],['v163','Nowa zakładka Trening (Przegląd, Zespół, Indywidualny, Raporty, Medyczne, Trenerzy); obóz wybierasz w wiadomości (z terminem wyjazdu); zawodnicy na kadrze nieobecni w klubie, wracają zmęczeni; obóz i powroty w terminarzu'],['v162','Obóz przygotowawczy znowu da się wybrać (płatny z salda klubu, nie z budżetu operacyjnego)'],['v159','Mecz: gwizdek, dźwięk piłki i opis wyniku akcji dopiero, gdy piłka spadnie (3D i 2D)'],['v158','Limit obcokrajowców liczony jak w przepisach PZPS: ilu jest naraz na boisku (libero tylko z jednym środkowym)'],['v155','Dźwięki w 3D: gwizdek i reakcja kibiców w chwili, gdy piłka spada (także przy pauzie), głośniejszy gwizdek przed zagrywką; ławka w meczu wyjaśnia, kto gra poza pozycją przez limit obcokrajowców'],['v153','Stroje klubu (domowy, wyjazdowy, libero; 7 wzorów) w kreatorze i w zakładce Klub, widoczne na twarzach i w meczu; nowe, bardziej realistyczne twarze'],['v152','Motyw granatowy jak w FM (pasek w kolorze klubu, żółty Kontynuuj), flagi krajów działają na Windows, obcokrajowcy w Transferach, samouczki we wszystkich zakładkach'],['v151','Ekran wczytywania gry: szczegóły zapisu, czas gry, ostatnia szóstka, wskazówki'],['v150','Limit obcokrajowców widoczny w składzie i na ławce, dźwięki po animacji, działające suwaki budżetu, uczciwy wpływ sponsorów'],['v149','Dźwięki zgrane z animacją (także 3D), gwizdek sędziego przed zagrywką'],['v148','Język angielski — etap 1: menu, ekran startowy, górny pasek, pozycje, daty'],['v147','Transfery: zakładki Wypożyczenia i Historia transferów'],['v146','Analiza rywala na ekranie głównym, zakładki na starszych ekranach'],['v145','Balans treningu „mocniej”, łagodniejsza ocena zarządu po sezonie, kibice na pasku we własnym klubie'],['v143','Własny klub: sam wybierasz charakter i plan, kibice wpływają na frekwencję i sponsorów'],['v142','Ekran startowy, motyw grafitowy jak w FM, przestawiane menu'],['v141','Strategia klubu: cele zarządu, plan pięcioletni, kibice'],['v140','Finanse: wykresy, kredyt bankowy, licencja ligowa, prognoza'],['v139','Trening: indywidualny, mentoring, odpoczynek, reżimy, trenerzy'],['v138','Wyższe limity sztabu, skauci osobno, własny klub bez limitu'],['v137','Dźwięki meczu i powiadomień, wersja na Windows'],['v136','Zapisy w IndexedDB, delegowanie transferów']];
 ui.start=true;
 function smHasSave(){return SAVE.team!=null&&!!SAVE.coach;}
 function smCont(){ui.start=false;ui.sm=null;render();}
@@ -8961,6 +8978,164 @@ function yTrainMonth(d){const m=+d.slice(5,7);if(m===7)return;const MD={};for(co
 juniorsView=function(){const tab=ui.jrTab||'o';const T=[['o','Widok ogólny'],['j','Widok ogólny: Juniorzy'],['w','Wypożyczenia']];
   let body='';try{body=tab==='j'?yList():tab==='w'?yLoans():yOverview();}catch(e){console.error(e);body=`<div class="card bad">Błąd widoku juniorów: ${esc(String(e))}</div>`;}
   return `${ui.tmsg?`<div class="card tmsg ${ui.tmsg.ok?'ok':'no'}">${esc(ui.tmsg.t)}</div>`:''}<div class="subtabs">${T.map(([k,l])=>`<button class="${k===tab?'on':''}" onclick="ui.jrTab='${k}';ui.confirm=null;render()">${l}</button>`).join('')}</div>${body}`;};
+// ================= POPRAWKI v177: skauting (charakter, pełna obserwacja), ochrona nowych zawodników, rozmowy o formie/kontrakcie,
+// dynamika meczu punkt po punkcie, zmiany i czasy komputera, znaczniki załamania / gazu, skład przed każdym setem =================
+
+// ---------- 1. raport charakteru od skauta ----------
+const TR_NEG=['ner','len','kap','ind'];
+function trCard(k){const t=TRAITS[k];if(!t)return '';const neg=TR_NEG.includes(k);
+  return `<div class="chtr ${neg?'neg':'pos'}" style="--tc:${t[1]}"><div class="row" style="gap:8px"><b>${esc(t[0])}</b><span class="sp"></span><span class="tkp ${neg?'r':'g'}">${neg?'wada':'zaleta'}</span></div><p class="small">${esc(t[2])}</p></div>`;}
+function chrVerdict(p){const neg=p.tr.filter(k=>TR_NEG.includes(k));const L=[];
+  if(hasT(p,'lid'))L.push('Naturalny kandydat na kapitana — podniesie morale i zgranie zespołu.');
+  if(hasT(p,'kap'))L.push('Uwaga: na ławce szybko się psuje i psuje szatnię. Bierz go tylko do podstawowego składu.');
+  if(hasT(p,'ner'))L.push('W końcówkach setów i tie-breakach może zawodzić. Psycholog w sztabie pomaga.');
+  if(hasT(p,'len'))L.push('Wolniej się rozwija — u młodego zawodnika to ważna wada.');
+  if(hasT(p,'ind'))L.push('Bierze atak na siebie nawet ze złych piłek i obniża zgranie.');
+  if(hasT(p,'amb')||hasT(p,'suk'))L.push('Oczekuje ważnej roli — w negocjacjach zaproponuj grę w podstawie.');
+  if(hasT(p,'loj'))L.push('Przywiązuje się do klubu: trudniej go wyciągnąć, ale potem rzadko chce odejść.');
+  if(hasT(p,'pra')||hasT(p,'pro'))L.push('Solidny charakter — dobrze pracuje na treningach.');
+  if(!L.length)L.push(neg.length?'Charakter z wadami — przemyśl transfer.':'Charakter bez większych zastrzeżeń.');
+  return L;}
+function chrMailHtml(b){const P=PLAYERS[b.pid];if(!P)return `<p class="mtext">Zawodnik nie jest już dostępny.</p>`;const p=P.p;ensTraits(p);const wm=wantsMove(p);
+  const ment=MENTAL.map(([k,n])=>{const v=p[k]||10;return `<div class="chm"><span>${n}</span><span class="kbar"><i style="width:${v*5}%;background:${v>=14?'var(--good)':v<=8?'var(--bad)':'var(--acc)'}"></i></span><b>${v}</b></div>`;}).join('');
+  return `<div class="row" style="gap:12px;margin-bottom:10px">${pFace(p,56)}<div><b style="font-size:17px">${esc(p.first)} ${esc(p.last)}</b> ${natTag(p)}<div class="small mut">${pTag(p.pos)} ${POS_NAMES[p.pos]} · ${p.age} l. · ${p.tm>=0&&TEAMS[p.tm]?esc(TEAMS[p.tm].name):'wolny zawodnik'}</div></div></div>
+   <p class="mtext">${esc(b.how||'Dyskretne rozpoznanie: rozmowy z trenerami, kolegami z drużyny i dziennikarzami.')}</p>
+   <h4 class="chh">Cechy charakteru</h4><div class="chtrs">${p.tr.map(trCard).join('')||'<p class="small mut">Brak wyraźnych cech charakteru.</p>'}</div>
+   <h4 class="chh">Cechy mentalne</h4><div class="chms">${ment}</div>
+   <h4 class="chh">Ocena skauta</h4><ul class="chv">${chrVerdict(p).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+   <div class="yrow"><span>Chęć przejścia do nas</span><b class="${wm[1]}">${wm[0]}</b></div>
+   <div class="mact"><button class="btn" onclick="openPop('${p.id}')">Profil zawodnika</button><button class="ghost" onclick="openCard('${p.id}')">Pełna karta</button>${knowOf(p)<100&&p.tm!==SAVE.team?`<button class="ghost" onclick="fullObserve('${p.id}')">🔍 Pełna obserwacja (wiedza ${knowOf(p)}%)</button>`:''}</div>`;}
+chrReport=function(t,sc){const P=PLAYERS[t.pid];if(!P)return;const p=P.p;SX().chr[p.id]=1;addKnow(p.id,10);ensTraits(p);
+  sendMail({cat:'skaut',from:`${sc.first[0]}. ${sc.last} (skaut)`,t:`Charakter: ${p.first} ${p.last}`,s:p.tr.map(k=>TRAITS[k]?TRAITS[k][0]:k).join(', ')||'bez wyraźnych cech',b:{type:'chr',pid:p.id},lab:'Charakter'});};
+// ---------- 2. pełna obserwacja: wiedza 100% + charakter ----------
+function fullDays(sc){return Math.round(clamp(26-sc.skill*0.8,10,22));}
+function fullObserve(pid){const P=PLAYERS[pid];if(!P)return;if(SC().tasks.some(t=>t.pid===pid&&(t.type==='obs'||t.type==='full'))){ui.scMsg='Ten zawodnik jest już obserwowany.';render();return;}
+  if(!isShort(pid))SC().short.push(pid);ui.card=null;ui.pop=null;newTask({type:'full',pid});}
+{const _td=taskDays;taskDays=function(type,sc){return type==='full'?fullDays(sc):_td.apply(this,arguments);};}
+{const _sd=scoutDay;scoutDay=function(d){if(SAVE.team!=null&&SAVE.world){const s=SX();
+    for(const t of s.tasks.slice()){if(t.type!=='full')continue;const sc=allScouts().find(x=>x.id===t.sid);if(!sc)continue;
+      if(!t.start){if(scoutLoad(sc)<scoutSlots(sc)){t.start=d;t.until=addDays(d,fullDays(sc));}continue;}
+      const P=PLAYERS[t.pid];if(!P){s.tasks=s.tasks.filter(x=>x!==t);continue;}
+      const left=Math.max(1,daysBetween(d,t.until)+1);addKnow(t.pid,(100-knowOf(P.p))/left);
+      if(t.until<=d){s.tasks=s.tasks.filter(x=>x!==t);s.know[t.pid]=100;s.chr[t.pid]=1;ensTraits(P.p);obsReport(t,sc);chrReport(t,sc);}}
+    // oryginalny przebieg nie zna typu 'full' — na czas jego działania odsuwamy termin, żeby go nie zakończył
+    const full=s.tasks.filter(t=>t.type==='full');const keep=full.map(t=>[t,t.until,t.start]);for(const t of full){t.until='9999-12-31';if(!t.start)t.start='9999-12-31';}
+    try{_sd.apply(this,arguments);}finally{for(const [t,u,st] of keep){t.until=u;t.start=st;}}}
+  else _sd.apply(this,arguments);};}
+// przycisk w karcie zawodnika i w podglądzie
+function fullObsBtn(p,cls){if(!p||p.tm===SAVE.team||knowOf(p)>=100)return '';if(SC().tasks.some(t=>t.pid===p.id&&t.type==='full'))return `<span class="small mut">🔍 Trwa pełna obserwacja</span>`;
+  return `<button class="${cls||'link small'}" onclick="fullObserve('${p.id}')" title="Skaut obserwuje zawodnika przez kilkanaście dni: poznasz dokładne atrybuty, potencjał i charakter">🔍 Pełna obserwacja</button>`;}
+// ---------- poczta: nowe typy treści ----------
+{const _mb=mailBodyHtml;mailBodyHtml=function(m){const b=m.b||{};if(b.type==='chr')return chrMailHtml(b);
+  if(b.type==='text'&&b.x&&!b.txt)return `<p class="mtext">${esc(b.x).replace(/\n/g,'<br>')}</p>${m.cat==='skaut'&&/^Charakter: /.test(m.t||'')?chrOldBtn(m):''}`;return _mb.apply(this,arguments);};}
+function chrOldBtn(m){const nm=(m.t||'').replace(/^Charakter: /,'');const p=W().players.find(x=>x.first+' '+x.last===nm);return p?`<div class="mact"><button class="btn" onclick="openPop('${p.id}')">Profil zawodnika</button></div>`:'';}
+
+// ---------- 3. ochrona świeżo sprowadzonych zawodników ----------
+function newSign(p){if(!p||p.tm!==SAVE.team)return false;const d=today();if(p.jd&&daysBetween(p.jd,d)<180)return true;
+  const h=(SAVE.trh||[]).find(x=>x.id===p.id&&x.inn);return !!(h&&daysBetween(h.d,d)<180);}
+{const _mp=movePlayer;movePlayer=function(p,tm){const r=_mp.apply(this,arguments);try{if(SAVE.team!=null&&tm===SAVE.team&&S())p.jd=today();}catch(e){}return r;};}
+{const _fb=findBuyers;findBuyers=function(pid){const P=PLAYERS[pid];if(P&&newSign(P.p)&&!P.p.tl)return [];return _fb.apply(this,arguments);};}
+{const _is=ixSuitor;ixSuitor=function(p){if(newSign(p))return null;return _is.apply(this,arguments);};}
+
+// ---------- 4. rozmowy: forma w meczach i kontrakt ----------
+function seaGrade(p){const r=(S().ps||{})[p.id];return r&&r.rn>=2?r.rs/r.rn:null;}
+TALK_K.push(['fpraise','Pochwal za formę w meczach','Doceń jego grę w ostatnich meczach'],['fcrit','Skrytykuj formę w meczach','Powiedz, że w meczach gra poniżej oczekiwań'],
+  ['cfut','Zapewnij o przyszłości w klubie','„Liczę na Ciebie także w kolejnych sezonach”'],['cext','Zaproponuj przedłużenie kontraktu','Rozmowa wstępna — potem negocjacje z agentem'],['cwant','Zapytaj o jego oczekiwania','Czy chce zostać i ile chciałby zarabiać']);
+const TALK_G=[['tr','Trening',['praise','crit']],['fm','Forma',['fpraise','fcrit']],['mt','Mecz',['motiv']],['ct','Kontrakt',['cfut','cext','cwant']]];
+Object.assign(TALK_LINES,{
+  fpraise:{g:['Dzięki, trenerze! W meczach czuję się coraz pewniej.','To mnie nakręca — w następnym meczu dam jeszcze więcej.'],n:['Dzięki, choć było kilka gorszych akcji.','OK, dziękuję.'],b:['Pochwała? Przecież ostatnio gram słabo…','Nie wiem, czy to szczere, trenerze.']},
+  fcrit:{g:['Wiem, w meczach zawodziłem. Poprawię to.','Ma pan rację. Wezmę się w garść przed następnym meczem.'],n:['Postaram się… choć nie było aż tak źle.','Przyjąłem.'],b:['Gram dobrze, a słyszę krytykę? To niesprawiedliwe!','Niech pan spojrzy na statystyki, trenerze.']},
+  cfut:{g:['To dla mnie ważne. Chcę tu zostać na dłużej.','Dziękuję, trenerze. Dobrze się tu czuję.'],n:['Miło słyszeć. Zobaczymy, co przyniesie przyszłość.','Dobrze, dziękuję.'],b:['Słowa to jedno, a kontrakt to drugie…','Usłyszałem to już kiedyś. Wolałbym konkretów.']},
+  cext:{g:['Chętnie! Niech klub rozmawia z moim agentem.','Super wiadomość — chcę zostać.'],n:['Porozmawiam z agentem. Zobaczymy, co zaproponujecie.','Rozważę to.'],b:['Na razie nie myślę o przedłużeniu.','Najpierw chcę zobaczyć, jak potoczy się sezon.']},
+  cwant:{g:['Szczerze? Dobrze mi tu. Liczę na uczciwą podwyżkę.'],n:['Myślę o swojej przyszłości. Dużo zależy od roli i pieniędzy.'],b:['Rozglądam się. Chcę grać o wyższe cele.']}});
+{const _ts=talkScore;talkScore=function(p,k,t){if(!['fpraise','fcrit','cfut','cext','cwant'].includes(k))return _ts.apply(this,arguments);
+  const tk=TALK_T[t][1];const g=seaGrade(p),fm=fmOf(p);let q=0;const why=[];const n=S().n;
+  if(k==='fpraise'){const good=(g!=null&&g>=7)||fm>=70,ok=(g!=null&&g>=6.4)||fm>=58;q=good?1.5:ok?0.8:0;why.push(good?'pochwała zasłużona':ok?'gra solidnie':'pochwała na wyrost');if(hasT(p,'amb')||hasT(p,'suk'))q+=0.3;if(!ok&&hasT(p,'len'))q-=0.5;if(t===2)q-=0.3;}
+  else if(k==='fcrit'){const bad=(g!=null&&g<6)||fm<45,meh=(g!=null&&g<6.5)||fm<58;q=bad?0.8:meh?-0.2:-1.7;why.push(bad?'krytyka uzasadniona':meh?'gra przeciętnie':'krytyka niesprawiedliwa');
+    if(hasT(p,'pro')||hasT(p,'zde'))q+=0.5;if(hasT(p,'kap')){q-=1;why.push('kapryśny źle znosi krytykę');}if(hasT(p,'ner')){q-=0.5;if(t===2)q-=0.6;}if(q<0&&t===0)q*=0.5;}
+  else if(k==='cfut'){const end=p.ce!=null&&p.ce<=n;q=end?1.1:0.6;why.push(end?'kontrakt kończy się po sezonie — doceni deklarację':'ma ważny kontrakt');if(hasT(p,'loj'))q+=0.4;if(hasT(p,'amb')&&ROLE_I[roleOf(p)]>=2){q-=0.6;why.push('chce większej roli');}if(p.tl){q=-1.2;why.push('jest na liście transferowej — nie uwierzy');}}
+  else if(k==='cext'){const yrs=(p.ce||n)-n;const sat=p.tm>=0&&TEAMS[p.tm]?pSat(p,TEAMS[p.tm]).v:60;q=(yrs<=0?1.2:yrs===1?0.6:-0.3)+(sat-55)/40;why.push(yrs<=0?'kontrakt kończy się po sezonie':yrs===1?'jeszcze rok kontraktu':'ma długi kontrakt');if(hasT(p,'loj'))q+=0.4;if(hasT(p,'sta'))q-=0.2;if(p.wantOut===n){q-=1.2;why.push('myśli o odejściu');}}
+  else{q=0.4;why.push('rozmowa informacyjna');}
+  q=clamp(q*(q>0?tk:(t===0?0.8:tk)),-2,2);return {q,r:g,why};};}
+{const _td=talkDo;talkDo=function(pid,k,t){if(!['fpraise','fcrit','cfut','cext','cwant'].includes(k))return _td.apply(this,arguments);
+  const P=PLAYERS[pid];if(!P)return;const p=P.p;if(talkLeft(p))return;const sc=talkScore(p,k,t);const q=sc.q;
+  const out=q>=0.5?'g':q>-0.3?'n':'b';const lines=TALK_LINES[k][out];const line=lines[Math.floor(R()*lines.length)];const m0=p.mor==null?60:p.mor,f0=fmOf(p);const fx=[];
+  if(k==='cwant'){const wd=wageDemand(p);const sat=pSat(p,TEAMS[p.tm]).v;fx.push(`oczekuje ok. ${fmtShort2(wd)}/rok (teraz ${fmtShort2(p.wage)})`);fx.push(sat>=60?'chce zostać w klubie':sat>=42?'waha się, czy zostać':'rozgląda się za innym klubem');addMor(p,1);}
+  else{addMor(p,q*(k==='fcrit'?6:6));formAdd(p,(k==='fpraise'||k==='fcrit')?q*1.8:q*0.6);}
+  if(k==='fcrit'&&q>0){p.tkB=Math.round(q*0.005*1000)/1000;p.tkBd=nextEvent()?nextEvent().d:today();fx.push('lepsza gra w najbliższym meczu');}
+  if(k==='fpraise'&&out==='g'&&hasT(p,'len')){fx.push('może się trochę rozluźnić');}
+  if(k==='cfut'){relAdd(p,q>0?3:-2);if(q>0&&p.ce!=null&&p.ce<=S().n){ixPromise(p,'kontrakt',30,{ce:p.ce});fx.push('obietnica: nowa oferta kontraktu w ciągu 30 dni');}}
+  if(k==='cext'){if(q>0){fx.push('gotowy do rozmów — otwórz negocjacje');p.negOk=today();}else fx.push('na razie nie chce rozmawiać o przedłużeniu');}
+  if(out==='b'&&hasT(p,'kap')){p.unh=(p.unh||0)+1;fx.push('psuje atmosferę w szatni');}
+  p.talkD=today();const res={pid,k,t,line,out,m0,m1:p.mor,f0,f1:fmOf(p),fx,why:sc.why,neg:k==='cext'&&q>0};ui.talkRes=res;
+  sendMail({cat:'druz',from:`${p.first} ${p.last}`,t:`Rozmowa: ${TALK_K.find(x=>x[0]===k)[1].toLowerCase()} (${p.last})`,s:`„${line}”`,b:{type:'talk',res},ic:'💬'});save();render();};}
+talkModal=function(){const P=PLAYERS[ui.talk];if(!P){ui.talk=null;return '';}const p=P.p;ensTraits(p);const r=wkRating(p);const g=seaGrade(p);const left=talkLeft(p);const res=ui.talkRes;
+  const head=`<div class="row" style="gap:12px"><span>${pFace(p,60)}</span><div><h2 style="margin:0">${esc(p.first)} ${esc(p.last)}</h2><div class="small mut">${pTag(p.pos)} ${p.age} l. · charakter: ${p.tr.map(k=>TRAITS[k][0].toLowerCase()).join(', ')}</div></div><span class="sp"></span><button class="ghost" onclick="ui.talk=null;ui.talkRes=null;render()">✕</button></div>
+   <div class="tkkv"><div><span>Trening (7 dni)</span><b class="${r==null?'mut':scCls(r)}">${r==null?'–':fx1(r)}</b></div><div><span>Mecze (śr. ocena)</span><b class="${g==null?'mut':scCls(g)}">${g==null?'–':fx1(g)}</b></div><div><span>Morale</span><b>${morLabel(p.mor==null?60:p.mor)}</b></div><div><span>Forma</span><b>${Math.round(fmOf(p))}</b></div><div><span>Kontrakt</span><b>${p.ce==null?'–':p.ce<=S().n?'kończy się po sezonie':'jeszcze '+(p.ce-S().n)+' sez.'}</b></div></div>`;
+  let body;
+  if(res&&res.pid===p.id){body=`<div class="tklab">Odpowiedź zawodnika</div><div class="tkbub ${res.out}">„${esc(res.line)}”</div><div class="tklab">Skutek</div>${talkFx(res)}
+     ${res.why.length?`<p class="small mut" style="margin-top:8px">Asystent: ${res.why.join(', ')}.</p>`:''}<div class="row" style="margin-top:12px;gap:8px">${res.neg?`<button class="btn" onclick="ui.talk=null;ui.talkRes=null;negOpen('${p.id}','renew')">💼 Przejdź do negocjacji</button>`:''}<button class="${res.neg?'ghost':'btn'}" onclick="ui.talk=null;ui.talkRes=null;render()">Zamknij</button></div>`;}
+  else if(left){body=`<p class="mut" style="margin-top:14px">Rozmawiałeś z nim niedawno (${fmtShort(p.talkD)}). Kolejna rozmowa możliwa za ${left} ${left===1?'dzień':'dni'}.</p>`;}
+  else{const grp=TALK_G.find(x=>x[2].includes(ui.talkK))||TALK_G[0];
+    body=`<div class="tklab">Temat rozmowy</div><div class="tktone tkgrp">${TALK_G.map(([gk,gn,ks])=>`<button class="${grp[0]===gk?'on':''}" onclick="ui.talkK='${ks[0]}';render()">${gn}</button>`).join('')}</div>
+    <div class="tklab">Co chcesz powiedzieć?</div>${TALK_K.filter(x=>grp[2].includes(x[0])).map(([k,n,d])=>{const s=talkScore(p,k,ui.talkT);const [pl,c]=talkPred(s.q);return `<button class="tkopt ${ui.talkK===k?'on':''}" onclick="ui.talkK='${k}';render()"><span><b>${n}</b><small>${d}</small></span>${k==='cwant'?'':`<span class="tkp ${c}">reakcja: ${pl}</span>`}</button>`;}).join('')}
+    ${ui.talkK==='cwant'?'':`<div class="tklab">Ton</div><div class="tktone">${TALK_T.map(([n],i)=>`<button class="${ui.talkT===i?'on':''}" onclick="ui.talkT=${i};render()">${n}</button>`).join('')}</div>`}
+    <div class="row" style="gap:8px;margin-top:12px"><button class="btn" onclick="talkDo('${p.id}',ui.talkK,ui.talkT)">Porozmawiaj</button><span class="small mut">Z jednym zawodnikiem możesz rozmawiać raz na ${TALK_CD} dni.</span></div>`;}
+  return `<div class="modal" onclick="if(event.target===this){ui.talk=null;ui.talkRes=null;render()}"><div class="mcard tkcard">${head}${body}</div></div>`;};
+{const _tf=talkFx;talkFx=function(r){return _tf(r).replace(/<span class="tkp g">(oczekuje|chce zostać|waha|rozgląda)/g,(a,b)=>`<span class="tkp ${b==='rozgląda'?'r':b==='waha'?'y':'g'}">${b}`);};}
+
+// ---------- 5. dynamika meczu: każdy punkt z jego rodzajem ----------
+const PT_KIND={kill:['A','Atak'],blockout:['A','Atak'],block:['B','Blok'],ace:['S','As serwisowy']};
+function ptKind(t){return PT_KIND[t]||['E','Błąd rywala'];}
+fmMomentum=function(m){const h=m.hist||[];const kc=kitColors(m);const sets=[...new Set(h.map(x=>x[0]))];
+  const cnt=[{A:0,B:0,S:0,E:0},{A:0,B:0,S:0,E:0}];
+  const rows=sets.map(sn=>{const pts=h.filter(x=>x[0]===sn);let prev=[0,0];
+    const cells=pts.map(x=>{const w=x[3]!=null?x[3]:(x[1]>prev[0]?0:1);prev=[x[1],x[2]];const k=ptKind(x[4]);if(x[4]!=null)cnt[w][k[0]]++;
+      const col=kc[w],ink=lum(col)>0.6?'#111':'#fff';const lab=x[4]!=null?k[0]:'';const ol=lum(col)<0.18?'box-shadow:inset 0 0 0 1px #aab2bf;':'';
+      return `<span class="dmc ${w?'b':'t'}" title="${x[1]}:${x[2]} — ${esc(m.sides[w].team.short)}${x[4]!=null?': '+k[1]:''}"><i style="background:${col};color:${ink};${ol}">${lab}</i></span>`;}).join('');
+    const last=pts[pts.length-1];return `<div class="dmset"><span class="dmsn">Set ${sn}<b>${last?last[1]+':'+last[2]:''}</b></span><div class="dmrow">${cells}</div></div>`;}).join('');
+  const leg=i=>`<span class="dmleg"><i style="background:${kc[i]};${lum(kc[i])<0.18?'box-shadow:inset 0 0 0 1px #aab2bf':''}"></i>${esc(m.sides[i].team.short)}: atak ${cnt[i].A} · blok ${cnt[i].B} · as ${cnt[i].S} · błędy rywala ${cnt[i].E}</span>`;
+  return `<div class="card fmw"><div class="fmh"><b>Dynamika meczu</b><span class="small mut">każdy punkt: A atak · B blok · S as · E błąd rywala</span></div>
+   ${rows||'<p class="small mut">Czeka na pierwszy punkt.</p>'}${h.length?`<div class="dmlegs">${leg(0)}${leg(1)}</div>`:''}</div>`;};
+
+// ---------- 7. komputer robi zmiany i bierze czasy, gdy zawodnikom nie idzie ----------
+function setStat(p,m){const k='_s'+m.setNo;const st=p.st;const b=p[k]||(p[k]={att:st.att,kill:st.kill,attErr:st.attErr,blocked:st.blocked,srvErr:st.srvErr,recErr:st.recErr,rec:st.rec});
+  return {att:st.att-b.att,kill:st.kill-b.kill,err:(st.attErr-b.attErr)+(st.blocked-b.blocked)+(st.srvErr-b.srvErr)+(st.recErr-b.recErr),rec:st.rec-b.rec,recErr:st.recErr-b.recErr};}
+{const _ai=aiTurn;aiTurn=function(m,i){const msgs=_ai.apply(this,arguments)||[];try{const s=m.sides[i];
+  const isUser=typeof SAVE!=='undefined'&&SAVE&&SAVE.team!=null&&s.team.idx===SAVE.team;if(isUser||m.over)return msgs;
+  const lead=m.score[1-i]-m.score[i];const mx=Math.max(...m.score);
+  // czas, gdy rywal ucieka w secie (wcześniej tylko po serii punktów)
+  if(s.to>0&&!msgs.some(x=>/^Czas/.test(x))&&lead>=4&&mx>=10&&(s._toAt||-9)<m.rallies-6&&R()<0.4){callTimeout(m,i);s._toAt=m.rallies;msgs.push(`Czas dla ${s.team.name}: trener szuka sposobu na rywala.`);}
+  // zmiana zawodnika, któremu nie idzie w secie
+  const ps=s._ps||(s._ps={});if(s.subs>0&&(ps[m.setNo]||0)<2&&Math.max(...m.score)>=6){
+    for(let k=0;k<6;k++){const sl=s.slots[k];if((s.srvSub&&s.srvSub.si===k)||(s.dbl&&(k===s.dbl.rI||k===s.dbl.aI)))continue;const p=sl.p;if(sl.role==='R'&&R()<0.6)continue;if(p['_in'+m.setNo])continue;
+      const st=setStat(p,m);const bad=st.err>=3||(st.att>=5&&st.kill/st.att<0.3)||(st.rec>=4&&st.recErr>=2)||(MENT&&(p.cf||0)<=-1.2);if(!bad)continue;
+      const c=benchOf(s).filter(x=>x.pos===sl.role&&!(x.inj>0)&&x.en>70).sort((a,b)=>rating(b)-rating(a))[0];
+      if(c&&rating(c)>=rating(p)-12&&R()<0.25){if(substitute(m,i,k,c.id)){ps[m.setNo]=(ps[m.setNo]||0)+1;c['_s'+m.setNo]=null;c['_in'+m.setNo]=1;msgs.push(`Zmiana w ${s.team.name}: ${nm(c)} za ${nm(p)} (słabo mu szło w tym secie).`);break;}}}}
+  }catch(e){console.error(e);}return msgs;};}
+
+// ---------- 8. załamany / w gazie — wyraźne oznaczenia ----------
+function cfState(p){if(typeof MENT==='undefined'||!MENT||!p)return 0;const c=p.cf||0;return c<=-1?-1:c>=1?1:0;}
+function cfBadge(p){const s=cfState(p);return s<0?'<span class="cfb dn" title="Załamany po błędach: gra wyraźnie słabiej. Pomoże czas z przemową „Uspokój” albo zmiana.">▼ ZAŁAMANY</span>':s>0?'<span class="cfb up" title="W gazie: gra pewniej i skuteczniej">▲ W GAZIE</span>':'';}
+
+// ---------- 9. skład przed każdym setem ----------
+function setLuPanel(m){const s=m.sides[0];if(!s||m.over)return '';const used=new Set(s.slots.map(x=>x.p.id));if(s.libero)used.add(s.libero.id);
+  const all=s.pl.filter(p=>!(p.inj>0));const opt=(cur,ex)=>all.filter(p=>p.id===cur||!used.has(p.id)).map(p=>`<option value="${p.id}" ${p.id===cur?'selected':''}>${esc(shortN(p))} (${POS_SHORT[p.pos]} ${rating(p)} · ${Math.round(p.en)}%)${cfState(p)<0?' ▼':cfState(p)>0?' ▲':''}</option>`).join('');
+  const row=(k)=>{const sl=s.slots[k];return `<label class="slu"><span>${pTag(sl.role)}</span><select onchange="setLuSet(${k},this.value)">${opt(sl.p.id)}</select></label>`;};
+  const st0=m._lu0;const same=st0&&s.slots.every((x,k)=>x.p.id===st0[k])&&(!s.libero||s.libero.id===m._lb0);
+  return `<div class="setlu"><div class="row wrap" style="gap:8px;align-items:center"><b>Skład na ${m.setNo}. seta</b><span class="small mut">zmiany w przerwie nie zużywają limitu zmian</span><span class="sp"></span>
+    <label class="small">Start w ustawieniu <select onchange="setLuRot(+this.value)">${[0,1,2,3,4,5].map(n=>`<option value="${n}" ${((s.tactics.startRot||0)%6)===n?'selected':''}>R${n+1}</option>`).join('')}</select></label>
+    ${st0&&!same?`<button class="ghost sm" onclick="setLuReset()">↺ Skład z początku meczu</button>`:''}</div>
+   <div class="slugrid">${[0,1,2,3,4,5].map(row).join('')}${s.libero?`<label class="slu"><span>${pTag('L')}</span><select onchange="setLuLib(this.value)">${opt(s.libero.id)}</select></label>`:''}</div>
+   ${ui.setLuMsg?`<p class="small bad">${esc(ui.setLuMsg)}</p>`:''}</div>`;}
+function setLuSet(k,pid){const m=ui.match;const s=m.sides[0];const p=s.pl.find(x=>x.id===pid);if(!p)return;const old=s.slots[k].p;if(old.id===pid)return;
+  if(typeof sideForOK==='function'&&!sideForOK(s,old,p)){ui.setLuMsg='Limit obcokrajowców: obcokrajowiec może wejść tylko za obcokrajowca.';render();return;}
+  const j=s.slots.findIndex(x=>x.p.id===pid);if(j>=0)s.slots[j].p=old;else if(s.libero&&s.libero.id===pid)s.libero=old;s.slots[k].p=p;p['_s'+m.setNo]=null;ui.setLuMsg=null;persistLive();render();}
+function setLuLib(pid){const m=ui.match;const s=m.sides[0];const p=s.pl.find(x=>x.id===pid);if(!p)return;if(typeof sideForOK==='function'&&!sideForOK(s,s.libero,p)){ui.setLuMsg='Limit obcokrajowców: obcokrajowiec może wejść tylko za obcokrajowca.';render();return;}s.libero=p;ui.setLuMsg=null;persistLive();render();}
+function setLuRot(n){const m=ui.match;const s=m.sides[0];s.tactics.startRot=n;s.rot=baseRot(s.tactics);persistLive();render();}
+function setLuReset(){const m=ui.match;const s=m.sides[0];if(!m._lu0)return;m._lu0.forEach((id,k)=>{const p=s.pl.find(x=>x.id===id);if(p&&!(p.inj>0))s.slots[k].p=p;});
+  if(m._lb0){const l=s.pl.find(x=>x.id===m._lb0);if(l)s.libero=l;}ui.setLuMsg=null;persistLive();render();}
+{const _sr=stepRally;stepRally=function(m){if(!m._lu0&&m.sides&&m.sides[0]){m._lu0=m.sides[0].slots.map(x=>x.p.id);m._lb0=m.sides[0].libero?m.sides[0].libero.id:null;}return _sr.apply(this,arguments);};}
 // ================= SAMOUCZKI ZAKŁADEK, OBCOKRAJOWCY W TRANSFERACH, KOLOR KLUBU =================
 // Samouczek pokazuje się przy pierwszym wejściu do każdej zakładki (w stylu FM: „Wprowadzenie”).
 // „Rozumiem” zamyka go dla tej zakładki; przycisk „?” na pasku pod nagłówkiem otwiera go ponownie.

@@ -14,9 +14,9 @@ function fmFormation(m,i){const sd=m.sides[i],mine=i===0,sv=m.serving===i;const 
   const cell=z=>{const e=oc.find(x=>x.zone===z-1);if(!e)return '<div class="fmz"></div>';const p=e.p;const r=liveRating(p);
     const click=mine&&!m.over?`onclick="selSub(${e.slot==='L'?"'L'":e.slot})"`:'';
     const d=ui.talkRes&&mine&&ui.talkRes.del?ui.talkRes.del[p.id]:null;
-    return `<div class="fmz ${click?'clk':''} ${ui.subSel!=null&&mine&&(ui.subSel===e.slot)?'sel':''}" ${click} title="Strefa ${z}: ${esc(p.first+' '+p.last)} · ${POS_NAMES[e.role]} · energia ${Math.round(p.en)}%">
+    return `<div class="fmz ${click?'clk':''} ${cfState(p)<0?'cfdn':cfState(p)>0?'cfup':''} ${ui.subSel!=null&&mine&&(ui.subSel===e.slot)?'sel':''}" ${click} title="Strefa ${z}: ${esc(p.first+' '+p.last)} · ${POS_NAMES[e.role]} · energia ${Math.round(p.en)}%">
       ${fmJersey(m,i,e)}<span class="fmrt ${rCls(r)}">${fmtR(r)}</span><span class="fmps">${pTag(e.role)}</span>
-      <div class="fmnr"><b class="fmnm">${esc(shortN(p))}</b>${typeof MENT!=='undefined'&&MENT&&(p.cf||0)<=-1?'<span class="cfi" title="Roztrzęsiony po błędach: gra słabiej. Pomoże przerwa na żądanie.">🔻</span>':typeof MENT!=='undefined'&&MENT&&(p.cf||0)>=1?'<span class="cfi" title="W gazie: gra pewniej">🔥</span>':''}</div>${d?`<span class="dlt ${d>0?'good':'bad'}" title="Reakcja na przemowę (morale)">${d>0?'+':''}${d}</span>`:''}
+      <div class="fmnr"><b class="fmnm">${esc(shortN(p))}</b></div>${cfBadge(p)}${d?`<span class="dlt ${d>0?'good':'bad'}" title="Reakcja na przemowę (morale)">${d>0?'+':''}${d}</span>`:''}
       <span class="fmen"><i style="width:${Math.round(p.en)}%;background:${energyCol(p.en)}"></i></span></div>`;};
   const back=oc.filter(e=>!isFrontZ(e.zone));
   return `<div class="card fmcard" style="border-top:3px solid ${kc}">
@@ -94,8 +94,8 @@ function fmTeamStats(m,i){const t=teamTotals(m.sides[i]),o=teamTotals(m.sides[1-
 function fmStrip(m){const a=m.sides[0];const oc=onCourt(a,m.serving===0);const ord={R:0,A:1,P:2,S:3,L:4};
   const on=oc.slice().sort((x,y)=>ord[x.role]-ord[y.role]||x.zone-y.zone);
   const mine=e=>{const p=e.p,r=liveRating(p),mor=p.mor==null?60:p.mor;const click=!m.over?`onclick="selSub(${e.slot==='L'?"'L'":e.slot})"`:'';
-    return `<div class="fmsp ${click?'clk':''} ${ui.subSel===e.slot?'sel':''}" ${click} title="${esc(p.first+' '+p.last)} · energia ${Math.round(p.en)}% · morale ${mor}">
-      <span class="fmps2">${pTag(e.role)}</span>${fmJersey(m,0,e,28)}<b class="fmnm">${esc(shortN(p))}</b><span class="fmps2">ogólna <b style="color:var(--acc)">${rating(p)}</b></span>
+    return `<div class="fmsp ${click?'clk':''} ${cfState(p)<0?'cfdn':cfState(p)>0?'cfup':''} ${ui.subSel===e.slot?'sel':''}" ${click} title="${esc(p.first+' '+p.last)} · energia ${Math.round(p.en)}% · morale ${mor}">
+      <span class="fmps2">${pTag(e.role)}</span>${fmJersey(m,0,e,28)}<b class="fmnm">${esc(shortN(p))}</b>${cfBadge(p)}<span class="fmps2">ogólna <b style="color:var(--acc)">${rating(p)}</b></span>
       <span class="fmrow"><span class="fmrt ${rCls(r)}">${fmtR(r)}</span><span>${mor>=62?'😀':mor>=45?'😐':'😟'}</span>${formChip(p)}</span>
       <span class="fmen"><i style="width:${Math.round(p.en)}%;background:${energyCol(p.en)}"></i></span></div>`;};
   return `<div class="card fmstrip"><div class="fmsi"><b>Skład</b><div class="small mut">Zmian zostało <b style="color:var(--txt)">${a.subs}</b></div><div class="small mut">Czasów zostało <b style="color:var(--txt)">${a.to}</b></div><div class="small mut">Kliknij, by zmienić</div></div>${on.map(mine).join('')}</div>`;}
@@ -133,7 +133,7 @@ function fmPanel(m){const a=m.sides[0];
   return '';}
 function fmLiveView(subPanel){const m=ui.match;
   return `${fmTop(m)}${fmPanel(m)}
-  ${ui.talk&&!m.over?talkCard(m):ui.to&&ui.to.kind==='set'&&!m.over?`<div class="card talk"><div class="row"><h3 style="margin:0">🔄 Przerwa po ${ui.to.setNo}. secie</h3><span class="sp"></span><button class="ghost" onclick="ui.talk=true;render()">🗣️ Przemowa</button><button class="btn" onclick="endTimeout()">⏩ Zaczynamy ${m.setNo}. seta</button></div>${setSummary(m)}</div>`:''}
+  ${ui.talk&&!m.over?talkCard(m):ui.to&&ui.to.kind==='set'&&!m.over?`<div class="card talk"><div class="row"><h3 style="margin:0">🔄 Przerwa po ${ui.to.setNo}. secie</h3><span class="sp"></span><button class="ghost" onclick="ui.talk=true;render()">🗣️ Przemowa</button><button class="btn" onclick="endTimeout()">⏩ Zaczynamy ${m.setNo}. seta</button></div>${setSummary(m)}${setLuPanel(m)}</div>`:''}
   ${m.over?`<div class="card row"><b>Mecz zakończony: ${esc(m.sides[m.winner].team.name)} wygrywa ${Math.max(...m.setsWon)}:${Math.min(...m.setsWon)}</b><span class="sp"></span><button class="btn" onclick="ui.view='post';render()">Podsumowanie</button><button class="ghost" onclick="ui.match=null;render()">Dalej</button></div>`:''}
   <div class="fmwrap"><div class="fmlay">
    <div class="fml">${fmFormation(m,0)}${fmAssistant(m)}${fmAnalyst(m)}</div>

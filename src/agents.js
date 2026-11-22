@@ -28,7 +28,7 @@ function agDaily(d){if(SAVE.team==null||!SAVE.world||!S())return;const X=AG();
   if(X.q.length>=2)return;if(X.last&&daysBetween(X.last,d)<18)return;if(R()>0.12)return;
   const t=myTeam();const ph=S().phase;const cand=[];const avg=t.players.reduce((a,p)=>a+rating(p),0)/Math.max(1,t.players.length);
   for(const p of t.players){if(p.jr||p.loan||p.tl)continue;if(p.agD&&daysBetween(p.agD,d)<90)continue;
-    const fair=wageDemand(p);if(p.wage&&fair&&p.wage<fair*0.9&&p.ce>S().n&&rating(p)>=avg)cand.push([2,{k:'pod',pid:p.id,fair:round5k(fair),club:typeof ixSuitor==='function'?ixSuitor(p):null}]);
+    const fair=wageDemand(p);if(p.wage&&fair&&p.wage<fair*0.9&&p.ce>S().n&&rating(p)>=avg&&!(typeof newSign==='function'&&newSign(p)))cand.push([2,{k:'pod',pid:p.id,fair:round5k(fair),club:typeof ixSuitor==='function'?ixSuitor(p):null}]);
     if(p.ce!=null&&p.ce<=S().n&&p.noExt!==S().n&&(ph==='liga'||ph==='po')&&S().round>=Math.floor((S().rounds||[]).length*0.33)&&rating(p)>=avg-2)cand.push([2,{k:'kon',pid:p.id}]);}
   // klient do pozyskania: wolny zawodnik albo niezadowolony z innego klubu, wyraźnie lepszy od zmiennika na tej pozycji
   const pos=['P','A','S','R','L'][Math.floor(R()*5)];const mine=t.players.filter(p=>p.pos===pos&&!p.jr).map(p=>rating(p)).sort((a,b)=>b-a);const bar=(mine[1]!=null?mine[1]:mine[0]||60)+2;

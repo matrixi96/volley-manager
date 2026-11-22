@@ -515,7 +515,7 @@ function stepRally(m){
    const tu=m.tu||(m.tu=[{},{}]);for(const i of [0,1]){const t=m.sides[i].tactics;for(const k of TFK){const key=k+':'+tfV(t,k);tu[i][key]=(tu[i][key]||0)+1;}}}
   fatigue(m,ex.n);
   if(MENT)for(const sd of m.sides)for(const p of sd.pl)if(p.cf)p.cf=Math.abs(p.cf)<0.05?0:p.cf*(p.cf<0?(sd.cfLid?0.86:0.9)+clamp(cfK(p)-1,0,1)*0.04:0.85);
-  const w=r.winner;m.score[w]++;(m.hist=m.hist||[]).push([m.setNo,m.score[0],m.score[1]]);
+  const w=r.winner;m.score[w]++;(m.hist=m.hist||[]).push([m.setNo,m.score[0],m.score[1],w,r.type]);
   if(m.run.t===w)m.run.n++;else m.run={t:w,n:1};
   const ws=m.sides[w],ls=m.sides[1-w];ws.mom=Math.min(3,Math.max(0,ws.mom)+1+(ws.wer&&R()<0.15?1:0));ls.mom=0;
   if(w!==m.serving){m.serving=w;ws.rot.push(ws.rot.shift());}
