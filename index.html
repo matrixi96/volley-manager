@@ -826,6 +826,18 @@ body.th-n .mail2 .mxtabs>button{background:transparent;border:0;border-bottom:2p
 body.th-n .mail2 .mxtabs>button.on{background:transparent;color:#fff;border-bottom-color:var(--acc)}
 body.th-n .mail2 .mxd{background:#283342;color:#aab6c5;font-weight:600;font-size:11.5px;border-color:#2f3b4a}
 body.th-n .mail2 .mx{border-bottom:1px solid #2b3644}
+
+/* edytor strojów */
+.kited{display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:start;margin-top:8px}
+.kprev{display:flex;gap:8px;align-items:flex-end}
+.kpv{background:#151c25;border:1px solid var(--line);border-radius:4px;padding:8px 8px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--mut);font-size:12.5px;cursor:pointer}
+.kpv.on{border-color:var(--acc);color:#fff;background:#1b2430}.kpv:hover{border-color:#ffffff40}
+.klab{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);font-weight:600;margin:12px 0 6px}.kopts .klab:first-child{margin-top:0}
+.kcols{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.ksw{width:26px;height:26px;border-radius:4px;border:2px solid #0008;padding:0;cursor:pointer;flex:none}.ksw.on{border-color:var(--acc);box-shadow:0 0 0 2px #f2c41866}
+.kpick{position:relative;display:flex;align-items:center;justify-content:center;background:conic-gradient(#ef4444,#facc15,#22c55e,#06b6d4,#3b82f6,#d946ef,#ef4444);color:#fff;font-weight:800;text-shadow:0 0 3px #000;overflow:hidden}
+.kpick input{position:absolute;inset:-4px;opacity:0;cursor:pointer;width:40px;height:40px;padding:0;border:0}
+@media (max-width:760px){.kited{grid-template-columns:1fr}.kprev{justify-content:center}}
 </style></head><body><div id="app"></div>
 <script>
 // ================= JĘZYK GRY (polski / angielski) =================
@@ -3067,55 +3079,82 @@ function faceSvg(seed,o){
   const brow=1.6+r()*1.8,browTilt=(r()-0.5)*4;
   const eyeY=cy-2+r()*3,eyeDx=9+r()*2.5,eyeR=2.4+r()*0.8;
   const noseT=Math.floor(r()*3),mouthT=Math.floor(r()*4);
-  const dark=c=>{const n=parseInt(c.slice(1),16);return `rgb(${[n>>16,n>>8&255,n&255].map(v=>Math.round(v*0.78)).join(',')})`;};
-  let s=`<svg class="face" viewBox="0 0 100 100" width="${size}" height="${size}"><defs><clipPath id="fc${strSeed(seed)%99999}"><circle cx="50" cy="50" r="50"/></clipPath></defs><g clip-path="url(#fc${strSeed(seed)%99999})">`;
-  s+=`<rect width="100" height="100" fill="${o.bg||'#1a2540'}"/>`;
-  // koszulka / marynarka
-  if(o.kind==='coach'||o.kind==='staff'){s+=`<path d="M8 100 Q12 78 32 74 L50 84 L68 74 Q88 78 92 100Z" fill="${o.kind==='coach'?'#1f2937':'#334155'}"/><path d="M42 76 L50 92 L58 76 L50 82Z" fill="#f8fafc"/><path d="M48 82 L52 82 L53 96 L50 99 L47 96Z" fill="${jersey}"/>`;}
-  else s+=`<path d="M6 100 Q10 77 33 73 Q50 81 67 73 Q90 77 94 100Z" fill="${jersey}"/><path d="M38 74 Q50 84 62 74" fill="none" stroke="${dark(jersey)}" stroke-width="3"/>`;
-  // szyja, uszy, twarz
-  s+=`<rect x="${cx-8}" y="${cy+20}" width="16" height="14" rx="5" fill="${dark(skin)}"/>`;
-  s+=`<ellipse cx="${cx-fw}" cy="${cy+2}" rx="4" ry="6" fill="${skin}"/><ellipse cx="${cx+fw}" cy="${cy+2}" rx="4" ry="6" fill="${skin}"/>`;
-  s+=`<path d="M${cx-fw} ${cy-6} Q${cx-fw} ${cy-fh} ${cx} ${cy-fh} Q${cx+fw} ${cy-fh} ${cx+fw} ${cy-6} L${cx+fw-1} ${cy+8} Q${cx+fw*(0.55+jaw*0.25)} ${cy+fh-2} ${cx} ${cy+fh} Q${cx-fw*(0.55+jaw*0.25)} ${cy+fh-2} ${cx-fw+1} ${cy+8}Z" fill="${skin}"/>`;
+  const sh=(c,f)=>{const n=parseInt(c.slice(1),16);return `rgb(${[n>>16,n>>8&255,n&255].map(v=>Math.max(0,Math.min(255,Math.round(f>1?v+(255-v)*(f-1):v*f)))).join(',')})`;};
+  const dark=c=>sh(c,0.78);
+  const U='f'+strSeed(seed)%99999+'_'+(++FACE_UID);
+  const kit=o.kit||(typeof KIT_BY_COLOR!=='undefined'&&KIT_BY_COLOR[jersey])||null;
+  const hairD=hairC==='#d1d5db'||hairC==='#9ca3af'?sh(hairC,0.8):sh(hairC,0.6),hairL=sh(hairC,1.35);
+  const skinL=sh(skin,1.12),skinD=sh(skin,0.74),skinDD=sh(skin,0.6);
+  let s=`<svg class="face" viewBox="0 0 100 100" width="${size}" height="${size}"><defs><clipPath id="c${U}"><circle cx="50" cy="50" r="50"/></clipPath>
+   <radialGradient id="s${U}" cx="44%" cy="38%" r="68%"><stop offset="0" stop-color="${skinL}"/><stop offset=".55" stop-color="${skin}"/><stop offset="1" stop-color="${skinD}"/></radialGradient>
+   <linearGradient id="h${U}" x1="0" y1="0" x2=".3" y2="1"><stop offset="0" stop-color="${hairL}"/><stop offset=".45" stop-color="${hairC}"/><stop offset="1" stop-color="${hairD}"/></linearGradient>
+   <linearGradient id="j${U}" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".28"/><stop offset=".4" stop-color="#000" stop-opacity="0"/><stop offset=".65" stop-color="#fff" stop-opacity=".08"/><stop offset="1" stop-color="#000" stop-opacity=".3"/></linearGradient>
+   <radialGradient id="b${U}" cx="50%" cy="35%" r="75%"><stop offset="0" stop-color="${o.bg?o.bg:'#27375a'}"/><stop offset="1" stop-color="${o.bg?o.bg:'#141d30'}"/></radialGradient></defs><g clip-path="url(#c${U})">`;
+  s+=`<rect width="100" height="100" fill="url(#b${U})"/>`;
+  // ubranie
+  const shirt='M6 100 Q10 77 33 73 Q50 81 67 73 Q90 77 94 100Z';
+  if(o.kind==='coach'||o.kind==='staff'){s+=`<path d="M8 100 Q12 78 32 74 L50 84 L68 74 Q88 78 92 100Z" fill="${o.kind==='coach'?'#1f2937':'#334155'}"/><path d="M8 100 Q12 78 32 74 L50 84 L68 74 Q88 78 92 100Z" fill="url(#j${U})"/><path d="M42 76 L50 92 L58 76 L50 82Z" fill="#f8fafc"/><path d="M48 82 L52 82 L53 96 L50 99 L47 96Z" fill="${jersey}"/><path d="M32 74 L44 96 M68 74 L56 96" stroke="#0005" stroke-width="1.2"/>`;}
+  else{const k=kit||{p:'plain',a:jersey,b:dark(jersey),c:'r'};s+=`<defs><clipPath id="k${U}"><path d="${shirt}"/></clipPath></defs><path d="${shirt}" fill="${k.a}"/><g clip-path="url(#k${U})">`;
+    const b=k.b;s+=({v:[26,40,54,68].map(x=>`<rect x="${x}" y="70" width="6" height="30" fill="${b}"/>`).join(''),h:`<rect x="0" y="88" width="100" height="7" fill="${b}"/>`,hoops:`<rect x="0" y="82" width="100" height="4" fill="${b}"/><rect x="0" y="91" width="100" height="4" fill="${b}"/>`,sash:`<path d="M20 74 L30 74 L64 100 L50 100Z" fill="${b}"/>`,half:`<rect x="50" y="70" width="50" height="30" fill="${b}"/>`,side:`<rect x="6" y="70" width="16" height="30" fill="${b}"/><rect x="78" y="70" width="16" height="30" fill="${b}"/>`})[k.p]||'';
+    s+=`<rect x="0" y="70" width="100" height="30" fill="url(#j${U})"/></g>`+(k.c==='v'?`<path d="M38 74 L50 86 L62 74" fill="none" stroke="${k.b}" stroke-width="3"/>`:`<path d="M38 74 Q50 84 62 74" fill="none" stroke="${k.b}" stroke-width="3"/>`);}
+  // szyja z cieniem pod żuchwą
+  s+=`<path d="M${cx-8.5} ${cy+16} L${cx-9} ${cy+33} Q${cx} ${cy+37} ${cx+9} ${cy+33} L${cx+8.5} ${cy+16}Z" fill="${skinD}"/><ellipse cx="${cx}" cy="${cy+fh-2}" rx="${fw*0.55}" ry="5" fill="${skinDD}" opacity=".55"/>`;
+  // uszy
+  for(const g of [-1,1])s+=`<ellipse cx="${cx+g*fw}" cy="${cy+2}" rx="4.2" ry="6.5" fill="${skin}"/><path d="M${cx+g*(fw+1.5)} ${cy-2} Q${cx+g*(fw+2.5)} ${cy+2} ${cx+g*(fw+1)} ${cy+6}" fill="none" stroke="${skinDD}" stroke-width="1.1" opacity=".7"/>`;
+  // twarz
+  const face=`M${cx-fw} ${cy-6} Q${cx-fw} ${cy-fh} ${cx} ${cy-fh} Q${cx+fw} ${cy-fh} ${cx+fw} ${cy-6} L${cx+fw-1} ${cy+8} Q${cx+fw*(0.55+jaw*0.25)} ${cy+fh-2} ${cx} ${cy+fh} Q${cx-fw*(0.55+jaw*0.25)} ${cy+fh-2} ${cx-fw+1} ${cy+8}Z`;
+  s+=`<path d="${face}" fill="url(#s${U})"/>`;
+  // cieniowanie: skronie, policzki, żuchwa
+  s+=`<ellipse cx="${cx+fw*0.55}" cy="${cy+6}" rx="${fw*0.45}" ry="${fh*0.7}" fill="${skinDD}" opacity=".12"/>`;
+  s+=`<ellipse cx="${cx-eyeDx-1}" cy="${cy+9}" rx="5.5" ry="3.5" fill="#d9776a" opacity=".16"/><ellipse cx="${cx+eyeDx+1}" cy="${cy+9}" rx="5.5" ry="3.5" fill="#d9776a" opacity=".16"/>`;
+  s+=`<ellipse cx="${cx-3}" cy="${cy-fh+9}" rx="${fw*0.45}" ry="5" fill="#fff" opacity=".07"/>`;
   // zarost
-  if(beard===1)s+=`<path d="M${cx-fw+3} ${cy+8} Q${cx-fw*0.6} ${cy+fh-3} ${cx} ${cy+fh} Q${cx+fw*0.6} ${cy+fh-3} ${cx+fw-3} ${cy+8} Q${cx} ${cy+16} ${cx-fw+3} ${cy+8}Z" fill="${hairC}" opacity=".28"/>`;
-  if(beard===2||beard===5)s+=`<path d="M${cx-fw+2} ${cy+4} Q${cx-fw*0.7} ${cy+fh+(beard===5?4:0)} ${cx} ${cy+fh+(beard===5?6:2)} Q${cx+fw*0.7} ${cy+fh+(beard===5?4:0)} ${cx+fw-2} ${cy+4} Q${cx+8} ${cy+20} ${cx} ${cy+19} Q${cx-8} ${cy+20} ${cx-fw+2} ${cy+4}Z" fill="${hairC}" opacity=".92"/>`;
-  if(beard===3)s+=`<path d="M${cx-6} ${cy+19} Q${cx} ${cy+fh+4} ${cx+6} ${cy+19} Q${cx} ${cy+22} ${cx-6} ${cy+19}Z" fill="${hairC}"/>`;
-  if(beard>=3)s+=`<path d="M${cx-9} ${cy+13} Q${cx} ${cy+9} ${cx+9} ${cy+13} Q${cx} ${cy+12} ${cx-9} ${cy+13}Z" fill="${hairC}" stroke="${hairC}" stroke-width="2"/>`;
-  // włosy
-  const top=cy-fh;
+  if(beard===1){s+=`<path d="M${cx-fw+3} ${cy+8} Q${cx-fw*0.6} ${cy+fh-3} ${cx} ${cy+fh} Q${cx+fw*0.6} ${cy+fh-3} ${cx+fw-3} ${cy+8} Q${cx+8} ${cy+14} ${cx} ${cy+13} Q${cx-8} ${cy+14} ${cx-fw+3} ${cy+8}Z" fill="${hairD}" opacity=".16"/><path d="M${cx-8} ${cy+12.5} Q${cx} ${cy+10} ${cx+8} ${cy+12.5}" stroke="${hairD}" stroke-width="2.2" opacity=".2" fill="none"/>`;}
+  if(beard===2||beard===5)s+=`<path d="M${cx-fw+2} ${cy+4} Q${cx-fw*0.7} ${cy+fh+(beard===5?4:0)} ${cx} ${cy+fh+(beard===5?6:2)} Q${cx+fw*0.7} ${cy+fh+(beard===5?4:0)} ${cx+fw-2} ${cy+4} Q${cx+8} ${cy+20} ${cx} ${cy+19} Q${cx-8} ${cy+20} ${cx-fw+2} ${cy+4}Z" fill="url(#h${U})" opacity=".95"/>`;
+  if(beard===3)s+=`<path d="M${cx-6} ${cy+19} Q${cx} ${cy+fh+4} ${cx+6} ${cy+19} Q${cx} ${cy+22} ${cx-6} ${cy+19}Z" fill="url(#h${U})"/>`;
+  if(beard>=3||beard===2||beard===5)s+=`<path d="M${cx-9} ${cy+13.5} Q${cx} ${cy+9} ${cx+9} ${cy+13.5} Q${cx+3} ${cy+12} ${cx} ${cy+12.5} Q${cx-3} ${cy+12} ${cx-9} ${cy+13.5}Z" fill="${hairC}" stroke="${hairC}" stroke-width="1.6"/>`;
+  // usta
+  const my=cy+15;const lipU=sh(skin,0.62),lipL=sh(skin,0.8);const lipC=beard>=3?'#5b3a2e':sh('#b05a50',1);
+  s+=[`<path d="M${cx-7} ${my} Q${cx-3} ${my-1.5} ${cx} ${my-0.5} Q${cx+3} ${my-1.5} ${cx+7} ${my} Q${cx} ${my+2} ${cx-7} ${my}Z" fill="${lipU}"/><path d="M${cx-6.5} ${my+0.6} Q${cx} ${my+5} ${cx+6.5} ${my+0.6} Q${cx} ${my+2.4} ${cx-6.5} ${my+0.6}Z" fill="${lipL}"/><path d="M${cx-7.5} ${my-0.2} Q${cx} ${my+2.4} ${cx+7.5} ${my-0.2}" fill="none" stroke="${lipC}" stroke-width="1.1" stroke-linecap="round"/>`,
+      `<path d="M${cx-6} ${my} Q${cx} ${my-1.6} ${cx+6} ${my}Z" fill="${lipU}"/><path d="M${cx-5.5} ${my+0.4} Q${cx} ${my+3.6} ${cx+5.5} ${my+0.4}Z" fill="${lipL}"/><path d="M${cx-6.5} ${my+0.3} L${cx+6.5} ${my+0.3}" stroke="${lipC}" stroke-width="1.1" stroke-linecap="round"/>`,
+      `<path d="M${cx-8} ${my-1} Q${cx} ${my+8} ${cx+8} ${my-1} Q${cx} ${my+1} ${cx-8} ${my-1}Z" fill="#3b1714"/><path d="M${cx-6.6} ${my-0.3} Q${cx} ${my+2.6} ${cx+6.6} ${my-0.3} L${cx+5.6} ${my+1.4} Q${cx} ${my+3.4} ${cx-5.6} ${my+1.4}Z" fill="#f4f1ea"/><path d="M${cx-8} ${my-1} Q${cx} ${my+8} ${cx+8} ${my-1}" fill="none" stroke="${lipU}" stroke-width="1.6"/>`,
+      `<path d="M${cx-6} ${my+1.5} Q${cx} ${my-1.2} ${cx+6} ${my+1.5} Q${cx} ${my+0.6} ${cx-6} ${my+1.5}Z" fill="${lipU}"/><path d="M${cx-5} ${my+1.8} Q${cx} ${my+4} ${cx+5} ${my+1.8}Z" fill="${lipL}"/><path d="M${cx-6.5} ${my+1.6} Q${cx} ${my-0.4} ${cx+6.5} ${my+1.6}" fill="none" stroke="${lipC}" stroke-width="1.1" stroke-linecap="round"/>`][mouthT];
+  // nos: cień boczny, grzbiet, nozdrza
+  const ny=cy+7;
+  s+=[`<path d="M${cx-1.5} ${eyeY+3} Q${cx-3.5} ${ny} ${cx-4.5} ${ny+2.5} Q${cx-1} ${ny+4.6} ${cx+2} ${ny+3.6}" fill="none" stroke="${skinDD}" stroke-width="1.3" stroke-linecap="round" opacity=".75"/>`,
+      `<path d="M${cx} ${eyeY+3} L${cx-4} ${ny+3} Q${cx} ${ny+5.6} ${cx+4} ${ny+3}" fill="none" stroke="${skinDD}" stroke-width="1.3" stroke-linejoin="round" opacity=".75"/>`,
+      `<path d="M${cx-1} ${eyeY+3} Q${cx-4} ${ny} ${cx-5} ${ny+2.6} Q${cx} ${ny+5.4} ${cx+5} ${ny+2.6} Q${cx+3.6} ${ny} ${cx+1} ${eyeY+3}" fill="${skinD}" opacity=".35"/>`][noseT];
+  s+=`<path d="M${cx+1.2} ${eyeY+4} Q${cx+2.4} ${ny-1} ${cx+3.6} ${ny+1.6}" fill="none" stroke="${skinDD}" stroke-width="2.4" opacity=".18" stroke-linecap="round"/><path d="M${cx-0.6} ${eyeY+4} L${cx-0.8} ${ny}" stroke="#fff" stroke-width="1.2" opacity=".14" stroke-linecap="round"/>`;
+  s+=`<ellipse cx="${cx-2.2}" cy="${ny+3.3}" rx="1.3" ry=".75" fill="${skinDD}" opacity=".8"/><ellipse cx="${cx+2.2}" cy="${ny+3.3}" rx="1.3" ry=".75" fill="${skinDD}" opacity=".8"/>`;
+  // oczy: oczodoły, białko, tęczówka, źrenica, odblask, powieka
+  for(const g of [-1,1]){const ex=cx+g*eyeDx;
+    s+=`<ellipse cx="${ex}" cy="${eyeY-1.4}" rx="${eyeR+3.4}" ry="${eyeR+1.6}" fill="${skinDD}" opacity=".16"/>`;
+    s+=`<path d="M${ex-eyeR-2} ${eyeY} Q${ex} ${eyeY-eyeR-0.8} ${ex+eyeR+2} ${eyeY} Q${ex} ${eyeY+eyeR*0.85} ${ex-eyeR-2} ${eyeY}Z" fill="#f3efe9"/>`;
+    s+=`<circle cx="${ex+g*0.2}" cy="${eyeY-0.1}" r="${eyeR*0.78}" fill="${eyeC}"/><circle cx="${ex+g*0.2}" cy="${eyeY-0.1}" r="${eyeR*0.78}" fill="none" stroke="#0006" stroke-width=".5"/><circle cx="${ex+g*0.2}" cy="${eyeY-0.1}" r="${eyeR*0.36}" fill="#0b0b0b"/><circle cx="${ex+g*0.2+0.8}" cy="${eyeY-0.9}" r="${eyeR*0.2}" fill="#fff" opacity=".9"/>`;
+    s+=`<path d="M${ex-eyeR-2.2} ${eyeY+0.2} Q${ex} ${eyeY-eyeR-1.4} ${ex+eyeR+2.2} ${eyeY+0.2}" fill="none" stroke="#2a1a12" stroke-width="1.3" stroke-linecap="round"/><path d="M${ex-eyeR-1} ${eyeY-eyeR-1.6} Q${ex} ${eyeY-eyeR-3} ${ex+eyeR+1} ${eyeY-eyeR-1.6}" fill="none" stroke="${skinDD}" stroke-width=".7" opacity=".5"/>`;
+    // brwi (zwężające się)
+    const by=eyeY-6.5;const t=browTilt*0.3*g;s+=`<path d="M${ex-6.5} ${by+1.2+t} Q${ex-1} ${by-2.6-browTilt*0.2} ${ex+6.5} ${by+0.4-t} Q${ex} ${by-2.6+brow*0.9} ${ex-6.5} ${by+1.2+t+brow*0.55}Z" fill="${hairC==='#d1d5db'?'#9ca3af':hairD}"/>`;}
+  if(age>=40){const op=Math.min(.55,(age-35)/40);s+=`<path d="M${cx-eyeDx-8} ${eyeY+1} l-3 1.6 M${cx-eyeDx-8} ${eyeY+3} l-2.6 2 M${cx+eyeDx+8} ${eyeY+1} l3 1.6 M${cx+eyeDx+8} ${eyeY+3} l2.6 2 M${cx-9} ${cy-fh+10} q9 -2.4 18 0 M${cx-7} ${cy-fh+13.5} q7 -1.6 14 0 M${cx-6} ${ny+2} Q${cx-10} ${my} ${cx-8.6} ${my+3} M${cx+6} ${ny+2} Q${cx+10} ${my} ${cx+8.6} ${my+3}" stroke="${skinDD}" stroke-width=".9" fill="none" opacity="${op}"/>`;}
+  // włosy (z gradientem i pasmami)
+  const top=cy-fh;const HF=`url(#h${U})`;
   const hp=[
     '',
-    `<path d="M${cx-fw} ${cy-6} Q${cx-fw} ${top-1} ${cx} ${top-1} Q${cx+fw} ${top-1} ${cx+fw} ${cy-6} Q${cx+fw-3} ${top+8} ${cx} ${top+7} Q${cx-fw+3} ${top+8} ${cx-fw} ${cy-6}Z" fill="${hairC}" opacity=".75"/>`,
-    `<path d="M${cx-fw-1} ${cy-2} Q${cx-fw-3} ${top-4} ${cx} ${top-5} Q${cx+fw+3} ${top-4} ${cx+fw+1} ${cy-2} L${cx+fw-2} ${cy-8} Q${cx+fw-6} ${top+9} ${cx} ${top+9} Q${cx-fw+6} ${top+9} ${cx-fw+2} ${cy-8}Z" fill="${hairC}"/>`,
-    `<path d="M${cx-fw-1} ${cy-1} Q${cx-fw-4} ${top-6} ${cx-4} ${top-5} Q${cx+fw+5} ${top-6} ${cx+fw+1} ${cy-4} L${cx+fw-2} ${cy-9} Q${cx+6} ${top+6} ${cx-8} ${top+10} Q${cx-fw+4} ${top+12} ${cx-fw+2} ${cy-6}Z" fill="${hairC}"/>`,
-    `<path d="M${cx-fw-1} ${cy-4} L${cx-fw+2} ${top-2} L${cx-14} ${top-9} L${cx-8} ${top-3} L${cx-2} ${top-11} L${cx+4} ${top-3} L${cx+11} ${top-10} L${cx+15} ${top-2} L${cx+fw+1} ${top-3} L${cx+fw+1} ${cy-4} Q${cx} ${top+8} ${cx-fw-1} ${cy-4}Z" fill="${hairC}"/>`,
-    Array.from({length:9},(_,i)=>`<circle cx="${cx-fw+3+i*(fw*2-6)/8}" cy="${top+2+(i%2)*3}" r="6.5" fill="${hairC}"/>`).join('')+`<rect x="${cx-fw}" y="${top}" width="${fw*2}" height="8" fill="${hairC}"/>`,
-    `<path d="M${cx-fw-3} ${cy+10} Q${cx-fw-6} ${top-6} ${cx} ${top-6} Q${cx+fw+6} ${top-6} ${cx+fw+3} ${cy+10} L${cx+fw-1} ${cy+8} L${cx+fw-2} ${cy-8} Q${cx+fw-8} ${top+8} ${cx} ${top+8} Q${cx-fw+8} ${top+8} ${cx-fw+2} ${cy-8} L${cx-fw+1} ${cy+8}Z" fill="${hairC}"/>`,
-    `<path d="M${cx-fw} ${cy-6} Q${cx-fw} ${top+2} ${cx-8} ${top} L${cx+8} ${top} Q${cx+fw} ${top+2} ${cx+fw} ${cy-6} Q${cx} ${top+9} ${cx-fw} ${cy-6}Z" fill="${hairC}" opacity=".45"/><path d="M${cx-7} ${top+6} L${cx-6} ${top-8} Q${cx} ${top-12} ${cx+6} ${top-8} L${cx+7} ${top+6}Z" fill="${hairC}"/>`
+    `<path d="M${cx-fw} ${cy-6} Q${cx-fw} ${top-1} ${cx} ${top-1} Q${cx+fw} ${top-1} ${cx+fw} ${cy-6} Q${cx+fw-3} ${top+8} ${cx} ${top+7} Q${cx-fw+3} ${top+8} ${cx-fw} ${cy-6}Z" fill="${HF}" opacity=".7"/>`,
+    `<path d="M${cx-fw-1} ${cy-2} Q${cx-fw-3} ${top-4} ${cx} ${top-5} Q${cx+fw+3} ${top-4} ${cx+fw+1} ${cy-2} L${cx+fw-2} ${cy-8} Q${cx+fw-6} ${top+9} ${cx} ${top+9} Q${cx-fw+6} ${top+9} ${cx-fw+2} ${cy-8}Z" fill="${HF}"/>`,
+    `<path d="M${cx-fw-1} ${cy-1} Q${cx-fw-4} ${top-6} ${cx-4} ${top-5} Q${cx+fw+5} ${top-6} ${cx+fw+1} ${cy-4} L${cx+fw-2} ${cy-9} Q${cx+6} ${top+6} ${cx-8} ${top+10} Q${cx-fw+4} ${top+12} ${cx-fw+2} ${cy-6}Z" fill="${HF}"/>`,
+    `<path d="M${cx-fw-1} ${cy-4} L${cx-fw+2} ${top-2} L${cx-14} ${top-9} L${cx-8} ${top-3} L${cx-2} ${top-11} L${cx+4} ${top-3} L${cx+11} ${top-10} L${cx+15} ${top-2} L${cx+fw+1} ${top-3} L${cx+fw+1} ${cy-4} Q${cx} ${top+8} ${cx-fw-1} ${cy-4}Z" fill="${HF}"/>`,
+    Array.from({length:9},(_,i)=>`<circle cx="${cx-fw+3+i*(fw*2-6)/8}" cy="${top+2+(i%2)*3}" r="6.5" fill="${HF}"/>`).join('')+`<rect x="${cx-fw}" y="${top}" width="${fw*2}" height="8" fill="${hairC}"/>`+Array.from({length:7},(_,i)=>`<circle cx="${cx-fw+7+i*(fw*2-14)/6}" cy="${top-1+(i%2)*2}" r="2" fill="${hairL}" opacity=".25"/>`).join(''),
+    `<path d="M${cx-fw-3} ${cy+10} Q${cx-fw-6} ${top-6} ${cx} ${top-6} Q${cx+fw+6} ${top-6} ${cx+fw+3} ${cy+10} L${cx+fw-1} ${cy+8} L${cx+fw-2} ${cy-8} Q${cx+fw-8} ${top+8} ${cx} ${top+8} Q${cx-fw+8} ${top+8} ${cx-fw+2} ${cy-8} L${cx-fw+1} ${cy+8}Z" fill="${HF}"/>`,
+    `<path d="M${cx-fw} ${cy-6} Q${cx-fw} ${top+2} ${cx-8} ${top} L${cx+8} ${top} Q${cx+fw} ${top+2} ${cx+fw} ${cy-6} Q${cx} ${top+9} ${cx-fw} ${cy-6}Z" fill="${HF}" opacity=".45"/><path d="M${cx-7} ${top+6} L${cx-6} ${top-8} Q${cx} ${top-12} ${cx+6} ${top-8} L${cx+7} ${top+6}Z" fill="${HF}"/>`
   ];
   s+=hp[hairStyle]||'';
-  if(band)s+=`<path d="M${cx-fw-1} ${top+12} Q${cx} ${top+6} ${cx+fw+1} ${top+12} L${cx+fw+1} ${top+17} Q${cx} ${top+11} ${cx-fw-1} ${top+17}Z" fill="${o.bandColor||'#f8fafc'}"/>`;
-  // brwi, oczy
-  for(const sgn of [-1,1]){const ex=cx+sgn*eyeDx;
-    s+=`<path d="M${ex-6} ${eyeY-6+sgn*browTilt*0.3} Q${ex} ${eyeY-9-browTilt*0.2} ${ex+6} ${eyeY-6-sgn*browTilt*0.3}" fill="none" stroke="${hairC==='#d1d5db'?'#9ca3af':hairC}" stroke-width="${brow}" stroke-linecap="round"/>`;
-    s+=`<ellipse cx="${ex}" cy="${eyeY}" rx="${eyeR+1.6}" ry="${eyeR}" fill="#fff"/><circle cx="${ex}" cy="${eyeY}" r="${eyeR*0.8}" fill="${eyeC}"/><circle cx="${ex}" cy="${eyeY}" r="${eyeR*0.38}" fill="#111"/>`;}
-  if(age>=40)s+=`<path d="M${cx-eyeDx-9} ${eyeY+1} l-3 2 M${cx+eyeDx+9} ${eyeY+1} l3 2 M${cx-8} ${top+10} q8 -2 16 0" stroke="${dark(skin)}" stroke-width="1" fill="none" opacity=".6"/>`;
-  // nos
-  const ny=cy+7;
-  s+=[`<path d="M${cx-1} ${eyeY+3} Q${cx-4} ${ny+2} ${cx-3} ${ny+3} Q${cx} ${ny+5} ${cx+3} ${ny+3}" fill="none" stroke="${dark(skin)}" stroke-width="1.6" stroke-linecap="round"/>`,
-      `<path d="M${cx} ${eyeY+3} L${cx-4} ${ny+3} Q${cx} ${ny+6} ${cx+4} ${ny+3}" fill="none" stroke="${dark(skin)}" stroke-width="1.6" stroke-linejoin="round"/>`,
-      `<ellipse cx="${cx}" cy="${ny+2}" rx="4.5" ry="3" fill="${dark(skin)}" opacity=".45"/>`][noseT];
-  // usta
-  const my=cy+15;const lip=beard>=3?'#5b3a2e':'#a3504a';
-  s+=[`<path d="M${cx-7} ${my} Q${cx} ${my+5} ${cx+7} ${my}" fill="none" stroke="${lip}" stroke-width="2" stroke-linecap="round"/>`,
-      `<path d="M${cx-6} ${my+1} L${cx+6} ${my+1}" stroke="${lip}" stroke-width="2" stroke-linecap="round"/>`,
-      `<path d="M${cx-8} ${my-1} Q${cx} ${my+7} ${cx+8} ${my-1} Q${cx} ${my+2} ${cx-8} ${my-1}Z" fill="#fff" stroke="${lip}" stroke-width="1.5"/>`,
-      `<path d="M${cx-6} ${my+2} Q${cx} ${my-1} ${cx+6} ${my+2}" fill="none" stroke="${lip}" stroke-width="2" stroke-linecap="round"/>`][mouthT];
+  if(hairStyle>=2&&hairStyle!==5)s+=`<path d="M${cx-fw*0.6} ${top+1} Q${cx-4} ${top-3} ${cx+fw*0.2} ${top+2} M${cx-fw*0.3} ${top+4} Q${cx+4} ${top} ${cx+fw*0.6} ${top+3} M${cx-fw*0.8} ${top+6} Q${cx-fw*0.5} ${top+2} ${cx-fw*0.1} ${top+5}" fill="none" stroke="${hairL}" stroke-width=".9" opacity=".35"/>`;
+  if(band)s+=`<path d="M${cx-fw-1} ${top+12} Q${cx} ${top+6} ${cx+fw+1} ${top+12} L${cx+fw+1} ${top+17} Q${cx} ${top+11} ${cx-fw-1} ${top+17}Z" fill="${o.bandColor||'#f8fafc'}"/><path d="M${cx-fw-1} ${top+16} Q${cx} ${top+10} ${cx+fw+1} ${top+16}" stroke="#0002" stroke-width="1" fill="none"/>`;
   s+=`</g></svg>`;
   return s;
 }
-function pFace(p,size){const t=p.tm>=0?TEAMS[p.tm]:null;return faceSvg(p.id,{size:size||36,age:p.age,color:t?t.color:'#64748b',kind:p.jr?'junior':'player'});}
+let FACE_UID=0;
+function pFace(p,size){const t=p.tm>=0?TEAMS[p.tm]:null;const kit=t&&typeof teamKit==='function'?teamKit(p.tm).h:null;return faceSvg(p.id,{size:size||36,age:p.age,color:t?t.color:'#64748b',kit,kind:p.jr?'junior':'player'});}
 function sFace(st,size){return faceSvg(st.id,{size:size||40,age:st.age,color:TEAMS[SAVE.team].color,kind:'staff'});}
 // ================= TRENER (gracz) =================
 const C_ATTR=[
@@ -3520,7 +3559,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=152').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=153').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
@@ -7939,7 +7978,7 @@ function homeView(){const s=S();if(!s)return '';
 function hvClip(){document.querySelectorAll('.hvgl').forEach(g=>{const b=g.getBoundingClientRect().bottom;for(const c of g.children)c.style.visibility=c.getBoundingClientRect().bottom>b+1?'hidden':'';});}
 window.addEventListener('resize',()=>{if(ui.tab==='home')hvClip();});
 // ================= WYGLĄD: motyw w stylu FM, przestawiane menu boczne, ekran startowy =================
-const APPV='152';
+const APPV='153';
 const HELP_EN='• You run a volleyball club as the manager: pick the squad, tactics and training, then watch matches live or simulate them.<br>• <b>Continue</b> (top right) moves time to the next event.<br>• Inbox and Conversations hold issues from players, the board, media and agents.<br>• Club → Staff: hire staff and delegate duties.<br>• Club → Club vision: what the board expects.<br>• Finances: budgets, bank loan and league licence.<br>• The game saves automatically; extra slots and save codes are in “Save game”.<br>• You can reorder the left menu by dragging items.';
 // ---- motyw ----
 function uiPref(k,d){try{const v=localStorage.getItem('vm_'+k);return v==null?d:v;}catch(e){return d;}}
@@ -7982,7 +8021,7 @@ function looksCard(){const th=themeCur();const G=navGroups();
    <button class="ghost sm" style="margin-top:8px" onclick="navReset()">${_t('Przywróć domyślną kolejność')}</button></details></div>`;}
 {const _sv=saveView;saveView=function(){return `<div class="card row wrap" style="gap:8px;align-items:center"><span>${_t('Ustawienia i zapis gry')}</span><span class="sp"></span><button class="ghost" onclick="ui.start=true;render()">${_t('⏏ Menu główne')}</button></div>`+looksCard()+_sv.apply(this,arguments);};}
 // ================= EKRAN STARTOWY =================
-const CHANGES=[['v152','Motyw granatowy jak w FM (pasek w kolorze klubu, żółty Kontynuuj), flagi krajów działają na Windows, obcokrajowcy w Transferach, samouczki we wszystkich zakładkach'],['v151','Ekran wczytywania gry: szczegóły zapisu, czas gry, ostatnia szóstka, wskazówki'],['v150','Limit obcokrajowców widoczny w składzie i na ławce, dźwięki po animacji, działające suwaki budżetu, uczciwy wpływ sponsorów'],['v149','Dźwięki zgrane z animacją (także 3D), gwizdek sędziego przed zagrywką'],['v148','Język angielski — etap 1: menu, ekran startowy, górny pasek, pozycje, daty'],['v147','Transfery: zakładki Wypożyczenia i Historia transferów'],['v146','Analiza rywala na ekranie głównym, zakładki na starszych ekranach'],['v145','Balans treningu „mocniej”, łagodniejsza ocena zarządu po sezonie, kibice na pasku we własnym klubie'],['v143','Własny klub: sam wybierasz charakter i plan, kibice wpływają na frekwencję i sponsorów'],['v142','Ekran startowy, motyw grafitowy jak w FM, przestawiane menu'],['v141','Strategia klubu: cele zarządu, plan pięcioletni, kibice'],['v140','Finanse: wykresy, kredyt bankowy, licencja ligowa, prognoza'],['v139','Trening: indywidualny, mentoring, odpoczynek, reżimy, trenerzy'],['v138','Wyższe limity sztabu, skauci osobno, własny klub bez limitu'],['v137','Dźwięki meczu i powiadomień, wersja na Windows'],['v136','Zapisy w IndexedDB, delegowanie transferów']];
+const CHANGES=[['v153','Stroje klubu (domowy, wyjazdowy, libero; 7 wzorów) w kreatorze i w zakładce Klub, widoczne na twarzach i w meczu; nowe, bardziej realistyczne twarze'],['v152','Motyw granatowy jak w FM (pasek w kolorze klubu, żółty Kontynuuj), flagi krajów działają na Windows, obcokrajowcy w Transferach, samouczki we wszystkich zakładkach'],['v151','Ekran wczytywania gry: szczegóły zapisu, czas gry, ostatnia szóstka, wskazówki'],['v150','Limit obcokrajowców widoczny w składzie i na ławce, dźwięki po animacji, działające suwaki budżetu, uczciwy wpływ sponsorów'],['v149','Dźwięki zgrane z animacją (także 3D), gwizdek sędziego przed zagrywką'],['v148','Język angielski — etap 1: menu, ekran startowy, górny pasek, pozycje, daty'],['v147','Transfery: zakładki Wypożyczenia i Historia transferów'],['v146','Analiza rywala na ekranie głównym, zakładki na starszych ekranach'],['v145','Balans treningu „mocniej”, łagodniejsza ocena zarządu po sezonie, kibice na pasku we własnym klubie'],['v143','Własny klub: sam wybierasz charakter i plan, kibice wpływają na frekwencję i sponsorów'],['v142','Ekran startowy, motyw grafitowy jak w FM, przestawiane menu'],['v141','Strategia klubu: cele zarządu, plan pięcioletni, kibice'],['v140','Finanse: wykresy, kredyt bankowy, licencja ligowa, prognoza'],['v139','Trening: indywidualny, mentoring, odpoczynek, reżimy, trenerzy'],['v138','Wyższe limity sztabu, skauci osobno, własny klub bez limitu'],['v137','Dźwięki meczu i powiadomień, wersja na Windows'],['v136','Zapisy w IndexedDB, delegowanie transferów']];
 ui.start=true;
 function smHasSave(){return SAVE.team!=null&&!!SAVE.coach;}
 function smCont(){ui.start=false;ui.sm=null;render();}
@@ -8101,14 +8140,89 @@ smLoad=function(i){const o=slotInfo(i);if(!o)return;ui.sm=null;runLoad('load','S
 smImport=function(){const before=SAVE;importCode();if(SAVE.team!=null&&SAVE.coach&&!/nieprawidłowy/.test(ui.msg||'')){ui.sm=null;ui.start=true;runLoad('load','Kod zapisu',[[40,'Rozpakowywanie danych'],[80,'Przygotowanie świata gry'],[100,'Gotowe']],()=>{ui.start=false;ui.tab='home';});}else render();};
 {const _sn=smNew;smNew=function(){if(smHasSave()&&ui.confirm!=='smnew'){ui.confirm='smnew';render();return;}ui.confirm='smnew';runLoad('new','',[[40,'Tworzenie lig i klubów'],[75,'Losowanie zawodników',()=>{_sn();ui.start=true;}],[100,'Gotowe']],()=>{ui.start=false;});};}
 {const _r3=render;render=function(){if(ui.load){const app=$('#app');if(app){app.innerHTML=loadView();return;}}return _r3.apply(this,arguments);};}
+// ================= STROJE KLUBÓW =================
+// Każdy klub ma 3 komplety: h — domowy, w — wyjazdowy, l — libero.
+// Komplet: p — wzór, a — kolor główny, b — kolor dodatkowy, s — spodenki, c — kołnierz (v / r).
+// Własne stroje zapisane są w SAVE.kits[idx klubu]; pozostałe kluby dostają domyślne z barw klubu.
+const KIT_PATS=[['plain','Gładka'],['v','Pasy pionowe'],['h','Pas poziomy'],['hoops','Poziome pasy'],['sash','Szarfa'],['half','Połówki'],['side','Boczne wstawki']];
+const KIT_COLORS=['#ffffff','#111827','#dc2626','#be123c','#ea580c','#f59e0b','#facc15','#16a34a','#0d9488','#0ea5e9','#2563eb','#1e3a8a','#7c3aed','#db2777','#6b7280','#78350f'];
+const KIT_SETS=[['h','Domowy'],['w','Wyjazdowy'],['l','Libero']];
+function kitInk(c){return lum(c)>0.6?'#111827':'#ffffff';}
+function kitDark(c){const n=parseInt(String(c).slice(1),16);if(isNaN(n))return '#1f2937';return '#'+[n>>16,n>>8&255,n&255].map(v=>Math.round(v*0.45).toString(16).padStart(2,'0')).join('');}
+function kitDefault(color){const light=lum(color)>0.7;const away=light?'#111827':'#f1f5f9';const lib=LIBC0(color,away);
+  return {h:{p:'plain',a:color,b:light?'#111827':'#ffffff',s:light?'#111827':kitDark(color),c:'v'},
+          w:{p:'plain',a:away,b:color,s:light?'#111827':color,c:'v'},
+          l:{p:'plain',a:lib,b:kitInk(lib)==='#111827'?'#111827':'#ffffff',s:light?'#111827':kitDark(color),c:'v'}};}
+function teamKit(ti){const t=TEAMS[ti];if(!t)return kitDefault('#64748b');const k=SAVE.kits&&SAVE.kits[ti];return k||kitDefault(t.color);}
+// --- rysunek koszulki ze spodenkami (podgląd, edytor) ---
+function kitPat(k,w,clip){const b=k.b;switch(k.p){
+  case 'v':return [0.3,0.43,0.57,0.7].map(x=>`<rect x="${w*x-3}" y="0" width="6" height="200" fill="${b}"/>`).join('');
+  case 'h':return `<rect x="0" y="50" width="${w}" height="14" fill="${b}"/>`;
+  case 'hoops':return [34,52,70,88].map(y=>`<rect x="0" y="${y}" width="${w}" height="8" fill="${b}"/>`).join('');
+  case 'sash':return `<path d="M30 20L46 12L92 100L74 100Z" fill="${b}"/>`;
+  case 'half':return `<rect x="${w/2}" y="0" width="${w/2}" height="200" fill="${b}"/>`;
+  case 'side':return `<rect x="32" y="44" width="8" height="56" fill="${b}"/><rect x="80" y="44" width="8" height="56" fill="${b}"/><path d="M90 20L110 40L98 52Z" fill="${b}"/><path d="M30 20L10 40L22 52Z" fill="${b}"/>`;
+  default:return '';}}
+let KIT_UID=0;
+function kitSvg(k,num,size){size=size||90;const id='kt'+(++KIT_UID);const body='M30 20L45 12Q60 20 75 12L90 20L110 40L98 52L88 44L88 100L32 100L32 44L22 52L10 40Z';
+  const neck=k.c==='r'?`<path d="M45 12Q60 22 75 12" fill="none" stroke="${k.b}" stroke-width="3"/>`:`<path d="M45 12Q52 26 60 30Q68 26 75 12" fill="none" stroke="${k.b}" stroke-width="3"/>`;
+  const ink=k.p==='plain'||k.p==='side'?kitInk(k.a):'#ffffff';
+  return `<svg class="kitsvg" viewBox="0 0 120 150" width="${size}" height="${Math.round(size*1.25)}"><defs><clipPath id="${id}"><path d="${body}"/></clipPath><linearGradient id="${id}g" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".18"/><stop offset=".35" stop-color="#000" stop-opacity="0"/><stop offset=".7" stop-color="#fff" stop-opacity=".07"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></linearGradient></defs>
+   <path d="${body}" fill="${k.a}"/><g clip-path="url(#${id})">${kitPat(k,120)}<rect width="120" height="110" fill="url(#${id}g)"/></g><path d="${body}" fill="none" stroke="#0b0f14" stroke-width="1.2"/>${neck}
+   ${num!=null?`<text x="60" y="80" text-anchor="middle" font-size="32" font-weight="900" font-family="Arial Black,Arial,sans-serif" fill="${ink}" stroke="#0b0f14" stroke-width="1" paint-order="stroke">${num}</text>`:''}
+   <path d="M34 102L86 102L90 140L64 140L60 122L56 140L30 140Z" fill="${k.s}" stroke="#0b0f14" stroke-width="1.2"/><path d="M34 106L86 106" stroke="${k.b}" stroke-width="2" opacity=".8"/></svg>`;}
+// --- wybór kompletów na mecz (wyjazdowy, gdy domowe barwy są zbyt podobne) ---
+let KIT_BY_COLOR={};const LIBC0=libColor;
+function teamKitT(t){const k=SAVE.kits&&t&&t.idx!=null&&t.idx>=0&&SAVE.kits[t.idx];return k||kitDefault(t&&t.color||'#64748b');}
+function kitPick(m){const T=m.sides.map(s=>s.team);const K=T.map(teamKitT);let s=['h','h'];
+  if(cdist(K[0].h.a,K[1].h.a)<110){const homeLeft=m.homeIdx==null||m.homeIdx===T[0].idx;const aw=homeLeft?1:0;s[aw]='w';
+    if(cdist(K[aw].w.a,K[1-aw].h.a)<110)s[aw]='alt';}
+  const out=[0,1].map(i=>{if(s[i]==='alt'){const hc=K[1-i].h.a;const a=lum(hc)>0.7?'#111827':'#f1f5f9';return {p:'plain',a,b:hc,s:a,c:'v'};}return K[i][s[i]];});
+  const libs=[0,1].map(i=>{let l=K[i].l;if(Math.min(cdist(l.a,out[0].a),cdist(l.a,out[1].a))<90){const a=LIBC0(out[i].a,out[1-i].a);l={p:'plain',a,b:kitInk(a),s:out[i].s,c:'v'};}return l;});
+  return {k:out,l:libs};}
+kitColors=function(m){const P=kitPick(m);KIT_BY_COLOR={};P.k.forEach((k,i)=>{KIT_BY_COLOR[k.a]=k;KIT_BY_COLOR['L'+k.a]=P.l[i];});return P.k.map(k=>k.a);};
+// libero: kolor z kompletu libero (gdy pasuje), inaczej dotychczasowy dobór
+libColor=function(c,o){const l=KIT_BY_COLOR['L'+c];return l?l.a:LIBC0(c,o);};
+// koszulka w widoku klasycznym meczu — wzór z kompletu
+{const _j=jersey;jersey=function(p,color,isLib,opp){const k=KIT_BY_COLOR[isLib?'L'+color:color];if(!k||k.p==='plain')return _j.apply(this,arguments);
+  const html=_j(p,isLib?k.a:color,false,opp);const id='jk'+(++KIT_UID);const body='M19 3 L25 5 Q30 9 35 5 L41 3 L58 13 L52 25 L46 22 L46 54 L14 54 L14 22 L8 25 L2 13 Z';
+  return html.replace(/(<path d="M19 3[^>]*\/>)/,`<defs><clipPath id="${id}"><path d="${body}"/></clipPath></defs>$1<g clip-path="url(#${id})"><g transform="scale(.5)">${kitPat(k,120)}</g></g>`);};}
+// 3D: koszulka, spodenki i libero z kompletu (kolory; wzory na modelach to zadanie widoku 3D)
+if(typeof v3dKits==='function'){const _v=v3dKits;v3dKits=function(m){const K=_v.apply(this,arguments);try{const P=kitPick(m);P.k.forEach((k,i)=>{K[i].jersey=k.a;K[i].shorts=k.s;K[i].ink=kitInk(k.a);K[i].lib=P.l[i].a;K[i].libInk=kitInk(P.l[i].a);K[i].trim=k.b;K[i].pattern=k.p;});}catch(e){console.error(e);}return K;};}
+// --- edytor strojów ---
+function kitEdState(src){return src;}
+function kitEditor(kits,setKey,onCh){const k=kits[setKey];const sw=(f)=>KIT_COLORS.map(c=>`<button class="ksw ${k[f]===c?'on':''}" style="background:${c}" onclick="${onCh}('${setKey}','${f}','${c}')" title="${c}"></button>`).join('')+`<label class="ksw kpick" title="Własny kolor"><input type="color" value="${k[f]}" onchange="${onCh}('${setKey}','${f}',this.value)">+</label>`;
+  return `<div class="kited"><div class="kprev">${KIT_SETS.map(([s,n])=>`<button class="kpv ${s===setKey?'on':''}" onclick="${onCh}('${s}','_sel','')">${kitSvg(kits[s],s==='l'?1:7,s===setKey?120:70)}<span>${_t(n)}</span></button>`).join('')}</div>
+   <div class="kopts"><div class="klab">${_t('Wzór koszulki')}</div><div class="row wrap" style="gap:6px">${KIT_PATS.map(([p,n])=>`<button class="ghost sm ${k.p===p?'on':''}" onclick="${onCh}('${setKey}','p','${p}')">${_t(n)}</button>`).join('')}</div>
+    <div class="klab">${_t('Kolor główny')}</div><div class="kcols">${sw('a')}</div>
+    <div class="klab">${_t('Kolor dodatkowy (wzór, kołnierz, numer)')}</div><div class="kcols">${sw('b')}</div>
+    <div class="klab">${_t('Spodenki')}</div><div class="kcols">${sw('s')}</div>
+    <div class="klab">${_t('Kołnierz')}</div><div class="row" style="gap:6px"><button class="ghost sm ${k.c!=='r'?'on':''}" onclick="${onCh}('${setKey}','c','v')">V-neck</button><button class="ghost sm ${k.c==='r'?'on':''}" onclick="${onCh}('${setKey}','c','r')">${_t('Okrągły')}</button></div></div></div>`;}
+// kreator nowego klubu
+function ocKit(){const o=ocDraft();if(!o.kit||o.kitCol!==o.color&&!o.kitTouched){o.kit=kitDefault(o.color);o.kitCol=o.color;}return o.kit;}
+function ocKitCh(s,f,v){const o=ocDraft();const K=ocKit();if(f==='_sel'){ui.ocKs=s;render();return;}K[s][f]=v;o.kitTouched=true;ui.ocKs=s;render();}
+{const _ov=ownClubView;ownClubView=function(){const h=_ov.apply(this,arguments);const K=ocKit();const ed=`<h3>${_t('Stroje klubu')}</h3><p class="small mut">${_t('Komplet domowy, wyjazdowy i libero. Będą widoczne na twarzach zawodników, w składzie i na boisku. Na wyjeździe drużyna sama założy strój wyjazdowy, gdy barwy są zbyt podobne do rywala.')}</p>${kitEditor(K,ui.ocKs||'h','ocKitCh')}`;
+  return h.replace('<h3>Charakter klubu</h3>',ed+'<h3>Charakter klubu</h3>');};}
+{const _fc=foundClub;foundClub=function(){const o=ocDraft();const K=JSON.parse(JSON.stringify(ocKit()));const r=_fc.apply(this,arguments);try{if(SAVE.custom&&SAVE.custom.idx===o.replace){SAVE.kits=SAVE.kits||{};SAVE.kits[o.replace]=K;save();}}catch(e){console.error(e);}return r;};}
+// zakładka Klub → Stroje (dla prowadzonego klubu)
+function myKits(){SAVE.kits=SAVE.kits||{};if(!SAVE.kits[SAVE.team])SAVE.kits[SAVE.team]=JSON.parse(JSON.stringify(teamKit(SAVE.team)));return SAVE.kits[SAVE.team];}
+function clubKitCh(s,f,v){if(f==='_sel'){ui.kitS=s;render();return;}myKits()[s][f]=v;ui.kitS=s;save();render();}
+function clubKitReset(){if(SAVE.kits)delete SAVE.kits[SAVE.team];save();render();}
+function clubKitCard(){if(SAVE.team==null)return '';const K=SAVE.kits&&SAVE.kits[SAVE.team]?SAVE.kits[SAVE.team]:teamKit(SAVE.team);
+  return `<div class="card"><div class="row wrap"><h2 style="margin:0">${_t('Stroje klubu')}</h2><span class="sp"></span><button class="ghost sm" onclick="clubKitReset()">${_t('Przywróć domyślne')}</button></div>
+   <p class="small mut">${_t('Stroje widać na twarzach zawodników, w składzie, w meczu (widok 2D i klasyczny) oraz kolory w widoku 3D. Na wyjeździe drużyna sama założy strój wyjazdowy, gdy barwy są zbyt podobne do rywala.')}</p>
+   ${kitEditor(SAVE.kits&&SAVE.kits[SAVE.team]?SAVE.kits[SAVE.team]:JSON.parse(JSON.stringify(K)),ui.kitS||'h',SAVE.kits&&SAVE.kits[SAVE.team]?'clubKitCh':'clubKitCh0')}</div>`;}
+function clubKitCh0(s,f,v){myKits();clubKitCh(s,f,v);}
+{const _cv=clubView;clubView=function(){return _cv.apply(this,arguments)+clubKitCard();};}
+if(typeof SUBT!=='undefined'&&SUBT.klub)SUBT.klub.push(['st','Stroje',/Stroje klubu/i]);
 // ================= POPRAWKI: limit obcokrajowców widoczny w składzie i w meczu =================
 function forInfo(){const t=myTeam();const mx=tmMaxF(t);if(mx==null)return null;const hl=healthyLineup(t,myLineup());const lu=hl.lu;const n=luForeign(t,lu);
   const fx=lineupFix(t,lu);const ch=LINEUP_KEYS.filter(([k])=>fx[k]!==lu[k]).map(([k,l])=>({k,l,out:t.players.find(p=>p.id===lu[k]),inn:t.players.find(p=>p.id===fx[k])}));return {mx,n,lu,fx,ch,inj:hl.ch};}
 function forApply(){const F=forInfo();if(!F)return;SAVE.lineup=Object.assign({},F.fx);save();render();}
 function forCard(){const F=forInfo();const live=typeof liveMatch==='function'&&liveMatch();let h='';
   if(live)h+=`<div class="card" style="border-color:#eab308"><b>⚠ Mecz właśnie trwa.</b> <span class="small">Zmiany składu tutaj obowiązują od następnego meczu. Zawodników w trwającym meczu zmieniasz w widoku meczu (kliknij zawodnika na pasku „Skład”, potem rezerwowego).</span> <button class="link" onclick="go('mecz')">Wróć do meczu →</button></div>`;
-  if(F){const bad=F.n>F.mx;h+=`<div class="card" style="${bad?'border-color:var(--bad)':''}"><div class="row wrap" style="gap:10px;align-items:center"><b>🌍 Limit obcokrajowców: ${forRuleTxt(myLg())}.</b><span class="${bad?'bad':'good'}">W Twoim składzie: <b>${F.n}</b> / ${F.mx}</span>${bad?`<span class="sp"></span><button class="btn sm" onclick="forApply()">Popraw skład zgodnie z limitem</button>`:''}</div>
-    ${bad?`<div class="small" style="margin-top:6px">Jeśli tego nie zmienisz, przed meczem asystent sam wymieni: ${F.ch.map(c=>`<b>${esc(c.out.last)}</b> → <b>${esc(c.inn.last)}</b> (${c.l})`).join(', ')}.</div>`:''}
+  if(F){const bad=F.n>F.mx;h+=`<div class="card" style="${bad?'border-color:var(--bad)':''}"><div class="row wrap" style="gap:10px;align-items:center"><b>🌍 Limit obcokrajowców: ${forRuleTxt(myLg())}.</b><span class="${bad?'bad':'good'}">W Twoim składzie: <b>${F.n}</b> / ${F.mx}</span>${bad&&F.ch.length?`<span class="sp"></span><button class="btn sm" onclick="forApply()">Popraw skład zgodnie z limitem</button>`:''}</div>
+    ${bad?(F.ch.length?`<div class="small" style="margin-top:6px">Jeśli tego nie zmienisz, przed meczem asystent sam wymieni: ${F.ch.map(c=>`<b>${esc(c.out.last)}</b> → <b>${esc(c.inn.last)}</b> (${c.l})`).join(', ')}.</div>`:`<div class="small bad" style="margin-top:6px">W kadrze jest za mało zdrowych zawodników z kraju ligi, żeby zmieścić się w limicie — asystent nie ma kogo wstawić. Potrzebujesz transferu zawodnika z kraju ligi (zakładka Transfery albo Juniorzy).</div>`):''}
     <div class="small mut" style="margin-top:4px">Ten sam limit obowiązuje przy zmianach w trakcie meczu — obcokrajowca można wpuścić tylko za obcokrajowca.</div></div>`;}
   if(F&&F.inj&&F.inj.length)h+=`<div class="card"><span class="small">🚑 Kontuzje: przed meczem wejdą ${F.inj.map(([p,c,l])=>`<b>${esc(c.last)}</b> za ${esc(p?p.last:'—')} (${l})`).join(', ')}.</span></div>`;
   return h;}
@@ -8128,6 +8242,11 @@ function forCard(){const F=forInfo();const live=typeof liveMatch==='function'&&l
   if(ui.forMsg){h=h.replace('<div class="fmsi"><b>Ławka</b>',`<div class="fmsi"><div class="small bad" style="margin-bottom:4px">${ui.forMsg}</div><b>Ławka</b>`);}}catch(e){console.error(e);}return h;};}
 {const _ds=doSub;doSub=function(pid){ui.forMsg=null;const m=ui.match;const r=_ds.apply(this,arguments);try{const lg=m&&m.log[m.log.length-1];if(lg&&/Zmiana niemożliwa/.test(lg.t)){ui.forMsg=lg.t;render();}}catch(e){}return r;};}
 {const _ss=selSub;selSub=function(){ui.forMsg=null;return _ss.apply(this,arguments);};}
+
+// nowy klub: kadra musi zmieścić się w limicie obcokrajowców (najwyżej 3 obcokrajowców, reszta z kraju ligi)
+{const _fc=foundClub;foundClub=function(){const r=_fc.apply(this,arguments);try{const t=myTeam();const c=LG_C[SAVE.lg[t.idx]];const fs=t.players.filter(p=>p.nat!==c);const keep=fs.filter(p=>p.star).concat(fs.filter(p=>!p.star)).slice(0,3);
+  const conv=p=>{const [f,l]=natName(c);p.nat=c;p.first=f;p.last=l;};for(const p of fs)if(!keep.includes(p))conv(p);
+  for(const pos of ['R','A','P','S','L']){const ps=t.players.filter(p=>p.pos===pos);if(ps.length&&!ps.some(p=>p.nat===c)){const x=ps.find(p=>!p.star);if(x)conv(x);}}SAVE.lineup=lineupFix(t,autoLineup(t));save();}catch(e){console.error(e);}return r;};}
 // ================= SAMOUCZKI ZAKŁADEK, OBCOKRAJOWCY W TRANSFERACH, KOLOR KLUBU =================
 // Samouczek pokazuje się przy pierwszym wejściu do każdej zakładki (w stylu FM: „Wprowadzenie”).
 // „Rozumiem” zamyka go dla tej zakładki; przycisk „?” na pasku pod nagłówkiem otwiera go ponownie.

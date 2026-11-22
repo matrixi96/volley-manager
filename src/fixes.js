@@ -4,8 +4,8 @@ function forInfo(){const t=myTeam();const mx=tmMaxF(t);if(mx==null)return null;c
 function forApply(){const F=forInfo();if(!F)return;SAVE.lineup=Object.assign({},F.fx);save();render();}
 function forCard(){const F=forInfo();const live=typeof liveMatch==='function'&&liveMatch();let h='';
   if(live)h+=`<div class="card" style="border-color:#eab308"><b>⚠ Mecz właśnie trwa.</b> <span class="small">Zmiany składu tutaj obowiązują od następnego meczu. Zawodników w trwającym meczu zmieniasz w widoku meczu (kliknij zawodnika na pasku „Skład”, potem rezerwowego).</span> <button class="link" onclick="go('mecz')">Wróć do meczu →</button></div>`;
-  if(F){const bad=F.n>F.mx;h+=`<div class="card" style="${bad?'border-color:var(--bad)':''}"><div class="row wrap" style="gap:10px;align-items:center"><b>🌍 Limit obcokrajowców: ${forRuleTxt(myLg())}.</b><span class="${bad?'bad':'good'}">W Twoim składzie: <b>${F.n}</b> / ${F.mx}</span>${bad?`<span class="sp"></span><button class="btn sm" onclick="forApply()">Popraw skład zgodnie z limitem</button>`:''}</div>
-    ${bad?`<div class="small" style="margin-top:6px">Jeśli tego nie zmienisz, przed meczem asystent sam wymieni: ${F.ch.map(c=>`<b>${esc(c.out.last)}</b> → <b>${esc(c.inn.last)}</b> (${c.l})`).join(', ')}.</div>`:''}
+  if(F){const bad=F.n>F.mx;h+=`<div class="card" style="${bad?'border-color:var(--bad)':''}"><div class="row wrap" style="gap:10px;align-items:center"><b>🌍 Limit obcokrajowców: ${forRuleTxt(myLg())}.</b><span class="${bad?'bad':'good'}">W Twoim składzie: <b>${F.n}</b> / ${F.mx}</span>${bad&&F.ch.length?`<span class="sp"></span><button class="btn sm" onclick="forApply()">Popraw skład zgodnie z limitem</button>`:''}</div>
+    ${bad?(F.ch.length?`<div class="small" style="margin-top:6px">Jeśli tego nie zmienisz, przed meczem asystent sam wymieni: ${F.ch.map(c=>`<b>${esc(c.out.last)}</b> → <b>${esc(c.inn.last)}</b> (${c.l})`).join(', ')}.</div>`:`<div class="small bad" style="margin-top:6px">W kadrze jest za mało zdrowych zawodników z kraju ligi, żeby zmieścić się w limicie — asystent nie ma kogo wstawić. Potrzebujesz transferu zawodnika z kraju ligi (zakładka Transfery albo Juniorzy).</div>`):''}
     <div class="small mut" style="margin-top:4px">Ten sam limit obowiązuje przy zmianach w trakcie meczu — obcokrajowca można wpuścić tylko za obcokrajowca.</div></div>`;}
   if(F&&F.inj&&F.inj.length)h+=`<div class="card"><span class="small">🚑 Kontuzje: przed meczem wejdą ${F.inj.map(([p,c,l])=>`<b>${esc(c.last)}</b> za ${esc(p?p.last:'—')} (${l})`).join(', ')}.</span></div>`;
   return h;}
@@ -25,3 +25,8 @@ function forCard(){const F=forInfo();const live=typeof liveMatch==='function'&&l
   if(ui.forMsg){h=h.replace('<div class="fmsi"><b>Ławka</b>',`<div class="fmsi"><div class="small bad" style="margin-bottom:4px">${ui.forMsg}</div><b>Ławka</b>`);}}catch(e){console.error(e);}return h;};}
 {const _ds=doSub;doSub=function(pid){ui.forMsg=null;const m=ui.match;const r=_ds.apply(this,arguments);try{const lg=m&&m.log[m.log.length-1];if(lg&&/Zmiana niemożliwa/.test(lg.t)){ui.forMsg=lg.t;render();}}catch(e){}return r;};}
 {const _ss=selSub;selSub=function(){ui.forMsg=null;return _ss.apply(this,arguments);};}
+
+// nowy klub: kadra musi zmieścić się w limicie obcokrajowców (najwyżej 3 obcokrajowców, reszta z kraju ligi)
+{const _fc=foundClub;foundClub=function(){const r=_fc.apply(this,arguments);try{const t=myTeam();const c=LG_C[SAVE.lg[t.idx]];const fs=t.players.filter(p=>p.nat!==c);const keep=fs.filter(p=>p.star).concat(fs.filter(p=>!p.star)).slice(0,3);
+  const conv=p=>{const [f,l]=natName(c);p.nat=c;p.first=f;p.last=l;};for(const p of fs)if(!keep.includes(p))conv(p);
+  for(const pos of ['R','A','P','S','L']){const ps=t.players.filter(p=>p.pos===pos);if(ps.length&&!ps.some(p=>p.nat===c)){const x=ps.find(p=>!p.star);if(x)conv(x);}}SAVE.lineup=lineupFix(t,autoLineup(t));save();}catch(e){console.error(e);}return r;};}

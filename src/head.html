@@ -819,5 +819,17 @@ body.th-n .mail2 .mxtabs>button{background:transparent;border:0;border-bottom:2p
 body.th-n .mail2 .mxtabs>button.on{background:transparent;color:#fff;border-bottom-color:var(--acc)}
 body.th-n .mail2 .mxd{background:#283342;color:#aab6c5;font-weight:600;font-size:11.5px;border-color:#2f3b4a}
 body.th-n .mail2 .mx{border-bottom:1px solid #2b3644}
+
+/* edytor strojów */
+.kited{display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:start;margin-top:8px}
+.kprev{display:flex;gap:8px;align-items:flex-end}
+.kpv{background:#151c25;border:1px solid var(--line);border-radius:4px;padding:8px 8px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--mut);font-size:12.5px;cursor:pointer}
+.kpv.on{border-color:var(--acc);color:#fff;background:#1b2430}.kpv:hover{border-color:#ffffff40}
+.klab{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);font-weight:600;margin:12px 0 6px}.kopts .klab:first-child{margin-top:0}
+.kcols{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.ksw{width:26px;height:26px;border-radius:4px;border:2px solid #0008;padding:0;cursor:pointer;flex:none}.ksw.on{border-color:var(--acc);box-shadow:0 0 0 2px #f2c41866}
+.kpick{position:relative;display:flex;align-items:center;justify-content:center;background:conic-gradient(#ef4444,#facc15,#22c55e,#06b6d4,#3b82f6,#d946ef,#ef4444);color:#fff;font-weight:800;text-shadow:0 0 3px #000;overflow:hidden}
+.kpick input{position:absolute;inset:-4px;opacity:0;cursor:pointer;width:40px;height:40px;padding:0;border:0}
+@media (max-width:760px){.kited{grid-template-columns:1fr}.kprev{justify-content:center}}
 </style></head><body><div id="app"></div>
 <script>
