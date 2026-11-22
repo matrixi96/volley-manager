@@ -55,18 +55,21 @@ function sndSteps(m,ev,steps,in3d){SND.animEv=ev;SND.after=null;if(!sndOk('match
     else if(k==='dig')snd='bump';else if(k==='blk')snd='block';else if(k==='floor'||k==='out')snd='floor',g=k==='out'?0.6:1;else if(k==='net')snd='net';else if(k==='mix')snd='floor';
     if(!k&&i===steps.length-1)snd='floor';cs.push([t,snd,g]);});
   const home=m.ctx?m.sides.findIndex(x=>x.team&&x.team.idx===m.ctx.h):0;const homeWon=ev.winner===home;const cf=sndCrowdF(m);const big=ev.type==='ace'||ev.type==='block'||steps.length>7;
-  const fin=()=>{const af=SND.after;SND.after=null;if(af)setTimeout(af,700);sndWhistle(0.28);setTimeout(()=>{if(homeWon){sndCheer(cf*(big?1.4:1),big?40:18);}else{sndGroan(cf*0.8);sndCheer(cf*0.35,6);}sndAmbLevel(1,1.5);},160);};
+  const fin=()=>{const af=SND.after;SND.after=null;if(af)setTimeout(af,700);sndWhistle(0.38);setTimeout(()=>{if(homeWon){sndCheer(cf*(big?1.4:1),big?40:18);}else{sndGroan(cf*0.8);sndCheer(cf*0.35,6);}sndAmbLevel(1,1.5);},160);};
   const play=c=>{if(c&&c[1])sndHit(c[1],c[2]);};
-  if(in3d){SND.q={m,cs,j:0,fin,ended:0};return;}// w 3D dźwięki wyzwalają zdarzenia animacji (sndPh / sndDone)
+  if(in3d){const ls=steps[steps.length-1]||{};SND.q={m,cs,j:0,fin,ended:0,lastPh:ls.ph,lastDur:ls.dur||400};return;}// w 3D dźwięki wyzwalają zdarzenia animacji (sndPh / sndDone)
   const plan=cs.map(c=>[c[0],c[1],c[2]]);plan.push([t+80,'_fin',0]);let el=-(ui.speed>=1600?750:450),last=performance.now(),k=0;const swellAt=cs[3]?cs[3][0]:1e9;let sw=0;
   const h=setInterval(()=>{const now=performance.now();if(!m.paused)el+=now-last;last=now;if(!sw&&el>=swellAt){sw=1;sndAmbLevel(1.8,1.2);}
     while(k<plan.length&&plan[k][0]<=el){const c=plan[k++];if(c[1]==='_fin')fin();else play(c);}
     if(k>=plan.length||ui.match!==m){clearInterval(h);SND.timers=SND.timers.filter(x=>x!==h);}},20);SND.timers.push(h);}
 // gwizdek sędziego pozwalający na zagrywkę; zwraca opóźnienie (ms), o jakie animacja czeka na zagrywkę
-function sndServeWhistle(m){if(!sndOk('match'))return 0;sndWhistle(0.22);return ui.speed>=1600?750:450;}
+function sndServeWhistle(m){if(!sndOk('match'))return 0;sndWhistle(0.34);return ui.speed>=1600?750:450;}
 // 3D: każda zmiana opisu fazy = początek kolejnego kroku (czyli kontakt kończący poprzedni krok); opis z wynikiem akcji = piłka na boisku
 function sndPh(ph,label){const Q=SND.q;if(!Q||Q.ended)return;if(ph&&label&&ph===label){while(Q.j<Q.cs.length){const c=Q.cs[Q.j++];if(Q.j===Q.cs.length&&c[1])sndHit(c[1],c[2]);}Q.ended=1;setTimeout(Q.fin,120);return;}
-  const c=Q.cs[Q.j++];if(c&&c[1])sndHit(c[1],c[2]);if(Q.j===3)sndAmbLevel(1.8,1.2);}
+  const c=Q.cs[Q.j++];if(c&&c[1])sndHit(c[1],c[2]);if(Q.j===3)sndAmbLevel(1.8,1.2);
+  // początek ostatniego kroku: po jego czasie piłka ląduje — wtedy dźwięk kontaktu, gwizdek i kibice (nie czekamy na koniec animacji ani na pauzę)
+  if(!Q.arm&&(Q.j>=Q.cs.length-1||ph===Q.lastPh)){Q.arm=1;let el=0,last=performance.now();const h=setInterval(()=>{const now=performance.now();if(!Q.m.paused)el+=now-last;last=now;
+    if(Q.ended||SND.q!==Q){clearInterval(h);return;}if(el>=Q.lastDur){clearInterval(h);Q.ended=1;const f=Q.cs[Q.cs.length-1];if(f&&f[1])sndHit(f[1],f[2]);Q.fin();}},25);SND.timers.push(h);}}
 function sndDone(){const Q=SND.q;if(!Q||Q.ended)return;Q.ended=1;const c=Q.cs[Q.cs.length-1];if(c&&c[1]&&Q.j<Q.cs.length)sndHit(c[1],c[2]);Q.fin();}
 // akcja bez animacji (widok klasyczny / szybkie tempo): tylko gwizdek i reakcja kibiców
 function sndPoint(m,ev){if(!sndOk('match')||!ev)return;sndAmbStart(m);const home=m.ctx?m.sides.findIndex(x=>x.team&&x.team.idx===m.ctx.h):0;const cf=sndCrowdF(m);
