@@ -36,8 +36,12 @@ Po pierwszym otwarciu gra działa bez internetu.
 
 ## Dla twórcy
 Źródła są w katalogu `src/`. Po zmianach zbuduj grę: `python src/build.py` (tworzy `index.html`).
-Przy większych aktualizacjach podbij nazwę cache w `sw.js` (np. `volley-manager-v150` → `v151`), żeby telefony szybciej pobrały nową wersję.
+Przy większych aktualizacjach podbij nazwę cache w `sw.js` (np. `volley-manager-v151` → `v152`), żeby telefony szybciej pobrały nową wersję.
 
 ## Testy
 
 `node tests/run.js` — symuluje 160 meczów i pełny sezon, sprawdza progi realizmu (atak, przyjęcie, asy, błędy zagrywki, asekuracja, tie-breaki) oraz brak błędów JS. Wymaga Playwright i Chrome. Kod wyjścia 1 = coś poza progiem.
+
+## Licencje zewnętrzne
+
+- Flagi krajów: czcionka [Twemoji Country Flags](https://github.com/talkjs/country-flag-emoji-polyfill) (MIT), grafika [Twemoji](https://github.com/twitter/twemoji) © Twitter, licencja [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).

@@ -2,8 +2,10 @@
 <html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Volley Manager — prototyp</title>
 <style>
+/*FLAGFONT*/
+/* flagi krajów: czcionka Twemoji Country Flags (grafika Twemoji, licencja CC-BY 4.0) — Windows nie wyświetla flag emoji */
 :root{--bg:#0b1220;--panel:#121a2b;--panel2:#1a2540;--line:#26344f;--txt:#e6ecf7;--mut:#8b99b6;--acc:#ffb020;--good:#22c55e;--bad:#ef4444}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 'Twemoji Country Flags',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 h2{margin:0 0 8px;font-size:18px}h3{margin:14px 0 6px;font-size:15px}
 header{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;flex-wrap:wrap;padding-top:calc(10px + env(safe-area-inset-top,0px))}
 html,body{overflow-x:clip;max-width:100%}
@@ -383,8 +385,8 @@ tr.relz td{background:rgba(239,68,68,.08)}tr.relz td:first-child{box-shadow:inse
 
 /* ================= WYGLĄD „DATA ROOM” (ciemny, kondensowane nagłówki, złote akcenty) ================= */
 :root{--bg:#0d0f12;--panel:#15171b;--panel2:#1c1f24;--line:#272a30;--txt:#ece9e3;--mut:#8d9199;--acc:#e8b73a;--good:#5ad17a;--bad:#ef6b5b;--warn:#e9a04a;
- --fc:'Bahnschrift SemiBold Condensed','Bahnschrift Condensed','Bahnschrift','Roboto Condensed','Barlow Condensed','Arial Narrow',sans-serif-condensed,system-ui,sans-serif;
- --fb:'Inter','Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,Roboto,sans-serif}
+ --fc:'Twemoji Country Flags','Bahnschrift SemiBold Condensed','Bahnschrift Condensed','Bahnschrift','Roboto Condensed','Barlow Condensed','Arial Narrow',sans-serif-condensed,system-ui,sans-serif;
+ --fb:'Twemoji Country Flags','Inter','Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,Roboto,sans-serif}
 body{background:var(--bg);font-family:var(--fb);font-size:14px;letter-spacing:.005em}
 h2{font-family:var(--fc);font-weight:700;font-size:22px;text-transform:uppercase;letter-spacing:.03em;line-height:1.15;margin:0 0 10px;font-stretch:condensed}
 h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.14em;font-weight:600;color:#d9d4ca;margin:16px 0 8px}
@@ -758,5 +760,64 @@ body.th-fm .tabb.on{border-bottom-color:#fff;color:#fff}body.th-fm .seg button.o
 .smlink{background:none;border:0;color:#9cc2ff;cursor:pointer;margin-top:12px;padding:0;display:block}
 .smset .card{background:#25272c;color:var(--txt)}
 @media(max-width:820px){.smpanel{right:50%;transform:translate(50%,-50%);padding:28px 20px 14px}.smcoach{display:none}.smlogo{font-size:34px}}
+
+/* ================= MOTYW „GRANAT” W STYLU FM (body.th-n): granatowe panele, górny pasek w kolorze klubu, żółty „Kontynuuj” ================= */
+body.th-n{--bg:#18202a;--panel:#212b37;--panel2:#28333f;--line:#2f3b49;--txt:#e9eef4;--mut:#95a3b4;--acc:#f2c418;--good:#4cd07d;--bad:#ff6b6b;--warn:#f0a44b;--club:#8f1d2c}
+body.th-n{background:#18202a radial-gradient(ellipse at 70% -10%,#26344a 0,#18202a 60%) fixed}
+body.th-n .side{background:#1a222c;border-right:1px solid #10161d}
+body.th-n .sbrand{color:#fff}body.th-n .sbm{color:var(--acc)}
+body.th-n .ngh{color:#8593a5;letter-spacing:.06em;text-transform:none;font-size:12px;font-weight:600;padding:12px 12px 4px;border-top:1px solid #ffffff0d;margin-top:4px}
+body.th-n .nav{color:#e3e9f0;border-radius:2px}body.th-n .nav .ic{color:#c3ccd7}
+body.th-n .nav:hover{background:#ffffff0c}
+body.th-n .nav.on{background:#2c3949;color:#fff;box-shadow:inset 4px 0 0 var(--acc)}
+body.th-n .nbad{background:var(--acc);color:#231b00;border-radius:9px;padding:0 6px;font-size:11px}
+body.th-n .topbar{background:var(--club)!important;border-bottom:1px solid #0006;box-shadow:inset 0 -40px 60px -40px #0004}
+body.th-n .tclub{border-bottom:0!important}
+body.th-n .tcn small,body.th-n .topbar .lab,body.th-n .tdate .lab{color:#ffffffb3!important}
+body.th-n .tpage{color:#fff}
+body.th-n .tsearch{background:#0000002e!important;border:1px solid #ffffff1f!important;color:#ffffffc0}
+body.th-n .tsearch input{color:#fff;background:transparent!important;border:0!important}body.th-n .tsearch input::placeholder{color:#ffffff99}body.th-n .tsearch kbd{color:#ffffffa0;border-color:#ffffff30}
+body.th-n .tdate{background:#ffffff1a;border:1px solid #ffffff24!important;border-radius:3px;padding:3px 10px!important;align-self:center}
+body.th-n .tbtn{border-color:#ffffff40;color:#fff;border-radius:3px}body.th-n .tbtn:hover{background:#ffffff14}
+body.th-n .tplay{background:#f2c418!important;color:#1f1800!important;border:0!important;border-radius:3px;box-shadow:none;padding:9px 18px;font-size:16px}
+body.th-n .tplay:hover{background:#ffd43b!important}
+body.th-n .ctx{border-bottom:1px solid #ffffff12}
+body.th-n .card,body.th-n .pan{background:#212b37;border:1px solid #2b3644;border-radius:3px}
+body.th-n h2{color:#fff}body.th-n h3,body.th-n .pan .ttl,body.th-n .hsum .lab{color:#fff}
+body.th-n .btn{background:#2f3c4e;color:#fff;border-radius:3px;border:1px solid #3c4b5f}body.th-n .btn:hover{background:#38475c;filter:none}
+body.th-n .ghost{background:#28333f;border:1px solid #3a4758;color:#e9eef4;border-radius:3px}body.th-n .ghost:hover{background:#303d4c}
+body.th-n .ghost.on{border-color:var(--acc);color:#fff;background:#f2c41814}
+body.th-n select,body.th-n input,body.th-n textarea{background:#1a222c;border-color:#364352;border-radius:3px}
+body.th-n a,body.th-n .link{color:#7fb6ff}
+body.th-n .tabb.on,body.th-n .subtabs button.on{border-bottom-color:var(--acc);color:#fff}
+body.th-n .seg button.on{background:#f2c418;color:#1f1800}
+body.th-n tr:nth-child(even) td{background:#ffffff05}body.th-n tr:hover td{background:#ffffff0a}
+body.th-n th{color:#aab6c5}
+body.th-n .lcourt{background:#1b2533;border-color:#33425a}
+body.th-n .lcz{background:#26313f;border-color:#344255}
+body.th-n .opt{background:#28333f;border-color:#364352}.th-n .opt.on{border-color:var(--acc);background:#f2c4180f}
+body.th-n .mx.sel,body.th-n .mx:hover{background:#2c3949}
+
+/* samouczki zakładek + obcokrajowcy w transferach */
+.guide{border:1px solid #f2c41866!important;background:linear-gradient(90deg,#f2c41812,transparent 60%),var(--panel)!important}
+.gdh{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.gdi{width:34px;height:34px;border-radius:50%;background:#f2c418;color:#1f1800;display:flex;align-items:center;justify-content:center;font:700 19px var(--fc);flex:none}
+.gdk{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#f2c418;font-weight:600}.gdh b{font-size:17px}
+.gdl{margin:10px 0 6px}.gdp{margin:0;padding-left:20px;color:#cfd7e1;font-size:13.5px}.gdp li{margin:3px 0}
+.gdq{margin-left:10px;width:24px;height:24px;border-radius:50%;border:1px solid #ffffff55;background:#ffffff14;color:#fff;font:700 13px var(--fb);vertical-align:middle;cursor:pointer;letter-spacing:0}.gdq.on,.gdq:hover{background:#f2c418;color:#1f1800;border-color:#f2c418}
+.fsn{display:flex;flex-direction:column;line-height:1.2}.fsn span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);font-weight:600}.fsn b{font:700 22px var(--fc)}
+.fsn b.goodc{color:var(--good)}.fsn b.warnc{color:var(--warn)}.fsn b.bad{color:var(--bad)}
+.frp{background:var(--panel2);border:1px solid var(--line);border-radius:3px;padding:3px 8px;font-size:13px;cursor:pointer}.frp small{color:var(--mut)}
+.lcf .natf{position:absolute;bottom:-4px;right:-12px;font-size:18px;margin:0;line-height:1;filter:drop-shadow(0 1px 1px #000c)}
+.natf{font-size:1.05em}
+@media (min-width:901px){.topbar .tpage{display:flex!important;flex-direction:row!important;align-items:center}}
+
+/* poczta w motywie granatowym — jak skrzynka FM */
+body.th-n .mail2 .mlist{background:#202a36;border:1px solid #2b3644;border-radius:3px}
+body.th-n .mail2 .mpane{background:#1f2834;border:1px solid #2b3644;border-radius:3px}
+body.th-n .mail2 .mph{background:#2a3546;border-bottom:2px solid var(--club)}
+body.th-n .mail2 .mxtabs>button{background:transparent;border:0;border-bottom:2px solid transparent;border-radius:0;padding:5px 4px;margin-right:10px;color:#c9d2dd}
+body.th-n .mail2 .mxtabs>button.on{background:transparent;color:#fff;border-bottom-color:var(--acc)}
+body.th-n .mail2 .mxd{background:#283342;color:#aab6c5;font-weight:600;font-size:11.5px;border-color:#2f3b4a}
+body.th-n .mail2 .mx{border-bottom:1px solid #2b3644}
 </style></head><body><div id="app"></div>
 <script>
