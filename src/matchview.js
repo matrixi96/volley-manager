@@ -111,8 +111,8 @@ function v3dSubs(m,list,M,then){const mk=m.sides.map(x=>x.team.name).join('|');c
 function v3dPlay(m,pre,ev,steps,label,sf,done){const M=V3D.mod;const srv=ev.seq[0]&&ev.seq[0].k==='srv'?String(ev.seq[0].id):null;const so=pre.find(o=>String(o.id)===srv);
   const kc=kitColors(m);
   M.bench(v3dBench(m,pre));
-  v3dSubs(m,v3dList(m,pre),M,()=>{const dl=typeof sndServeWhistle==='function'?sndServeWhistle(m):0;setTimeout(()=>M.play({pre:v3dList(m,pre),srv,jump:v3dJump(so),steps:steps.map(x=>Object.assign({},x,{id:x.id!=null?String(x.id):null,moves:x.moves.map(v=>Object.assign({},v,{id:String(v.id)}))})),winner:ev.winner,label,wcol:kc[ev.winner],sig:{type:ev.type,how:((ev.seq||[]).find(x=>x.srv)||{}).how||null},short:ui.speed<1600,sb:v3dSb(m),
-    onPh:t=>{const e=document.getElementById('mph');if(e&&t)e.textContent=t;try{if(typeof sndPh==='function')sndPh(t,label);}catch(x){}},paused:()=>!!m.paused,done:()=>{try{if(typeof sndDone==='function')sndDone();}catch(x){}done();}}),dl);});}
+  v3dSubs(m,v3dList(m,pre),M,()=>{const dl=typeof sndServeWhistle==='function'?sndServeWhistle(m):0;if(typeof SND!=='undefined'&&SND.q)SND.q.l=srv?(v3dJump(so)?1.5:1.3):0.4;setTimeout(()=>M.play({pre:v3dList(m,pre),srv,jump:v3dJump(so),steps:steps.map(x=>Object.assign({},x,{id:x.id!=null?String(x.id):null,moves:x.moves.map(v=>Object.assign({},v,{id:String(v.id)}))})),winner:ev.winner,label,wcol:kc[ev.winner],sig:{type:ev.type,how:((ev.seq||[]).find(x=>x.srv)||{}).how||null},short:ui.speed<1600,sb:v3dSb(m),
+    onPh:t=>{try{if(typeof sndPhShow==='function')sndPhShow(t);else{const e=document.getElementById('mph');if(e&&t)e.textContent=t;}if(typeof sndPh==='function')sndPh(t,label);}catch(x){}},paused:()=>!!m.paused,done:()=>{try{if(typeof sndDone==='function')sndDone();}catch(x){}done();}}),dl);});}
 function v3dStatic(m){const el=document.getElementById('m3d');if(!el)return;
   v3dLoad().then(M=>{if(!M||!document.getElementById('m3d'))return;const box=document.getElementById('m3d');box.classList.add('on');M.mount(box);const cv=document.getElementById('mcv');if(cv)cv.style.display='none';
     if(ui.to&&!M.busy()){const back=ui.to.returning||!ui.to.end;const sc=back?formation(m):benchScene(m,formation(m));M.idle({pre:v3dList(m,sc),srv:null,huddle:!back,sb:v3dSb(m)});return;}
@@ -223,9 +223,9 @@ function hallAnim(m,pre,ev,done){
   if(v3dOn()&&V3D.mod){v3dPlay(m,pre,ev,steps,label,sf,done);return;}
   let k=0;const phEl=()=>document.getElementById('mph');
   const run=()=>{if(!document.getElementById('mcv')){done();return;}
-    if(k>=steps.length){drawHall(m,scene,ball,{t:label,w:ev.winner});const wEnd=()=>m.paused?setTimeout(wEnd,100):done();setTimeout(wEnd,ui.speed>=1600?750:560);return;}
+    if(k>=steps.length){if(phEl()&&steps.length)phEl().textContent=steps[steps.length-1].ph;drawHall(m,scene,ball,{t:label,w:ev.winner});const wEnd=()=>m.paused?setTimeout(wEnd,100):done();setTimeout(wEnd,ui.speed>=1600?750:560);return;}
     const st=steps[k++];const from={...ball};const fromP={};for(const o of scene)fromP[o.id]=[o.x,o.y];const tgt={};for(const mv of st.moves)tgt[mv.id]=mv;
-    if(phEl())phEl().textContent=st.ph;let el=0,last=null;
+    if(phEl()&&k<steps.length)phEl().textContent=st.ph;let el=0,last=null;
     const fr=now=>{if(last!=null&&!m.paused)el+=now-last;last=now;const t=Math.min(1,el/st.dur),e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
       ball={x:from.x+(st.to.x-from.x)*t,y:from.y+(st.to.y-from.y)*t,h:from.h+(st.to.h-from.h)*t+st.peak*4*t*(1-t)};
       for(const o of scene){const mv=tgt[o.id];if(!mv){o.j=0;continue;}const f=fromP[o.id];o.x=f[0]+(mv.x-f[0])*e;o.y=f[1]+(mv.y-f[1])*e;o.j=mv.j?Math.sin(Math.PI*Math.min(1,t*1.15))*mv.j:0;}
