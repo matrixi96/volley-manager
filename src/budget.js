@@ -11,7 +11,12 @@ function revForecast(){try{const md=matchday(1,null,null,true);const kh=ECO().ka
 // bez dyrektora zarząd planuje ostrożnie (85% prognozy); dobry dyrektor do 100%
 function budAcc(){const fs=finSk();return fs?0.9+fs/20*0.1:0.85;}
 function budSplit(){return Object.assign({},BUD_DEF,SAVE.budSplit||{});}
-function budPlan(){const s=S();const rev=revForecast()*budAcc();const reserve=Math.max(0,(SAVE.fin?SAVE.fin.bal:0)-300000);const pool=rev+reserve*0.6;const sp=budSplit();
+// koszty stałe spoza pensji i utrzymania (skauting, bazy danych) — wcześniej nie były w planie i co roku „zjadały” oszczędności
+function fixedYear(){try{const x=SAVE.sc||{};const subs=Object.keys(x.sub||{}).filter(k=>x.sub[k]).length;return ((x.bud||0)+subs*(typeof SUB_COST!=='undefined'?SUB_COST:15000))*12;}catch(e){return 0;}}
+// zarząd wydaje tylko część oszczędności ponad bezpieczną poduszkę (500 tys.)
+function budReserve(){return Math.max(0,(SAVE.fin?SAVE.fin.bal:0)-500000);}
+const BUD_RES_K=0.35,BUD_WG_SHARE=0.68;
+function budPlan(){const s=S();const rev=Math.max(0,revForecast()*budAcc()-fixedYear());const reserve=budReserve();const pool=rev+reserve*BUD_RES_K;const sp=budSplit();
   const old=SAVE.bud&&SAVE.bud.n===s.n?SAVE.bud:null;
   const bs=budSplitAmt(pool,sp,reserve);
   SAVE.bud={n:s.n,pool:round5k(pool),res:reserve,wg:bs.wg,op:bs.op,tr:bs.tr,trUsed:old?old.trUsed:0,opUsed:old?old.opUsed:0,trAdd:old?old.trAdd:0,extra:old?old.extra:0,warn:{}};
@@ -43,6 +48,7 @@ function budAsk(){if(typeof bmView==='function'){ui.ixTab='zarzad';go('rozmowy')
 function budSplitAmt(pool,sp,res){const M=budMins();const free=pool-M.wg-M.op;const f=budFree();const rT=(res||0)*0.25;// ćwierć oszczędności zawsze idzie na transfery
   if(free<=0)return {wg:round5k(M.wg),op:round5k(M.op),tr:round5k(rT)};
   let wg=M.wg+free*f.wg,op=M.op+free*f.op,tr=free*f.tr;
+  {const rev=pool-(res||0)*BUD_RES_K;const cap=Math.max(M.wg,rev*BUD_WG_SHARE+(res||0)*0.25);if(wg>cap){tr+=wg-cap;wg=cap;}}
   return {wg:round5k(wg),op:round5k(op),tr:round5k(Math.max(0,tr))};}
 // podział WOLNYCH pieniędzy (po zarezerwowaniu obecnych pensji i utrzymania): domyślnie głównie na transfery
 const BUD_FREE_DEF={wg:0.45,tr:0.35,op:0.2};
@@ -112,7 +118,11 @@ function aiSocResult(ti,won,sweep){if(ti===SAVE.team||!SAVE.ai[ti])return;const 
 function nRounds(){const s=S();return s&&s.rounds?s.rounds.length:22;}
 
 // pula rośnie razem z prognozą (sprzedane karnety, lepsza frekwencja, nowi sponsorzy) — nigdy nie maleje w trakcie sezonu
-function budRefresh(){const b=BUD();const s=S();if(!b||!s||b.n!==s.n)return;const fresh=round5k(revForecast()*budAcc()+(b.res||0)*0.6);
+function budRefresh(){const b=BUD();const s=S();if(!b||!s||b.n!==s.n)return;const fresh=round5k(Math.max(0,revForecast()*budAcc()-fixedYear())+(b.res||0)*BUD_RES_K);
   if(fresh>b.pool+5000){b.pool=fresh;const bs=budSplitAmt(b.pool,budFree(),b.res);b.wg=bs.wg;b.op=bs.op;b.tr=bs.tr;}
   else{const bs=budSplitAmt(b.pool,budFree(),b.res);b.wg=bs.wg;b.op=bs.op;b.tr=bs.tr;}}
 {const _bc=budgetCard;budgetCard=function(){try{budRefresh();}catch(e){console.error(e);}return _bc.apply(this,arguments);};}
+
+// ostrzeżenie, gdy pensje zjadają zbyt dużą część przychodów
+function wageShare(){const rev=Math.max(1,revForecast()-fixedYear());return wageBill()/rev;}
+{const _bc2=budgetCard;budgetCard=function(){const h=_bc2.apply(this,arguments);try{const w=wageShare();if(w>BUD_WG_SHARE+0.03)return h+`<div class="card tmsg no"><b>⚠ Pensje to ${Math.round(w*100)}% przychodów</b> — bezpieczny poziom to ok. ${Math.round(BUD_WG_SHARE*100)}%. Zarząd nie zgodzi się na kolejne podwyżki, dopóki kontrakty nie spadną. Dobre sposoby: nie przedłużaj drogich kontraktów rezerwowych, sprzedaj zawodnika, zdobądź sponsorów albo awansuj (wyższe przychody).</div>`;}catch(e){}return h;};}

@@ -999,6 +999,13 @@ body.th-n .tpage{text-transform:none}
 .tkgrp{flex-wrap:wrap}.tkkv{flex-wrap:wrap}
 /* media w poczcie i aktualnościach */
 .ptk-md{background:#c084fc33;color:#e9d5ff}.mdq{margin:10px 0;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:#ffffff05}.mdopts{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+/* ustawienia i zgłoszenia */
+.setrow{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}.setrow:first-of-type{border-top:0}.setrow>div:first-child{display:flex;flex-direction:column;gap:2px;max-width:520px}
+.setrow input[type=range]{width:180px;vertical-align:middle}
+.bugcard{max-width:620px}.bugl{display:flex;flex-direction:column;gap:4px;margin:8px 0;font-size:13.5px}.bugl input,.bugl textarea{width:100%;box-sizing:border-box;font:inherit;font-size:14px;color:var(--txt);background:#0f131a;border:1px solid var(--line);border-radius:4px;padding:8px 10px}.bugl textarea{resize:vertical}.bugl input:focus,.bugl textarea:focus{outline:none;border-color:var(--acc)}
+.bugpre{white-space:pre-wrap;font-size:11.5px;background:#0003;padding:8px;border-radius:4px;max-height:180px;overflow:auto}
+.bugbtn .ic{font-size:15px}
+body.calm *,body.calm *::before,body.calm *::after{animation:none!important;transition:none!important}
 </style></head><body><div id="app"></div>
 <script>
 // ================= JĘZYK GRY (polski / angielski) =================
@@ -2496,7 +2503,8 @@ function exportCode(){persistLive();ui.code=btoa(unescape(encodeURIComponent(JSO
 function copyCode(){const t=ui.code;try{navigator.clipboard.writeText(t).then(()=>{ui.msg='Skopiowano kod zapisu.';render();},()=>{ui.msg='Nie udało się skopiować — zaznacz kod i skopiuj ręcznie.';render();});}catch(e){ui.msg='Nie udało się skopiować — zaznacz kod i skopiuj ręcznie.';render();}}
 function importCode(){const v=($('#imp')||{}).value||'';try{const o=JSON.parse(decodeURIComponent(escape(atob(v.trim()))));if(o.team==null||!o.season)throw 0;loadObj(o);ui.msg='Wczytano grę z kodu.';ui.code=null;ui.tab='mecz';}catch(e){ui.msg='Ten kod zapisu jest nieprawidłowy.';}render();}
 function newGame(){if(ui.confirm!=='new'){ui.confirm='new';render();return;}clearTimeout(timer);SAVE={};resetTeams();ui.match=null;ui.confirm=null;save();render();}
-function saveView(){
+function saveView(){return saveBaseView();}
+function saveBaseView(){
   return `${ui.msg?`<div class="card msg">${ui.msg}</div>`:''}
   <div class="card"><h2>Zapis gry</h2><p>${storageOk?'✅ Gra zapisuje się automatycznie po każdym meczu i w trakcie meczu, więc po zamknięciu strony wrócisz w to samo miejsce.':'⚠️ Ta przeglądarka nie pozwala na zapis. Używaj kodu zapisu poniżej.'}</p><p class="small mut">${ST.mode==='idb'?'Zapisy trzymane są w bazie przeglądarki (IndexedDB) — bez limitu 5 MB, więc długie kariery mieszczą się bez problemu.':'Zapisy trzymane są w localStorage (limit ok. 5 MB). Przy bardzo długiej karierze zapisuj kopię kodem zapisu.'} Rozmiar zapisu: ${(((stGet(KEY)||'').length)/1048576).toFixed(1)} MB.</p>
   <p class="mut small">Zapis jest w tej przeglądarce na tym urządzeniu. Żeby przenieść grę na inne urządzenie, użyj kodu zapisu.</p></div>
@@ -2751,6 +2759,14 @@ function renew(pid,wage,years){const p=PLAYERS[pid].p;delete p.raiseReq;const ne
   p.wage=round5k(wage);p.ce=contractEndFor(years);achEv('renew');news(`✍️ ${p.first} ${p.last} przedłużył kontrakt do ${ceDate(p.ce)}.`);save();tradeMsg(true,`${p.last} przedłużył kontrakt do ${ceDate(p.ce)}.`);}
 
 // ---- AI: transfery i kontrakty ----
+// uzupełnienie TWOJEJ kadry do minimum: tani zawodnik na poziomie obecnej drużyny (wcześniej brało najlepszych wolnych zawodników, np. gwiazdy z oceną 90, bez patrzenia na budżet)
+function myFillSign(t,pos){const rs=t.players.map(p=>rating(p)).sort((a,b)=>b-a).slice(0,10);const lg=lgTeams(lgOf(t.idx)).filter(x=>x.idx!==t.idx);
+  const ref=rs.length>=4?rs.reduce((a,b)=>a+b,0)/rs.length:(lg.length?lg.reduce((a,x)=>a+teamStrength(x),0)/lg.length-4:60);
+  const fa=W().players.filter(p=>p.tm<0&&p.pos===pos&&!p.inj&&!p.retired&&rating(p)<=ref+2).map(p=>({p,sc:Math.abs(rating(p)-ref)+wageDemand(p)/80000})).sort((a,b)=>a.sc-b.sc);
+  let p=fa.length?fa[0].p:null;if(ST_C)delete ST_C[t.idx];
+  if(!p){p=genPlayer(pos,(ref-1)/5-2.5,21+Math.floor(R()*8));initPlayerMeta(p,S().n,true);W().players.push(p);}
+  p.tm=t.idx;assignNum(p,t.idx);p.wage=wageDemand(p);p.ce=S().n+1;p.jd=today();t.players=W().players.filter(x=>x.tm===t.idx&&!x.jr);
+  news(`✍️ ${p.first} ${p.last} (${POS_NAMES[pos]}, ocena ${rating(p)}) dołącza jako wolny zawodnik — klub uzupełnił kadrę do minimum (kontrakt na rok, ${fmt(p.wage)}/rok).`);return p;}
 function aiSign(t,pos){
   const fa=W().players.filter(p=>p.tm<0&&p.pos===pos&&!p.inj).map(p=>[p,rating(p)]).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
   const tS=teamStrength(t);let p=fa.find(x=>rating(x)<=tS+4)||fa[0];if(ST_C)delete ST_C[t.idx];
@@ -2850,7 +2866,7 @@ function startSeasonFromOff(){
   for(const p of exp){p.tm=-1;p.wage=0;p.ce=0;news(`👋 ${p.first} ${p.last} odchodzi — wygasł kontrakt.`);}
   for(const p of agedOut()){p.tm=-1;p.jr=false;news(`👋 ${p.first} ${p.last} (${p.age} l.) kończy wiek juniora i odchodzi z akademii.`);}
   syncTeams();
-  if(myTeam().players.length<SQUAD_MIN){while(myTeam().players.length<SQUAD_MIN){const t=myTeam();const pos=['R','A','P','S','L'].find(x=>posCount(t,x)<POS_MIN[x])||randPos();aiSign(t,pos);syncTeams();}news('Klub dobrał zawodników z wolnego rynku, żeby uzupełnić kadrę do minimum.');}
+  if(myTeam().players.length<SQUAD_MIN){while(myTeam().players.length<SQUAD_MIN){const t=myTeam();const pos=['R','A','P','S','L'].find(x=>posCount(t,x)<POS_MIN[x])||randPos();myFillSign(t,pos);syncTeams();}news('Klub dobrał zawodników z wolnego rynku, żeby uzupełnić kadrę do minimum.');}
   s.phase='spar';ui.tmsg=null;try{campStart();}catch(e){}syncDate();save();render();
 }
 
@@ -3725,7 +3741,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=181').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=182').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
@@ -5412,7 +5428,7 @@ function karOpen(d){const s=S();if(!s||!s.rdates)return false;d=d||today();retur
 function crowdFor(ti,k,price,est){const rep=SAVE.ai[ti].rep;const inf=infraOf(ti);const L=inf.hala;const cap=HALA_CAP[L-1];const mine=ti===SAVE.team;price=price==null?tixPrice(ti):price;
   let pm=Math.pow(refPrice(ti)/Math.max(5,price),1.4);pm=clamp(pm,0.2,1.7);
   let pos=1;try{const s=S();if(s&&(s.phase==='liga'||s.phase==='po')){const p=leagueTable().findIndex(x=>x.i===ti)+1;pos=p<=3?1.1:p>=10?0.92:1;}}catch(e){}
-  let D=(1400+rep*25)*(1+0.05*(L-1))*pm*pos*(est?1:0.85+R()*0.3)*k*(mine&&SAVE.soc&&typeof socCrowdB==='function'?1+socCrowdB():1)*(mine&&typeof fansK==='function'?fansK():1);
+  let D=(1400+rep*25)*(1+0.05*(L-1))*([1.25,1.08,1][LG_LV[lgOf(ti)]]||1)*pm*pos*(est?1:0.85+R()*0.3)*k*(mine&&SAVE.soc&&typeof socCrowdB==='function'?1+socCrowdB():1)*(mine&&typeof fansK==='function'?fansK():1);
   const spots=parkSpots(inf.park),need=D*0.3;let pk=need>spots?1-0.3*(1-spots/need):1;
   if(mine){const pp=ECO().park;pk*=clamp(1-0.04*(pp/PARK_REF-1),0.85,1);}
   D*=pk;
@@ -5530,7 +5546,12 @@ function revForecast(){try{const md=matchday(1,null,null,true);const kh=ECO().ka
 // bez dyrektora zarząd planuje ostrożnie (85% prognozy); dobry dyrektor do 100%
 function budAcc(){const fs=finSk();return fs?0.9+fs/20*0.1:0.85;}
 function budSplit(){return Object.assign({},BUD_DEF,SAVE.budSplit||{});}
-function budPlan(){const s=S();const rev=revForecast()*budAcc();const reserve=Math.max(0,(SAVE.fin?SAVE.fin.bal:0)-300000);const pool=rev+reserve*0.6;const sp=budSplit();
+// koszty stałe spoza pensji i utrzymania (skauting, bazy danych) — wcześniej nie były w planie i co roku „zjadały” oszczędności
+function fixedYear(){try{const x=SAVE.sc||{};const subs=Object.keys(x.sub||{}).filter(k=>x.sub[k]).length;return ((x.bud||0)+subs*(typeof SUB_COST!=='undefined'?SUB_COST:15000))*12;}catch(e){return 0;}}
+// zarząd wydaje tylko część oszczędności ponad bezpieczną poduszkę (500 tys.)
+function budReserve(){return Math.max(0,(SAVE.fin?SAVE.fin.bal:0)-500000);}
+const BUD_RES_K=0.35,BUD_WG_SHARE=0.68;
+function budPlan(){const s=S();const rev=Math.max(0,revForecast()*budAcc()-fixedYear());const reserve=budReserve();const pool=rev+reserve*BUD_RES_K;const sp=budSplit();
   const old=SAVE.bud&&SAVE.bud.n===s.n?SAVE.bud:null;
   const bs=budSplitAmt(pool,sp,reserve);
   SAVE.bud={n:s.n,pool:round5k(pool),res:reserve,wg:bs.wg,op:bs.op,tr:bs.tr,trUsed:old?old.trUsed:0,opUsed:old?old.opUsed:0,trAdd:old?old.trAdd:0,extra:old?old.extra:0,warn:{}};
@@ -5562,6 +5583,7 @@ function budAsk(){if(typeof bmView==='function'){ui.ixTab='zarzad';go('rozmowy')
 function budSplitAmt(pool,sp,res){const M=budMins();const free=pool-M.wg-M.op;const f=budFree();const rT=(res||0)*0.25;// ćwierć oszczędności zawsze idzie na transfery
   if(free<=0)return {wg:round5k(M.wg),op:round5k(M.op),tr:round5k(rT)};
   let wg=M.wg+free*f.wg,op=M.op+free*f.op,tr=free*f.tr;
+  {const rev=pool-(res||0)*BUD_RES_K;const cap=Math.max(M.wg,rev*BUD_WG_SHARE+(res||0)*0.25);if(wg>cap){tr+=wg-cap;wg=cap;}}
   return {wg:round5k(wg),op:round5k(op),tr:round5k(Math.max(0,tr))};}
 // podział WOLNYCH pieniędzy (po zarezerwowaniu obecnych pensji i utrzymania): domyślnie głównie na transfery
 const BUD_FREE_DEF={wg:0.45,tr:0.35,op:0.2};
@@ -5631,10 +5653,14 @@ function aiSocResult(ti,won,sweep){if(ti===SAVE.team||!SAVE.ai[ti])return;const 
 function nRounds(){const s=S();return s&&s.rounds?s.rounds.length:22;}
 
 // pula rośnie razem z prognozą (sprzedane karnety, lepsza frekwencja, nowi sponsorzy) — nigdy nie maleje w trakcie sezonu
-function budRefresh(){const b=BUD();const s=S();if(!b||!s||b.n!==s.n)return;const fresh=round5k(revForecast()*budAcc()+(b.res||0)*0.6);
+function budRefresh(){const b=BUD();const s=S();if(!b||!s||b.n!==s.n)return;const fresh=round5k(Math.max(0,revForecast()*budAcc()-fixedYear())+(b.res||0)*BUD_RES_K);
   if(fresh>b.pool+5000){b.pool=fresh;const bs=budSplitAmt(b.pool,budFree(),b.res);b.wg=bs.wg;b.op=bs.op;b.tr=bs.tr;}
   else{const bs=budSplitAmt(b.pool,budFree(),b.res);b.wg=bs.wg;b.op=bs.op;b.tr=bs.tr;}}
 {const _bc=budgetCard;budgetCard=function(){try{budRefresh();}catch(e){console.error(e);}return _bc.apply(this,arguments);};}
+
+// ostrzeżenie, gdy pensje zjadają zbyt dużą część przychodów
+function wageShare(){const rev=Math.max(1,revForecast()-fixedYear());return wageBill()/rev;}
+{const _bc2=budgetCard;budgetCard=function(){const h=_bc2.apply(this,arguments);try{const w=wageShare();if(w>BUD_WG_SHARE+0.03)return h+`<div class="card tmsg no"><b>⚠ Pensje to ${Math.round(w*100)}% przychodów</b> — bezpieczny poziom to ok. ${Math.round(BUD_WG_SHARE*100)}%. Zarząd nie zgodzi się na kolejne podwyżki, dopóki kontrakty nie spadną. Dobre sposoby: nie przedłużaj drogich kontraktów rezerwowych, sprzedaj zawodnika, zdobądź sponsorów albo awansuj (wyższe przychody).</div>`;}catch(e){}return h;};}
 // ===== Social media klubu: obserwujący, feed, styl komunikacji, akcje, kryzysy, specjalista =====
 const SOC_LG_REF=[25000,9000,3500,14000,3000,32000,8000,30000,5000];// typowa liczba obserwujących klubu w lidze
 const SOC_STY={pro:['Profesjonalny','Rzeczowe komunikaty i zdjęcia z meczów. Bezpiecznie, ale wolniejszy wzrost.',1,0.4,0],
@@ -7378,7 +7404,7 @@ const DLG=[
  ['spons','Sponsorzy','fin','Dyrektor podpisuje oferty sponsorów (tytularnego, gdy go brak). Nigdy nie zrywa umów.'],
  ['agents','Kontakty agentów','fin','Dyrektor odpowiada agentom: zgadza się na rozmowy o kontraktach ważnych zawodników, inne prośby grzecznie odrzuca.'],
  ['scout','Przydziały skautów','sk','Skaut sam rozpoczyna przydziały pod najsłabsze pozycje w kadrze, gdy ma wolne miejsce.'],
- ['trans','Transfery (uzupełnianie kadry)','sk','W oknie transferowym główny skaut (jak dyrektor sportowy) uzupełnia brakujące pozycje: najpierw szuka wolnych zawodników, potem tańszych rezerwowych z innych klubów. Mieści się w budżetach, kupuje najwyżej 3 zawodników na okno i nikogo nie sprzedaje. Słabszy skaut gorzej ocenia kandydatów.'],
+ ['trans','Transfery (uzupełnianie kadry)','sk','W oknie transferowym główny skaut (jak dyrektor sportowy) uzupełnia brakujące pozycje (najpierw wolni zawodnicy, potem tańsi rezerwowi z innych klubów), a gdy kadra jest kompletna — wzmacnia najsłabszą pozycję w podstawowym składzie (min. +3 do oceny). Mieści się w budżetach, kupuje najwyżej 3 zawodników na okno (w tym 2 wzmocnienia) i nikogo nie sprzedaje. Słabszy skaut gorzej ocenia kandydatów.'],
  ['jr','Juniorzy','jr','Trener juniorów promuje do pierwszej drużyny gotowych juniorów (gdy jest miejsce) i zwalnia 20-latków bez perspektyw.'],
 ];
 function DL(){if(!SAVE.dlg){SAVE.dlg={on:{},quiet:0,log:[],wk:null};try{if(ensTrn().mode==='asy')SAVE.dlg.on.train=1;}catch(e){}}return SAVE.dlg;}
@@ -7404,26 +7430,37 @@ function dlgPrep(d){if(!dlg('prep'))return;const e=nextEvent();const c=myNext();
   const op=c.h===SAVE.team?c.a:c.h;let L=[];try{L=preTips(op).filter(x=>x.btn&&x.act);}catch(e){}if(!L.length)return;
   window._dlgPrep=1;try{quiet(()=>{for(const x of L){try{(new Function(x.act))();}catch(e){}}});}finally{window._dlgPrep=0;}dlgNote(`Analityk ustawił taktykę na ${TEAMS[op].name}: ${L.map(x=>x.t.replace(/\.$/,'')).join('; ')}.`);}
 // ---- kontrakty ----
-function dlgContracts(d){if(!dlg('contr'))return;const s=S();if(!s)return;const md=d.slice(5);if(!(md==='02-01'||md==='05-01'))return;const t=myTeam();const avg=t.players.filter(p=>!p.jr).reduce((a,p)=>a+rating(p),0)/Math.max(1,t.players.length);
-  for(const p of t.players.slice()){if(p.jr||p.loan||p.ce==null||p.ce>s.n||p.noExt===s.n)continue;
-    if(rating(p)>=avg&&p.age<=32){const w=wageNeeded(p);const dw=w-(p.wage||0);if(dw>0&&dw>budLeft().wg){dlgNote(`Dyrektor nie przedłużył ${p.first} ${p.last}: brak miejsca w budżecie płacowym (potrzeba ${fmt(w)}).`);continue;}
-      dlgRenew(p,1);dlgNote(`Dyrektor przedłużył kontrakt: ${p.first} ${p.last} do ${ceDate(p.ce)} (${fmt(w)}/rok).`);}
-    else if(md==='05-01'){p.noExt=s.n;dlgNote(`Dyrektor nie przedłuży umowy ${p.first} ${p.last} (odejdzie po sezonie).`);}}}
+function dlgContracts(d){if(!dlg('contr'))return;const s=S();if(!s)return;const md=d.slice(5);if(!(md==='02-01'||md==='05-01'))return;const t=myTeam();const pl=t.players.filter(p=>!p.jr&&!p.loan);
+  const avg=pl.reduce((a,p)=>a+rating(p),0)/Math.max(1,pl.length);const rank=pl.slice().sort((a,b)=>rating(b)-rating(a));const top=new Set(rank.slice(0,12).map(p=>p.id));
+  const exp=rank.filter(p=>p.ce!=null&&p.ce<=s.n&&p.noExt!==s.n);const stay=pl.length-exp.length;
+  // kto jest potrzebny: najlepsza dwunastka albo zawodnik, bez którego zabraknie ludzi na pozycji; wiek do 32 (do 34 dla wyraźnie lepszych od średniej)
+  const need=p=>{const left=pl.filter(x=>x.pos===p.pos&&x!==p&&!(x.ce!=null&&x.ce<=s.n)).length;return left<(POS_STD[p.pos]||1);};
+  let kept=0;for(const p of exp){const ok=(top.has(p.id)||rating(p)>=avg-2||need(p))&&(p.age<=32||(p.age<=34&&rating(p)>=avg+3));
+    if(ok){const w=wageNeeded(p);const dw=w-(p.wage||0);if(dw>0&&dw>budLeft().wg){dlgNote(`Dyrektor nie przedłużył ${p.first} ${p.last}: brak miejsca w budżecie płacowym (potrzeba ${fmt(w)}).`);continue;}
+      dlgRenew(p,1);kept++;dlgNote(`Dyrektor przedłużył kontrakt: ${p.first} ${p.last} do ${ceDate(p.ce)} (${fmt(w)}/rok).`);}
+    else if(md==='05-01'&&stay+kept>=SQUAD_MIN+2){p.noExt=s.n;dlgNote(`Dyrektor nie przedłuży umowy ${p.first} ${p.last} (odejdzie po sezonie).`);}}}
 // ---- transfery: uzupełnianie brakujących pozycji ----
 function dlgTransfers(d){if(!dlg('trans')||!windowOpen())return;const D=DL();const s=S();if(D.trLast&&daysBetween(D.trLast,d)<3)return;D.trLast=d;
   D.trN=D.trN||{};if((D.trN[s.n]||0)>=3)return;const t=myTeam();const mine=t.players.filter(p=>!p.jr&&!(p.loan&&p.loan.from===SAVE.team&&p.tm!==SAVE.team));if(t.players.length>=SQUAD_MAX)return;
-  const need=Object.keys(POS_STD).filter(k=>mine.filter(p=>p.pos===k).length<POS_STD[k]).sort((a,b)=>(mine.filter(p=>p.pos===a).length-POS_STD[a])-(mine.filter(p=>p.pos===b).length-POS_STD[b]));if(!need.length)return;
+  const need=Object.keys(POS_STD).filter(k=>mine.filter(p=>p.pos===k).length<POS_STD[k]).sort((a,b)=>(mine.filter(p=>p.pos===a).length-POS_STD[a])-(mine.filter(p=>p.pos===b).length-POS_STD[b]));const upg=!need.length;let cut=null;if(upg){if((D.trU&&D.trU[s.n]||0)>=3)return;
+    // kadra pełna: zwalniamy miejsce, oddając najsłabszego zmiennika (poza najlepszą dwunastką, z pozycji z nadwyżką)
+    if(t.players.length>=SQUAD_MAX-1){const rk=mine.slice().sort((a,b)=>rating(b)-rating(a));const t12=new Set(rk.slice(0,12).map(p=>p.id));
+      cut=rk.slice().reverse().find(p=>!t12.has(p.id)&&!p.loan&&mine.filter(x=>x.pos===p.pos).length>POS_STD[p.pos]&&!(typeof newSign==='function'&&newSign(p))&&releaseCost(p)<=Math.max(60000,SAVE.fin.bal*0.03));if(!cut)return;}
+    // kadra kompletna: szukamy wzmocnienia na pozycji, gdzie podstawowy skład jest najsłabszy
+    const ST={R:1,A:1,P:2,S:2,L:1};const wk=Object.keys(ST).map(k=>{const r=mine.filter(p=>p.pos===k).map(p=>rating(p)).sort((a,b)=>b-a);return {k,v:r[ST[k]-1]||0};}).sort((a,b)=>a.v-b.v);
+    need.push(...wk.slice(0,2).map(x=>x.k));D._upBar={};for(const x of wk)D._upBar[x.k]=x.v+3;}
   const top=mine.map(p=>rating(p)).sort((a,b)=>b-a).slice(0,12);const avg=top.reduce((a,b)=>a+b,0)/Math.max(1,top.length);const sk=dlgSk('trans');const myRep=SAVE.ai[SAVE.team].rep;const miss=need.reduce((a,k)=>a+POS_STD[k]-mine.filter(p=>p.pos===k).length,0);const maxW=budLeft().wg*(miss>1?Math.max(0.35,1/miss*1.3):1);
-  for(const pos of need){const posR=mine.filter(p=>p.pos===pos).map(p=>rating(p));const bar=Math.min(avg-6,posR.length?Math.max(...posR)-2:avg-6);
+  for(const pos of need){const posR=mine.filter(p=>p.pos===pos).map(p=>rating(p));const bar=upg?D._upBar[pos]:Math.min(avg-6,posR.length?Math.max(...posR)-2:avg-6);
     const cands=[];for(const p of W().players){if(p.pos!==pos||p.jr||p.retired||p.inj>0||p.tm===SAVE.team||p.loan||p.age<19||p.age>32)continue;
       if(p.tm>=0){if(isYT(p.tm)||(isStarter(p)&&!p.tl)||TEAMS[p.tm].players.length<=SQUAD_MIN+1||SAVE.ai[p.tm].rep>myRep+15)continue;}
       const est=rating(p)+(R()-0.5)*(20-sk)/2;if(est<bar)continue;const fee=p.tm<0?0:Math.round(pValue(p)*(p.tl?1:1.15)/10000)*10000;const w=wageNeeded(p);
-      if(fee>0&&(budCan('tr',fee)||SAVE.fin.bal-fee<0))continue;if(w>maxW)continue;cands.push({p,est,fee,w,sc:est+(p.tm<0?3:0)-fee/250000});}
-    if(!cands.length){if(!D.trMiss||D.trMiss[pos]!==s.n){D.trMiss=D.trMiss||{};D.trMiss[pos]=s.n;dlgNote(`Skaut nie znalazł nikogo na pozycję ${POS_NAMES[pos]||pos}, kto zmieściłby się w budżetach i podniósł poziom kadry.`);}continue;}
+      if(fee>0&&(budCan('tr',fee)||SAVE.fin.bal-fee<0))continue;if(w>(upg?budLeft().wg*0.8+(cut?cut.wage||0:0):maxW))continue;if(cut&&rating(p)<rating(cut)+6)continue;cands.push({p,est,fee,w,sc:est+(p.tm<0?3:0)-fee/250000});}
+    if(!cands.length){if(upg)continue;if(!D.trMiss||D.trMiss[pos]!==s.n){D.trMiss=D.trMiss||{};D.trMiss[pos]=s.n;dlgNote(`Skaut nie znalazł nikogo na pozycję ${POS_NAMES[pos]||pos}, kto zmieściłby się w budżetach i podniósł poziom kadry.`);}continue;}
     cands.sort((a,b)=>b.sc-a.sc);const c=cands[0];const p=c.p;const from=p.tm;
     if(c.fee){money(-c.fee,'Transfery');SAVE.ai[from].bud+=c.fee;finLog(`Zakup (skaut): ${p.first} ${p.last} (${TEAMS[from].short})`,-c.fee);}
+    if(cut){const rc=releaseCost(cut);money(-rc,'Odprawy');finLog(`Rozwiązanie kontraktu (skaut): ${cut.first} ${cut.last}`,-rc);movePlayer(cut,-1);cut.wage=0;cut.ce=0;dlgNote(`Dyrektor rozwiązał kontrakt z ${cut.first} ${cut.last} (ocena ${rating(cut)}), żeby zrobić miejsce w kadrze — odprawa ${fmt(rc)}.`);}
     if(typeof budWageOver==='function')budWageOver(c.w);movePlayer(p,SAVE.team);p.wage=c.w;p.ce=contractEndFor(prefYears(p));delete p.tl;try{achEv('sign');}catch(e){}
-    D.trN[s.n]=(D.trN[s.n]||0)+1;dlgNote(`Skaut sprowadził ${p.first} ${p.last} (${pos}, ${p.age} l., ocena ${rating(p)}) ${from>=0?`z ${TEAMS[from].name} za ${fmt(c.fee)}`:'jako wolnego zawodnika'} — kontrakt ${fmt(c.w)}/rok do ${ceDate(p.ce)}.`);
+    D.trN[s.n]=(D.trN[s.n]||0)+1;if(upg){D.trU=D.trU||{};D.trU[s.n]=(D.trU[s.n]||0)+1;}dlgNote(`Skaut sprowadził ${p.first} ${p.last} (${pos}, ${p.age} l., ocena ${rating(p)}) ${from>=0?`z ${TEAMS[from].name} za ${fmt(c.fee)}`:'jako wolnego zawodnika'} — kontrakt ${fmt(c.w)}/rok do ${ceDate(p.ce)}.`);
     news(`✍️ ${p.first} ${p.last} dołącza do zespołu${from>=0?` z ${TEAMS[from].name} za ${fmt(c.fee)}`:' jako wolny zawodnik'} (transfer przeprowadził skaut).`);break;}}
 // ---- sponsorzy ----
 function dlgSponsors(){if(!dlg('spons'))return;const s=SPN();const n0=s.act.length;quiet(()=>{for(const k in s.off)for(const o of (s.off[k]||[]).slice()){if(k==='tit'&&s.act.some(c=>c.cat==='tit'))continue;signSponsor(k,o.id);}});
@@ -7444,7 +7481,7 @@ function dlgScout(){if(!dlg('scout'))return;const s=SC();for(const sc of scAll()
 // ---- juniorzy ----
 function dlgJuniors(d){if(!dlg('jr'))return;if(!d.endsWith('-07-15')&&!d.endsWith('-01-15'))return;const t=myTeam();const J=juniorsOf(SAVE.team);
   const minR=Math.min(...myTeam().players.filter(p=>!p.jr).map(p=>rating(p)));
-  if(J.some(p=>!PLAYERS[p.id]))rebuildIndex();for(const p of J.slice().sort((a,b)=>rating(b)-rating(a))){if(t.players.length>=SQUAD_MAX)break;if(rating(p)>=minR-1&&p.age>=17){quiet(()=>promote(p.id));dlgNote(`Trener juniorów awansował ${p.first} ${p.last} (ocena ${rating(p)}) do pierwszej drużyny.`);}}
+  if(J.some(p=>!PLAYERS[p.id]))rebuildIndex();for(const p of J.slice().sort((a,b)=>rating(b)-rating(a))){if(t.players.length>=SQUAD_MAX)break;const sr=myTeam().players.filter(x=>!x.jr).map(x=>rating(x)).sort((a,b)=>b-a);const av=sr.slice(0,12).reduce((a,b)=>a+b,0)/Math.max(1,Math.min(12,sr.length));if(rating(p)>=minR-1&&p.age>=17&&(t.players.length<SQUAD_MIN+2||rating(p)>=av-5)){quiet(()=>promote(p.id));dlgNote(`Trener juniorów awansował ${p.first} ${p.last} (ocena ${rating(p)}) do pierwszej drużyny.`);}}
   if(d.endsWith('-07-15'))for(const p of agedOut()){if((p.pot||rating(p))<minR+2){p.tm=-1;p.jr=false;p.wage=0;dlgNote(`Trener juniorów rozstał się z ${p.first} ${p.last} (20 lat, bez perspektyw na pierwszą drużynę).`);}}}
 // ---- codziennie ----
 function dlgDaily(d){if(SAVE.team==null||!SAVE.world||!S())return;try{dlgPrep(d);dlgContracts(d);dlgScout();dlgJuniors(d);dlgTransfers(d);}catch(e){console.error(e);}
@@ -7943,12 +7980,12 @@ function sndWhistle(len,n){if(!sndOk('match'))return;const x=SND.ctx;let t=sndT(
   t+=d+0.12;}}
 // kibice: tło (szum hali) + okrzyki + oklaski
 function sndCrowdF(m){const a=(m&&m.att)||800;return clamp(0.35+a/4000,0.35,1.3);}
-function sndAmbStart(m){if(!sndOk('match')||SND.amb)return;const x=SND.ctx;const s=x.createBufferSource();s.buffer=SND.noise;s.loop=true;const f=x.createBiquadFilter();f.type='bandpass';f.frequency.value=650;f.Q.value=0.5;
+function sndAmbStart(m){if(!sndOk('match')||SND.amb||sndCfg().crowd===0)return;const x=SND.ctx;const s=x.createBufferSource();s.buffer=SND.noise;s.loop=true;const f=x.createBiquadFilter();f.type='bandpass';f.frequency.value=650;f.Q.value=0.5;
   const f2=x.createBiquadFilter();f2.type='lowpass';f2.frequency.value=1500;const v=x.createGain();v.gain.value=0.0001;s.connect(f);f.connect(f2);f2.connect(v);v.connect(SND.mb);s.start();
   SND.amb={s,v,base:0.018*sndCrowdF(m)};v.gain.exponentialRampToValueAtTime(SND.amb.base,sndT()+1.5);}
 function sndAmbLevel(mult,dur){const A=SND.amb;if(!A||!SND.ctx)return;const t=sndT();A.v.gain.cancelScheduledValues(t);A.v.gain.setValueAtTime(Math.max(0.0001,A.v.gain.value),t);A.v.gain.linearRampToValueAtTime(A.base*mult,t+(dur||0.6));}
 function sndAmbStop(){const A=SND.amb;if(!A)return;SND.amb=null;try{const t=SND.ctx.currentTime;A.v.gain.cancelScheduledValues(t);A.v.gain.setValueAtTime(Math.max(0.0001,A.v.gain.value),t);A.v.gain.exponentialRampToValueAtTime(0.0001,t+0.8);A.s.stop(t+0.9);}catch(e){}}
-function sndCheer(power,claps){if(!sndOk('match'))return;const p=clamp(power,0.2,2);const t=sndT();
+function sndCheer(power,claps){if(!sndOk('match')||sndCfg().crowd===0)return;const p=clamp(power,0.2,2);const t=sndT();
   sNoise(SND.mb,1.1+p*0.7,0.09*p,'bandpass',900,0.6,t,0.12);sNoise(SND.mb,0.9+p*0.5,0.05*p,'bandpass',1700,0.8,t+0.05,0.1);
   const n=Math.round((claps||0)*p);for(let i=0;i<n;i++)sNoise(SND.mb,0.03,0.05*p*(0.5+Math.random()),'bandpass',1500+Math.random()*1500,1.5,t+0.2+Math.random()*1.6,0.002);}
 function sndGroan(power){if(!sndOk('match'))return;sNoise(SND.mb,0.9,0.05*clamp(power,0.2,1.5),'lowpass',450,0.7,null,0.15);}
@@ -8214,7 +8251,7 @@ function homeView(){const s=S();if(!s)return '';
 function hvClip(){document.querySelectorAll('.hvgl').forEach(g=>{const b=g.getBoundingClientRect().bottom;for(const c of g.children)c.style.visibility=c.getBoundingClientRect().bottom>b+1?'hidden':'';});}
 window.addEventListener('resize',()=>{if(ui.tab==='home')hvClip();});
 // ================= WYGLĄD: motywy, przestawiane menu boczne, ekran startowy =================
-const APPV='181';
+const APPV='182';
 const HELP_EN='• You run a volleyball club as the manager: pick the squad, tactics and training, then watch matches live or simulate them.<br>• <b>Continue</b> (top right) moves time to the next event.<br>• Inbox and Conversations hold issues from players, the board, media and agents.<br>• Club → Staff: hire staff and delegate duties.<br>• Club → Club vision: what the board expects.<br>• Finances: budgets, bank loan and league licence.<br>• The game saves automatically; extra slots and save codes are in “Save game”.<br>• You can reorder the left menu by dragging items.';
 // ---- motyw ----
 function uiPref(k,d){try{const v=localStorage.getItem('vm_'+k);return v==null?d:v;}catch(e){return d;}}
@@ -8257,7 +8294,7 @@ function looksCard(){const th=themeCur();const G=navGroups();
    <button class="ghost sm" style="margin-top:8px" onclick="navReset()">${_t('Przywróć domyślną kolejność')}</button></details></div>`;}
 {const _sv=saveView;saveView=function(){return `<div class="card row wrap" style="gap:8px;align-items:center"><span>${_t('Ustawienia i zapis gry')}</span><span class="sp"></span><button class="ghost" onclick="ui.start=true;render()">${_t('⏏ Menu główne')}</button></div>`+looksCard()+_sv.apply(this,arguments);};}
 // ================= EKRAN STARTOWY =================
-const CHANGES=[['v180','Wiadomości na ekranie głównym: wypowiedzi z konferencji jako nagłówki prasowe (trener, przed lub po meczu z kim, cytat, pytanie i skutek), na górze listy.'],['v179','Media w Poczcie: konferencja przed meczem (na 2 dni przed) i po meczu przychodzą jako wiadomości od rzecznika prasowego — odpowiadasz w nich, a potem zostaje zapis odpowiedzi. Na ekranie głównym w Wiadomościach widać konferencje czekające na odpowiedź i ostatnie wypowiedzi.'],['v178','Porządki w opisach i nazwach motywów.'],['v177','Skauting: pełny raport charakteru (cechy z opisem, cechy mentalne, ocena skauta, chęć przejścia) i pełna obserwacja (wiedza 100% + charakter). Nowo sprowadzeni zawodnicy przez pół roku bez ofert innych klubów i próśb agentów o podwyżkę. Rozmowy: forma w meczach i kontrakt (zapewnienie o przyszłości, przedłużenie, oczekiwania). Dynamika meczu punkt po punkcie z rodzajem punktu. Komputer zmienia zawodników, którym nie idzie, i bierze czas, gdy rywal ucieka. Wyraźne oznaczenia ZAŁAMANY i W GAZIE. Wybór składu i ustawienia przed każdym setem.'],['v176','Poczta: nagłówek otwartej wiadomości (nadawca, tytuł) ma pełne tło — treść nie prześwituje już pod nim przy przewijaniu.'],['v175','Nowy wygląd: wbudowana czcionka Barlow (tekst Semi Condensed, nagłówki i liczby Condensed — wszędzie taka sama, też offline), grafitowo-granatowe panele, żółte podkreślone tytuły paneli, białe linki, tytuły ekranów i kart pisane normalnie zamiast wielkimi literami.'],['v174','Juniorzy w nowym układzie: Widok ogólny (kandydaci do pierwszego zespołu z radami trenera juniorów, terminarz i liga U20, akademia, nabór), Widok ogólny: Juniorzy (wykres postępów, ocena treningu i meczowa, opinie), Wypożyczenia (raporty co miesiąc, wypożyczanie juniorów 18–19 lat). Juniorzy trenują teraz w akademii co miesiąc i naprawdę się rozwijają.'],['v173','Usunięto rolę Zawodnik rotacyjny (zostają: kluczowy, podstawowy, perspektywiczny, rezerwowy)'],['v172','Czas gry liczony z czasu na boisku (wyjście w szóstce = min. 75%, zmiana w trakcie meczu kosztuje mało, krótkie wejście ok. 10%); rezerwowi i perspektywiczni nie złoszczą się o brak gry'],['v171','Rezerwowy bez wymagań co do czasu gry, na końcu listy ról (za perspektywicznym)'],['v170','Ustalony czas gry widoczny w karcie zawodnika i w Dynamice; zadowolenie z gry liczone względem ustalonej roli; jedna wspólna lista ról w negocjacjach i rozmowach'],['v169','Tło hali; rola w zespole przy negocjacjach; loga sponsorów; trening indywidualny jednej cechy; własne sparingi z zaproszeniami (kierownik drużyny może je organizować)'],['v166','Nowy ekran główny – Portal (skrzynka, wiadomości z ligi/kadry/social mediów, terminarz, tabela, statystyki, widżety) i rozbudowany profil drużyny'],['v165','Reprezentacja: kliknij kraj, żeby zobaczyć skład kadry; wzory strojów widoczne na zawodnikach w meczu 2D'],['v164','Budżety: obóz poza budżetem operacyjnym, mniejsze rezerwy zarządu, pula rośnie z prognozą; karnety pokazują cenę za mecz; wiadomość o obozie od kierownika drużyny'],['v163','Nowa zakładka Trening (Przegląd, Zespół, Indywidualny, Raporty, Medyczne, Trenerzy); obóz wybierasz w wiadomości (z terminem wyjazdu); zawodnicy na kadrze nieobecni w klubie, wracają zmęczeni; obóz i powroty w terminarzu'],['v162','Obóz przygotowawczy znowu da się wybrać (płatny z salda klubu, nie z budżetu operacyjnego)'],['v159','Mecz: gwizdek, dźwięk piłki i opis wyniku akcji dopiero, gdy piłka spadnie (3D i 2D)'],['v158','Limit obcokrajowców liczony jak w przepisach PZPS: ilu jest naraz na boisku (libero tylko z jednym środkowym)'],['v155','Dźwięki w 3D: gwizdek i reakcja kibiców w chwili, gdy piłka spada (także przy pauzie), głośniejszy gwizdek przed zagrywką; ławka w meczu wyjaśnia, kto gra poza pozycją przez limit obcokrajowców'],['v153','Stroje klubu (domowy, wyjazdowy, libero; 7 wzorów) w kreatorze i w zakładce Klub, widoczne na twarzach i w meczu; nowe, bardziej realistyczne twarze'],['v152','Motyw granatowy (pasek w kolorze klubu, żółty Kontynuuj), flagi krajów działają na Windows, obcokrajowcy w Transferach, samouczki we wszystkich zakładkach'],['v151','Ekran wczytywania gry: szczegóły zapisu, czas gry, ostatnia szóstka, wskazówki'],['v150','Limit obcokrajowców widoczny w składzie i na ławce, dźwięki po animacji, działające suwaki budżetu, uczciwy wpływ sponsorów'],['v149','Dźwięki zgrane z animacją (także 3D), gwizdek sędziego przed zagrywką'],['v148','Język angielski — etap 1: menu, ekran startowy, górny pasek, pozycje, daty'],['v147','Transfery: zakładki Wypożyczenia i Historia transferów'],['v146','Analiza rywala na ekranie głównym, zakładki na starszych ekranach'],['v145','Balans treningu „mocniej”, łagodniejsza ocena zarządu po sezonie, kibice na pasku we własnym klubie'],['v143','Własny klub: sam wybierasz charakter i plan, kibice wpływają na frekwencję i sponsorów'],['v142','Ekran startowy, motyw grafitowy, przestawiane menu'],['v141','Strategia klubu: cele zarządu, plan pięcioletni, kibice'],['v140','Finanse: wykresy, kredyt bankowy, licencja ligowa, prognoza'],['v139','Trening: indywidualny, mentoring, odpoczynek, reżimy, trenerzy'],['v138','Wyższe limity sztabu, skauci osobno, własny klub bez limitu'],['v137','Dźwięki meczu i powiadomień, wersja na Windows'],['v136','Zapisy w IndexedDB, delegowanie transferów']];
+const CHANGES=[['v182','Ustawienia zamiast „Zapisz grę” (Ogólne, Grafika, Dźwięk z przełącznikiem kibiców, Zapis gry), przycisk „Zgłoś błąd” na dole menu, finanse: budżet płacowy zależny od przychodów i rezerw (ostrzeżenie przy za wysokich płacach), większe wpływy z biletów w niższych ligach, uzupełnianie kadry tańszymi zawodnikami na poziomie drużyny zamiast gwiazd, dyrektor przedłuża całą podstawową kadrę, skaut z przekazanymi transferami wzmacnia najsłabsze pozycje (także przy pełnej kadrze, zwalniając najsłabszego zmiennika), trener juniorów nie zapycha kadry słabymi juniorami.'],['v180','Wiadomości na ekranie głównym: wypowiedzi z konferencji jako nagłówki prasowe (trener, przed lub po meczu z kim, cytat, pytanie i skutek), na górze listy.'],['v179','Media w Poczcie: konferencja przed meczem (na 2 dni przed) i po meczu przychodzą jako wiadomości od rzecznika prasowego — odpowiadasz w nich, a potem zostaje zapis odpowiedzi. Na ekranie głównym w Wiadomościach widać konferencje czekające na odpowiedź i ostatnie wypowiedzi.'],['v178','Porządki w opisach i nazwach motywów.'],['v177','Skauting: pełny raport charakteru (cechy z opisem, cechy mentalne, ocena skauta, chęć przejścia) i pełna obserwacja (wiedza 100% + charakter). Nowo sprowadzeni zawodnicy przez pół roku bez ofert innych klubów i próśb agentów o podwyżkę. Rozmowy: forma w meczach i kontrakt (zapewnienie o przyszłości, przedłużenie, oczekiwania). Dynamika meczu punkt po punkcie z rodzajem punktu. Komputer zmienia zawodników, którym nie idzie, i bierze czas, gdy rywal ucieka. Wyraźne oznaczenia ZAŁAMANY i W GAZIE. Wybór składu i ustawienia przed każdym setem.'],['v176','Poczta: nagłówek otwartej wiadomości (nadawca, tytuł) ma pełne tło — treść nie prześwituje już pod nim przy przewijaniu.'],['v175','Nowy wygląd: wbudowana czcionka Barlow (tekst Semi Condensed, nagłówki i liczby Condensed — wszędzie taka sama, też offline), grafitowo-granatowe panele, żółte podkreślone tytuły paneli, białe linki, tytuły ekranów i kart pisane normalnie zamiast wielkimi literami.'],['v174','Juniorzy w nowym układzie: Widok ogólny (kandydaci do pierwszego zespołu z radami trenera juniorów, terminarz i liga U20, akademia, nabór), Widok ogólny: Juniorzy (wykres postępów, ocena treningu i meczowa, opinie), Wypożyczenia (raporty co miesiąc, wypożyczanie juniorów 18–19 lat). Juniorzy trenują teraz w akademii co miesiąc i naprawdę się rozwijają.'],['v173','Usunięto rolę Zawodnik rotacyjny (zostają: kluczowy, podstawowy, perspektywiczny, rezerwowy)'],['v172','Czas gry liczony z czasu na boisku (wyjście w szóstce = min. 75%, zmiana w trakcie meczu kosztuje mało, krótkie wejście ok. 10%); rezerwowi i perspektywiczni nie złoszczą się o brak gry'],['v171','Rezerwowy bez wymagań co do czasu gry, na końcu listy ról (za perspektywicznym)'],['v170','Ustalony czas gry widoczny w karcie zawodnika i w Dynamice; zadowolenie z gry liczone względem ustalonej roli; jedna wspólna lista ról w negocjacjach i rozmowach'],['v169','Tło hali; rola w zespole przy negocjacjach; loga sponsorów; trening indywidualny jednej cechy; własne sparingi z zaproszeniami (kierownik drużyny może je organizować)'],['v166','Nowy ekran główny – Portal (skrzynka, wiadomości z ligi/kadry/social mediów, terminarz, tabela, statystyki, widżety) i rozbudowany profil drużyny'],['v165','Reprezentacja: kliknij kraj, żeby zobaczyć skład kadry; wzory strojów widoczne na zawodnikach w meczu 2D'],['v164','Budżety: obóz poza budżetem operacyjnym, mniejsze rezerwy zarządu, pula rośnie z prognozą; karnety pokazują cenę za mecz; wiadomość o obozie od kierownika drużyny'],['v163','Nowa zakładka Trening (Przegląd, Zespół, Indywidualny, Raporty, Medyczne, Trenerzy); obóz wybierasz w wiadomości (z terminem wyjazdu); zawodnicy na kadrze nieobecni w klubie, wracają zmęczeni; obóz i powroty w terminarzu'],['v162','Obóz przygotowawczy znowu da się wybrać (płatny z salda klubu, nie z budżetu operacyjnego)'],['v159','Mecz: gwizdek, dźwięk piłki i opis wyniku akcji dopiero, gdy piłka spadnie (3D i 2D)'],['v158','Limit obcokrajowców liczony jak w przepisach PZPS: ilu jest naraz na boisku (libero tylko z jednym środkowym)'],['v155','Dźwięki w 3D: gwizdek i reakcja kibiców w chwili, gdy piłka spada (także przy pauzie), głośniejszy gwizdek przed zagrywką; ławka w meczu wyjaśnia, kto gra poza pozycją przez limit obcokrajowców'],['v153','Stroje klubu (domowy, wyjazdowy, libero; 7 wzorów) w kreatorze i w zakładce Klub, widoczne na twarzach i w meczu; nowe, bardziej realistyczne twarze'],['v152','Motyw granatowy (pasek w kolorze klubu, żółty Kontynuuj), flagi krajów działają na Windows, obcokrajowcy w Transferach, samouczki we wszystkich zakładkach'],['v151','Ekran wczytywania gry: szczegóły zapisu, czas gry, ostatnia szóstka, wskazówki'],['v150','Limit obcokrajowców widoczny w składzie i na ławce, dźwięki po animacji, działające suwaki budżetu, uczciwy wpływ sponsorów'],['v149','Dźwięki zgrane z animacją (także 3D), gwizdek sędziego przed zagrywką'],['v148','Język angielski — etap 1: menu, ekran startowy, górny pasek, pozycje, daty'],['v147','Transfery: zakładki Wypożyczenia i Historia transferów'],['v146','Analiza rywala na ekranie głównym, zakładki na starszych ekranach'],['v145','Balans treningu „mocniej”, łagodniejsza ocena zarządu po sezonie, kibice na pasku we własnym klubie'],['v143','Własny klub: sam wybierasz charakter i plan, kibice wpływają na frekwencję i sponsorów'],['v142','Ekran startowy, motyw grafitowy, przestawiane menu'],['v141','Strategia klubu: cele zarządu, plan pięcioletni, kibice'],['v140','Finanse: wykresy, kredyt bankowy, licencja ligowa, prognoza'],['v139','Trening: indywidualny, mentoring, odpoczynek, reżimy, trenerzy'],['v138','Wyższe limity sztabu, skauci osobno, własny klub bez limitu'],['v137','Dźwięki meczu i powiadomień, wersja na Windows'],['v136','Zapisy w IndexedDB, delegowanie transferów']];
 ui.start=true;
 function smHasSave(){return SAVE.team!=null&&!!SAVE.coach;}
 function smCont(){ui.start=false;ui.sm=null;render();}
@@ -9317,6 +9354,95 @@ function forSquadCard(){if(SAVE.team==null||!SAVE.lg)return '';const t=myTeam();
 // ---- render: kolor klubu na pasku, przycisk „?” ----
 {const _r=render;render=function(){try{if(typeof themeClub==='function')themeClub();}catch(e){}const x=_r.apply(this,arguments);
   try{const tb=document.querySelector('main .ctx');if(tb&&!tb.querySelector('.gdq')){const b=guideBtn();if(b)tb.insertAdjacentHTML('beforeend',b);}}catch(e){}return x;};}
+// ================= USTAWIENIA (dawniej „Zapis gry”): Ogólne · Grafika · Dźwięk · Zapis gry =================
+NAV_L.zapis='Ustawienia';
+IC.zapis='<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>';
+// ---- preferencje graficzne i gry (zapamiętywane w urządzeniu) ----
+const SET_SPEEDS=[[1600,'0,5x'],[800,'1x'],[250,'2x'],[50,'4x']];
+function setPref(k,v){uiPrefSet(k,String(v));setApply();render();}
+function setApply(){try{const z=+uiPref('zoom','100')||100;document.documentElement.style.fontSize=z===100?'':(z/100*16)+'px';document.body.style.zoom=z===100?'':String(z/100);
+  document.body.classList.toggle('calm',uiPref('calm','0')==='1');}catch(e){}}
+// domyślne ustawienia widoku meczu przy starcie gry
+(function(){try{const sp=+uiPref('speed','0');if(sp)ui.speed=sp;const mv=uiPref('mview',null);if(mv)ui.mview=mv;if(uiPref('anim','1')==='0')ui.anim=false;}catch(e){}setTimeout(setApply,0);})();
+function setSeg(k,opts,cur){return `<div class="seg">${opts.map(([v,l])=>`<button class="${String(cur)===String(v)?'on':''}" onclick="${k.split('#').join("'"+v+"'")}">${l}</button>`).join('')}</div>`;}
+function setRow(label,ctrl,hint){return `<div class="setrow"><div><b>${label}</b>${hint?`<small class="mut">${hint}</small>`:''}</div><div>${ctrl}</div></div>`;}
+function setGeneral(){return `<div class="card"><h2>${_t('Ogólne')}</h2>
+  ${setRow(_t('Język / Language'),langBtns(),LANG==='en'?_t('Tłumaczenie na angielski jest w trakcie — część ekranów jest jeszcze po polsku.'):'')}
+  ${setRow(_t('Menu główne'),`<button class="ghost" onclick="ui.start=true;render()">${_t('⏏ Wyjdź do menu głównego')}</button>`,_t('Gra zapisuje się automatycznie.'))}</div>${typeof guideCard==='function'?guideCard():''}`;}
+function setGraphics(){const th=themeCur();const G=navGroups();const z=uiPref('zoom','100');const mv=uiPref('mview','hala');const v3=(()=>{try{return localStorage.getItem('vm_v3d2')!=='0';}catch(e){return true;}})();
+  return `<div class="card"><h2>${_t('Grafika')}</h2>
+  ${setRow(_t('Motyw'),setSeg("themeSet(#)",[['n',_t('Granat (kolor klubu)')],['fm',_t('Grafit')],['classic',_t('Klasyczny (złoty)')]],th==='n'||th==='fm'?th:'classic'))}
+  ${setRow(_t('Rozmiar interfejsu'),setSeg("setPref('zoom',#)",[['90','90%'],['100','100%'],['110','110%'],['125','125%']],z),_t('Większy przydaje się na dużych ekranach, mniejszy na laptopach.'))}
+  ${setRow(_t('Ograniczenie animacji'),setSeg("setPref('calm',#)",[['0',_t('Wył.')],['1',_t('Wł.')]],uiPref('calm','0')),_t('Wyłącza migające i pulsujące elementy interfejsu.'))}
+  <h3>${_t('Mecz')}</h3>
+  ${setRow(_t('Domyślny widok meczu'),setSeg("setPref('mview',#);ui.mview=uiPref('mview')",[['hala',_t('Hala')],['klasyczny',_t('Klasyczny')]],mv))}
+  ${setRow(_t('Hala'),setSeg("(function(v){try{localStorage.setItem('vm_v3d2',v);}catch(e){}ui.v3d=v==='1';render();})(#)",[['1','3D'],['0','2D']],v3?'1':'0'),_t('3D wymaga mocniejszego komputera. Na słabszym telefonie wybierz 2D.'))}
+  ${setRow(_t('Animacja akcji'),setSeg("setPref('anim',#);ui.anim=uiPref('anim')!=='0'",[['1',_t('Wł.')],['0',_t('Wył.')]],uiPref('anim','1')))}
+  ${setRow(_t('Domyślna szybkość meczu'),setSeg("setPref('speed',#);ui.speed=+uiPref('speed')",SET_SPEEDS.map(([v,l])=>[String(v),l]),uiPref('speed',String(ui.speed||1600))))}
+  <details style="margin-top:12px"><summary>${_t('Kolejność menu bocznego')}</summary><p class="small mut">${_t('Na komputerze możesz po prostu przeciągać pozycje w menu po lewej. Tutaj — strzałkami (działa też na telefonie).')}</p>
+   ${G.map(([g,ks])=>`<div class="small mut" style="margin-top:6px">${_t(g)}</div>${ks.map(k=>`<div class="res row small" style="gap:6px"><span>${NAV_L[k]}</span><span class="sp"></span><button class="ghost sm" onclick="navStep('${k}',-1)">▲</button><button class="ghost sm" onclick="navStep('${k}',1)">▼</button></div>`).join('')}`).join('')}
+   <button class="ghost sm" style="margin-top:8px" onclick="navReset()">${_t('Przywróć domyślną kolejność')}</button></details></div>`;}
+function setSound(){const c=sndCfg();const tg=(k,v)=>`sndInit();sndSet('${k}',${v})`;
+  return `<div class="card"><h2>${_t('Dźwięk')}</h2>
+  ${setRow(_t('Dźwięk'),`<div class="seg"><button class="${c.on?'on':''}" onclick="${tg('on',1)}">${_t('Wł.')}</button><button class="${!c.on?'on':''}" onclick="${tg('on',0)}">${_t('Wył.')}</button></div>`)}
+  ${setRow(_t('Głośność'),`<input type="range" min="0" max="100" value="${Math.round(c.vol*100)}" oninput="this.nextElementSibling.textContent=this.value+'%'" onchange="sndSet('vol',this.value/100)"> <b>${Math.round(c.vol*100)}%</b>`)}
+  ${setRow(_t('Dźwięki meczu'),`<div class="seg"><button class="${c.match?'on':''}" onclick="${tg('match',1)}">${_t('Wł.')}</button><button class="${!c.match?'on':''}" onclick="${tg('match',0)}">${_t('Wył.')}</button></div>`,_t('Piłka, gwizdek sędziego, kibice.'))}
+  ${setRow(_t('Kibice'),`<div class="seg"><button class="${c.crowd!==0?'on':''}" onclick="${tg('crowd',1)}">${_t('Wł.')}</button><button class="${c.crowd===0?'on':''}" onclick="${tg('crowd',0)}">${_t('Wył.')}</button></div>`,_t('Szum trybun i reakcje po punktach.'))}
+  ${setRow(_t('Powiadomienia'),`<div class="seg"><button class="${c.ui?'on':''}" onclick="${tg('ui',1)}">${_t('Wł.')}</button><button class="${!c.ui?'on':''}" onclick="${tg('ui',0)}">${_t('Wył.')}</button></div>`,_t('Dźwięk nowej wiadomości.'))}
+  <button class="ghost sm" style="margin-top:8px" onclick="sndInit();setTimeout(()=>{sndHit('serve');setTimeout(()=>sndHit('bump'),500);setTimeout(()=>sndHit('set'),900);setTimeout(()=>sndHit('spike'),1300);setTimeout(()=>sndHit('floor'),1650);setTimeout(()=>sndWhistle(0.3),1900);setTimeout(()=>sndCheer(1,25),2100);},50)">${_t('▶ Posłuchaj')}</button>
+  <p class="small mut">${_t('Dźwięki są generowane w grze. Szybka symulacja meczu jest cicha.')}</p></div>`;}
+const SET_TABS=[['ogol','Ogólne'],['graf','Grafika'],['dzw','Dźwięk'],['zap','Zapis gry']];
+saveView=function(){const t=ui.setTab||'ogol';
+  const body=t==='graf'?setGraphics():t==='dzw'?setSound():t==='zap'?saveBaseView():setGeneral();
+  return `<div class="subtabs">${SET_TABS.map(([k,l])=>`<button class="${k===t?'on':''}" onclick="ui.setTab='${k}';ui.confirm=null;render()">${_t(l)}</button>`).join('')}</div>${body}`;};
+// ================= ZGŁOŚ BŁĄD: przycisk na dole menu, formularz z danymi technicznymi =================
+const BUG_REPO='https://github.com/matrixi96/volley-manager/issues/new';
+// ostatnie błędy z gry (bez danych osobowych) — dołączane do zgłoszenia
+const ERRLOG=[];
+function errPush(t){try{t=String(t||'').slice(0,300);if(!t||ERRLOG.length&&ERRLOG[ERRLOG.length-1].t===t)return;ERRLOG.push({d:new Date().toISOString().slice(11,19),t});if(ERRLOG.length>15)ERRLOG.shift();}catch(e){}}
+window.addEventListener('error',e=>errPush((e.message||'błąd')+(e.filename?` @${String(e.filename).split('/').pop()}:${e.lineno}`:'')));
+window.addEventListener('unhandledrejection',e=>errPush('Promise: '+(e.reason&&e.reason.message||e.reason)));
+{const _ce=console.error.bind(console);console.error=function(){try{errPush([...arguments].map(x=>x&&x.message?x.message+(x.stack?' | '+String(x.stack).split('\n')[1]:''):String(x)).join(' '));}catch(e){}return _ce.apply(console,arguments);};}
+const BUG_KINDS=[['bug','🐞 Błąd'],['ui','🖥️ Wygląd / czytelność'],['bal','⚖️ Balans gry'],['idea','💡 Pomysł'],['inne','Inne']];
+function bugTech(){const L=[];try{L.push('Wersja: '+(typeof APPV!=='undefined'?APPV:'?')+' ('+((document.querySelector('meta[name=vmv]')||{}).content||'')+')');}catch(e){}
+  try{L.push('Ekran: '+(NAV_L[ui.tab]||ui.tab)+(ui.match&&!ui.match.over?' (trwa mecz)':''));}catch(e){}
+  try{if(SAVE&&SAVE.team!=null){L.push(`Klub: ${TEAMS[SAVE.team].name} (${LG_SHORT[myLg()]}), sezon ${S().n}, faza ${S().phase}, data ${today()}`);}}catch(e){}
+  try{L.push('Język: '+(typeof LANG!=='undefined'?LANG:'pl')+' · motyw: '+themeCur()+' · hala: '+(ui.v3d?'3D':'2D'));}catch(e){}
+  try{L.push('Urządzenie: '+navigator.userAgent.replace(/\s+/g,' ').slice(0,160)+' · ekran '+screen.width+'×'+screen.height);}catch(e){}
+  if(ERRLOG.length)L.push('Ostatnie błędy:\n'+ERRLOG.map(x=>`  ${x.d} ${x.t}`).join('\n'));else L.push('Ostatnie błędy: brak');
+  return L.join('\n');}
+function bugOpen(){ui.bug={k:'bug',t:'',d:'',tech:1};ui.navOpen=false;render();}
+function bugText(){const b=ui.bug;const kind=(BUG_KINDS.find(x=>x[0]===b.k)||['',''])[1];
+  return `**Rodzaj:** ${kind}\n\n**Co się stało / co proponujesz:**\n${b.d||'(brak opisu)'}\n\n**Jak to powtórzyć:**\n${b.steps||'—'}\n${b.tech?`\n---\n**Dane techniczne**\n\`\`\`\n${bugTech()}\n\`\`\``:''}`;}
+function bugRead(){const g=id=>{const e=document.getElementById(id);return e?e.value:'';};const b=ui.bug;b.t=g('bugt').trim();b.d=g('bugd').trim();b.steps=g('bugs').trim();}
+function bugSend(){bugRead();const b=ui.bug;if(!b.t&&!b.d){b.err='Napisz krótki tytuł albo opis.';render();return;}
+  const kind=(BUG_KINDS.find(x=>x[0]===b.k)||['',''])[1].replace(/^\S+\s/,'');const title=`[${kind}] ${b.t||b.d.slice(0,60)}`;
+  let body=bugText();if(body.length>6000)body=body.slice(0,6000)+'\n…';
+  const url=`${BUG_REPO}?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}&labels=${encodeURIComponent(b.k==='idea'?'enhancement':'bug')}`;
+  bugKeep('github');try{window.open(url,'_blank');}catch(e){location.href=url;}b.done='Otworzyłem stronę zgłoszenia na GitHubie — sprawdź treść i kliknij „Submit new issue”. Potrzebne jest darmowe konto GitHub.';render();}
+function bugCopy(){bugRead();const b=ui.bug;const txt=`${b.t}\n\n${bugText()}`;bugKeep('kopia');
+  const ok=()=>{b.done='Skopiowano zgłoszenie do schowka — wklej je tam, gdzie je wysyłasz (e-mail, Discord, Messenger).';render();};
+  try{navigator.clipboard.writeText(txt).then(ok,()=>{b.show=txt;render();});}catch(e){b.show=txt;render();}}
+function bugKeep(how){try{const L=JSON.parse(uiPref('bugs','[]'));L.unshift({d:new Date().toISOString().slice(0,16),t:ui.bug.t||ui.bug.d.slice(0,60),how});uiPrefSet('bugs',JSON.stringify(L.slice(0,20)));}catch(e){}}
+function bugModal(){const b=ui.bug;if(!b)return '';
+  return `<div class="modal" onclick="if(event.target===this){ui.bug=null;render()}"><div class="mcard bugcard">
+   <div class="row"><h2 style="margin:0">🐞 ${_t('Zgłoś błąd')}</h2><span class="sp"></span><button class="ghost" onclick="ui.bug=null;render()">✕</button></div>
+   ${b.done?`<p class="good">${esc(b.done)}</p><div class="row" style="gap:8px"><button class="btn" onclick="ui.bug=null;render()">${_t('Zamknij')}</button></div>`:`
+   <p class="small mut">${_t('Dziękujemy! Każde zgłoszenie pomaga poprawić grę. Opisz, co się stało i co robiłeś chwilę wcześniej.')}</p>
+   <div class="seg" style="flex-wrap:wrap;margin:8px 0">${BUG_KINDS.map(([k,l])=>`<button class="${b.k===k?'on':''}" onclick="bugRead();ui.bug.k='${k}';render()">${l}</button>`).join('')}</div>
+   <label class="bugl">${_t('Tytuł')}<input id="bugt" maxlength="90" value="${esc(b.t||'')}" placeholder="${_t('np. Mecz zatrzymał się po 2. secie')}"></label>
+   <label class="bugl">${_t('Co się stało?')}<textarea id="bugd" rows="4" placeholder="${_t('Opisz problem albo pomysł')}">${esc(b.d||'')}</textarea></label>
+   <label class="bugl">${_t('Jak to powtórzyć? (opcjonalnie)')}<textarea id="bugs" rows="2" placeholder="${_t('np. Poczta → raport skauta → kliknąłem „Profil”')}">${esc(b.steps||'')}</textarea></label>
+   <label class="row small" style="gap:6px;margin:6px 0"><input type="checkbox" ${b.tech?'checked':''} onchange="bugRead();ui.bug.tech=this.checked?1:0;render()"> ${_t('Dołącz dane techniczne (wersja, ekran, urządzenie, ostatnie błędy)')}</label>
+   ${b.tech?`<details class="small"><summary>${_t('Pokaż dane techniczne')}</summary><pre class="bugpre">${esc(bugTech())}</pre></details>`:''}
+   ${b.err?`<p class="small bad">${esc(b.err)}</p>`:''}
+   ${b.show?`<textarea class="code" readonly onclick="this.select()">${esc(b.show)}</textarea>`:''}
+   <div class="row wrap" style="gap:8px;margin-top:10px"><button class="btn" onclick="bugSend()">${_t('Wyślij przez GitHub')}</button><button class="ghost" onclick="bugCopy()">${_t('Kopiuj zgłoszenie')}</button></div>
+   <p class="small mut" style="margin-top:6px">${_t('Do zgłoszenia nie trafia Twój zapis gry ani żadne dane osobowe.')}</p>`}</div></div>`;}
+// przycisk na dole menu bocznego + okno nad wszystkimi ekranami
+{const _nav=sideNav;sideNav=function(){const h=_nav.apply(this,arguments);return h.replace('<div class="nfoot">',`<div class="nfoot"><button class="nav small bugbtn" onclick="bugOpen()" title="${_t('Zgłoś błąd')}"><span class="ic">🐞</span><span class="tx">${_t('Zgłoś błąd')}</span></button>`);};}
+{const _r=render;render=function(){const r=_r.apply(this,arguments);try{let el=document.getElementById('bugwrap');if(ui.bug){if(!el){el=document.createElement('div');el.id='bugwrap';document.body.appendChild(el);}
+  const f=document.activeElement&&document.activeElement.id;const keep=f&&/^bug[tds]$/.test(f)?[f,document.activeElement.selectionStart]:null;el.innerHTML=bugModal();if(keep){const x=document.getElementById(keep[0]);if(x){x.focus();try{x.setSelectionRange(keep[1],keep[1]);}catch(e){}}}}else if(el)el.remove();}catch(e){}return r;};}
 function vmBoot(){if(ST.mode==='idb'&&!ST.lsHad){try{const o=JSON.parse(stGet(KEY));if(o)SAVE=o;}catch(e){}rebuildIndex();restoreDefs();}
 applyCustom();
 // ================= START =================

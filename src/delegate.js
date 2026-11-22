@@ -9,7 +9,7 @@ const DLG=[
  ['spons','Sponsorzy','fin','Dyrektor podpisuje oferty sponsorów (tytularnego, gdy go brak). Nigdy nie zrywa umów.'],
  ['agents','Kontakty agentów','fin','Dyrektor odpowiada agentom: zgadza się na rozmowy o kontraktach ważnych zawodników, inne prośby grzecznie odrzuca.'],
  ['scout','Przydziały skautów','sk','Skaut sam rozpoczyna przydziały pod najsłabsze pozycje w kadrze, gdy ma wolne miejsce.'],
- ['trans','Transfery (uzupełnianie kadry)','sk','W oknie transferowym główny skaut (jak dyrektor sportowy) uzupełnia brakujące pozycje: najpierw szuka wolnych zawodników, potem tańszych rezerwowych z innych klubów. Mieści się w budżetach, kupuje najwyżej 3 zawodników na okno i nikogo nie sprzedaje. Słabszy skaut gorzej ocenia kandydatów.'],
+ ['trans','Transfery (uzupełnianie kadry)','sk','W oknie transferowym główny skaut (jak dyrektor sportowy) uzupełnia brakujące pozycje (najpierw wolni zawodnicy, potem tańsi rezerwowi z innych klubów), a gdy kadra jest kompletna — wzmacnia najsłabszą pozycję w podstawowym składzie (min. +3 do oceny). Mieści się w budżetach, kupuje najwyżej 3 zawodników na okno (w tym 2 wzmocnienia) i nikogo nie sprzedaje. Słabszy skaut gorzej ocenia kandydatów.'],
  ['jr','Juniorzy','jr','Trener juniorów promuje do pierwszej drużyny gotowych juniorów (gdy jest miejsce) i zwalnia 20-latków bez perspektyw.'],
 ];
 function DL(){if(!SAVE.dlg){SAVE.dlg={on:{},quiet:0,log:[],wk:null};try{if(ensTrn().mode==='asy')SAVE.dlg.on.train=1;}catch(e){}}return SAVE.dlg;}
@@ -35,26 +35,37 @@ function dlgPrep(d){if(!dlg('prep'))return;const e=nextEvent();const c=myNext();
   const op=c.h===SAVE.team?c.a:c.h;let L=[];try{L=preTips(op).filter(x=>x.btn&&x.act);}catch(e){}if(!L.length)return;
   window._dlgPrep=1;try{quiet(()=>{for(const x of L){try{(new Function(x.act))();}catch(e){}}});}finally{window._dlgPrep=0;}dlgNote(`Analityk ustawił taktykę na ${TEAMS[op].name}: ${L.map(x=>x.t.replace(/\.$/,'')).join('; ')}.`);}
 // ---- kontrakty ----
-function dlgContracts(d){if(!dlg('contr'))return;const s=S();if(!s)return;const md=d.slice(5);if(!(md==='02-01'||md==='05-01'))return;const t=myTeam();const avg=t.players.filter(p=>!p.jr).reduce((a,p)=>a+rating(p),0)/Math.max(1,t.players.length);
-  for(const p of t.players.slice()){if(p.jr||p.loan||p.ce==null||p.ce>s.n||p.noExt===s.n)continue;
-    if(rating(p)>=avg&&p.age<=32){const w=wageNeeded(p);const dw=w-(p.wage||0);if(dw>0&&dw>budLeft().wg){dlgNote(`Dyrektor nie przedłużył ${p.first} ${p.last}: brak miejsca w budżecie płacowym (potrzeba ${fmt(w)}).`);continue;}
-      dlgRenew(p,1);dlgNote(`Dyrektor przedłużył kontrakt: ${p.first} ${p.last} do ${ceDate(p.ce)} (${fmt(w)}/rok).`);}
-    else if(md==='05-01'){p.noExt=s.n;dlgNote(`Dyrektor nie przedłuży umowy ${p.first} ${p.last} (odejdzie po sezonie).`);}}}
+function dlgContracts(d){if(!dlg('contr'))return;const s=S();if(!s)return;const md=d.slice(5);if(!(md==='02-01'||md==='05-01'))return;const t=myTeam();const pl=t.players.filter(p=>!p.jr&&!p.loan);
+  const avg=pl.reduce((a,p)=>a+rating(p),0)/Math.max(1,pl.length);const rank=pl.slice().sort((a,b)=>rating(b)-rating(a));const top=new Set(rank.slice(0,12).map(p=>p.id));
+  const exp=rank.filter(p=>p.ce!=null&&p.ce<=s.n&&p.noExt!==s.n);const stay=pl.length-exp.length;
+  // kto jest potrzebny: najlepsza dwunastka albo zawodnik, bez którego zabraknie ludzi na pozycji; wiek do 32 (do 34 dla wyraźnie lepszych od średniej)
+  const need=p=>{const left=pl.filter(x=>x.pos===p.pos&&x!==p&&!(x.ce!=null&&x.ce<=s.n)).length;return left<(POS_STD[p.pos]||1);};
+  let kept=0;for(const p of exp){const ok=(top.has(p.id)||rating(p)>=avg-2||need(p))&&(p.age<=32||(p.age<=34&&rating(p)>=avg+3));
+    if(ok){const w=wageNeeded(p);const dw=w-(p.wage||0);if(dw>0&&dw>budLeft().wg){dlgNote(`Dyrektor nie przedłużył ${p.first} ${p.last}: brak miejsca w budżecie płacowym (potrzeba ${fmt(w)}).`);continue;}
+      dlgRenew(p,1);kept++;dlgNote(`Dyrektor przedłużył kontrakt: ${p.first} ${p.last} do ${ceDate(p.ce)} (${fmt(w)}/rok).`);}
+    else if(md==='05-01'&&stay+kept>=SQUAD_MIN+2){p.noExt=s.n;dlgNote(`Dyrektor nie przedłuży umowy ${p.first} ${p.last} (odejdzie po sezonie).`);}}}
 // ---- transfery: uzupełnianie brakujących pozycji ----
 function dlgTransfers(d){if(!dlg('trans')||!windowOpen())return;const D=DL();const s=S();if(D.trLast&&daysBetween(D.trLast,d)<3)return;D.trLast=d;
   D.trN=D.trN||{};if((D.trN[s.n]||0)>=3)return;const t=myTeam();const mine=t.players.filter(p=>!p.jr&&!(p.loan&&p.loan.from===SAVE.team&&p.tm!==SAVE.team));if(t.players.length>=SQUAD_MAX)return;
-  const need=Object.keys(POS_STD).filter(k=>mine.filter(p=>p.pos===k).length<POS_STD[k]).sort((a,b)=>(mine.filter(p=>p.pos===a).length-POS_STD[a])-(mine.filter(p=>p.pos===b).length-POS_STD[b]));if(!need.length)return;
+  const need=Object.keys(POS_STD).filter(k=>mine.filter(p=>p.pos===k).length<POS_STD[k]).sort((a,b)=>(mine.filter(p=>p.pos===a).length-POS_STD[a])-(mine.filter(p=>p.pos===b).length-POS_STD[b]));const upg=!need.length;let cut=null;if(upg){if((D.trU&&D.trU[s.n]||0)>=3)return;
+    // kadra pełna: zwalniamy miejsce, oddając najsłabszego zmiennika (poza najlepszą dwunastką, z pozycji z nadwyżką)
+    if(t.players.length>=SQUAD_MAX-1){const rk=mine.slice().sort((a,b)=>rating(b)-rating(a));const t12=new Set(rk.slice(0,12).map(p=>p.id));
+      cut=rk.slice().reverse().find(p=>!t12.has(p.id)&&!p.loan&&mine.filter(x=>x.pos===p.pos).length>POS_STD[p.pos]&&!(typeof newSign==='function'&&newSign(p))&&releaseCost(p)<=Math.max(60000,SAVE.fin.bal*0.03));if(!cut)return;}
+    // kadra kompletna: szukamy wzmocnienia na pozycji, gdzie podstawowy skład jest najsłabszy
+    const ST={R:1,A:1,P:2,S:2,L:1};const wk=Object.keys(ST).map(k=>{const r=mine.filter(p=>p.pos===k).map(p=>rating(p)).sort((a,b)=>b-a);return {k,v:r[ST[k]-1]||0};}).sort((a,b)=>a.v-b.v);
+    need.push(...wk.slice(0,2).map(x=>x.k));D._upBar={};for(const x of wk)D._upBar[x.k]=x.v+3;}
   const top=mine.map(p=>rating(p)).sort((a,b)=>b-a).slice(0,12);const avg=top.reduce((a,b)=>a+b,0)/Math.max(1,top.length);const sk=dlgSk('trans');const myRep=SAVE.ai[SAVE.team].rep;const miss=need.reduce((a,k)=>a+POS_STD[k]-mine.filter(p=>p.pos===k).length,0);const maxW=budLeft().wg*(miss>1?Math.max(0.35,1/miss*1.3):1);
-  for(const pos of need){const posR=mine.filter(p=>p.pos===pos).map(p=>rating(p));const bar=Math.min(avg-6,posR.length?Math.max(...posR)-2:avg-6);
+  for(const pos of need){const posR=mine.filter(p=>p.pos===pos).map(p=>rating(p));const bar=upg?D._upBar[pos]:Math.min(avg-6,posR.length?Math.max(...posR)-2:avg-6);
     const cands=[];for(const p of W().players){if(p.pos!==pos||p.jr||p.retired||p.inj>0||p.tm===SAVE.team||p.loan||p.age<19||p.age>32)continue;
       if(p.tm>=0){if(isYT(p.tm)||(isStarter(p)&&!p.tl)||TEAMS[p.tm].players.length<=SQUAD_MIN+1||SAVE.ai[p.tm].rep>myRep+15)continue;}
       const est=rating(p)+(R()-0.5)*(20-sk)/2;if(est<bar)continue;const fee=p.tm<0?0:Math.round(pValue(p)*(p.tl?1:1.15)/10000)*10000;const w=wageNeeded(p);
-      if(fee>0&&(budCan('tr',fee)||SAVE.fin.bal-fee<0))continue;if(w>maxW)continue;cands.push({p,est,fee,w,sc:est+(p.tm<0?3:0)-fee/250000});}
-    if(!cands.length){if(!D.trMiss||D.trMiss[pos]!==s.n){D.trMiss=D.trMiss||{};D.trMiss[pos]=s.n;dlgNote(`Skaut nie znalazł nikogo na pozycję ${POS_NAMES[pos]||pos}, kto zmieściłby się w budżetach i podniósł poziom kadry.`);}continue;}
+      if(fee>0&&(budCan('tr',fee)||SAVE.fin.bal-fee<0))continue;if(w>(upg?budLeft().wg*0.8+(cut?cut.wage||0:0):maxW))continue;if(cut&&rating(p)<rating(cut)+6)continue;cands.push({p,est,fee,w,sc:est+(p.tm<0?3:0)-fee/250000});}
+    if(!cands.length){if(upg)continue;if(!D.trMiss||D.trMiss[pos]!==s.n){D.trMiss=D.trMiss||{};D.trMiss[pos]=s.n;dlgNote(`Skaut nie znalazł nikogo na pozycję ${POS_NAMES[pos]||pos}, kto zmieściłby się w budżetach i podniósł poziom kadry.`);}continue;}
     cands.sort((a,b)=>b.sc-a.sc);const c=cands[0];const p=c.p;const from=p.tm;
     if(c.fee){money(-c.fee,'Transfery');SAVE.ai[from].bud+=c.fee;finLog(`Zakup (skaut): ${p.first} ${p.last} (${TEAMS[from].short})`,-c.fee);}
+    if(cut){const rc=releaseCost(cut);money(-rc,'Odprawy');finLog(`Rozwiązanie kontraktu (skaut): ${cut.first} ${cut.last}`,-rc);movePlayer(cut,-1);cut.wage=0;cut.ce=0;dlgNote(`Dyrektor rozwiązał kontrakt z ${cut.first} ${cut.last} (ocena ${rating(cut)}), żeby zrobić miejsce w kadrze — odprawa ${fmt(rc)}.`);}
     if(typeof budWageOver==='function')budWageOver(c.w);movePlayer(p,SAVE.team);p.wage=c.w;p.ce=contractEndFor(prefYears(p));delete p.tl;try{achEv('sign');}catch(e){}
-    D.trN[s.n]=(D.trN[s.n]||0)+1;dlgNote(`Skaut sprowadził ${p.first} ${p.last} (${pos}, ${p.age} l., ocena ${rating(p)}) ${from>=0?`z ${TEAMS[from].name} za ${fmt(c.fee)}`:'jako wolnego zawodnika'} — kontrakt ${fmt(c.w)}/rok do ${ceDate(p.ce)}.`);
+    D.trN[s.n]=(D.trN[s.n]||0)+1;if(upg){D.trU=D.trU||{};D.trU[s.n]=(D.trU[s.n]||0)+1;}dlgNote(`Skaut sprowadził ${p.first} ${p.last} (${pos}, ${p.age} l., ocena ${rating(p)}) ${from>=0?`z ${TEAMS[from].name} za ${fmt(c.fee)}`:'jako wolnego zawodnika'} — kontrakt ${fmt(c.w)}/rok do ${ceDate(p.ce)}.`);
     news(`✍️ ${p.first} ${p.last} dołącza do zespołu${from>=0?` z ${TEAMS[from].name} za ${fmt(c.fee)}`:' jako wolny zawodnik'} (transfer przeprowadził skaut).`);break;}}
 // ---- sponsorzy ----
 function dlgSponsors(){if(!dlg('spons'))return;const s=SPN();const n0=s.act.length;quiet(()=>{for(const k in s.off)for(const o of (s.off[k]||[]).slice()){if(k==='tit'&&s.act.some(c=>c.cat==='tit'))continue;signSponsor(k,o.id);}});
@@ -75,7 +86,7 @@ function dlgScout(){if(!dlg('scout'))return;const s=SC();for(const sc of scAll()
 // ---- juniorzy ----
 function dlgJuniors(d){if(!dlg('jr'))return;if(!d.endsWith('-07-15')&&!d.endsWith('-01-15'))return;const t=myTeam();const J=juniorsOf(SAVE.team);
   const minR=Math.min(...myTeam().players.filter(p=>!p.jr).map(p=>rating(p)));
-  if(J.some(p=>!PLAYERS[p.id]))rebuildIndex();for(const p of J.slice().sort((a,b)=>rating(b)-rating(a))){if(t.players.length>=SQUAD_MAX)break;if(rating(p)>=minR-1&&p.age>=17){quiet(()=>promote(p.id));dlgNote(`Trener juniorów awansował ${p.first} ${p.last} (ocena ${rating(p)}) do pierwszej drużyny.`);}}
+  if(J.some(p=>!PLAYERS[p.id]))rebuildIndex();for(const p of J.slice().sort((a,b)=>rating(b)-rating(a))){if(t.players.length>=SQUAD_MAX)break;const sr=myTeam().players.filter(x=>!x.jr).map(x=>rating(x)).sort((a,b)=>b-a);const av=sr.slice(0,12).reduce((a,b)=>a+b,0)/Math.max(1,Math.min(12,sr.length));if(rating(p)>=minR-1&&p.age>=17&&(t.players.length<SQUAD_MIN+2||rating(p)>=av-5)){quiet(()=>promote(p.id));dlgNote(`Trener juniorów awansował ${p.first} ${p.last} (ocena ${rating(p)}) do pierwszej drużyny.`);}}
   if(d.endsWith('-07-15'))for(const p of agedOut()){if((p.pot||rating(p))<minR+2){p.tm=-1;p.jr=false;p.wage=0;dlgNote(`Trener juniorów rozstał się z ${p.first} ${p.last} (20 lat, bez perspektyw na pierwszą drużynę).`);}}}
 // ---- codziennie ----
 function dlgDaily(d){if(SAVE.team==null||!SAVE.world||!S())return;try{dlgPrep(d);dlgContracts(d);dlgScout();dlgJuniors(d);dlgTransfers(d);}catch(e){console.error(e);}

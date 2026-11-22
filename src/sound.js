@@ -36,12 +36,12 @@ function sndWhistle(len,n){if(!sndOk('match'))return;const x=SND.ctx;let t=sndT(
   t+=d+0.12;}}
 // kibice: tło (szum hali) + okrzyki + oklaski
 function sndCrowdF(m){const a=(m&&m.att)||800;return clamp(0.35+a/4000,0.35,1.3);}
-function sndAmbStart(m){if(!sndOk('match')||SND.amb)return;const x=SND.ctx;const s=x.createBufferSource();s.buffer=SND.noise;s.loop=true;const f=x.createBiquadFilter();f.type='bandpass';f.frequency.value=650;f.Q.value=0.5;
+function sndAmbStart(m){if(!sndOk('match')||SND.amb||sndCfg().crowd===0)return;const x=SND.ctx;const s=x.createBufferSource();s.buffer=SND.noise;s.loop=true;const f=x.createBiquadFilter();f.type='bandpass';f.frequency.value=650;f.Q.value=0.5;
   const f2=x.createBiquadFilter();f2.type='lowpass';f2.frequency.value=1500;const v=x.createGain();v.gain.value=0.0001;s.connect(f);f.connect(f2);f2.connect(v);v.connect(SND.mb);s.start();
   SND.amb={s,v,base:0.018*sndCrowdF(m)};v.gain.exponentialRampToValueAtTime(SND.amb.base,sndT()+1.5);}
 function sndAmbLevel(mult,dur){const A=SND.amb;if(!A||!SND.ctx)return;const t=sndT();A.v.gain.cancelScheduledValues(t);A.v.gain.setValueAtTime(Math.max(0.0001,A.v.gain.value),t);A.v.gain.linearRampToValueAtTime(A.base*mult,t+(dur||0.6));}
 function sndAmbStop(){const A=SND.amb;if(!A)return;SND.amb=null;try{const t=SND.ctx.currentTime;A.v.gain.cancelScheduledValues(t);A.v.gain.setValueAtTime(Math.max(0.0001,A.v.gain.value),t);A.v.gain.exponentialRampToValueAtTime(0.0001,t+0.8);A.s.stop(t+0.9);}catch(e){}}
-function sndCheer(power,claps){if(!sndOk('match'))return;const p=clamp(power,0.2,2);const t=sndT();
+function sndCheer(power,claps){if(!sndOk('match')||sndCfg().crowd===0)return;const p=clamp(power,0.2,2);const t=sndT();
   sNoise(SND.mb,1.1+p*0.7,0.09*p,'bandpass',900,0.6,t,0.12);sNoise(SND.mb,0.9+p*0.5,0.05*p,'bandpass',1700,0.8,t+0.05,0.1);
   const n=Math.round((claps||0)*p);for(let i=0;i<n;i++)sNoise(SND.mb,0.03,0.05*p*(0.5+Math.random()),'bandpass',1500+Math.random()*1500,1.5,t+0.2+Math.random()*1.6,0.002);}
 function sndGroan(power){if(!sndOk('match'))return;sNoise(SND.mb,0.9,0.05*clamp(power,0.2,1.5),'lowpass',450,0.7,null,0.15);}

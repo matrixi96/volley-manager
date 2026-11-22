@@ -215,6 +215,14 @@ function renew(pid,wage,years){const p=PLAYERS[pid].p;delete p.raiseReq;const ne
   p.wage=round5k(wage);p.ce=contractEndFor(years);achEv('renew');news(`✍️ ${p.first} ${p.last} przedłużył kontrakt do ${ceDate(p.ce)}.`);save();tradeMsg(true,`${p.last} przedłużył kontrakt do ${ceDate(p.ce)}.`);}
 
 // ---- AI: transfery i kontrakty ----
+// uzupełnienie TWOJEJ kadry do minimum: tani zawodnik na poziomie obecnej drużyny (wcześniej brało najlepszych wolnych zawodników, np. gwiazdy z oceną 90, bez patrzenia na budżet)
+function myFillSign(t,pos){const rs=t.players.map(p=>rating(p)).sort((a,b)=>b-a).slice(0,10);const lg=lgTeams(lgOf(t.idx)).filter(x=>x.idx!==t.idx);
+  const ref=rs.length>=4?rs.reduce((a,b)=>a+b,0)/rs.length:(lg.length?lg.reduce((a,x)=>a+teamStrength(x),0)/lg.length-4:60);
+  const fa=W().players.filter(p=>p.tm<0&&p.pos===pos&&!p.inj&&!p.retired&&rating(p)<=ref+2).map(p=>({p,sc:Math.abs(rating(p)-ref)+wageDemand(p)/80000})).sort((a,b)=>a.sc-b.sc);
+  let p=fa.length?fa[0].p:null;if(ST_C)delete ST_C[t.idx];
+  if(!p){p=genPlayer(pos,(ref-1)/5-2.5,21+Math.floor(R()*8));initPlayerMeta(p,S().n,true);W().players.push(p);}
+  p.tm=t.idx;assignNum(p,t.idx);p.wage=wageDemand(p);p.ce=S().n+1;p.jd=today();t.players=W().players.filter(x=>x.tm===t.idx&&!x.jr);
+  news(`✍️ ${p.first} ${p.last} (${POS_NAMES[pos]}, ocena ${rating(p)}) dołącza jako wolny zawodnik — klub uzupełnił kadrę do minimum (kontrakt na rok, ${fmt(p.wage)}/rok).`);return p;}
 function aiSign(t,pos){
   const fa=W().players.filter(p=>p.tm<0&&p.pos===pos&&!p.inj).map(p=>[p,rating(p)]).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
   const tS=teamStrength(t);let p=fa.find(x=>rating(x)<=tS+4)||fa[0];if(ST_C)delete ST_C[t.idx];
@@ -314,7 +322,7 @@ function startSeasonFromOff(){
   for(const p of exp){p.tm=-1;p.wage=0;p.ce=0;news(`👋 ${p.first} ${p.last} odchodzi — wygasł kontrakt.`);}
   for(const p of agedOut()){p.tm=-1;p.jr=false;news(`👋 ${p.first} ${p.last} (${p.age} l.) kończy wiek juniora i odchodzi z akademii.`);}
   syncTeams();
-  if(myTeam().players.length<SQUAD_MIN){while(myTeam().players.length<SQUAD_MIN){const t=myTeam();const pos=['R','A','P','S','L'].find(x=>posCount(t,x)<POS_MIN[x])||randPos();aiSign(t,pos);syncTeams();}news('Klub dobrał zawodników z wolnego rynku, żeby uzupełnić kadrę do minimum.');}
+  if(myTeam().players.length<SQUAD_MIN){while(myTeam().players.length<SQUAD_MIN){const t=myTeam();const pos=['R','A','P','S','L'].find(x=>posCount(t,x)<POS_MIN[x])||randPos();myFillSign(t,pos);syncTeams();}news('Klub dobrał zawodników z wolnego rynku, żeby uzupełnić kadrę do minimum.');}
   s.phase='spar';ui.tmsg=null;try{campStart();}catch(e){}syncDate();save();render();
 }
 

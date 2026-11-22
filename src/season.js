@@ -336,7 +336,8 @@ function exportCode(){persistLive();ui.code=btoa(unescape(encodeURIComponent(JSO
 function copyCode(){const t=ui.code;try{navigator.clipboard.writeText(t).then(()=>{ui.msg='Skopiowano kod zapisu.';render();},()=>{ui.msg='Nie udało się skopiować — zaznacz kod i skopiuj ręcznie.';render();});}catch(e){ui.msg='Nie udało się skopiować — zaznacz kod i skopiuj ręcznie.';render();}}
 function importCode(){const v=($('#imp')||{}).value||'';try{const o=JSON.parse(decodeURIComponent(escape(atob(v.trim()))));if(o.team==null||!o.season)throw 0;loadObj(o);ui.msg='Wczytano grę z kodu.';ui.code=null;ui.tab='mecz';}catch(e){ui.msg='Ten kod zapisu jest nieprawidłowy.';}render();}
 function newGame(){if(ui.confirm!=='new'){ui.confirm='new';render();return;}clearTimeout(timer);SAVE={};resetTeams();ui.match=null;ui.confirm=null;save();render();}
-function saveView(){
+function saveView(){return saveBaseView();}
+function saveBaseView(){
   return `${ui.msg?`<div class="card msg">${ui.msg}</div>`:''}
   <div class="card"><h2>Zapis gry</h2><p>${storageOk?'✅ Gra zapisuje się automatycznie po każdym meczu i w trakcie meczu, więc po zamknięciu strony wrócisz w to samo miejsce.':'⚠️ Ta przeglądarka nie pozwala na zapis. Używaj kodu zapisu poniżej.'}</p><p class="small mut">${ST.mode==='idb'?'Zapisy trzymane są w bazie przeglądarki (IndexedDB) — bez limitu 5 MB, więc długie kariery mieszczą się bez problemu.':'Zapisy trzymane są w localStorage (limit ok. 5 MB). Przy bardzo długiej karierze zapisuj kopię kodem zapisu.'} Rozmiar zapisu: ${(((stGet(KEY)||'').length)/1048576).toFixed(1)} MB.</p>
   <p class="mut small">Zapis jest w tej przeglądarce na tym urządzeniu. Żeby przenieść grę na inne urządzenie, użyj kodu zapisu.</p></div>
