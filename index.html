@@ -3576,7 +3576,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=163').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=164').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
@@ -5330,9 +5330,9 @@ function matchdayCard(){const e=ECO(),inf=myInfra();const c=crowdFor(SAVE.team,1
    ${inf.vip?priceRow('vipP','Bilet VIP (loża)',e.vipP,bestVip(),`${vipSeats(inf.vip)} miejsc w loży · ok. ${m.vAtt} zajętych`,5):'<p class="small mut">Bilety VIP: najpierw zbuduj lożę VIP.</p>'}
    ${inf.gosc?`<p class="small mut">Sektor gości: ${guestSeats(inf.gosc)} miejsc, kibice rywala płacą cenę biletu normalnego (ok. ${m.gAtt} na mecz).</p>`:''}
    <h3>Karnety na sezon ${s?sLabel(s.n):''}</h3><p class="small mut">${kOpen?`Sprzedaż trwa do dnia przed 1. kolejką ligi (${fmtDMY(addDays(s.rdates[0],-1))}). Karnet obejmuje 11 meczów ligowych u siebie. Kibic z karnetem przychodzi na każdy mecz, a połowa karnetowiczów to nowi widzowie.`:`Sprzedaż zamknięta — ruszy w kolejnym okresie przygotowawczym.`}</p>
-   ${priceRow('kar.u','Karnet ulgowy',e.kar.u,karBest('u'),`sprzedane: ${ks.u} · cel przy tej cenie ok. ${karTarget('u',e.kar.u)}`,10)}
-   ${priceRow('kar.n','Karnet normalny',e.kar.n,karBest('n'),`sprzedane: ${ks.n} · cel przy tej cenie ok. ${karTarget('n',e.kar.n)}`,10)}
-   ${inf.vip?priceRow('kar.v','Karnet VIP',e.kar.v,karBest('v'),`sprzedane: ${ks.v} · cel przy tej cenie ok. ${karTarget('v',e.kar.v)}`,50):'<p class="small mut">Karnet VIP: dostępny po zbudowaniu loży VIP.</p>'}
+   ${priceRow('kar.u','Karnet ulgowy',e.kar.u,karBest('u'),`sprzedane: ${ks.u} · cel przy tej cenie ok. ${karTarget('u',e.kar.u)} · ${karPerMatch('u')}`,10)}
+   ${priceRow('kar.n','Karnet normalny',e.kar.n,karBest('n'),`sprzedane: ${ks.n} · cel przy tej cenie ok. ${karTarget('n',e.kar.n)} · ${karPerMatch('n')}`,10)}
+   ${inf.vip?priceRow('kar.v','Karnet VIP',e.kar.v,karBest('v'),`sprzedane: ${ks.v} · cel przy tej cenie ok. ${karTarget('v',e.kar.v)} · ${karPerMatch('v')}`,50):'<p class="small mut">Karnet VIP: dostępny po zbudowaniu loży VIP.</p>'}
    <p class="small"><b>Ze sprzedaży karnetów:</b> ${fmt(ks.inc)}</p>
    <h3>Parking</h3>${priceRow('park','Opłata za parking',e.park,bestPark(),`${parkSpots(inf.park).toLocaleString('pl-PL')} miejsc · zbyt wysoka opłata zniechęca część kibiców`)}
    <h3>Stoisko gastronomiczne (poziom ${inf.gastro})</h3>
@@ -5344,6 +5344,10 @@ function shopCard(){const e=ECO(),L=myInfra().sklep;const est=shopMonth(L,true);
    <p class="small"><b>Szacowany zysk:</b> ${fmt(est.tot)} / miesiąc (sprzedaż ${fmt(est.rev)})</p>
    ${lr?`<h3>Raport: ${MON_NOM[lr.m-1]}</h3><div class="tw"><table><thead><tr><th class="l">Produkt</th><th>Sztuk</th><th>Cena</th><th>Sprzedaż</th><th>Zysk</th></tr></thead><tbody>${lr.rows.map(r=>`<tr><td class="l">${r.n}</td><td>${r.q}</td><td>${r.pr} zł</td><td>${fmt(r.rev)}</td><td class="good">${fmt(r.pf)}</td></tr>`).join('')}<tr><td class="l"><b>Razem</b></td><td></td><td></td><td>${fmt(lr.rev)}</td><td class="good"><b>${fmt(lr.tot)}</b></td></tr></tbody></table></div>`:''}</div>`;}
 function pricesCard(){return `<div class="card"><h2>Ceny</h2><p class="small">Ceny biletów, karnetów, parkingu i jedzenia ustawisz w <button class="link" onclick="ui.infraSel='hala';go('klub')">Infrastruktura → Hala sportowa</button>, a ceny produktów w <button class="link" onclick="ui.infraSel='sklep';go('klub')">Infrastruktura → Sklep kibica</button>.</p></div>`;}
+
+// karnet: cena za jeden mecz i porównanie z biletem (karnet powinien wychodzić taniej niż bilety kupowane osobno)
+function karPerMatch(k){const e=ECO();const n=Math.max(1,Math.ceil(nRounds()/2));const per=Math.round(e.kar[k]/n);const single=k==='v'?e.vipP:e.tix;
+  const pct=Math.round((1-per/single)*100);return pct>0?`<b>${per} zł za mecz</b> (${pct}% taniej niż bilet ${k==='v'?'VIP':'normalny'} ${single} zł)`:`<b class="bad">${per} zł za mecz — drożej niż bilet ${k==='v'?'VIP':'normalny'} (${single} zł), kibice wolą kupować bilety</b>`;}
 // ===== Budżety klubu: transferowy, płacowy, operacyjny + dyrektor finansowy =====
 // Budżet ustalany na sezon z prognozy przychodów. Dyrektor finansowy dzieli pieniądze, dokładniej prognozuje i pilnuje wydatków.
 const BUD_DEF={wg:0.64,op:0.2,tr:0.16};
@@ -5368,7 +5372,7 @@ function budLeft(){const b=BUD();if(!b)return {tr:0,wg:0,op:0};return {tr:b.tr+(
 // księgowanie: money() przekazuje tu każdy ruch
 function budBook(amt,cat){const b=SAVE.team!=null&&S()?BUD():null;if(!b)return;
   if(cat==='Transfery'||cat==='Odprawy'){if(amt<0)b.trUsed+=-amt;else b.trAdd=(b.trAdd||0)+amt*0.5;}// połowa wpływów ze sprzedaży wraca do budżetu transferowego
-  if(cat==='Infrastruktura'||cat==='Obóz'||cat==='Marketing')if(amt<0)b.opUsed+=-amt;}
+  if(cat==='Infrastruktura'||cat==='Marketing')if(amt<0)b.opUsed+=-amt;}// obóz: jednorazowo z salda, poza budżetem operacyjnym
 // opis wpływu decyzji na budżety: d={tr,wg,op} (wydatek dodatni)
 function budImpact(d,note){const b=BUD();if(!b)return '';const L=budLeft();const rows=[];
   const one=(k,lab,tot,used,dv)=>{const after=used+dv;const left=tot-after;const pct=Math.min(130,Math.round(after/Math.max(1,tot)*100));
@@ -5396,7 +5400,7 @@ function budFree(){return Object.assign({},BUD_FREE_DEF,SAVE.budFree||{});}
 function budSetSplit(k,v){const sp=budFree();v=clamp(+v/100,0,1);sp[k]=v;const rest=['wg','op','tr'].filter(x=>x!==k);const sum=rest.reduce((a,x)=>a+sp[x],0);const fr=1-v;
   for(const x of rest)sp[x]=sum>0?sp[x]/sum*fr:fr/2;SAVE.budFree=sp;const b=BUD();if(b){const bs=budSplitAmt(b.pool,sp,b.res);b.wg=bs.wg;b.op=bs.op;b.tr=bs.tr;}save();render();}
 // suwaki: najpierw zarząd rezerwuje obecne pensje (+zapas) i utrzymanie obiektów; suwaki dzielą tylko to, co zostaje
-function budMins(){const wb=wageBill(),mn=maintenance()*12;return {wg:wb+Math.max(150000,wb*0.04),op:mn+50000};}
+function budMins(){const wb=wageBill(),mn=maintenance()*12;return {wg:wb+Math.max(50000,wb*0.03),op:mn+20000};}
 function budSliders(b,sp0){const sp=budFree();const M=budMins();const free=b.pool-M.wg-M.op;const prev=k=>{const t=Object.assign({},sp);return budSplitAmt(b.pool,t,b.res)[k];};
   const head=`<div class="small" style="margin:6px 0;grid-column:1/-1">Pula na sezon: <b>${fmt(b.pool)}</b> · najpierw zarezerwowane: obecne pensje z zapasem <b>${fmt(M.wg)}</b> i utrzymanie obiektów <b>${fmt(M.op)}</b> · <b class="${free>0?'good':'bad'}">wolne do podziału: ${fmt(Math.max(0,free))}</b></div>`;
   if(free<=0)return `<div class="budsp"><b>Podział budżetu</b>${head}<div class="small bad">Suwaki są wyłączone — obecne pensje i utrzymanie obiektów zajmują całą pulę, więc nie ma czego dzielić. Budżet transferowy pochodzi teraz z oszczędności klubu (${fmt(b.tr)}).</div>
@@ -5420,7 +5424,7 @@ function budgetCard(){const b=BUD();if(!b)return '';const L=budLeft();const sp=b
    <div class="small mut" style="margin:4px 0 10px">Do podziału: <b>${fmt(b.pool)}</b> (prognoza przychodów + część oszczędności).</div>
    ${bar('Transferowy',trTot,b.trUsed,`odstępne i premie za podpis${b.trAdd?` · +${fmt(b.trAdd)} ze sprzedaży`:''}${b.extra?` · +${fmt(b.extra)} od zarządu`:''}`)}
    ${bar('Płacowy (rocznie)',b.wg,wageBill(),'pensje zawodników i sztabu')}
-   ${bar('Operacyjny',b.op,b.opUsed+maintenance()*12,'utrzymanie obiektów, budowy, obóz')}
+   ${bar('Operacyjny',b.op,b.opUsed+maintenance()*12,'utrzymanie obiektów, budowy, marketing (obóz płacony osobno z salda)')}
    ${budSliders(b,sp)}
    <div class="row" style="gap:8px;margin-top:8px">${b.extra?'<span class="small mut">Zarząd dołożył już pieniądze w tym sezonie.</span>':`<button class="ghost sm" onclick="budAsk()">🏦 Poproś zarząd o +${fmt(round5k(Math.max(150000,b.tr*0.25)))} na transfery</button><span class="small mut">zaufanie zarządu −6</span>`}</div></div>`;}
 // sponsor podpisany w trakcie sezonu: jego raty do końca sezonu (czerwiec) zasilają budżety według podziału
@@ -5456,6 +5460,12 @@ function aiSocResult(ti,won,sweep){if(ti===SAVE.team||!SAVE.ai[ti])return;const 
   let g=won?0.008+(sweep?0.004:0):-(0.005+(sweep?0.004:0));g=g>0?g*st[2]*(sk?0.6+sk/20*0.8:0.35):g*(sk?1-sk/20*0.4:1);a.fol=Math.max(200,Math.round(a.fol*(1+g)));}
 
 function nRounds(){const s=S();return s&&s.rounds?s.rounds.length:22;}
+
+// pula rośnie razem z prognozą (sprzedane karnety, lepsza frekwencja, nowi sponsorzy) — nigdy nie maleje w trakcie sezonu
+function budRefresh(){const b=BUD();const s=S();if(!b||!s||b.n!==s.n)return;const fresh=round5k(revForecast()*budAcc()+(b.res||0)*0.6);
+  if(fresh>b.pool+5000){b.pool=fresh;const bs=budSplitAmt(b.pool,budFree(),b.res);b.wg=bs.wg;b.op=bs.op;b.tr=bs.tr;}
+  else{const bs=budSplitAmt(b.pool,budFree(),b.res);b.wg=bs.wg;b.op=bs.op;b.tr=bs.tr;}}
+{const _bc=budgetCard;budgetCard=function(){try{budRefresh();}catch(e){console.error(e);}return _bc.apply(this,arguments);};}
 // ===== Social media klubu: obserwujący, feed, styl komunikacji, akcje, kryzysy, specjalista =====
 const SOC_LG_REF=[25000,9000,3500,14000,3000,32000,8000,30000,5000];// typowa liczba obserwujących klubu w lidze
 const SOC_STY={pro:['Profesjonalny','Rzeczowe komunikaty i zdjęcia z meczów. Bezpiecznie, ale wolniejszy wzrost.',1,0.4,0],
@@ -8007,7 +8017,7 @@ function homeView(){const s=S();if(!s)return '';
 function hvClip(){document.querySelectorAll('.hvgl').forEach(g=>{const b=g.getBoundingClientRect().bottom;for(const c of g.children)c.style.visibility=c.getBoundingClientRect().bottom>b+1?'hidden':'';});}
 window.addEventListener('resize',()=>{if(ui.tab==='home')hvClip();});
 // ================= WYGLĄD: motyw w stylu FM, przestawiane menu boczne, ekran startowy =================
-const APPV='163';
+const APPV='164';
 const HELP_EN='• You run a volleyball club as the manager: pick the squad, tactics and training, then watch matches live or simulate them.<br>• <b>Continue</b> (top right) moves time to the next event.<br>• Inbox and Conversations hold issues from players, the board, media and agents.<br>• Club → Staff: hire staff and delegate duties.<br>• Club → Club vision: what the board expects.<br>• Finances: budgets, bank loan and league licence.<br>• The game saves automatically; extra slots and save codes are in “Save game”.<br>• You can reorder the left menu by dragging items.';
 // ---- motyw ----
 function uiPref(k,d){try{const v=localStorage.getItem('vm_'+k);return v==null?d:v;}catch(e){return d;}}
@@ -8050,7 +8060,7 @@ function looksCard(){const th=themeCur();const G=navGroups();
    <button class="ghost sm" style="margin-top:8px" onclick="navReset()">${_t('Przywróć domyślną kolejność')}</button></details></div>`;}
 {const _sv=saveView;saveView=function(){return `<div class="card row wrap" style="gap:8px;align-items:center"><span>${_t('Ustawienia i zapis gry')}</span><span class="sp"></span><button class="ghost" onclick="ui.start=true;render()">${_t('⏏ Menu główne')}</button></div>`+looksCard()+_sv.apply(this,arguments);};}
 // ================= EKRAN STARTOWY =================
-const CHANGES=[['v163','Nowa zakładka Trening (Przegląd, Zespół, Indywidualny, Raporty, Medyczne, Trenerzy); obóz wybierasz w wiadomości (z terminem wyjazdu); zawodnicy na kadrze nieobecni w klubie, wracają zmęczeni; obóz i powroty w terminarzu'],['v162','Obóz przygotowawczy znowu da się wybrać (płatny z salda klubu, nie z budżetu operacyjnego)'],['v159','Mecz: gwizdek, dźwięk piłki i opis wyniku akcji dopiero, gdy piłka spadnie (3D i 2D)'],['v158','Limit obcokrajowców liczony jak w przepisach PZPS: ilu jest naraz na boisku (libero tylko z jednym środkowym)'],['v155','Dźwięki w 3D: gwizdek i reakcja kibiców w chwili, gdy piłka spada (także przy pauzie), głośniejszy gwizdek przed zagrywką; ławka w meczu wyjaśnia, kto gra poza pozycją przez limit obcokrajowców'],['v153','Stroje klubu (domowy, wyjazdowy, libero; 7 wzorów) w kreatorze i w zakładce Klub, widoczne na twarzach i w meczu; nowe, bardziej realistyczne twarze'],['v152','Motyw granatowy jak w FM (pasek w kolorze klubu, żółty Kontynuuj), flagi krajów działają na Windows, obcokrajowcy w Transferach, samouczki we wszystkich zakładkach'],['v151','Ekran wczytywania gry: szczegóły zapisu, czas gry, ostatnia szóstka, wskazówki'],['v150','Limit obcokrajowców widoczny w składzie i na ławce, dźwięki po animacji, działające suwaki budżetu, uczciwy wpływ sponsorów'],['v149','Dźwięki zgrane z animacją (także 3D), gwizdek sędziego przed zagrywką'],['v148','Język angielski — etap 1: menu, ekran startowy, górny pasek, pozycje, daty'],['v147','Transfery: zakładki Wypożyczenia i Historia transferów'],['v146','Analiza rywala na ekranie głównym, zakładki na starszych ekranach'],['v145','Balans treningu „mocniej”, łagodniejsza ocena zarządu po sezonie, kibice na pasku we własnym klubie'],['v143','Własny klub: sam wybierasz charakter i plan, kibice wpływają na frekwencję i sponsorów'],['v142','Ekran startowy, motyw grafitowy jak w FM, przestawiane menu'],['v141','Strategia klubu: cele zarządu, plan pięcioletni, kibice'],['v140','Finanse: wykresy, kredyt bankowy, licencja ligowa, prognoza'],['v139','Trening: indywidualny, mentoring, odpoczynek, reżimy, trenerzy'],['v138','Wyższe limity sztabu, skauci osobno, własny klub bez limitu'],['v137','Dźwięki meczu i powiadomień, wersja na Windows'],['v136','Zapisy w IndexedDB, delegowanie transferów']];
+const CHANGES=[['v164','Budżety: obóz poza budżetem operacyjnym, mniejsze rezerwy zarządu, pula rośnie z prognozą; karnety pokazują cenę za mecz; wiadomość o obozie od kierownika drużyny'],['v163','Nowa zakładka Trening (Przegląd, Zespół, Indywidualny, Raporty, Medyczne, Trenerzy); obóz wybierasz w wiadomości (z terminem wyjazdu); zawodnicy na kadrze nieobecni w klubie, wracają zmęczeni; obóz i powroty w terminarzu'],['v162','Obóz przygotowawczy znowu da się wybrać (płatny z salda klubu, nie z budżetu operacyjnego)'],['v159','Mecz: gwizdek, dźwięk piłki i opis wyniku akcji dopiero, gdy piłka spadnie (3D i 2D)'],['v158','Limit obcokrajowców liczony jak w przepisach PZPS: ilu jest naraz na boisku (libero tylko z jednym środkowym)'],['v155','Dźwięki w 3D: gwizdek i reakcja kibiców w chwili, gdy piłka spada (także przy pauzie), głośniejszy gwizdek przed zagrywką; ławka w meczu wyjaśnia, kto gra poza pozycją przez limit obcokrajowców'],['v153','Stroje klubu (domowy, wyjazdowy, libero; 7 wzorów) w kreatorze i w zakładce Klub, widoczne na twarzach i w meczu; nowe, bardziej realistyczne twarze'],['v152','Motyw granatowy jak w FM (pasek w kolorze klubu, żółty Kontynuuj), flagi krajów działają na Windows, obcokrajowcy w Transferach, samouczki we wszystkich zakładkach'],['v151','Ekran wczytywania gry: szczegóły zapisu, czas gry, ostatnia szóstka, wskazówki'],['v150','Limit obcokrajowców widoczny w składzie i na ławce, dźwięki po animacji, działające suwaki budżetu, uczciwy wpływ sponsorów'],['v149','Dźwięki zgrane z animacją (także 3D), gwizdek sędziego przed zagrywką'],['v148','Język angielski — etap 1: menu, ekran startowy, górny pasek, pozycje, daty'],['v147','Transfery: zakładki Wypożyczenia i Historia transferów'],['v146','Analiza rywala na ekranie głównym, zakładki na starszych ekranach'],['v145','Balans treningu „mocniej”, łagodniejsza ocena zarządu po sezonie, kibice na pasku we własnym klubie'],['v143','Własny klub: sam wybierasz charakter i plan, kibice wpływają na frekwencję i sponsorów'],['v142','Ekran startowy, motyw grafitowy jak w FM, przestawiane menu'],['v141','Strategia klubu: cele zarządu, plan pięcioletni, kibice'],['v140','Finanse: wykresy, kredyt bankowy, licencja ligowa, prognoza'],['v139','Trening: indywidualny, mentoring, odpoczynek, reżimy, trenerzy'],['v138','Wyższe limity sztabu, skauci osobno, własny klub bez limitu'],['v137','Dźwięki meczu i powiadomień, wersja na Windows'],['v136','Zapisy w IndexedDB, delegowanie transferów']];
 ui.start=true;
 function smHasSave(){return SAVE.team!=null&&!!SAVE.coach;}
 function smCont(){ui.start=false;ui.sm=null;render();}
@@ -8365,7 +8375,7 @@ function campBook2(k){const s=S();const A=campAwayInfo();const when=ui.campWhen|
   campBook(k);const c=campOf();if(c&&!had){if(when==='late'&&A&&A.back>addDays(today(),1)){c.start=null;c.until=null;c.plan=A.back;}
     const M=mailBox().find(m=>m.b&&m.b.type==='camp'&&m.act);if(M)M.act=0;ui.campWhen=null;save();render();}}
 function campMailCheck(){if(SAVE.team==null||!S()||typeof campCanBook!=='function')return;const s=S();if(!campCanBook()||campOf())return;SAVE.campMail=SAVE.campMail||{};if(SAVE.campMail[s.n])return;
-  const fz=SAVE.staff&&SAVE.staff.fiz;const from=fz?`${fz.first} ${fz.last} (trener przygotowania)`:asyName();
+  const from=`${kierName()} (kierownik drużyny)`;
   const m=sendMail({cat:'trening',from,t:'Obóz przygotowawczy — wybierz miejsce',s:'Wybierz obóz przed sezonem',b:{type:'camp'},act:1,lab:'Wymaga decyzji'});if(m)SAVE.campMail[s.n]=m.id;}
 {const _mb=mailBodyHtml;mailBodyHtml=function(m){if(m.b&&m.b.type==='camp')return campChooser();return _mb.apply(this,arguments);};}
 function campOpenMail(){const id=SAVE.campMail&&SAVE.campMail[S().n];if(id){ui.mailSel=id;const m=mailBox().find(x=>x.id===id);if(m)m.r=1;}go('poczta');}
@@ -8414,6 +8424,9 @@ function trvKpi(){const t=myTeam();const ps=t.players;const avg=Math.round(teamF
 
 {const _cs=campStart;campStart=function(){const c=campOf();if(c&&c.plan&&!c.start)return;return _cs.apply(this,arguments);};}
 {const _r=render;render=function(){try{if(SAVE&&SAVE.team!=null&&!ui.start&&SAVE.world)campMailCheck();}catch(e){}return _r.apply(this,arguments);};}
+
+// kierownik drużyny — organizuje wyjazdy, obozy i logistykę (stała osoba w klubie)
+function kierName(){if(!SAVE.kier||SAVE.kier.tm!==SAVE.team){const c=LG_C[SAVE.lg[SAVE.team]]||'PL';const [f,l]=natName(c);SAVE.kier={tm:SAVE.team,n:`${f} ${l}`};}return SAVE.kier.n;}
 // ================= SAMOUCZKI ZAKŁADEK, OBCOKRAJOWCY W TRANSFERACH, KOLOR KLUBU =================
 // Samouczek pokazuje się przy pierwszym wejściu do każdej zakładki (w stylu FM: „Wprowadzenie”).
 // „Rozumiem” zamyka go dla tej zakładki; przycisk „?” na pasku pod nagłówkiem otwiera go ponownie.

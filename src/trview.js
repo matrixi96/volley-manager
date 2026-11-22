@@ -83,7 +83,7 @@ function campBook2(k){const s=S();const A=campAwayInfo();const when=ui.campWhen|
   campBook(k);const c=campOf();if(c&&!had){if(when==='late'&&A&&A.back>addDays(today(),1)){c.start=null;c.until=null;c.plan=A.back;}
     const M=mailBox().find(m=>m.b&&m.b.type==='camp'&&m.act);if(M)M.act=0;ui.campWhen=null;save();render();}}
 function campMailCheck(){if(SAVE.team==null||!S()||typeof campCanBook!=='function')return;const s=S();if(!campCanBook()||campOf())return;SAVE.campMail=SAVE.campMail||{};if(SAVE.campMail[s.n])return;
-  const fz=SAVE.staff&&SAVE.staff.fiz;const from=fz?`${fz.first} ${fz.last} (trener przygotowania)`:asyName();
+  const from=`${kierName()} (kierownik drużyny)`;
   const m=sendMail({cat:'trening',from,t:'Obóz przygotowawczy — wybierz miejsce',s:'Wybierz obóz przed sezonem',b:{type:'camp'},act:1,lab:'Wymaga decyzji'});if(m)SAVE.campMail[s.n]=m.id;}
 {const _mb=mailBodyHtml;mailBodyHtml=function(m){if(m.b&&m.b.type==='camp')return campChooser();return _mb.apply(this,arguments);};}
 function campOpenMail(){const id=SAVE.campMail&&SAVE.campMail[S().n];if(id){ui.mailSel=id;const m=mailBox().find(x=>x.id===id);if(m)m.r=1;}go('poczta');}
@@ -132,3 +132,6 @@ function trvKpi(){const t=myTeam();const ps=t.players;const avg=Math.round(teamF
 
 {const _cs=campStart;campStart=function(){const c=campOf();if(c&&c.plan&&!c.start)return;return _cs.apply(this,arguments);};}
 {const _r=render;render=function(){try{if(SAVE&&SAVE.team!=null&&!ui.start&&SAVE.world)campMailCheck();}catch(e){}return _r.apply(this,arguments);};}
+
+// kierownik drużyny — organizuje wyjazdy, obozy i logistykę (stała osoba w klubie)
+function kierName(){if(!SAVE.kier||SAVE.kier.tm!==SAVE.team){const c=LG_C[SAVE.lg[SAVE.team]]||'PL';const [f,l]=natName(c);SAVE.kier={tm:SAVE.team,n:`${f} ${l}`};}return SAVE.kier.n;}

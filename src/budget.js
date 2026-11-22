@@ -22,7 +22,7 @@ function budLeft(){const b=BUD();if(!b)return {tr:0,wg:0,op:0};return {tr:b.tr+(
 // księgowanie: money() przekazuje tu każdy ruch
 function budBook(amt,cat){const b=SAVE.team!=null&&S()?BUD():null;if(!b)return;
   if(cat==='Transfery'||cat==='Odprawy'){if(amt<0)b.trUsed+=-amt;else b.trAdd=(b.trAdd||0)+amt*0.5;}// połowa wpływów ze sprzedaży wraca do budżetu transferowego
-  if(cat==='Infrastruktura'||cat==='Obóz'||cat==='Marketing')if(amt<0)b.opUsed+=-amt;}
+  if(cat==='Infrastruktura'||cat==='Marketing')if(amt<0)b.opUsed+=-amt;}// obóz: jednorazowo z salda, poza budżetem operacyjnym
 // opis wpływu decyzji na budżety: d={tr,wg,op} (wydatek dodatni)
 function budImpact(d,note){const b=BUD();if(!b)return '';const L=budLeft();const rows=[];
   const one=(k,lab,tot,used,dv)=>{const after=used+dv;const left=tot-after;const pct=Math.min(130,Math.round(after/Math.max(1,tot)*100));
@@ -50,7 +50,7 @@ function budFree(){return Object.assign({},BUD_FREE_DEF,SAVE.budFree||{});}
 function budSetSplit(k,v){const sp=budFree();v=clamp(+v/100,0,1);sp[k]=v;const rest=['wg','op','tr'].filter(x=>x!==k);const sum=rest.reduce((a,x)=>a+sp[x],0);const fr=1-v;
   for(const x of rest)sp[x]=sum>0?sp[x]/sum*fr:fr/2;SAVE.budFree=sp;const b=BUD();if(b){const bs=budSplitAmt(b.pool,sp,b.res);b.wg=bs.wg;b.op=bs.op;b.tr=bs.tr;}save();render();}
 // suwaki: najpierw zarząd rezerwuje obecne pensje (+zapas) i utrzymanie obiektów; suwaki dzielą tylko to, co zostaje
-function budMins(){const wb=wageBill(),mn=maintenance()*12;return {wg:wb+Math.max(150000,wb*0.04),op:mn+50000};}
+function budMins(){const wb=wageBill(),mn=maintenance()*12;return {wg:wb+Math.max(50000,wb*0.03),op:mn+20000};}
 function budSliders(b,sp0){const sp=budFree();const M=budMins();const free=b.pool-M.wg-M.op;const prev=k=>{const t=Object.assign({},sp);return budSplitAmt(b.pool,t,b.res)[k];};
   const head=`<div class="small" style="margin:6px 0;grid-column:1/-1">Pula na sezon: <b>${fmt(b.pool)}</b> · najpierw zarezerwowane: obecne pensje z zapasem <b>${fmt(M.wg)}</b> i utrzymanie obiektów <b>${fmt(M.op)}</b> · <b class="${free>0?'good':'bad'}">wolne do podziału: ${fmt(Math.max(0,free))}</b></div>`;
   if(free<=0)return `<div class="budsp"><b>Podział budżetu</b>${head}<div class="small bad">Suwaki są wyłączone — obecne pensje i utrzymanie obiektów zajmują całą pulę, więc nie ma czego dzielić. Budżet transferowy pochodzi teraz z oszczędności klubu (${fmt(b.tr)}).</div>
@@ -74,7 +74,7 @@ function budgetCard(){const b=BUD();if(!b)return '';const L=budLeft();const sp=b
    <div class="small mut" style="margin:4px 0 10px">Do podziału: <b>${fmt(b.pool)}</b> (prognoza przychodów + część oszczędności).</div>
    ${bar('Transferowy',trTot,b.trUsed,`odstępne i premie za podpis${b.trAdd?` · +${fmt(b.trAdd)} ze sprzedaży`:''}${b.extra?` · +${fmt(b.extra)} od zarządu`:''}`)}
    ${bar('Płacowy (rocznie)',b.wg,wageBill(),'pensje zawodników i sztabu')}
-   ${bar('Operacyjny',b.op,b.opUsed+maintenance()*12,'utrzymanie obiektów, budowy, obóz')}
+   ${bar('Operacyjny',b.op,b.opUsed+maintenance()*12,'utrzymanie obiektów, budowy, marketing (obóz płacony osobno z salda)')}
    ${budSliders(b,sp)}
    <div class="row" style="gap:8px;margin-top:8px">${b.extra?'<span class="small mut">Zarząd dołożył już pieniądze w tym sezonie.</span>':`<button class="ghost sm" onclick="budAsk()">🏦 Poproś zarząd o +${fmt(round5k(Math.max(150000,b.tr*0.25)))} na transfery</button><span class="small mut">zaufanie zarządu −6</span>`}</div></div>`;}
 // sponsor podpisany w trakcie sezonu: jego raty do końca sezonu (czerwiec) zasilają budżety według podziału
@@ -110,3 +110,9 @@ function aiSocResult(ti,won,sweep){if(ti===SAVE.team||!SAVE.ai[ti])return;const 
   let g=won?0.008+(sweep?0.004:0):-(0.005+(sweep?0.004:0));g=g>0?g*st[2]*(sk?0.6+sk/20*0.8:0.35):g*(sk?1-sk/20*0.4:1);a.fol=Math.max(200,Math.round(a.fol*(1+g)));}
 
 function nRounds(){const s=S();return s&&s.rounds?s.rounds.length:22;}
+
+// pula rośnie razem z prognozą (sprzedane karnety, lepsza frekwencja, nowi sponsorzy) — nigdy nie maleje w trakcie sezonu
+function budRefresh(){const b=BUD();const s=S();if(!b||!s||b.n!==s.n)return;const fresh=round5k(revForecast()*budAcc()+(b.res||0)*0.6);
+  if(fresh>b.pool+5000){b.pool=fresh;const bs=budSplitAmt(b.pool,budFree(),b.res);b.wg=bs.wg;b.op=bs.op;b.tr=bs.tr;}
+  else{const bs=budSplitAmt(b.pool,budFree(),b.res);b.wg=bs.wg;b.op=bs.op;b.tr=bs.tr;}}
+{const _bc=budgetCard;budgetCard=function(){try{budRefresh();}catch(e){console.error(e);}return _bc.apply(this,arguments);};}

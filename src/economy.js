@@ -113,9 +113,9 @@ function matchdayCard(){const e=ECO(),inf=myInfra();const c=crowdFor(SAVE.team,1
    ${inf.vip?priceRow('vipP','Bilet VIP (loża)',e.vipP,bestVip(),`${vipSeats(inf.vip)} miejsc w loży · ok. ${m.vAtt} zajętych`,5):'<p class="small mut">Bilety VIP: najpierw zbuduj lożę VIP.</p>'}
    ${inf.gosc?`<p class="small mut">Sektor gości: ${guestSeats(inf.gosc)} miejsc, kibice rywala płacą cenę biletu normalnego (ok. ${m.gAtt} na mecz).</p>`:''}
    <h3>Karnety na sezon ${s?sLabel(s.n):''}</h3><p class="small mut">${kOpen?`Sprzedaż trwa do dnia przed 1. kolejką ligi (${fmtDMY(addDays(s.rdates[0],-1))}). Karnet obejmuje 11 meczów ligowych u siebie. Kibic z karnetem przychodzi na każdy mecz, a połowa karnetowiczów to nowi widzowie.`:`Sprzedaż zamknięta — ruszy w kolejnym okresie przygotowawczym.`}</p>
-   ${priceRow('kar.u','Karnet ulgowy',e.kar.u,karBest('u'),`sprzedane: ${ks.u} · cel przy tej cenie ok. ${karTarget('u',e.kar.u)}`,10)}
-   ${priceRow('kar.n','Karnet normalny',e.kar.n,karBest('n'),`sprzedane: ${ks.n} · cel przy tej cenie ok. ${karTarget('n',e.kar.n)}`,10)}
-   ${inf.vip?priceRow('kar.v','Karnet VIP',e.kar.v,karBest('v'),`sprzedane: ${ks.v} · cel przy tej cenie ok. ${karTarget('v',e.kar.v)}`,50):'<p class="small mut">Karnet VIP: dostępny po zbudowaniu loży VIP.</p>'}
+   ${priceRow('kar.u','Karnet ulgowy',e.kar.u,karBest('u'),`sprzedane: ${ks.u} · cel przy tej cenie ok. ${karTarget('u',e.kar.u)} · ${karPerMatch('u')}`,10)}
+   ${priceRow('kar.n','Karnet normalny',e.kar.n,karBest('n'),`sprzedane: ${ks.n} · cel przy tej cenie ok. ${karTarget('n',e.kar.n)} · ${karPerMatch('n')}`,10)}
+   ${inf.vip?priceRow('kar.v','Karnet VIP',e.kar.v,karBest('v'),`sprzedane: ${ks.v} · cel przy tej cenie ok. ${karTarget('v',e.kar.v)} · ${karPerMatch('v')}`,50):'<p class="small mut">Karnet VIP: dostępny po zbudowaniu loży VIP.</p>'}
    <p class="small"><b>Ze sprzedaży karnetów:</b> ${fmt(ks.inc)}</p>
    <h3>Parking</h3>${priceRow('park','Opłata za parking',e.park,bestPark(),`${parkSpots(inf.park).toLocaleString('pl-PL')} miejsc · zbyt wysoka opłata zniechęca część kibiców`)}
    <h3>Stoisko gastronomiczne (poziom ${inf.gastro})</h3>
@@ -127,3 +127,7 @@ function shopCard(){const e=ECO(),L=myInfra().sklep;const est=shopMonth(L,true);
    <p class="small"><b>Szacowany zysk:</b> ${fmt(est.tot)} / miesiąc (sprzedaż ${fmt(est.rev)})</p>
    ${lr?`<h3>Raport: ${MON_NOM[lr.m-1]}</h3><div class="tw"><table><thead><tr><th class="l">Produkt</th><th>Sztuk</th><th>Cena</th><th>Sprzedaż</th><th>Zysk</th></tr></thead><tbody>${lr.rows.map(r=>`<tr><td class="l">${r.n}</td><td>${r.q}</td><td>${r.pr} zł</td><td>${fmt(r.rev)}</td><td class="good">${fmt(r.pf)}</td></tr>`).join('')}<tr><td class="l"><b>Razem</b></td><td></td><td></td><td>${fmt(lr.rev)}</td><td class="good"><b>${fmt(lr.tot)}</b></td></tr></tbody></table></div>`:''}</div>`;}
 function pricesCard(){return `<div class="card"><h2>Ceny</h2><p class="small">Ceny biletów, karnetów, parkingu i jedzenia ustawisz w <button class="link" onclick="ui.infraSel='hala';go('klub')">Infrastruktura → Hala sportowa</button>, a ceny produktów w <button class="link" onclick="ui.infraSel='sklep';go('klub')">Infrastruktura → Sklep kibica</button>.</p></div>`;}
+
+// karnet: cena za jeden mecz i porównanie z biletem (karnet powinien wychodzić taniej niż bilety kupowane osobno)
+function karPerMatch(k){const e=ECO();const n=Math.max(1,Math.ceil(nRounds()/2));const per=Math.round(e.kar[k]/n);const single=k==='v'?e.vipP:e.tix;
+  const pct=Math.round((1-per/single)*100);return pct>0?`<b>${per} zł za mecz</b> (${pct}% taniej niż bilet ${k==='v'?'VIP':'normalny'} ${single} zł)`:`<b class="bad">${per} zł za mecz — drożej niż bilet ${k==='v'?'VIP':'normalny'} (${single} zł), kibice wolą kupować bilety</b>`;}
