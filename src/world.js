@@ -87,16 +87,21 @@ function isYT(ti){return !!(TEAM_DEFS[ti]&&TEAM_DEFS[ti].yt);}
 // ---- limit obcokrajowców ----
 function tmMaxF(team){if(!team||team.idx==null||!SAVE.lg)return null;const l=SAVE.lg[team.idx];if(l==null||l<0)return null;const c=lgCfg(l).maxF;return c==null?null:c;}
 function isForeign(p,team){return pNat(p)!==LG_C[SAVE.lg[team.idx]];}
-function luForeign(team,lu){const ids=Object.values(lu);return team.players.filter(p=>ids.includes(p.id)&&isForeign(p,team)).length;}
+// ilu obcokrajowców jest na boisku w najgorszym momencie: libero wchodzi za środkowego w drugiej linii, środkowy wraca tylko na własną zagrywkę,
+// więc razem na boisku bywają: oba środkowe (zagrywka) albo libero z jednym środkowym — nigdy libero z oboma
+function forMoment(team,others,mids,lib){const f=p=>p&&isForeign(p,team)?1:0;const base=others.reduce((a,p)=>a+f(p),0);const fm=mids.map(f),fl=lib?f(lib):0;
+  let best=fm.reduce((a,b)=>a+b,0);if(lib)for(const x of fm)best=Math.max(best,x+fl);if(lib&&!mids.length)best=fl;return base+best;}
+function luForeign(team,lu){const P=k=>team.players.find(p=>p.id===lu[k]);return forMoment(team,['R','A','P1','P2'].map(P),['S1','S2'].map(P).filter(Boolean),P('L'));}
 function lineupFix(team,lu){const mx=tmMaxF(team);if(mx==null)return lu;lu=Object.assign({},lu);let guard=8;
   while(luForeign(team,lu)>mx&&guard-->0){const used=new Set(Object.values(lu));const keys=LINEUP_KEYS.filter(([k])=>{const p=team.players.find(x=>x.id===lu[k]);return p&&isForeign(p,team);});
     let best=null;for(const [k,,pos] of keys){const cur=team.players.find(x=>x.id===lu[k]);const c=team.players.filter(p=>!p.inj&&!used.has(p.id)&&!isForeign(p,team)).sort((a,b)=>lineupScore(b,pos)-lineupScore(a,pos))[0];
       if(!c)continue;const loss=lineupScore(cur,pos)-lineupScore(c,pos);if(!best||loss<best.loss)best={k,c,loss};}
     if(!best)break;lu[best.k]=best.c.id;}
   return lu;}
-function sideForOK(s,outP,inP){const mx=tmMaxF(s.team);if(mx==null)return true;const on=s.slots.map(x=>x.p).concat(s.libero?[s.libero]:[]);
-  const n=on.filter(p=>p&&p!==outP&&isForeign(p,s.team)).length+(inP&&isForeign(inP,s.team)?1:0);return n<=mx;}
-function forRuleTxt(l){const c=lgCfg(l);return c.maxF==null?'bez limitu obcokrajowców':`na boisku najwyżej ${c.maxF} ${c.maxF===1?'obcokrajowiec':'obcokrajowców'} (min. ${7-c.maxF} zawodników z kraju ligi, wliczając libero)`;}
+function sideForOK(s,outP,inP){const mx=tmMaxF(s.team);if(mx==null)return true;const sw=p=>p===outP?inP:p;
+  const others=[],mids=[];for(const x of s.slots){const p=sw(x.p);if(x.role==='S')mids.push(p);else others.push(p);}
+  return forMoment(s.team,others,mids,s.libero?sw(s.libero):null)<=mx;}
+function forRuleTxt(l){const c=lgCfg(l);return c.maxF==null?'bez limitu obcokrajowców':`na boisku najwyżej ${c.maxF} ${c.maxF===1?'obcokrajowiec':'obcokrajowców'} (w każdej chwili min. ${6-c.maxF} zawodników z kraju ligi; libero liczy się, gdy jest na boisku)`;}
 // ---- zmiany struktury lig w starych zapisach: przeniesienia wchodzą od nowego sezonu ----
 function worldMigrate(){if(SAVE.wv>=3)return;for(const t of TEAMS){const d=TEAM_DEFS[t.idx];if(d&&d.mvLg!=null)SAVE.lg[t.idx]=d.mvLg;}SAVE.wv=3;}
 (function(){const D=TEAM_DEFS;const f=n=>D.findIndex(d=>d.name===n);

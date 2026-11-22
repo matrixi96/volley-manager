@@ -111,14 +111,14 @@ function guideCard(){return `<div class="card"><h2>${_t('Samouczki')}</h2><p cla
 
 // ---- transfery: obcokrajowcy w kadrze ----
 function forSquadCard(){if(SAVE.team==null||!SAVE.lg)return '';const t=myTeam();const c=LG_C[SAVE.lg[t.idx]];const mx=tmMaxF(t);
-  const fs=t.players.filter(p=>isForeign(p,t));const lu=Object.values(myLineup?myLineup():SAVE.lineup||{});const onC=fs.filter(p=>lu.includes(p.id)).length;
+  const fs=t.players.filter(p=>isForeign(p,t));const onC=luForeign(t,myLineup());
   const tag=p=>`<span class="frp" onclick="openPop('${p.id}')" title="${esc(natN(pNat(p)))}">${natFl(pNat(p))} ${esc(shortN(p))} <small>${pTag(p.pos)}</small></span>`;
   const note=mx==null?_t('W tej lidze nie ma limitu obcokrajowców.'):fs.length>=mx+2?_t('Masz już więcej obcokrajowców, niż może grać jednocześnie — kolejny zagraniczny transfer prawdopodobnie usiądzie na ławce.'):fs.length>=mx?_t('Limit na boisku jest wykorzystany — kolejny obcokrajowiec będzie konkurował o miejsce z obecnymi.'):_t('Możesz jeszcze wzmocnić skład obcokrajowcem bez kolizji z limitem.');
   const cls=mx==null?'':fs.length>=mx+2?'bad':fs.length>=mx?'warnc':'goodc';
   return `<div class="card forsq"><div class="row wrap" style="gap:18px;align-items:center"><span style="font-size:22px">🌍</span>
    <div class="fsn"><span>${_t('Obcokrajowcy w kadrze')}</span><b class="${cls}">${fs.length}</b></div>
    <div class="fsn"><span>${_t('Limit na boisku')}</span><b>${mx==null?'—':mx}</b></div>
-   <div class="fsn"><span>${_t('W wyjściowym składzie')}</span><b>${onC}${mx==null?'':' / '+mx}</b></div>
+   <div class="fsn"><span>${_t('Naraz na boisku (wyj. skład)')}</span><b>${onC}${mx==null?'':' / '+mx}</b></div>
    <div class="fsn"><span>${_t('Kraj ligi')}</span><b>${natFl(c)} ${esc(natN(c))}</b></div></div>
    <p class="small mut" style="margin:8px 0 6px">${note}</p>${fs.length?`<div class="row wrap" style="gap:6px">${fs.map(tag).join('')}</div>`:''}</div>`;}
 {const _tv=transferView;transferView=function(){let h=_tv.apply(this,arguments);try{h=forSquadCard()+h;}catch(e){console.error(e);}return h;};}
