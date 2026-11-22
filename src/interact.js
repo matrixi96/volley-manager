@@ -1,6 +1,6 @@
 // ================= ROZMOWY: SPRAWY ZGŁASZANE PRZEZ ZAWODNIKÓW, ROLE, OBIETNICE =================
 // SAVE.ix = {q:[otwarte sprawy], pr:[obietnice], cred:wiarygodność trenera 0–100, last:data ostatniej nowej sprawy, log:[]}
-// p.role – rola w zespole, p.rel – relacja z trenerem 0–100, p.pl8 – czy grał w ostatnich 8 kolejkach (1/0)
+// p.role – rola w zespole, p.rel – relacja z trenerem 0–100, p.pl8 – czas gry w ostatnich 8 kolejkach (0–1, patrz niżej: CZAS GRY)
 function IX(){return SAVE.ix||(SAVE.ix={q:[],pr:[],cred:60,last:null,log:[]});}
 const ROLES=[['klu','Kluczowy zawodnik',0.85,'Gra prawie zawsze, od niego zależą wyniki.'],['pod','Podstawowy zawodnik',0.65,'Gra w większości meczów.'],
   ['rot','Zawodnik rotacyjny',0.35,'Gra regularnie, ale nie co mecz.'],['per','Perspektywiczny',0.1,'Młody — uczy się, gra okazjonalnie.'],['rez','Rezerwowy',0,'Wchodzi, gdy jest potrzebny — nie liczy na regularną grę.']];
@@ -25,7 +25,7 @@ function ixPred(ch){const a=typeof staffSkill==='function'?staffSkill('asy'):8;c
 // każda opcja: [klucz, tekst odpowiedzi, (p,q)=>szansa, (p,q,ok)=>skutek]
 const IX_T={
  czas:{t:p=>`${p.first} ${p.last} chce więcej grać`,
-   x:(p,q)=>`„Trenerze, w ostatnich meczach gram za mało (${Math.round(q.sh*100)}% kolejek). Jako ${ROLES[ROLE_I[roleOf(p)]][1].toLowerCase()} oczekuję więcej. Co dalej?”`,
+   x:(p,q)=>`„Trenerze, w ostatnich meczach gram za mało (mój czas gry to ${Math.round(q.sh*100)}%). Jako ${ROLES[ROLE_I[roleOf(p)]][1].toLowerCase()} oczekuję więcej. Co dalej?”`,
    o:[['prom','Obiecuję ci więcej gry w ciągu 4 tygodni.',p=>ixChance(p,0.72+(IX().cred-60)/200,{amb:0.05}),
        (p,q,ok)=>{if(ok){addMor(p,6);relAdd(p,4);ixPromise(p,'czas',28,{need:Math.max(0.5,roleExp(p)-0.15)});return 'Uspokoił się. Obietnica zapisana — trzeba jej dotrzymać.';}addMor(p,-3);return 'Nie bardzo wierzy w obietnice — ostatnio trener ich nie dotrzymywał.';}],
      ['zasluz','Musisz zasłużyć na to na treningach.',p=>ixChance(p,0.5,{pro:0.25,oby:0.2,amb:-0.2,kap:-0.25,ind:-0.2}),
@@ -103,7 +103,7 @@ function roleAsk(pid,k){const P=PLAYERS[pid];if(!P)return;const p=P.p;const cur=
   p.role=k;ui.roleRes={pid,txt};save();render();}
 function roleModal(){const P=PLAYERS[ui.roleP];if(!P){ui.roleP=null;return '';}const p=P.p;const cur=roleOf(p);const sh=plShare(p);
   return `<div class="modal" onclick="if(event.target===this){ui.roleP=null;ui.roleRes=null;render()}"><div class="mcard" style="max-width:560px">
-   <div class="row" style="gap:12px;align-items:center">${pFace(p,56)}<div><h2 style="margin:0">Rozmowa o roli</h2><div class="small mut">${esc(p.first+' '+p.last)} · relacja z trenerem ${relOf(p)}/100${sh!=null?` · grał w ${Math.round(sh*100)}% ostatnich kolejek`:''}</div></div></div>
+   <div class="row" style="gap:12px;align-items:center">${pFace(p,56)}<div><h2 style="margin:0">Rozmowa o roli</h2><div class="small mut">${esc(p.first+' '+p.last)} · relacja z trenerem ${relOf(p)}/100${sh!=null?` · czas gry ${Math.round(sh*100)}% (ostatnie kolejki)`:''}</div></div></div>
    ${ui.roleRes&&ui.roleRes.pid===p.id?`<div class="card" style="margin:10px 0">${esc(ui.roleRes.txt)}</div>`:''}
    <div style="margin-top:10px">${ROLES.map(([k,l,e,ds])=>`<button class="opt ${cur===k?'on':''}" style="display:block;width:100%;text-align:left;margin:6px 0" ${cur===k?'disabled':''} onclick="roleAsk('${p.id}','${k}')"><b>${l}</b> <span class="small mut">· ${e>0?`oczekuje gry w ok. ${Math.round(e*100)}% meczów`:'bez wymagań co do czasu gry'}</span><div class="small mut">${ds}</div></button>`).join('')}</div>
    <p class="small mut">Proponowana rola wg asystenta: <b>${ROLES[ROLE_I[roleDef(p)]][1]}</b>. Obniżenie roli może go zdenerwować, ale zmniejsza oczekiwania co do gry.</p>
@@ -125,5 +125,23 @@ function ixView(){const X=IX();const res=ui.ixRes;
     ${prs.length?`<div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th class="l">Obietnica</th><th class="l">Termin</th><th class="l">Stan</th></tr></thead><tbody>${prs.map(r=>{const P=PLAYERS[r.pid];const p=P&&P.p;return `<tr><td class="l">${p?esc(p.first+' '+p.last):'?'}</td><td class="l">${PR_L[r.k]}</td><td class="l">${fmtShort(r.until)}</td><td class="l small">${r.k==='czas'?`grał ${r.p}/${r.n} kolejek (cel ${Math.round(r.need*100)}%)`:r.k==='lista'?'na liście transferowej':r.k==='podwyzka'?`obecnie ${fmtShort2(p?p.wage:0)}, cel ${fmtShort2(Math.round(r.w*1.1))}`:'czeka na ofertę'}</td></tr>`;}).join('')}</tbody></table></div>`:'<p class="mut small">Brak otwartych obietnic.</p>'}
     ${done.length?`<h3 style="margin-top:10px">Ostatnio rozliczone</h3>${done.map(r=>{const P=PLAYERS[r.pid];return `<div class="small">${r.st==='kept'?'✅':'❌'} ${P?esc(P.p.last):'?'} — ${PR_L[r.k]}</div>`;}).join('')}`:''}</div>
    <div class="card"><h2>Role w zespole</h2><p class="small mut">Rola mówi zawodnikowi, ile gry może oczekiwać. Zmienisz ją w karcie zawodnika („Rozmowa o roli”).</p>
-    <div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th>Poz.</th><th class="l">Rola</th><th>Gra (ost. 8)</th><th>Relacja</th><th>Zadowolenie</th></tr></thead><tbody>${myTeam().players.filter(p=>!p.jr).sort((a,b)=>ROLE_I[roleOf(a)]-ROLE_I[roleOf(b)]).map(p=>{const sh=plShare(p);const e=roleExp(p);const sat=pSat(p).v;
+    <div class="tw"><table><thead><tr><th class="l">Zawodnik</th><th>Poz.</th><th class="l">Rola</th><th>Czas gry (ost. 8)</th><th>Relacja</th><th>Zadowolenie</th></tr></thead><tbody>${myTeam().players.filter(p=>!p.jr).sort((a,b)=>ROLE_I[roleOf(a)]-ROLE_I[roleOf(b)]).map(p=>{const sh=plShare(p);const e=roleExp(p);const sat=pSat(p).v;
       return `<tr><td class="l"><button class="link pn" onclick="ui.roleP='${p.id}';render()">${esc(p.first[0]+'. '+p.last)}</button></td><td>${p.pos}</td><td class="l">${ROLES[ROLE_I[roleOf(p)]][1]}</td><td style="color:${sh==null?'':sh<e-0.25?'var(--bad,#ef4444)':sh>=e-0.1?'var(--good,#22c55e)':''}">${sh==null?'—':Math.round(sh*100)+'%'}</td><td>${relOf(p)}</td><td>${sat}</td></tr>`;}).join('')}</tbody></table></div></div>`;}
+
+// ================= CZAS GRY: liczony z czasu na boisku, nie z samego pojawienia się =================
+// Kolejka = wartość 0–1 w p.pl8 (średnia z ostatnich 8 kolejek):
+//  • wyszedł w podstawowym składzie: 0,75 + 0,25 × udział akcji na boisku (zmiana w trakcie meczu, np. po słabym secie, kosztuje najwyżej 0,25),
+//    libero z podstawowego składu: 1;
+//  • wszedł z ławki: udział akcji × 1,2 (min. 0,1, maks. 0,7) — wejście na jedną zagrywkę to ok. 0,1;
+//  • nie grał: 0. Kolejki w kontuzji i zaplanowanym odpoczynku się nie liczą.
+let ROUND_TIME=new Map();
+{const _sr=stepRally;stepRally=function(m){try{if(SAVE.team!=null)m.sides.forEach((sd,i)=>{if(sd.team.idx!==SAVE.team)return;
+    if(!m._st0){m._st0=new Set(sd.slots.map(x=>x.p.id));if(sd.libero)m._st0.add(sd.libero.id);m._lib0=sd.libero?sd.libero.id:null;}
+    m._rl=(m._rl||0)+1;for(const e of onCourt(sd,m.serving===i)){e.p.st.on=(e.p.st.on||0)+1;}});}catch(e){}return _sr.apply(this,arguments);};}
+{const _ic=injuryCheck;injuryCheck=function(m,mult){try{if(m._rl){const sd=m.sides.find(x=>x.team.idx===SAVE.team);if(sd)for(const cp of sd.pl){const sh=Math.min(1,(cp.st.on||0)/m._rl);let v=0;
+    if(m._st0&&m._st0.has(cp.id))v=cp.id===m._lib0?1:0.75+0.25*Math.min(1,sh/0.9);else if(sh>0)v=clamp(sh*1.2,0.1,0.7);
+    if(v>0)ROUND_TIME.set(cp.id,Math.max(ROUND_TIME.get(cp.id)||0,Math.round(v*100)/100));}}}catch(e){console.error(e);}return _ic.apply(this,arguments);};}
+ixRound=function(){if(SAVE.team==null)return;for(const q of IX().q)q.r=(q.r||0)+1;const d=today();
+  for(const p of myTeam().players){if(p.jr||p.inj||(p.restUntil&&p.restUntil>=d))continue;const v=ROUND_TIME.has(p.id)?ROUND_TIME.get(p.id):ROUND_PLAYED.has(p.id)?1:0;(p.pl8=p.pl8||[]).push(v);if(p.pl8.length>8)p.pl8.shift();
+    for(const pr of IX().pr)if(pr.st==='open'&&pr.pid===p.id&&pr.k==='czas'){pr.n++;pr.p+=v;}}
+  ROUND_TIME=new Map();};
