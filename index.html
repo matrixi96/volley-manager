@@ -3619,7 +3619,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=167').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=168').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
@@ -8069,7 +8069,7 @@ function homeView(){const s=S();if(!s)return '';
 function hvClip(){document.querySelectorAll('.hvgl').forEach(g=>{const b=g.getBoundingClientRect().bottom;for(const c of g.children)c.style.visibility=c.getBoundingClientRect().bottom>b+1?'hidden':'';});}
 window.addEventListener('resize',()=>{if(ui.tab==='home')hvClip();});
 // ================= WYGLĄD: motyw w stylu FM, przestawiane menu boczne, ekran startowy =================
-const APPV='167';
+const APPV='168';
 const HELP_EN='• You run a volleyball club as the manager: pick the squad, tactics and training, then watch matches live or simulate them.<br>• <b>Continue</b> (top right) moves time to the next event.<br>• Inbox and Conversations hold issues from players, the board, media and agents.<br>• Club → Staff: hire staff and delegate duties.<br>• Club → Club vision: what the board expects.<br>• Finances: budgets, bank loan and league licence.<br>• The game saves automatically; extra slots and save codes are in “Save game”.<br>• You can reorder the left menu by dragging items.';
 // ---- motyw ----
 function uiPref(k,d){try{const v=localStorage.getItem('vm_'+k);return v==null?d:v;}catch(e){return d;}}
@@ -8279,7 +8279,7 @@ libColor=function(c,o){const l=KIT_BY_COLOR['L'+c];return l?l.a:LIBC0(c,o);};
   const html=_j(p,isLib?k.a:color,false,opp);const id='jk'+(++KIT_UID);const body='M19 3 L25 5 Q30 9 35 5 L41 3 L58 13 L52 25 L46 22 L46 54 L14 54 L14 22 L8 25 L2 13 Z';
   return html.replace(/(<path d="M19 3[^>]*\/>)/,`<defs><clipPath id="${id}"><path d="${body}"/></clipPath></defs>$1<g clip-path="url(#${id})"><g transform="scale(.5)">${kitPat(k,120)}</g></g>`);};}
 // 3D: koszulka, spodenki i libero z kompletu (kolory; wzory na modelach to zadanie widoku 3D)
-if(typeof v3dKits==='function'){const _v=v3dKits;v3dKits=function(m){const K=_v.apply(this,arguments);try{const P=kitPick(m);P.k.forEach((k,i)=>{K[i].jersey=k.a;K[i].shorts=k.s;K[i].ink=kitInk(k.a);K[i].lib=P.l[i].a;K[i].libInk=kitInk(P.l[i].a);K[i].trim=k.b;K[i].pattern=k.p;});}catch(e){console.error(e);}return K;};}
+if(typeof v3dKits==='function'){const _v=v3dKits;v3dKits=function(m){const K=_v.apply(this,arguments);try{const P=kitPick(m);P.k.forEach((k,i)=>{K[i].jersey=k.a;K[i].shorts=k.s;K[i].ink=kitInk(k.a);K[i].lib=P.l[i].a;K[i].libInk=kitInk(P.l[i].a);K[i].trim=k.b;K[i].pattern=k.p;K[i].libTrim=P.l[i].b;K[i].libPattern=P.l[i].p;});}catch(e){console.error(e);}return K;};}
 // --- edytor strojów ---
 function kitEdState(src){return src;}
 function kitEditor(kits,setKey,onCh){const k=kits[setKey];const sw=(f)=>KIT_COLORS.map(c=>`<button class="ksw ${k[f]===c?'on':''}" style="background:${c}" onclick="${onCh}('${setKey}','${f}','${c}')" title="${c}"></button>`).join('')+`<label class="ksw kpick" title="Własny kolor"><input type="color" value="${k[f]}" onchange="${onCh}('${setKey}','${f}',this.value)">+</label>`;

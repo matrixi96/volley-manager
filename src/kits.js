@@ -46,7 +46,7 @@ libColor=function(c,o){const l=KIT_BY_COLOR['L'+c];return l?l.a:LIBC0(c,o);};
   const html=_j(p,isLib?k.a:color,false,opp);const id='jk'+(++KIT_UID);const body='M19 3 L25 5 Q30 9 35 5 L41 3 L58 13 L52 25 L46 22 L46 54 L14 54 L14 22 L8 25 L2 13 Z';
   return html.replace(/(<path d="M19 3[^>]*\/>)/,`<defs><clipPath id="${id}"><path d="${body}"/></clipPath></defs>$1<g clip-path="url(#${id})"><g transform="scale(.5)">${kitPat(k,120)}</g></g>`);};}
 // 3D: koszulka, spodenki i libero z kompletu (kolory; wzory na modelach to zadanie widoku 3D)
-if(typeof v3dKits==='function'){const _v=v3dKits;v3dKits=function(m){const K=_v.apply(this,arguments);try{const P=kitPick(m);P.k.forEach((k,i)=>{K[i].jersey=k.a;K[i].shorts=k.s;K[i].ink=kitInk(k.a);K[i].lib=P.l[i].a;K[i].libInk=kitInk(P.l[i].a);K[i].trim=k.b;K[i].pattern=k.p;});}catch(e){console.error(e);}return K;};}
+if(typeof v3dKits==='function'){const _v=v3dKits;v3dKits=function(m){const K=_v.apply(this,arguments);try{const P=kitPick(m);P.k.forEach((k,i)=>{K[i].jersey=k.a;K[i].shorts=k.s;K[i].ink=kitInk(k.a);K[i].lib=P.l[i].a;K[i].libInk=kitInk(P.l[i].a);K[i].trim=k.b;K[i].pattern=k.p;K[i].libTrim=P.l[i].b;K[i].libPattern=P.l[i].p;});}catch(e){console.error(e);}return K;};}
 // --- edytor strojów ---
 function kitEdState(src){return src;}
 function kitEditor(kits,setKey,onCh){const k=kits[setKey];const sw=(f)=>KIT_COLORS.map(c=>`<button class="ksw ${k[f]===c?'on':''}" style="background:${c}" onclick="${onCh}('${setKey}','${f}','${c}')" title="${c}"></button>`).join('')+`<label class="ksw kpick" title="Własny kolor"><input type="color" value="${k[f]}" onchange="${onCh}('${setKey}','${f}',this.value)">+</label>`;
