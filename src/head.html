@@ -726,6 +726,18 @@ body.th-fm .tabb.on{border-bottom-color:#fff;color:#fff}body.th-fm .seg button.o
 .hvriv{margin-bottom:12px}.hvrg{display:grid;grid-template-columns:1fr 180px;gap:10px;align-items:start}
 .hvst{display:flex;flex-direction:column;padding:6px 8px;border-radius:4px;background:#ffffff08;margin-bottom:6px}.hvst small{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
 .hvcourt{width:180px;height:180px}
+/* ================= EKRAN WCZYTYWANIA ================= */
+.ldshade{position:absolute;inset:0;background:#0b0f1acc}
+.ldpanel{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(760px,94vw);max-height:94vh;overflow:auto;background:#151b2bf2;border:1px solid #2e3753;border-radius:6px;padding:30px 34px 20px;color:#eef0f4}
+.ldt{font-family:var(--fc);font-weight:800;font-size:34px;letter-spacing:.01em}
+.ldbar{height:8px;background:#34405d;border-radius:4px;margin:14px 0 8px;overflow:hidden}.ldbar i{display:block;height:100%;background:#facc15;border-radius:4px}
+.ldsep{height:1px;background:#2e3753;margin:14px 0}
+.ldy{font-family:var(--fc);font-weight:700;font-size:20px;color:#facc15;margin-bottom:10px}
+.ldgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}.ldcol2{display:block;border-left:1px solid #2e3753;padding-left:22px}
+.ldh{font-weight:700;color:#facc15;font-size:15px;margin-top:12px}.ldh:first-child{margin-top:0}
+.ldb{font-weight:600;font-size:16px}.ldm{font-size:12.5px;color:#9aa3b8}
+.ldp{display:flex;gap:10px;align-items:baseline;padding:3px 0;font-size:15px}.ldp b{width:28px;text-align:right;font-family:var(--fc);font-size:17px}.ldp small{color:#9aa3b8;font-size:11px;letter-spacing:.08em}
+@media(max-width:700px){.ldgrid{grid-template-columns:1fr}.ldcol2{border-left:0;padding-left:0;border-top:1px solid #2e3753;padding-top:12px}.ldt{font-size:26px}}
 /* ================= EKRAN STARTOWY ================= */
 .smwrap{position:fixed;inset:0;overflow:hidden;background:#111;z-index:50}
 .smbg{position:absolute;inset:0;width:100%;height:100%}
