@@ -1,4 +1,4 @@
-// ================= JUNIORZY (układ jak w FM): Widok ogólny · Widok ogólny: Juniorzy · Wypożyczenia =================
+// ================= JUNIORZY: Widok ogólny · Widok ogólny: Juniorzy · Wypożyczenia =================
 if(typeof SUBT!=='undefined')delete SUBT.juniorzy;
 // --- historia ocen (wykres postępów): zapis co miesiąc ---
 function yTracked(){if(SAVE.team==null||!SAVE.world)return [];return W().players.filter(p=>(p.tm===SAVE.team&&(p.jr||p.age<=21))||(p.loan&&p.loan.from===SAVE.team));}
@@ -14,7 +14,7 @@ function yMatches(p){if(p.jr){const r=(S().jps||{})[p.id];return r?r.m:0;}const 
 function yTrainGr(p){const inf=myInfra();const sk=staffSkill('jr');const mk=monKey();let h=0;for(const c of p.id+mk)h=(h*31+c.charCodeAt(0))>>>0;
   const v=5.9+(sk-10)*0.07+(inf.akad-2)*0.18+(hasT(p,'pra')?0.45:0)+(hasT(p,'amb')?0.25:0)-(hasT(p,'len')?0.6:0)+((h%100)/100-0.5)*0.9+Math.min(0.5,Math.max(0,(rating(p)-yRh(p)[0])*0.08));
   return Math.max(4.5,Math.min(9.3,v));}
-// gwiazdki jak w FM: względem poziomu Twojej pierwszej drużyny (3★ = przeciętny zawodnik pierwszej szóstki)
+// gwiazdki względem poziomu Twojej pierwszej drużyny (3★ = przeciętny zawodnik pierwszej szóstki)
 function yRef(){const k=today();if(yRef.k!==k){yRef.k=k;yRef.v=teamStrength(myTeam());}return yRef.v;}
 function yStarN(v){return Math.max(0.5,Math.min(5,Math.round((3+(v-yRef())/5)*2)/2));}
 function yStarsH(n,cls){const f=Math.floor(n),h=n-f>=0.5;return `<span class="ystars ${cls||''}" title="${String(n).replace('.',',')} / 5">${'★'.repeat(f)}${h?'<i>★</i>':''}<span class="mut">${'★'.repeat(5-f-(h?1:0))}</span></span>`;}

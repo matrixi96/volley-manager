@@ -725,19 +725,19 @@ small .pt,.mut .pt{font-size:9px;padding:2px 5px;min-width:26px}
 /* telefon: większe przyciski i pola dotykowe */
 @media (pointer:coarse),(max-width:640px){.btn,.ghost,button.opt,.seg button,.tabb,select{min-height:42px}.btn.sm,.ghost.sm{min-height:38px;padding:8px 12px}.tabb{margin-right:14px;font-size:15px}.opts{gap:8px}.tipq{width:22px!important;height:22px!important;line-height:22px!important}}
 
-/* ================= MOTYW „GRAFIT” W STYLU FM (body.th-fm) ================= */
-body.th-fm{--bg:#121316;--panel:#1c1d21;--panel2:#24262b;--line:#2b2d33;--txt:#eceef1;--mut:#9aa0a9;--acc:#7cb4ff;--good:#3ddc84;--bad:#ff5f5f;--warn:#f0a44b}
-body.th-fm .card,body.th-fm .pan{border-color:#26282d;border-radius:4px}
-body.th-fm .btn{background:#f1f2f4;color:#15171a}
-body.th-fm .ghost{border-color:#7cb4ff66;color:#d6e6ff}body.th-fm .ghost.on{border-color:#7cb4ff;color:#fff;background:#7cb4ff1f}
-body.th-fm .side{background:#17181b}
-body.th-fm .tplay{background:#f1f2f4!important;color:#15171a!important;border-color:#f1f2f4!important}
-body.th-fm .topbar{background:linear-gradient(115deg,#17181b 0 60%,#1d1f23 60% 62%,#17181b 62% 74%,#1f2125 74% 75%,#17181b 75%)}
-body.th-fm .nav.on{background:#26282d;color:#fff;box-shadow:inset 3px 0 0 #fff}
-body.th-fm h3,body.th-fm .pan .ttl,body.th-fm .topbar .lab,body.th-fm .hsum .lab{color:#e8eaee}
-body.th-fm select,body.th-fm input,body.th-fm textarea{background:#151619;border-color:#34363c}
-body.th-fm a,body.th-fm .link{color:#8fc0ff}
-body.th-fm .tabb.on{border-bottom-color:#fff;color:#fff}body.th-fm .seg button.on{background:#e9ebee;color:#15171a}
+/* ================= MOTYW „GRAFIT” (body.th-g) ================= */
+body.th-g{--bg:#121316;--panel:#1c1d21;--panel2:#24262b;--line:#2b2d33;--txt:#eceef1;--mut:#9aa0a9;--acc:#7cb4ff;--good:#3ddc84;--bad:#ff5f5f;--warn:#f0a44b}
+body.th-g .card,body.th-g .pan{border-color:#26282d;border-radius:4px}
+body.th-g .btn{background:#f1f2f4;color:#15171a}
+body.th-g .ghost{border-color:#7cb4ff66;color:#d6e6ff}body.th-g .ghost.on{border-color:#7cb4ff;color:#fff;background:#7cb4ff1f}
+body.th-g .side{background:#17181b}
+body.th-g .tplay{background:#f1f2f4!important;color:#15171a!important;border-color:#f1f2f4!important}
+body.th-g .topbar{background:linear-gradient(115deg,#17181b 0 60%,#1d1f23 60% 62%,#17181b 62% 74%,#1f2125 74% 75%,#17181b 75%)}
+body.th-g .nav.on{background:#26282d;color:#fff;box-shadow:inset 3px 0 0 #fff}
+body.th-g h3,body.th-g .pan .ttl,body.th-g .topbar .lab,body.th-g .hsum .lab{color:#e8eaee}
+body.th-g select,body.th-g input,body.th-g textarea{background:#151619;border-color:#34363c}
+body.th-g a,body.th-g .link{color:#8fc0ff}
+body.th-g .tabb.on{border-bottom-color:#fff;color:#fff}body.th-g .seg button.on{background:#e9ebee;color:#15171a}
 .nav.ndrop,.ngh.ndrop{box-shadow:inset 0 3px 0 #7cb4ff!important}
 .nav[draggable=true]{cursor:pointer}
 /* ławka: wszyscy widoczni (zawijanie), zablokowani przez limit obcokrajowców */
@@ -782,7 +782,7 @@ body.th-fm .tabb.on{border-bottom-color:#fff;color:#fff}body.th-fm .seg button.o
 .smset .card{background:#25272c;color:var(--txt)}
 @media(max-width:820px){.smpanel{right:50%;transform:translate(50%,-50%);padding:28px 20px 14px}.smcoach{display:none}.smlogo{font-size:34px}}
 
-/* ================= MOTYW „GRANAT” W STYLU FM (body.th-n): granatowe panele, górny pasek w kolorze klubu, żółty „Kontynuuj” ================= */
+/* ================= MOTYW „GRANAT” (body.th-n): granatowe panele, górny pasek w kolorze klubu, żółty „Kontynuuj” ================= */
 body.th-n{--bg:#18202a;--panel:#212b37;--panel2:#28333f;--line:#2f3b49;--txt:#e9eef4;--mut:#95a3b4;--acc:#f2c418;--good:#4cd07d;--bad:#ff6b6b;--warn:#f0a44b;--club:#8f1d2c}
 body.th-n{background:#18202a radial-gradient(ellipse at 70% -10%,#26344a 0,#18202a 60%) fixed}
 body.th-n .side{background:#1a222c;border-right:1px solid #10161d}
@@ -832,7 +832,7 @@ body.th-n .mx.sel,body.th-n .mx:hover{background:#2c3949}
 .natf{font-size:1.05em}
 @media (min-width:901px){.topbar .tpage{display:flex!important;flex-direction:row!important;align-items:center}}
 
-/* poczta w motywie granatowym — jak skrzynka FM */
+/* poczta w motywie granatowym */
 body.th-n .mail2 .mlist{background:#202a36;border:1px solid #2b3644;border-radius:3px}
 body.th-n .mail2 .mpane{background:#1f2834;border:1px solid #2b3644;border-radius:3px}
 body.th-n .mail2 .mph{background:#2a3546;border-bottom:2px solid var(--club)}
@@ -922,7 +922,7 @@ body.th-n .ctx{background:rgba(15,21,29,.55);backdrop-filter:blur(2px)}
 
 .pcrole{grid-column:span 2;display:flex;flex-direction:column;gap:2px}.pcrole .link{align-self:flex-start;margin-top:2px}
 
-/* juniorzy (FM) */
+/* juniorzy */
 .ygrid{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:14px;align-items:start}
 .ygrid>*{min-width:0}@media(max-width:1000px){.ygrid{grid-template-columns:1fr}}
 .ytiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:14px}
@@ -940,7 +940,7 @@ body.th-n .ctx{background:rgba(15,21,29,.55);backdrop-filter:blur(2px)}
 .ysq{width:100%;font-size:12.5px}.ysq td,.ysq th{padding:3px 4px}
 .ycand{border-top:1px solid var(--line);padding:8px 0}.ycand.on{background:#facc1514;outline:1px solid #facc1555;padding:8px}
 .yspk{vertical-align:middle}
-/* ================= MOTYW FM26: czcionki Barlow (Semi Condensed + Condensed), grafitowo-granatowe panele ================= */
+/* ================= WYGLĄD: czcionki Barlow (Semi Condensed + Condensed), grafitowo-granatowe panele ================= */
 body.th-n{--fb:'Twemoji Country Flags','Barlow Semi Condensed','Segoe UI',system-ui,sans-serif;--fc:'Twemoji Country Flags','Barlow Condensed','Barlow Semi Condensed','Arial Narrow',sans-serif;
  --bg:#12151c;--panel:#1b1f28;--panel2:#222733;--line:#2a303c;--txt:#eef0f3;--mut:#9aa2ae;--acc:#f5c518;--good:#3fbf5f;--bad:#ef5350;--warn:#f39c34}
 body.th-n{font-family:var(--fb);font-size:15px;letter-spacing:0;background-color:#12151c}
@@ -1027,7 +1027,7 @@ const EN={
  'INSTRUKCJA':'GUIDE','CO NOWEGO':'WHAT\'S NEW','Pokaż samouczek w grze':'Show the in-game tutorial','pusty':'empty',
  'Menu główne':'Main menu','⏏ Menu główne':'⏏ Main menu','Ustawienia i zapis gry':'Settings & save game',
  // ustawienia wyglądu i języka
- 'Wygląd':'Appearance','Motyw:':'Theme:','Grafit (jak FM)':'Graphite (FM style)','Klasyczny (złoty)':'Classic (gold)','Kolejność menu bocznego':'Side menu order',
+ 'Wygląd':'Appearance','Motyw:':'Theme:','Grafit':'Graphite','Granat (kolor klubu)':'Navy (club colour)','Klasyczny (złoty)':'Classic (gold)','Kolejność menu bocznego':'Side menu order',
  'Na komputerze możesz po prostu przeciągać pozycje w menu po lewej. Tutaj — strzałkami (działa też na telefonie).':'On a computer just drag items in the left menu. Here you can use the arrows (works on phones too).',
  'Przywróć domyślną kolejność':'Restore default order','Język':'Language','Język / Language':'Language / Język',
  'Tłumaczenie na angielski jest w trakcie — część ekranów jest jeszcze po polsku.':'The English translation is in progress — some screens are still in Polish.',
@@ -3073,7 +3073,7 @@ function allScouts(){return [SAVE.staff&&SAVE.staff.sk].concat(SAVE.scouts||[]).
 function staffCount(){return Object.values(SAVE.staff||{}).filter(Boolean).length+(SAVE.scouts||[]).length;}
 // zatrudnianie ogranicza tylko budżet płacowy (zawodnicy + sztab); maksymalnie 6 skautów
 const SCOUT_MAX=6;
-// limit etatów w sztabie ustala zarząd (jak w FM): zależy od renomy klubu, można go podnieść prośbą do zarządu
+// limit etatów w sztabie ustala zarząd: zależy od renomy klubu, można go podnieść prośbą do zarządu
 var STAFF_LIM=1;
 function myRepS(){const a=SAVE.ai&&SAVE.team!=null?SAVE.ai[SAVE.team]:null;return (a&&a.rep)||30;}
 function staffLimitBase(){return clamp(Math.round(4.5+myRepS()/9),6,13);}
@@ -3723,7 +3723,7 @@ if(ui.v3d==null){try{ui.v3d=localStorage.getItem('vm_v3d2')!=='0';}catch(e){ui.v
 function v3dCan(){try{return matchMedia('(pointer:fine)').matches&&innerWidth>=900&&!!window.WebGLRenderingContext;}catch(e){return false;}}
 function v3dOn(){return !!ui.v3d&&v3dCan()&&ui.mview!=='klasyczny'&&!V3D.err;}
 function v3dToggle(){ui.v3d=!ui.v3d;try{localStorage.setItem('vm_v3d2',ui.v3d?'1':'0');}catch(e){}render();}
-function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=177').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
+function v3dLoad(){if(V3D.mod)return Promise.resolve(V3D.mod);if(!V3D.p)V3D.p=import('./3d/m3d.js?v=178').then(async x=>{const M=x.default;await M.init(new URL('./3d/',location.href).href);V3D.mod=M;return M;}).catch(e=>{V3D.err=e;console.error(e);render();});return V3D.p;}
 function v3dHex(c,f){const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*f),g=Math.round((n>>8&255)*f),b=Math.round((n&255)*f);return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
 function v3dKits(m){const kc=kitColors(m);return [0,1].map(i=>{const j=kc[i],lb=libColor(j,kc[1-i]);return {jersey:j,shorts:lum(j)>0.75?'#1f2937':v3dHex(j,0.38),lib:lb,ink:lum(j)>0.6?'#111827':'#ffffff',libInk:lum(lb)>0.6?'#111827':'#ffffff'};});}
 function v3dList(m,sc){const K=v3dKits(m);return sc.map(o=>({id:String(o.id),i:o.i,role:o.role,num:o.p.num,last:o.p.last,h:(o.p.h||195)/100,x:o.x,y:o.y,slot:o.slot,kit:K[o.i]}));}
@@ -3958,7 +3958,7 @@ function rotBox(m,i){const sd=m.sides[i];const sv=m.serving===i;const oc=onCourt
    ${sd.tmp&&sd.tmp.n>0?`<div class="small tmpb">📋 ${esc(TALK_TMP[sd.tmp.k]||'')} — ${sd.tmp.n} akcji</div>`:''}</div></div></div>`;}
 function rotCard(m){if(m.over)return '';return `<div class="card rotcard"><div class="row"><h3 style="margin:0">Grane ustawienie</h3><span class="sp"></span><span class="small mut">Set ${m.setNo} · ${m.score[0]}:${m.score[1]}</span></div><div class="rboxes">${rotBox(m,0)}${rotBox(m,1)}</div>
   <p class="small mut" style="margin:6px 0 0">Numer ustawienia = strefa, w której stoi rozgrywający. Ustawienie zmienia się, gdy drużyna odbiera zagrywkę rywalowi (rotacja zgodnie z ruchem wskazówek zegara).</p></div>`;}
-// ================= EKRAN MECZU W UKŁADZIE „MENEDŻERSKIM” (jak FM) =================
+// ================= EKRAN MECZU W UKŁADZIE MENEDŻERSKIM =================
 // ocena meczowa na żywo (skala 1–10, start 6,0)
 function liveRating(p){const x=p.st;const act=x.srv+x.rec+x.att+x.dig+x.blk;if(!act)return null;
   const v=6+0.3*x.kill+0.45*x.blk+0.45*x.ace+0.12*x.dig+0.06*x.recPos-0.3*x.attErr-0.25*x.srvErr-0.35*x.recErr-0.2*x.blocked-0.04*(x.att-x.kill-x.attErr);
@@ -4118,7 +4118,7 @@ function fmPlayerStats(m,i){const sd=m.sides[i];const onIds=new Set(onCourt(sd,m
    ${ps.map(p=>{const x=p.st;const err=x.attErr+x.srvErr+x.recErr;return `<tr class="${onIds.has(p.id)?'':'off'}"><td class="l"><span class="mut">${p.num}</span> ${esc(p.last)}</td><td><b>${x.kill+x.blk+x.ace}</b></td><td>${x.att?`${x.kill}/${x.att}`:'–'}</td><td>${x.rec?pc(x.recPos,x.rec):'–'}</td><td>${x.dig||'–'}</td><td>${x.blk||'–'}</td><td>${x.ace||'–'}</td><td class="${err?'bad':''}">${err||'–'}</td><td>${x.dA?pc(x.dH,x.dA):'–'}</td></tr>`;}).join('')}
    </tbody></table></div>`;}
 // ---- ławka rezerwowych z umiejętnościami ----
-const FM_KEY={R:['roz','zag','kiw'],P:['prz','ata','kiw'],A:['ata','blo','kiw'],S:['blo','czy','ata'],L:['prz','obr','czy']};
+const POS_KEYS3={R:['roz','zag','kiw'],P:['prz','ata','kiw'],A:['ata','blo','kiw'],S:['blo','czy','ata'],L:['prz','obr','czy']};
 const attrShort=k=>(ALL_ATTRS.find(a=>a[0]===k)||[k,k,k])[2];
 const attrCol=v=>v>=16?'#22c55e':v>=12?'#a3e635':v>=8?'#eab308':'#ef4444';
 // specjalne zmiany: na zagrywkę i podwójna (rozgrywający + atakujący)
@@ -4138,7 +4138,7 @@ function fmBench(m){const a=m.sides[0];const bench=benchOf(a);if(!bench.length)r
      return `<div class="fmbp clk ${fit||fitS?'fit':''} ${inj?'inj':''}" onclick="${sel!=null&&!inj&&(!srvM||fitS)?`doSub('${p.id}')`:`openPop('${p.id}')`}" title="${esc(p.first+' '+p.last)} · ${POS_NAMES[p.pos]} · ${p.age} lat">
       <div class="fmbh"><span class="fmj" style="width:26px;height:26px;font-size:12px;background:${p.pos==='L'?libColor(kitColors(m)[0],'#000'):kitColors(m)[0]};color:${lum(p.pos==='L'?libColor(kitColors(m)[0],'#000'):kitColors(m)[0])>0.6?'#111':'#fff'}">${p.num}</span>
        <div class="fmbn"><b class="fmnm">${esc(shortN(p))}</b><span class="fmps2">${pTag(p.pos)} · ${p.age} l.</span></div><span class="fmov" title="Ocena ogólna">${rating(p)}</span></div>
-      <div class="fmattrs">${FM_KEY[p.pos].map(k=>`<span title="${esc((ALL_ATTRS.find(x=>x[0]===k)||[])[1]||k)}"><small>${attrShort(k)}</small><b style="color:${attrCol(p[k])}">${p[k]}</b></span>`).join('')}</div>
+      <div class="fmattrs">${POS_KEYS3[p.pos].map(k=>`<span title="${esc((ALL_ATTRS.find(x=>x[0]===k)||[])[1]||k)}"><small>${attrShort(k)}</small><b style="color:${attrCol(p[k])}">${p[k]}</b></span>`).join('')}</div>
       ${inj?'<div class="small bad">kontuzja</div>':`<span class="fmen" style="width:100%"><i style="width:${Math.round(p.en)}%;background:${energyCol(p.en)}"></i></span>`}</div>`;}).join('')}</div>`;}
 // ================= TAKTYKA: BLOK, OBRONA, PIŁKI SYTUACYJNE, CEL ZAGRYWKI =================
 const BLK_OPT=[['Skos','Blok zamyka skos.'],['Zrównoważony','Blokujący czytają atak.'],['Prosta','Blok zamyka prostą.']];
@@ -7240,7 +7240,7 @@ function agView(){const X=AG();const res=ui.agRes;
    ${X.q.length?X.q.map(card).join(''):'<div class="card"><h2>Agenci</h2><p class="mut">Żaden agent nie czeka teraz na odpowiedź. Agenci sami się odezwą, gdy będą chcieli podwyżki dla klienta, rozmowy o kończącym się kontrakcie albo zaproponować Ci zawodnika.</p></div>'}
    ${X.log.length?`<div class="card"><h2>Ostatnie rozmowy z agentami</h2>${X.log.slice(0,8).map(l=>`<div class="small" style="margin:4px 0">${fmtShort(l.d)} — ${esc(l.txt)}</div>`).join('')}</div>`:''}`;}
 ROZ_TABS.push(['agenci','Agenci',()=>agN()]);
-// ================= SKAUTING JAK W FM: CECHY SKAUTÓW, REGIONY, PRZYDZIAŁY, BUDŻET, RAPORTY A–E, CELOWNIK, CHARAKTER =================
+// ================= SKAUTING: CECHY SKAUTÓW, REGIONY, PRZYDZIAŁY, BUDŻET, RAPORTY A–E, CELOWNIK, CHARAKTER =================
 // Regiony: kraje z ligami + reszta świata (wolni zawodnicy z innych krajów)
 const REGS=[['PL','Polska'],['DE','Niemcy'],['IT','Włochy'],['TR','Turcja'],['W','Reszta świata']];
 const REG_N=Object.fromEntries(REGS);
@@ -7365,7 +7365,7 @@ function scoutXView(){const s=SX();const sc=scAll();const tab=ui.scTab||'asg';
       <td class="nw">${SC().tasks.some(t=>t.pid===p.id)?'<small class="mut">zadanie trwa…</small>':`<button class="ghost sm" onclick="observe('${p.id}')">Obserwuj</button> ${trKnown(p)?'':`<button class="ghost sm" onclick="chrCheck('${p.id}')">Charakter</button>`}`} <button class="star on" onclick="toggleShort('${p.id}')">★</button></td></tr>`;}).join('')}</tbody></table></div>`:'<p class="mut">Pusto. Dodaj zawodników gwiazdką ☆ w rekomendacjach, bazie zawodników albo na rynku.</p>'}</div>`;}
 // podmiana widoku Skautingu (stary widok dostępny jako „Przegląd”)
 const scoutViewOld=scoutView;scoutView=scoutXView;
-// ================= OBOWIĄZKI: PRZEKAZANIE ZADAŃ SZTABOWI (jak „Responsibilities” w FM) =================
+// ================= OBOWIĄZKI: PRZEKAZANIE ZADAŃ SZTABOWI =================
 // SAVE.dlg = {on:{klucz:1}, quiet:1, log:[{d,t}], wk:data ostatniego podsumowania}
 const DLG=[
  ['press','Konferencje prasowe','asy','Asystent chodzi na konferencje i odpowiada neutralnie — bez kary dla relacji z mediami, ale też bez korzyści.'],
@@ -7448,13 +7448,13 @@ function dlgJuniors(d){if(!dlg('jr'))return;if(!d.endsWith('-07-15')&&!d.endsWit
 function dlgDaily(d){if(SAVE.team==null||!SAVE.world||!S())return;try{dlgPrep(d);dlgContracts(d);dlgScout();dlgJuniors(d);dlgTransfers(d);}catch(e){console.error(e);}
   const D=DL();if(D.quiet&&(!D.wk||daysBetween(D.wk,d)>=7)){const L=D.log.filter(x=>D.wk?x.d>D.wk:true);D.wk=d;if(L.length)sendMail({cat:'klub',from:'Sztab szkoleniowy',t:`Podsumowanie tygodnia sztabu (${L.length})`,s:L[0].t.slice(0,90),b:{type:'text',x:'Co sztab zrobił za Ciebie w tym tygodniu:\n\n• '+L.map(x=>x.t).join('\n• ')},lab:'Sztab'});}}
 // ---- widok ----
-function dlgCard(){const D=DL();return `<div class="card"><h2>Obowiązki${tipQ('Przekaż zadania sztabowi tak jak w Football Managerze. Jeśli na danym stanowisku nikogo nie ma, obowiązek wraca do Ciebie. Lepszy pracownik działa skuteczniej.')}</h2>
+function dlgCard(){const D=DL();return `<div class="card"><h2>Obowiązki${tipQ('Przekaż zadania członkom sztabu. Jeśli na danym stanowisku nikogo nie ma, obowiązek wraca do Ciebie. Lepszy pracownik działa skuteczniej.')}</h2>
   <div class="tw"><table><thead><tr><th class="l">Obowiązek</th><th class="l">Kto się zajmuje</th><th class="l">Co robi</th></tr></thead><tbody>${DLG.map(([k,l,r,ds])=>{const w=dlgWho(k);const on=!!D.on[k];
    return `<tr><td class="l"><b>${l}</b></td><td class="l nw"><select onchange="dlgSet('${k}',+this.value)"><option value="0" ${on&&w?'':'selected'}>Ja</option>${w?`<option value="1" ${on?'selected':''}>${esc(w.first[0]+'. '+w.last)} (${w.skill}/20)</option>`:''}</select>${w?'':`<div class="small mut">${ROLE_N[r]} — brak w sztabie</div>`}</td><td class="l small mut" style="white-space:normal;min-width:260px">${esc(ds)}</td></tr>`;}).join('')}</tbody></table></div>
   <label class="mopt" style="margin-top:8px"><input type="checkbox" ${D.quiet?'checked':''} onchange="DL().quiet=this.checked?1:0;save();render()"> Zamiast pojedynczych powiadomień wysyłaj jedno podsumowanie tygodnia</label>
   ${D.log.length?`<details style="margin-top:8px"><summary class="link">Ostatnie działania sztabu (${D.log.length})</summary>${D.log.slice(0,15).map(x=>`<div class="small" style="margin:3px 0"><span class="mut">${fmtShort(x.d)}</span> ${esc(x.t)}</div>`).join('')}</details>`:''}</div>`;}
 {const _sv=staffView;staffView=function(){return dlgCard()+_sv();};}
-// ================= TRENING W STYLU FM: zakładki, intensywność dnia, zadowolenie, postawa, indywidualny, mentoring, odpoczynek, trenerzy =================
+// ================= TRENING: zakładki, intensywność dnia, zadowolenie, postawa, indywidualny, mentoring, odpoczynek, trenerzy =================
 // p.itr={f:jednostka|null,i:0/1/2} — trening indywidualny; p.restUntil — wolne do dnia; SAVE.trn.ment=[[id,...]] — grupy mentorskie; SAVE.trn.ar — automatyczny odpoczynek
 const IND_INT=[{n:'Lżej',l:0.7,d:0.88,r:0.6},{n:'Normalnie',l:1,d:1,r:1},{n:'Mocniej',l:1.25,d:1.15,r:1.8}];
 const IND_FOCUS=['zag','prz','ata','blo','obr','roz','sil','tak'];
@@ -7594,7 +7594,7 @@ function trxCoach(){const m=clubMods(SAVE.team);
   const i=h.indexOf('</tbody></table></div>');if(i>0)h=h.slice(0,i)+row+h.slice(i);
   const j=h.indexOf('<div class="card"><h2>Intensywność</h2>');const cards=trxOvCards();h=j>0?h.slice(0,j)+cards+h.slice(j):h+cards;
   return trxHead()+h;};}
-// ================= FINANSE W STYLU FM: historia, wykresy, zakładki, kredyt, licencja, prognoza =================
+// ================= FINANSE: historia, wykresy, zakładki, kredyt, licencja, prognoza =================
 // SAVE.fin.hist=[{m:'2026-09',bal,in:{kat:kw},out:{kat:kw}}] (zamknięte miesiące); SAVE.fin.cur — bieżący miesiąc; SAVE.fin.loan — kredyt bankowy
 const MON_S=['sty','lut','mar','kwi','maj','cze','lip','sie','wrz','paź','lis','gru'];
 function monKey(d){return (d||SAVE._now||today()).slice(0,7);}
@@ -7706,7 +7706,7 @@ function finProg(){const P=finProj();const f=SAVE.fin;const ml=monthsLeftSeason(
 function finLicTab(){const L=finLic();return `<div class="card"><h2>Licencja ligowa</h2><p class="small mut">Przed startem każdego sezonu komisja licencyjna sprawdza klub. Czerwony wymóg przy starcie sezonu = kara finansowa, blokada transferów do końca okna i spadek zaufania zarządu. Żółty = ostrzeżenie.</p>
   ${L.it.map(x=>`<div class="res row" style="gap:8px"><b class="${x[0]===2?'good':x[0]===1?'':'bad'}">${x[0]===2?'✓':x[0]===1?'⚠':'✗'}</b> ${esc(x[1])}</div>`).join('')}</div>`;}
 {const _fv=financeView;financeView=function(){const tab=ui.finTab||'sum';const body=tab==='sum'?finSum()+_fv.apply(this,arguments).replace(/<div class="card fin">[\s\S]*?<\/div><\/div>/,''):tab==='inc'?finCatTab('inc'):tab==='exp'?finCatTab('exp'):tab==='wag'?finWag():tab==='loan'?finLoan():tab==='prog'?finProg():finLicTab();return finHead()+body;};}
-// ================= STRATEGIA KLUBU (jak „Club Vision” w FM) =================
+// ================= STRATEGIA KLUBU =================
 // SAVE.vis={tm,prof,goals:[[k,imp]],rules:[[k,imp]],trad:[k...],plan:[{n,g}],rep0,n0,log:[{d,t,ok}],fans,ev:{t,x,until},st:{k:status},sig:[{id,age,n}],pres}
 const VIS_PROF={akad:['Akademia','Zarząd chce, żeby klub żył z własnych wychowanków.'],handel:['Handel zawodnikami','Kupić tanio, rozwinąć, sprzedać z zyskiem.'],gwiazdy:['Ambicje i gwiazdy','Wyniki tu i teraz, głośne nazwiska.'],lokal:['Lokalny patriotyzm','Swoi zawodnicy, pełna hala, bliskość kibiców.'],oszcz:['Rozsądne finanse','Najpierw stabilny budżet, potem ambicje.']};
 const IMP_N=['Preferowany','Oczekiwany','Wymagany'];
@@ -8211,14 +8211,14 @@ function homeView(){const s=S();if(!s)return '';
 
 function hvClip(){document.querySelectorAll('.hvgl').forEach(g=>{const b=g.getBoundingClientRect().bottom;for(const c of g.children)c.style.visibility=c.getBoundingClientRect().bottom>b+1?'hidden':'';});}
 window.addEventListener('resize',()=>{if(ui.tab==='home')hvClip();});
-// ================= WYGLĄD: motyw w stylu FM, przestawiane menu boczne, ekran startowy =================
-const APPV='177';
+// ================= WYGLĄD: motywy, przestawiane menu boczne, ekran startowy =================
+const APPV='178';
 const HELP_EN='• You run a volleyball club as the manager: pick the squad, tactics and training, then watch matches live or simulate them.<br>• <b>Continue</b> (top right) moves time to the next event.<br>• Inbox and Conversations hold issues from players, the board, media and agents.<br>• Club → Staff: hire staff and delegate duties.<br>• Club → Club vision: what the board expects.<br>• Finances: budgets, bank loan and league licence.<br>• The game saves automatically; extra slots and save codes are in “Save game”.<br>• You can reorder the left menu by dragging items.';
 // ---- motyw ----
 function uiPref(k,d){try{const v=localStorage.getItem('vm_'+k);return v==null?d:v;}catch(e){return d;}}
 function uiPrefSet(k,v){try{localStorage.setItem('vm_'+k,v);}catch(e){}}
 function themeCur(){if(uiPref('thv2',null)==null){uiPrefSet('thv2','1');uiPrefSet('theme','n');}return uiPref('theme','n');}
-function themeApply(){const t=themeCur();document.body.classList.toggle('th-fm',t==='fm'||t==='n');document.body.classList.toggle('th-n',t==='n');themeClub();}
+function themeApply(){const t=themeCur();document.body.classList.toggle('th-g',t==='fm'||t==='n');document.body.classList.toggle('th-n',t==='n');themeClub();}
 // kolor klubu na górnym pasku (przyciemniony, żeby biały tekst był czytelny)
 function themeClub(){let c='#8f1d2c';try{if(SAVE&&SAVE.team!=null&&TEAMS[SAVE.team])c=TEAMS[SAVE.team].color;}catch(e){}
   const n=parseInt(String(c).slice(1),16);if(isNaN(n))return;let r=n>>16,g=n>>8&255,b=n&255;const L=(0.299*r+0.587*g+0.114*b)/255;const k=L>0.55?0.42:L>0.35?0.62:0.85;
@@ -8249,13 +8249,13 @@ sideNav=function(){const mini=ui.tab==='mecz'&&liveMatch();const newsN=typeof un
   </aside>${ui.navOpen?'<div class="navshade" onclick="ui.navOpen=false;render()"></div>':''}`;};
 // ---- karta ustawień wyglądu (w Zapis gry / Ustawienia) ----
 function looksCard(){const th=themeCur();const G=navGroups();
-  return `<div class="card"><h2>${_t('Wygląd')}</h2><div class="row wrap" style="gap:10px;align-items:center"><span>${_t('Język / Language')}</span>${langBtns()}</div>${LANG==='en'?`<p class="small mut">${_t('Tłumaczenie na angielski jest w trakcie — część ekranów jest jeszcze po polsku.')}</p>`:''}<div class="row wrap" style="gap:10px;align-items:center;margin-top:8px"><span>${_t('Motyw:')}</span><div class="seg"><button class="${th==='n'?'on':''}" onclick="themeSet('n')">${_t('Granat (FM, kolor klubu)')}</button><button class="${th==='fm'?'on':''}" onclick="themeSet('fm')">${_t('Grafit')}</button><button class="${th!=='fm'&&th!=='n'?'on':''}" onclick="themeSet('classic')">${_t('Klasyczny (złoty)')}</button></div></div>
+  return `<div class="card"><h2>${_t('Wygląd')}</h2><div class="row wrap" style="gap:10px;align-items:center"><span>${_t('Język / Language')}</span>${langBtns()}</div>${LANG==='en'?`<p class="small mut">${_t('Tłumaczenie na angielski jest w trakcie — część ekranów jest jeszcze po polsku.')}</p>`:''}<div class="row wrap" style="gap:10px;align-items:center;margin-top:8px"><span>${_t('Motyw:')}</span><div class="seg"><button class="${th==='n'?'on':''}" onclick="themeSet('n')">${_t('Granat (kolor klubu)')}</button><button class="${th==='fm'?'on':''}" onclick="themeSet('fm')">${_t('Grafit')}</button><button class="${th!=='fm'&&th!=='n'?'on':''}" onclick="themeSet('classic')">${_t('Klasyczny (złoty)')}</button></div></div>
    <details style="margin-top:10px"><summary>${_t('Kolejność menu bocznego')}</summary><p class="small mut">${_t('Na komputerze możesz po prostu przeciągać pozycje w menu po lewej. Tutaj — strzałkami (działa też na telefonie).')}</p>
    ${G.map(([g,ks])=>`<div class="small mut" style="margin-top:6px">${_t(g)}</div>${ks.map(k=>`<div class="res row small" style="gap:6px"><span>${NAV_L[k]}</span><span class="sp"></span><button class="ghost sm" onclick="navStep('${k}',-1)">▲</button><button class="ghost sm" onclick="navStep('${k}',1)">▼</button></div>`).join('')}`).join('')}
    <button class="ghost sm" style="margin-top:8px" onclick="navReset()">${_t('Przywróć domyślną kolejność')}</button></details></div>`;}
 {const _sv=saveView;saveView=function(){return `<div class="card row wrap" style="gap:8px;align-items:center"><span>${_t('Ustawienia i zapis gry')}</span><span class="sp"></span><button class="ghost" onclick="ui.start=true;render()">${_t('⏏ Menu główne')}</button></div>`+looksCard()+_sv.apply(this,arguments);};}
 // ================= EKRAN STARTOWY =================
-const CHANGES=[['v177','Skauting: pełny raport charakteru (cechy z opisem, cechy mentalne, ocena skauta, chęć przejścia) i pełna obserwacja (wiedza 100% + charakter). Nowo sprowadzeni zawodnicy przez pół roku bez ofert innych klubów i próśb agentów o podwyżkę. Rozmowy: forma w meczach i kontrakt (zapewnienie o przyszłości, przedłużenie, oczekiwania). Dynamika meczu punkt po punkcie z rodzajem punktu. Komputer zmienia zawodników, którym nie idzie, i bierze czas, gdy rywal ucieka. Wyraźne oznaczenia ZAŁAMANY i W GAZIE. Wybór składu i ustawienia przed każdym setem.'],['v176','Poczta: nagłówek otwartej wiadomości (nadawca, tytuł) ma pełne tło — treść nie prześwituje już pod nim przy przewijaniu.'],['v175','Nowy wygląd w stylu FM: wbudowana czcionka Barlow (tekst Semi Condensed, nagłówki i liczby Condensed — wszędzie taka sama, też offline), grafitowo-granatowe panele, żółte podkreślone tytuły paneli, białe linki, tytuły ekranów i kart pisane normalnie zamiast wielkimi literami.'],['v174','Juniorzy jak w FM: Widok ogólny (kandydaci do pierwszego zespołu z radami trenera juniorów, terminarz i liga U20, akademia, nabór), Widok ogólny: Juniorzy (wykres postępów, ocena treningu i meczowa, opinie), Wypożyczenia (raporty co miesiąc, wypożyczanie juniorów 18–19 lat). Juniorzy trenują teraz w akademii co miesiąc i naprawdę się rozwijają.'],['v173','Usunięto rolę Zawodnik rotacyjny (zostają: kluczowy, podstawowy, perspektywiczny, rezerwowy)'],['v172','Czas gry liczony z czasu na boisku (wyjście w szóstce = min. 75%, zmiana w trakcie meczu kosztuje mało, krótkie wejście ok. 10%); rezerwowi i perspektywiczni nie złoszczą się o brak gry'],['v171','Rezerwowy bez wymagań co do czasu gry, na końcu listy ról (za perspektywicznym)'],['v170','Ustalony czas gry widoczny w karcie zawodnika i w Dynamice; zadowolenie z gry liczone względem ustalonej roli; jedna wspólna lista ról w negocjacjach i rozmowach'],['v169','Tło hali; rola w zespole przy negocjacjach; loga sponsorów; trening indywidualny jednej cechy; własne sparingi z zaproszeniami (kierownik drużyny może je organizować)'],['v166','Nowy ekran główny w stylu Portalu FM (skrzynka, wiadomości z ligi/kadry/social mediów, terminarz, tabela, statystyki, widżety) i rozbudowany profil drużyny'],['v165','Reprezentacja: kliknij kraj, żeby zobaczyć skład kadry; wzory strojów widoczne na zawodnikach w meczu 2D'],['v164','Budżety: obóz poza budżetem operacyjnym, mniejsze rezerwy zarządu, pula rośnie z prognozą; karnety pokazują cenę za mecz; wiadomość o obozie od kierownika drużyny'],['v163','Nowa zakładka Trening (Przegląd, Zespół, Indywidualny, Raporty, Medyczne, Trenerzy); obóz wybierasz w wiadomości (z terminem wyjazdu); zawodnicy na kadrze nieobecni w klubie, wracają zmęczeni; obóz i powroty w terminarzu'],['v162','Obóz przygotowawczy znowu da się wybrać (płatny z salda klubu, nie z budżetu operacyjnego)'],['v159','Mecz: gwizdek, dźwięk piłki i opis wyniku akcji dopiero, gdy piłka spadnie (3D i 2D)'],['v158','Limit obcokrajowców liczony jak w przepisach PZPS: ilu jest naraz na boisku (libero tylko z jednym środkowym)'],['v155','Dźwięki w 3D: gwizdek i reakcja kibiców w chwili, gdy piłka spada (także przy pauzie), głośniejszy gwizdek przed zagrywką; ławka w meczu wyjaśnia, kto gra poza pozycją przez limit obcokrajowców'],['v153','Stroje klubu (domowy, wyjazdowy, libero; 7 wzorów) w kreatorze i w zakładce Klub, widoczne na twarzach i w meczu; nowe, bardziej realistyczne twarze'],['v152','Motyw granatowy jak w FM (pasek w kolorze klubu, żółty Kontynuuj), flagi krajów działają na Windows, obcokrajowcy w Transferach, samouczki we wszystkich zakładkach'],['v151','Ekran wczytywania gry: szczegóły zapisu, czas gry, ostatnia szóstka, wskazówki'],['v150','Limit obcokrajowców widoczny w składzie i na ławce, dźwięki po animacji, działające suwaki budżetu, uczciwy wpływ sponsorów'],['v149','Dźwięki zgrane z animacją (także 3D), gwizdek sędziego przed zagrywką'],['v148','Język angielski — etap 1: menu, ekran startowy, górny pasek, pozycje, daty'],['v147','Transfery: zakładki Wypożyczenia i Historia transferów'],['v146','Analiza rywala na ekranie głównym, zakładki na starszych ekranach'],['v145','Balans treningu „mocniej”, łagodniejsza ocena zarządu po sezonie, kibice na pasku we własnym klubie'],['v143','Własny klub: sam wybierasz charakter i plan, kibice wpływają na frekwencję i sponsorów'],['v142','Ekran startowy, motyw grafitowy jak w FM, przestawiane menu'],['v141','Strategia klubu: cele zarządu, plan pięcioletni, kibice'],['v140','Finanse: wykresy, kredyt bankowy, licencja ligowa, prognoza'],['v139','Trening: indywidualny, mentoring, odpoczynek, reżimy, trenerzy'],['v138','Wyższe limity sztabu, skauci osobno, własny klub bez limitu'],['v137','Dźwięki meczu i powiadomień, wersja na Windows'],['v136','Zapisy w IndexedDB, delegowanie transferów']];
+const CHANGES=[['v178','Porządki w opisach i nazwach motywów.'],['v177','Skauting: pełny raport charakteru (cechy z opisem, cechy mentalne, ocena skauta, chęć przejścia) i pełna obserwacja (wiedza 100% + charakter). Nowo sprowadzeni zawodnicy przez pół roku bez ofert innych klubów i próśb agentów o podwyżkę. Rozmowy: forma w meczach i kontrakt (zapewnienie o przyszłości, przedłużenie, oczekiwania). Dynamika meczu punkt po punkcie z rodzajem punktu. Komputer zmienia zawodników, którym nie idzie, i bierze czas, gdy rywal ucieka. Wyraźne oznaczenia ZAŁAMANY i W GAZIE. Wybór składu i ustawienia przed każdym setem.'],['v176','Poczta: nagłówek otwartej wiadomości (nadawca, tytuł) ma pełne tło — treść nie prześwituje już pod nim przy przewijaniu.'],['v175','Nowy wygląd: wbudowana czcionka Barlow (tekst Semi Condensed, nagłówki i liczby Condensed — wszędzie taka sama, też offline), grafitowo-granatowe panele, żółte podkreślone tytuły paneli, białe linki, tytuły ekranów i kart pisane normalnie zamiast wielkimi literami.'],['v174','Juniorzy w nowym układzie: Widok ogólny (kandydaci do pierwszego zespołu z radami trenera juniorów, terminarz i liga U20, akademia, nabór), Widok ogólny: Juniorzy (wykres postępów, ocena treningu i meczowa, opinie), Wypożyczenia (raporty co miesiąc, wypożyczanie juniorów 18–19 lat). Juniorzy trenują teraz w akademii co miesiąc i naprawdę się rozwijają.'],['v173','Usunięto rolę Zawodnik rotacyjny (zostają: kluczowy, podstawowy, perspektywiczny, rezerwowy)'],['v172','Czas gry liczony z czasu na boisku (wyjście w szóstce = min. 75%, zmiana w trakcie meczu kosztuje mało, krótkie wejście ok. 10%); rezerwowi i perspektywiczni nie złoszczą się o brak gry'],['v171','Rezerwowy bez wymagań co do czasu gry, na końcu listy ról (za perspektywicznym)'],['v170','Ustalony czas gry widoczny w karcie zawodnika i w Dynamice; zadowolenie z gry liczone względem ustalonej roli; jedna wspólna lista ról w negocjacjach i rozmowach'],['v169','Tło hali; rola w zespole przy negocjacjach; loga sponsorów; trening indywidualny jednej cechy; własne sparingi z zaproszeniami (kierownik drużyny może je organizować)'],['v166','Nowy ekran główny – Portal (skrzynka, wiadomości z ligi/kadry/social mediów, terminarz, tabela, statystyki, widżety) i rozbudowany profil drużyny'],['v165','Reprezentacja: kliknij kraj, żeby zobaczyć skład kadry; wzory strojów widoczne na zawodnikach w meczu 2D'],['v164','Budżety: obóz poza budżetem operacyjnym, mniejsze rezerwy zarządu, pula rośnie z prognozą; karnety pokazują cenę za mecz; wiadomość o obozie od kierownika drużyny'],['v163','Nowa zakładka Trening (Przegląd, Zespół, Indywidualny, Raporty, Medyczne, Trenerzy); obóz wybierasz w wiadomości (z terminem wyjazdu); zawodnicy na kadrze nieobecni w klubie, wracają zmęczeni; obóz i powroty w terminarzu'],['v162','Obóz przygotowawczy znowu da się wybrać (płatny z salda klubu, nie z budżetu operacyjnego)'],['v159','Mecz: gwizdek, dźwięk piłki i opis wyniku akcji dopiero, gdy piłka spadnie (3D i 2D)'],['v158','Limit obcokrajowców liczony jak w przepisach PZPS: ilu jest naraz na boisku (libero tylko z jednym środkowym)'],['v155','Dźwięki w 3D: gwizdek i reakcja kibiców w chwili, gdy piłka spada (także przy pauzie), głośniejszy gwizdek przed zagrywką; ławka w meczu wyjaśnia, kto gra poza pozycją przez limit obcokrajowców'],['v153','Stroje klubu (domowy, wyjazdowy, libero; 7 wzorów) w kreatorze i w zakładce Klub, widoczne na twarzach i w meczu; nowe, bardziej realistyczne twarze'],['v152','Motyw granatowy (pasek w kolorze klubu, żółty Kontynuuj), flagi krajów działają na Windows, obcokrajowcy w Transferach, samouczki we wszystkich zakładkach'],['v151','Ekran wczytywania gry: szczegóły zapisu, czas gry, ostatnia szóstka, wskazówki'],['v150','Limit obcokrajowców widoczny w składzie i na ławce, dźwięki po animacji, działające suwaki budżetu, uczciwy wpływ sponsorów'],['v149','Dźwięki zgrane z animacją (także 3D), gwizdek sędziego przed zagrywką'],['v148','Język angielski — etap 1: menu, ekran startowy, górny pasek, pozycje, daty'],['v147','Transfery: zakładki Wypożyczenia i Historia transferów'],['v146','Analiza rywala na ekranie głównym, zakładki na starszych ekranach'],['v145','Balans treningu „mocniej”, łagodniejsza ocena zarządu po sezonie, kibice na pasku we własnym klubie'],['v143','Własny klub: sam wybierasz charakter i plan, kibice wpływają na frekwencję i sponsorów'],['v142','Ekran startowy, motyw grafitowy, przestawiane menu'],['v141','Strategia klubu: cele zarządu, plan pięcioletni, kibice'],['v140','Finanse: wykresy, kredyt bankowy, licencja ligowa, prognoza'],['v139','Trening: indywidualny, mentoring, odpoczynek, reżimy, trenerzy'],['v138','Wyższe limity sztabu, skauci osobno, własny klub bez limitu'],['v137','Dźwięki meczu i powiadomień, wersja na Windows'],['v136','Zapisy w IndexedDB, delegowanie transferów']];
 ui.start=true;
 function smHasSave(){return SAVE.team!=null&&!!SAVE.coach;}
 function smCont(){ui.start=false;ui.sm=null;render();}
@@ -8314,7 +8314,7 @@ function hvRival(){const c=myNext();if(!c||c.h==null)return '';const op=c.h===SA
    <div class="small mut" style="margin-bottom:8px"><b>Podsumowanie:</b> ${thr} (siła ${their} wobec ${mine})</div>
    <div class="hvrg"><div>${row('Najlepszy zawodnik',top,'ocena '+rating(top))}${row('Najgroźniejszy atak',at,'atak '+at.ata)}${row('Najlepsza zagrywka',sv,'zagrywka '+sv.zag)}${row('Najlepszy blok',bl,'blok '+bl.blo)}</div><div>${court}</div></div></div>`;}
 {const _hv=homeView;homeView=function(){let h=_hv.apply(this,arguments);try{const r=hvRival();if(r){const i=h.indexOf('<div class="hv3">');if(i>=0){const j=h.indexOf('<div class="hvcol">',h.indexOf('<div class="hvcol">',i)+5);if(j>0)h=h.slice(0,j+19)+r+h.slice(j+19);}}}catch(e){console.error(e);}return h;};}
-// ================= ZAKŁADKI NA STARSZYCH EKRANACH (podział sekcji jak w FM) =================
+// ================= ZAKŁADKI NA STARSZYCH EKRANACH (podział sekcji) =================
 const SUBT={klub:[['ob','Obiekty',null],['md','Dzień meczowy',/Dzień meczowy|Podsumowanie dnia/i]],
  juniorzy:[['k','Kadra juniorów',null],['l','Liga juniorów',/Liga juniorów/i]],
  trener:[['p','Profil',null],['k','Kariera',/Kariera/i]],
@@ -8731,7 +8731,7 @@ function sparCard(){if(!sparCanPlan())return '';const s=S();ensureDates(s);sparH
    ${free.length?`<div class="ngform" style="margin-top:10px"><label>Termin <select id="spd">${free.map(d=>`<option value="${d}">${fmtShort(d)} (${DOW_S[new Date(d+'T12:00:00Z').getUTCDay()]})</option>`).join('')}</select></label><label>Rywal <select id="spo">${opts}</select></label><label>Gdzie <select id="sph"><option value="1">u nas</option><option value="0">na wyjeździe</option></select></label><button class="btn" onclick="sparInvite($('#spo').value,$('#spd').value,$('#sph').value==='1')">Wyślij zaproszenie</button></div>`:'<p class="small mut">Brak wolnych terminów przed ligą.</p>'}
    ${ui.sparMsg?`<div class="small ${ui.sparMsg.ok?'good':'bad'}" style="margin-top:6px">${esc(ui.sparMsg.t)}</div>`:''}</div>`;}
 {const _sv=seasonView;seasonView=function(){const h=_sv.apply(this,arguments);try{const s=S();if(s&&s.phase==='off'&&!SAVE.fired)return h+sparCard();}catch(e){console.error(e);}return h;};}
-// ================= EKRAN GŁÓWNY W STYLU „PORTAL” (FM) =================
+// ================= EKRAN GŁÓWNY „PORTAL” =================
 // 4 kolumny: Skrzynka · Wiadomości + terminarz · Tabela + statystyki zawodników · widżety (rywal, dane, budżety, trening, skauting)
 function ptAgo(d){const n=daysBetween(d,today());return n<=0?'dziś':n===1?'wczoraj':n<7?`${n} dni temu`:fmtShort(d);}
 function ptCard(title,body,act,cls){return `<div class="card ptc ${cls||''}"><div class="pth"><span>${title}</span>${act?`<button class="link" onclick="${act[1]}">${act[0]} →</button>`:''}</div>${body}</div>`;}
@@ -8804,7 +8804,7 @@ homeView=function(){const s=S();if(!s)return '';
    <div class="ptgrid"><div class="ptcol">${ptMail()}</div><div class="ptcol">${ptFeed()}${ptFix()}</div><div class="ptcol">${ptTable()}${ptLeaders()}</div><div class="ptcol">${ptRival()}${ptData()}${ptBudgets()}${ptTraining()}${ptScout()}</div></div>
    ${typeof hvRival==='function'?hvRival():''}`;};
 
-// ================= PROFIL DRUŻYNY (po kliknięciu klubu) — w stylu FM =================
+// ================= PROFIL DRUŻYNY (po kliknięciu klubu) =================
 function tvGames(i){const s=S();const out=[];const sameL=lgOf(i)===myLg();
   (s.results||[]).forEach((rd,k)=>{for(const g of rd)if(g.h===i||g.a===i)out.push({d:s.rdates?s.rdates[k]:null,h:g.h,a:g.a,sw:g.sw,c:LG_SHORT[lgOf(i)]});});
   if(sameL&&s.rounds){for(let k=s.round||0;k<s.rounds.length;k++){const f=s.rounds[k].find(f=>f[0]===i||f[1]===i);if(f&&!(s.results&&s.results[k]))out.push({d:s.rdates?s.rdates[k]:null,h:f[0],a:f[1],sw:null,c:LG_SHORT[lgOf(i)]});}}
@@ -8841,7 +8841,7 @@ teamModal=function(){const i=ui.teamPop;const t=TEAMS[i];if(!t){ui.teamPop=null;
   const c5=`<div class="card ptc"><div class="pth">Podstawowy skład</div><div class="totr tvtotr">${st7.filter(x=>x.p).map(({p,ps})=>`<div onclick="openPop('${p.id}')">${pFace(p,40)}<b>${esc(p.last)}</b><small>${pTag(ps)} · ${rating(p,ps)}</small></div>`).join('')}</div>
     ${trs.length?`<div class="pth" style="margin-top:12px">Transfery z Twoim klubem</div>${trs.map(x=>`<div class="ptrow"><span>${x.inn?'➡️ do nas':'⬅️ od nas'}: <b>${esc(x.nm)}</b></span><span class="mut small">${fmtShort(x.d)} · ${x.fee?fmt(x.fee):'—'}</span></div>`).join('')}`:''}</div>`;
   return `<div class="modal tvmodal" onclick="if(event.target===this){ui.teamPop=null;render()}"><div class="tvcard">${head}<div class="tvgrid"><div>${c1}${c5}</div><div>${c2}</div><div>${c3}</div><div>${c4}</div></div></div></div>`;};
-// ================= JUNIORZY (układ jak w FM): Widok ogólny · Widok ogólny: Juniorzy · Wypożyczenia =================
+// ================= JUNIORZY: Widok ogólny · Widok ogólny: Juniorzy · Wypożyczenia =================
 if(typeof SUBT!=='undefined')delete SUBT.juniorzy;
 // --- historia ocen (wykres postępów): zapis co miesiąc ---
 function yTracked(){if(SAVE.team==null||!SAVE.world)return [];return W().players.filter(p=>(p.tm===SAVE.team&&(p.jr||p.age<=21))||(p.loan&&p.loan.from===SAVE.team));}
@@ -8857,7 +8857,7 @@ function yMatches(p){if(p.jr){const r=(S().jps||{})[p.id];return r?r.m:0;}const 
 function yTrainGr(p){const inf=myInfra();const sk=staffSkill('jr');const mk=monKey();let h=0;for(const c of p.id+mk)h=(h*31+c.charCodeAt(0))>>>0;
   const v=5.9+(sk-10)*0.07+(inf.akad-2)*0.18+(hasT(p,'pra')?0.45:0)+(hasT(p,'amb')?0.25:0)-(hasT(p,'len')?0.6:0)+((h%100)/100-0.5)*0.9+Math.min(0.5,Math.max(0,(rating(p)-yRh(p)[0])*0.08));
   return Math.max(4.5,Math.min(9.3,v));}
-// gwiazdki jak w FM: względem poziomu Twojej pierwszej drużyny (3★ = przeciętny zawodnik pierwszej szóstki)
+// gwiazdki względem poziomu Twojej pierwszej drużyny (3★ = przeciętny zawodnik pierwszej szóstki)
 function yRef(){const k=today();if(yRef.k!==k){yRef.k=k;yRef.v=teamStrength(myTeam());}return yRef.v;}
 function yStarN(v){return Math.max(0.5,Math.min(5,Math.round((3+(v-yRef())/5)*2)/2));}
 function yStarsH(n,cls){const f=Math.floor(n),h=n-f>=0.5;return `<span class="ystars ${cls||''}" title="${String(n).replace('.',',')} / 5">${'★'.repeat(f)}${h?'<i>★</i>':''}<span class="mut">${'★'.repeat(5-f-(h?1:0))}</span></span>`;}
@@ -9137,7 +9137,7 @@ function setLuReset(){const m=ui.match;const s=m.sides[0];if(!m._lu0)return;m._l
   if(m._lb0){const l=s.pl.find(x=>x.id===m._lb0);if(l)s.libero=l;}ui.setLuMsg=null;persistLive();render();}
 {const _sr=stepRally;stepRally=function(m){if(!m._lu0&&m.sides&&m.sides[0]){m._lu0=m.sides[0].slots.map(x=>x.p.id);m._lb0=m.sides[0].libero?m.sides[0].libero.id:null;}return _sr.apply(this,arguments);};}
 // ================= SAMOUCZKI ZAKŁADEK, OBCOKRAJOWCY W TRANSFERACH, KOLOR KLUBU =================
-// Samouczek pokazuje się przy pierwszym wejściu do każdej zakładki (w stylu FM: „Wprowadzenie”).
+// Samouczek pokazuje się przy pierwszym wejściu do każdej zakładki („Wprowadzenie”).
 // „Rozumiem” zamyka go dla tej zakładki; przycisk „?” na pasku pod nagłówkiem otwiera go ponownie.
 const GUIDES={
  home:['Ekran główny','Twoje centrum dowodzenia: najbliższy mecz, forma drużyny, tabela i najważniejsze wiadomości w jednym miejscu.',

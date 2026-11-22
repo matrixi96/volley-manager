@@ -26,7 +26,7 @@ const EN={
  'INSTRUKCJA':'GUIDE','CO NOWEGO':'WHAT\'S NEW','Pokaż samouczek w grze':'Show the in-game tutorial','pusty':'empty',
  'Menu główne':'Main menu','⏏ Menu główne':'⏏ Main menu','Ustawienia i zapis gry':'Settings & save game',
  // ustawienia wyglądu i języka
- 'Wygląd':'Appearance','Motyw:':'Theme:','Grafit (jak FM)':'Graphite (FM style)','Klasyczny (złoty)':'Classic (gold)','Kolejność menu bocznego':'Side menu order',
+ 'Wygląd':'Appearance','Motyw:':'Theme:','Grafit':'Graphite','Granat (kolor klubu)':'Navy (club colour)','Klasyczny (złoty)':'Classic (gold)','Kolejność menu bocznego':'Side menu order',
  'Na komputerze możesz po prostu przeciągać pozycje w menu po lewej. Tutaj — strzałkami (działa też na telefonie).':'On a computer just drag items in the left menu. Here you can use the arrows (works on phones too).',
  'Przywróć domyślną kolejność':'Restore default order','Język':'Language','Język / Language':'Language / Język',
  'Tłumaczenie na angielski jest w trakcie — część ekranów jest jeszcze po polsku.':'The English translation is in progress — some screens are still in Polish.',

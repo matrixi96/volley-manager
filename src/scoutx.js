@@ -1,4 +1,4 @@
-// ================= SKAUTING JAK W FM: CECHY SKAUTÓW, REGIONY, PRZYDZIAŁY, BUDŻET, RAPORTY A–E, CELOWNIK, CHARAKTER =================
+// ================= SKAUTING: CECHY SKAUTÓW, REGIONY, PRZYDZIAŁY, BUDŻET, RAPORTY A–E, CELOWNIK, CHARAKTER =================
 // Regiony: kraje z ligami + reszta świata (wolni zawodnicy z innych krajów)
 const REGS=[['PL','Polska'],['DE','Niemcy'],['IT','Włochy'],['TR','Turcja'],['W','Reszta świata']];
 const REG_N=Object.fromEntries(REGS);

@@ -1,4 +1,4 @@
-// ================= EKRAN GŁÓWNY W STYLU „PORTAL” (FM) =================
+// ================= EKRAN GŁÓWNY „PORTAL” =================
 // 4 kolumny: Skrzynka · Wiadomości + terminarz · Tabela + statystyki zawodników · widżety (rywal, dane, budżety, trening, skauting)
 function ptAgo(d){const n=daysBetween(d,today());return n<=0?'dziś':n===1?'wczoraj':n<7?`${n} dni temu`:fmtShort(d);}
 function ptCard(title,body,act,cls){return `<div class="card ptc ${cls||''}"><div class="pth"><span>${title}</span>${act?`<button class="link" onclick="${act[1]}">${act[0]} →</button>`:''}</div>${body}</div>`;}
@@ -71,7 +71,7 @@ homeView=function(){const s=S();if(!s)return '';
    <div class="ptgrid"><div class="ptcol">${ptMail()}</div><div class="ptcol">${ptFeed()}${ptFix()}</div><div class="ptcol">${ptTable()}${ptLeaders()}</div><div class="ptcol">${ptRival()}${ptData()}${ptBudgets()}${ptTraining()}${ptScout()}</div></div>
    ${typeof hvRival==='function'?hvRival():''}`;};
 
-// ================= PROFIL DRUŻYNY (po kliknięciu klubu) — w stylu FM =================
+// ================= PROFIL DRUŻYNY (po kliknięciu klubu) =================
 function tvGames(i){const s=S();const out=[];const sameL=lgOf(i)===myLg();
   (s.results||[]).forEach((rd,k)=>{for(const g of rd)if(g.h===i||g.a===i)out.push({d:s.rdates?s.rdates[k]:null,h:g.h,a:g.a,sw:g.sw,c:LG_SHORT[lgOf(i)]});});
   if(sameL&&s.rounds){for(let k=s.round||0;k<s.rounds.length;k++){const f=s.rounds[k].find(f=>f[0]===i||f[1]===i);if(f&&!(s.results&&s.results[k]))out.push({d:s.rdates?s.rdates[k]:null,h:f[0],a:f[1],sw:null,c:LG_SHORT[lgOf(i)]});}}

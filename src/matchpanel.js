@@ -1,4 +1,4 @@
-// ================= EKRAN MECZU W UKŁADZIE „MENEDŻERSKIM” (jak FM) =================
+// ================= EKRAN MECZU W UKŁADZIE MENEDŻERSKIM =================
 // ocena meczowa na żywo (skala 1–10, start 6,0)
 function liveRating(p){const x=p.st;const act=x.srv+x.rec+x.att+x.dig+x.blk;if(!act)return null;
   const v=6+0.3*x.kill+0.45*x.blk+0.45*x.ace+0.12*x.dig+0.06*x.recPos-0.3*x.attErr-0.25*x.srvErr-0.35*x.recErr-0.2*x.blocked-0.04*(x.att-x.kill-x.attErr);
@@ -158,7 +158,7 @@ function fmPlayerStats(m,i){const sd=m.sides[i];const onIds=new Set(onCourt(sd,m
    ${ps.map(p=>{const x=p.st;const err=x.attErr+x.srvErr+x.recErr;return `<tr class="${onIds.has(p.id)?'':'off'}"><td class="l"><span class="mut">${p.num}</span> ${esc(p.last)}</td><td><b>${x.kill+x.blk+x.ace}</b></td><td>${x.att?`${x.kill}/${x.att}`:'–'}</td><td>${x.rec?pc(x.recPos,x.rec):'–'}</td><td>${x.dig||'–'}</td><td>${x.blk||'–'}</td><td>${x.ace||'–'}</td><td class="${err?'bad':''}">${err||'–'}</td><td>${x.dA?pc(x.dH,x.dA):'–'}</td></tr>`;}).join('')}
    </tbody></table></div>`;}
 // ---- ławka rezerwowych z umiejętnościami ----
-const FM_KEY={R:['roz','zag','kiw'],P:['prz','ata','kiw'],A:['ata','blo','kiw'],S:['blo','czy','ata'],L:['prz','obr','czy']};
+const POS_KEYS3={R:['roz','zag','kiw'],P:['prz','ata','kiw'],A:['ata','blo','kiw'],S:['blo','czy','ata'],L:['prz','obr','czy']};
 const attrShort=k=>(ALL_ATTRS.find(a=>a[0]===k)||[k,k,k])[2];
 const attrCol=v=>v>=16?'#22c55e':v>=12?'#a3e635':v>=8?'#eab308':'#ef4444';
 // specjalne zmiany: na zagrywkę i podwójna (rozgrywający + atakujący)
@@ -178,7 +178,7 @@ function fmBench(m){const a=m.sides[0];const bench=benchOf(a);if(!bench.length)r
      return `<div class="fmbp clk ${fit||fitS?'fit':''} ${inj?'inj':''}" onclick="${sel!=null&&!inj&&(!srvM||fitS)?`doSub('${p.id}')`:`openPop('${p.id}')`}" title="${esc(p.first+' '+p.last)} · ${POS_NAMES[p.pos]} · ${p.age} lat">
       <div class="fmbh"><span class="fmj" style="width:26px;height:26px;font-size:12px;background:${p.pos==='L'?libColor(kitColors(m)[0],'#000'):kitColors(m)[0]};color:${lum(p.pos==='L'?libColor(kitColors(m)[0],'#000'):kitColors(m)[0])>0.6?'#111':'#fff'}">${p.num}</span>
        <div class="fmbn"><b class="fmnm">${esc(shortN(p))}</b><span class="fmps2">${pTag(p.pos)} · ${p.age} l.</span></div><span class="fmov" title="Ocena ogólna">${rating(p)}</span></div>
-      <div class="fmattrs">${FM_KEY[p.pos].map(k=>`<span title="${esc((ALL_ATTRS.find(x=>x[0]===k)||[])[1]||k)}"><small>${attrShort(k)}</small><b style="color:${attrCol(p[k])}">${p[k]}</b></span>`).join('')}</div>
+      <div class="fmattrs">${POS_KEYS3[p.pos].map(k=>`<span title="${esc((ALL_ATTRS.find(x=>x[0]===k)||[])[1]||k)}"><small>${attrShort(k)}</small><b style="color:${attrCol(p[k])}">${p[k]}</b></span>`).join('')}</div>
       ${inj?'<div class="small bad">kontuzja</div>':`<span class="fmen" style="width:100%"><i style="width:${Math.round(p.en)}%;background:${energyCol(p.en)}"></i></span>`}</div>`;}).join('')}</div>`;}
 // ================= TAKTYKA: BLOK, OBRONA, PIŁKI SYTUACYJNE, CEL ZAGRYWKI =================
 const BLK_OPT=[['Skos','Blok zamyka skos.'],['Zrównoważony','Blokujący czytają atak.'],['Prosta','Blok zamyka prostą.']];

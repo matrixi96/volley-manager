@@ -25,7 +25,7 @@ function allScouts(){return [SAVE.staff&&SAVE.staff.sk].concat(SAVE.scouts||[]).
 function staffCount(){return Object.values(SAVE.staff||{}).filter(Boolean).length+(SAVE.scouts||[]).length;}
 // zatrudnianie ogranicza tylko budżet płacowy (zawodnicy + sztab); maksymalnie 6 skautów
 const SCOUT_MAX=6;
-// limit etatów w sztabie ustala zarząd (jak w FM): zależy od renomy klubu, można go podnieść prośbą do zarządu
+// limit etatów w sztabie ustala zarząd: zależy od renomy klubu, można go podnieść prośbą do zarządu
 var STAFF_LIM=1;
 function myRepS(){const a=SAVE.ai&&SAVE.team!=null?SAVE.ai[SAVE.team]:null;return (a&&a.rep)||30;}
 function staffLimitBase(){return clamp(Math.round(4.5+myRepS()/9),6,13);}

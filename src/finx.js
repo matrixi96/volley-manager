@@ -1,4 +1,4 @@
-// ================= FINANSE W STYLU FM: historia, wykresy, zakładki, kredyt, licencja, prognoza =================
+// ================= FINANSE: historia, wykresy, zakładki, kredyt, licencja, prognoza =================
 // SAVE.fin.hist=[{m:'2026-09',bal,in:{kat:kw},out:{kat:kw}}] (zamknięte miesiące); SAVE.fin.cur — bieżący miesiąc; SAVE.fin.loan — kredyt bankowy
 const MON_S=['sty','lut','mar','kwi','maj','cze','lip','sie','wrz','paź','lis','gru'];
 function monKey(d){return (d||SAVE._now||today()).slice(0,7);}

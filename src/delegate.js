@@ -1,4 +1,4 @@
-// ================= OBOWIĄZKI: PRZEKAZANIE ZADAŃ SZTABOWI (jak „Responsibilities” w FM) =================
+// ================= OBOWIĄZKI: PRZEKAZANIE ZADAŃ SZTABOWI =================
 // SAVE.dlg = {on:{klucz:1}, quiet:1, log:[{d,t}], wk:data ostatniego podsumowania}
 const DLG=[
  ['press','Konferencje prasowe','asy','Asystent chodzi na konferencje i odpowiada neutralnie — bez kary dla relacji z mediami, ale też bez korzyści.'],
@@ -81,7 +81,7 @@ function dlgJuniors(d){if(!dlg('jr'))return;if(!d.endsWith('-07-15')&&!d.endsWit
 function dlgDaily(d){if(SAVE.team==null||!SAVE.world||!S())return;try{dlgPrep(d);dlgContracts(d);dlgScout();dlgJuniors(d);dlgTransfers(d);}catch(e){console.error(e);}
   const D=DL();if(D.quiet&&(!D.wk||daysBetween(D.wk,d)>=7)){const L=D.log.filter(x=>D.wk?x.d>D.wk:true);D.wk=d;if(L.length)sendMail({cat:'klub',from:'Sztab szkoleniowy',t:`Podsumowanie tygodnia sztabu (${L.length})`,s:L[0].t.slice(0,90),b:{type:'text',x:'Co sztab zrobił za Ciebie w tym tygodniu:\n\n• '+L.map(x=>x.t).join('\n• ')},lab:'Sztab'});}}
 // ---- widok ----
-function dlgCard(){const D=DL();return `<div class="card"><h2>Obowiązki${tipQ('Przekaż zadania sztabowi tak jak w Football Managerze. Jeśli na danym stanowisku nikogo nie ma, obowiązek wraca do Ciebie. Lepszy pracownik działa skuteczniej.')}</h2>
+function dlgCard(){const D=DL();return `<div class="card"><h2>Obowiązki${tipQ('Przekaż zadania członkom sztabu. Jeśli na danym stanowisku nikogo nie ma, obowiązek wraca do Ciebie. Lepszy pracownik działa skuteczniej.')}</h2>
   <div class="tw"><table><thead><tr><th class="l">Obowiązek</th><th class="l">Kto się zajmuje</th><th class="l">Co robi</th></tr></thead><tbody>${DLG.map(([k,l,r,ds])=>{const w=dlgWho(k);const on=!!D.on[k];
    return `<tr><td class="l"><b>${l}</b></td><td class="l nw"><select onchange="dlgSet('${k}',+this.value)"><option value="0" ${on&&w?'':'selected'}>Ja</option>${w?`<option value="1" ${on?'selected':''}>${esc(w.first[0]+'. '+w.last)} (${w.skill}/20)</option>`:''}</select>${w?'':`<div class="small mut">${ROLE_N[r]} — brak w sztabie</div>`}</td><td class="l small mut" style="white-space:normal;min-width:260px">${esc(ds)}</td></tr>`;}).join('')}</tbody></table></div>
   <label class="mopt" style="margin-top:8px"><input type="checkbox" ${D.quiet?'checked':''} onchange="DL().quiet=this.checked?1:0;save();render()"> Zamiast pojedynczych powiadomień wysyłaj jedno podsumowanie tygodnia</label>

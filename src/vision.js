@@ -1,4 +1,4 @@
-// ================= STRATEGIA KLUBU (jak „Club Vision” w FM) =================
+// ================= STRATEGIA KLUBU =================
 // SAVE.vis={tm,prof,goals:[[k,imp]],rules:[[k,imp]],trad:[k...],plan:[{n,g}],rep0,n0,log:[{d,t,ok}],fans,ev:{t,x,until},st:{k:status},sig:[{id,age,n}],pres}
 const VIS_PROF={akad:['Akademia','Zarząd chce, żeby klub żył z własnych wychowanków.'],handel:['Handel zawodnikami','Kupić tanio, rozwinąć, sprzedać z zyskiem.'],gwiazdy:['Ambicje i gwiazdy','Wyniki tu i teraz, głośne nazwiska.'],lokal:['Lokalny patriotyzm','Swoi zawodnicy, pełna hala, bliskość kibiców.'],oszcz:['Rozsądne finanse','Najpierw stabilny budżet, potem ambicje.']};
 const IMP_N=['Preferowany','Oczekiwany','Wymagany'];

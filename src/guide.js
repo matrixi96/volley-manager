@@ -1,5 +1,5 @@
 // ================= SAMOUCZKI ZAKŁADEK, OBCOKRAJOWCY W TRANSFERACH, KOLOR KLUBU =================
-// Samouczek pokazuje się przy pierwszym wejściu do każdej zakładki (w stylu FM: „Wprowadzenie”).
+// Samouczek pokazuje się przy pierwszym wejściu do każdej zakładki („Wprowadzenie”).
 // „Rozumiem” zamyka go dla tej zakładki; przycisk „?” na pasku pod nagłówkiem otwiera go ponownie.
 const GUIDES={
  home:['Ekran główny','Twoje centrum dowodzenia: najbliższy mecz, forma drużyny, tabela i najważniejsze wiadomości w jednym miejscu.',
