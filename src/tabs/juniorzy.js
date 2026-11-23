@@ -132,6 +132,77 @@ function yTrainMonth(d){const m=+d.slice(5,7);if(m===7)return;const MD={};for(co
     const txt=out.map(p=>{const R0=yLoanRep(p);return `${p.first} ${p.last} (${TEAMS[p.tm].name}): ${R0.m} meczów${R0.g!=null?', średnia ocena '+R0.g.toFixed(2).replace('.',','):''}. ${R0.rep}`;}).join('\n');
     sendMail({cat:'klub',from,t:'Raport z wypożyczeń',s:`${out.length} zawodników na wypożyczeniu`,b:{type:'text',txt}});}}}catch(e){console.error(e);}return r;};}
 // --- główny widok ---
-juniorsView=function(){const tab=ui.jrTab||'o';const T=[['o','Widok ogólny'],['j','Widok ogólny: Juniorzy'],['w','Wypożyczenia']];
-  let body='';try{body=tab==='j'?yList():tab==='w'?yLoans():yOverview();}catch(e){console.error(e);body=`<div class="card bad">Błąd widoku juniorów: ${esc(String(e))}</div>`;}
+juniorsView=function(){const tab=ui.jrTab||'o';const T=[['o','Widok ogólny'],['j','Widok ogólny: Juniorzy'],['w','Wypożyczenia'],['n',`Nabór${nabOpen()?` (${nabPending()})`:''}`]];
+  let body='';try{body=tab==='j'?yList():tab==='w'?yLoans():tab==='n'?nabView():yOverview();}catch(e){console.error(e);body=`<div class="card bad">Błąd widoku juniorów: ${esc(String(e))}</div>`;}
   return `${ui.tmsg?`<div class="card tmsg ${ui.tmsg.ok?'ok':'no'}">${esc(ui.tmsg.t)}</div>`:''}<div class="subtabs">${T.map(([k,l])=>`<button class="${k===tab?'on':''}" onclick="ui.jrTab='${k}';ui.confirm=null;render()">${l}</button>`).join('')}</div>${body}`;};
+
+// ================= NABÓR DO AKADEMII: testy kandydatów, ocena trenera juniorów, decyzja =================
+// 1 maja zgłasza się 6–10 kandydatów (15–17 lat). Obecny poziom jest dokładny (testy), potencjał i charakter ocenia
+// trener juniorów — im lepszy, tym trafniej. Skaut może dodatkowo obejrzeć kandydata (3 dni). Decyzja do końca sezonu;
+// bez decyzji (albo gdy juniorów przekazałeś trenerowi) wybiera trener. Przyjęty junior to stypendium co roku.
+// Odrzuceni trafiają do akademii innych klubów — czasem wyrosną na gwiazdy.
+const NAB_STP=[20000,15000,10000];
+function NAB(){return SAVE.nab||null;}
+function nabOpen(){const N=NAB();return !!(N&&S()&&N.n===S().n&&!N.done);}
+function nabPending(){const N=NAB();return N?N.c.filter(c=>!N.dec[c.id]).length:0;}
+function nabSlots(){const inf=myInfra();const k=2+Math.floor(inf.akad/2)+(staffSkill('jr')>=15?1:0);const stay=juniorsOf(SAVE.team).filter(p=>p.age<19).length;return Math.max(0,Math.min(k+1,18-stay));}
+function nabCount(){const inf=myInfra();const rep=SAVE.ai[SAVE.team]?SAVE.ai[SAVE.team].rep:50;return clamp(5+inf.akad+(rep>=70?1:0),6,10);}
+function nabGen(){const s=S();if(!s||SAVE.team==null)return;if(SAVE.nab&&SAVE.nab.n===s.n)return;const c=[];
+  for(let i=0;i<nabCount();i++){const age=15+Math.floor(R()*3);const p=genJunior(SAVE.team,age);p.cand=1;ensTraits(p);c.push(p);}
+  SAVE.nab={n:s.n,c,dec:{},obs:{},done:0};
+  if(typeof sendMail==='function')sendMail({cat:'klub',from:'Trener juniorów',t:`Testy naborowe: ${c.length} kandydatów`,s:`Wolnych miejsc w akademii: ${nabSlots()}. Decyzja do końca sezonu.`,b:{type:'text',x:`Na testy do akademii zgłosiło się ${c.length} kandydatów w wieku 15–17 lat. Obejrzałem ich i przygotowałem ocenę: obecny poziom, przewidywany potencjał, charakter i porównanie z naszymi juniorami.\n\nMamy ${nabSlots()} wolnych miejsc. Zdecyduj w zakładce Juniorzy → Nabór, kogo przyjmujemy — masz czas do końca sezonu. Jeśli nie zdecydujesz, wybiorę sam.`},act:1,lab:'Juniorzy'});}
+{const _mo2=monthly;monthly=function(d){const r=_mo2.apply(this,arguments);try{if(d.slice(5,7)==='05')nabGen();nabRegret();}catch(e){console.error(e);}return r;};}
+// ocena potencjału przez trenera juniorów (kandydaci i juniorzy przyjęci przez nabór; z czasem w akademii coraz dokładniejsza)
+function nabObs(p){const N=NAB();const o=N&&N.obs[p.id];return !!(o&&today()>=o);}
+function jrPotEst(p){const sk=staffSkill('jr');let w=sk>=15?3:sk>=8?6:9,e=sk>=15?2:sk>=8?5:8;if(p.cand&&nabObs(p)){w=2;e=0.6;}
+  let f=1;if(!p.cand){if(!p.jAcad)return [p.pot,p.pot];const m=daysBetween(p.jAcad,today())/30;f=Math.max(0,1-m/24);if(f<=0)return [p.pot,p.pot];}
+  const c=p.pot+hashId(p.id+'jp')*e*f;const a=Math.round(clamp(c-w/2*f,40,99)),b=Math.round(clamp(c+w/2*f,40,99));return [Math.min(a,b),Math.max(a,b)];}
+function jrPotMid(p){const [a,b]=jrPotEst(p);return (a+b)/2;}
+function jrPotStars(p){const [lo,hi]=jrPotEst(p);const a=yStarN(lo),b=yStarN(hi);return yStarsH(a,'pot')+(b>a?` <span class="small mut">(do ${b}★)</span>`:'');}
+// juniorzy przyjęci przez nabór: potencjał w widokach juniorów to ocena trenera
+{const _yp=yPotStars;yPotStars=function(p){try{if(p&&p.tm===SAVE.team&&p.jAcad&&jrPotEst(p)[0]!==jrPotEst(p)[1])return jrPotStars(p);}catch(e){}return _yp.apply(this,arguments);};}
+function nabTraitSeen(p,k){if(nabObs(p))return true;const sk=staffSkill('jr');return (hashId(p.id+k)+1)/2<0.35+sk/40;}
+function nabTraits(p){const T=(p.tr||[]).filter(k=>TRAITS[k]);const seen=T.filter(k=>nabTraitSeen(p,k));const hid=T.length-seen.length;
+  return (seen.map(k=>`<span class="trt" style="--c:${TRAITS[k][1]}" title="${esc(TRAITS[k][2])}">${TRAITS[k][0]}</span>`).join(' ')||'<span class="mut small">brak wyraźnych cech</span>')+(hid?` <span class="small mut">+${hid} nieznane</span>`:'');}
+// odniesienie do obecnych juniorów
+function nabMine(pos){return juniorsOf(SAVE.team).filter(p=>p.pos===pos&&p.age<19);}
+function nabVs(p){const L=nabMine(p.pos);const m=jrPotMid(p);if(!L.length)return `Nie mamy juniora na tej pozycji (${POS_NAMES[p.pos].toLowerCase()}).`;
+  const worse=L.filter(x=>jrPotMid(x)<m).length;return worse===L.length?`Najlepszy potencjał wśród naszych juniorów na tej pozycji (${L.length}).`:worse?`Lepszy potencjał niż ${worse} z ${L.length} naszych juniorów na tej pozycji.`:`Słabszy potencjał niż wszyscy nasi juniorzy na tej pozycji (${L.length}).`;}
+function nabScore(p){const need=nabMine(p.pos).length;return jrPotMid(p)+(need===0?4:need===1?2:need>=4?-2:0)+rating(p)*0.15;}
+function nabRecIds(){const N=NAB();if(!N)return new Set();return new Set(N.c.slice().sort((a,b)=>nabScore(b)-nabScore(a)).slice(0,nabSlots()).map(p=>p.id));}
+function nabOpinion(p,rec){const m=jrPotMid(p),r=rating(p);const need=nabMine(p.pos).length;
+  if(rec&&need===0)return `Polecam — brakuje nam juniora na tej pozycji, a ${p.last} rokuje.`;if(rec&&yStarN(m)>=4)return 'Polecam — wyjątkowy talent, szybko się rozwinie.';if(rec)return 'Polecam — solidny kandydat do akademii.';
+  if(yStarN(m)<=1.5)return 'Na razie za słaby — raczej nie zostanie zawodnikiem pierwszej drużyny.';if(need>=4)return 'Mamy już kilku juniorów na tej pozycji.';return 'Do rozważenia, ale są lepsi kandydaci.';}
+function nabDec(id,v){const N=NAB();if(!nabOpen())return;if(v==='acc'&&N.dec[id]!=='acc'&&N.c.filter(c=>N.dec[c.id]==='acc').length>=nabSlots()){ui.tmsg={ok:false,t:`Brak wolnych miejsc — przyjąłeś już ${nabSlots()} kandydatów.`};render();return;}
+  if(N.dec[id]===v)delete N.dec[id];else N.dec[id]=v;ui.tmsg=null;save();render();}
+function nabObserve(id){const N=NAB();if(!nabOpen())return;if(!allScouts().length){ui.tmsg={ok:false,t:'Nie masz skauta — zatrudnij go w zakładce Sztab.'};render();return;}
+  if(Object.keys(N.obs).length>=3){ui.tmsg={ok:false,t:'Skauci mogą obejrzeć najwyżej 3 kandydatów w jednym naborze.'};render();return;}N.obs[id]=addDays(today(),3);ui.tmsg={ok:true,t:'Skaut obejrzy kandydata — dokładniejsza ocena będzie za 3 dni.'};save();render();}
+function nabStp(){return NAB_STP[LG_LV[myLg()]]||10000;}
+function nabView(){const N=NAB();const s=S();
+  if(!N||N.n!==s.n)return `<div class="card"><h2>Nabór do akademii</h2><p>Testy naborowe odbywają się co roku w maju. Wtedy zobaczysz tu kandydatów z oceną trenera juniorów i zdecydujesz, kogo przyjąć. Nabór do akademii następuje po zakończeniu sezonu.</p>${N&&N.done?'':''}</div>`;
+  if(N.done)return `<div class="card"><h2>Nabór zakończony</h2><p>Przyjęci kandydaci są już w akademii — zobacz Widok ogólny: Juniorzy.</p></div>`;
+  const rec=nabRecIds();const acc=N.c.filter(c=>N.dec[c.id]==='acc').length;const sl=nabSlots();
+  const pos=['R','A','P','S','L'];const mineTbl=`<div class="tw"><table><thead><tr><th class="l">Pozycja</th><th>Juniorów</th><th>Najlepszy poziom</th><th>Najlepszy potencjał</th></tr></thead><tbody>${pos.map(k=>{const L=nabMine(k);const br=L.length?Math.max(...L.map(x=>rating(x))):null;const bp=L.length?L.slice().sort((a,b)=>jrPotMid(b)-jrPotMid(a))[0]:null;return `<tr><td class="l">${POS_NAMES[k]}</td><td class="${L.length?'':'bad'}">${L.length}</td><td>${br??'—'}</td><td>${bp?jrPotStars(bp):'—'}</td></tr>`;}).join('')}</tbody></table></div>`;
+  const rows=N.c.slice().sort((a,b)=>nabScore(b)-nabScore(a)).map(p=>{const d=N.dec[p.id];const ob=N.obs[p.id];return `<tr class="${d==='acc'?'selrow':''}" style="${d==='rej'?'opacity:.5':''}">
+    <td class="l"><b>${esc(p.first)} ${esc(p.last)}</b> ${natFl(p.nat)}<div class="small mut">${p.age} l.${p.cm?` · ${p.cm} cm`:''}</div></td><td>${POS_SHORT[p.pos]}</td><td><b>${rating(p)}</b></td><td>${jrPotStars(p)}${ob?`<div class="small ${today()>=ob?'good':'mut'}">${today()>=ob?'✓ obejrzał skaut':'skaut ogląda…'}</div>`:''}</td>
+    <td class="l small">${nabTraits(p)}</td><td class="l small">${rec.has(p.id)?'<b class="good">✓</b> ':''}${esc(nabOpinion(p,rec.has(p.id)))}<div class="mut">${esc(nabVs(p))}</div></td>
+    <td><div class="row" style="gap:4px;flex-wrap:wrap;justify-content:flex-end"><button class="${d==='acc'?'btn':'ghost'} sm" onclick="nabDec('${p.id}','acc')">${d==='acc'?'✓ Przyjęty':'Przyjmij'}</button><button class="${d==='rej'?'btn':'ghost'} sm" onclick="nabDec('${p.id}','rej')">${d==='rej'?'✗ Odrzucony':'Odrzuć'}</button><button class="ghost sm" title="Porównaj" onclick="cmpOpen('${p.id}')">⚖</button>${ob?'':`<button class="ghost sm" title="Obserwacja skauta (3 dni)" onclick="nabObserve('${p.id}')">🔍</button>`}</div></td></tr>`;}).join('');
+  return `${ui.tmsg?`<div class="card tmsg ${ui.tmsg.ok?'ok':'no'}">${esc(ui.tmsg.t)}</div>`:''}<div class="card"><h2>Nabór do akademii — testy kandydatów</h2>
+   <p class="small">Przyjęci: <b>${acc} / ${sl}</b> wolnych miejsc · stypendium ${fmt(nabStp())} rocznie za każdego przyjętego · decyzja do końca sezonu (bez decyzji wybierze trener juniorów).</p>
+   <p class="small mut">Poziom jest dokładny (testy). Potencjał i charakter to ocena trenera juniorów (${SAVE.staff&&SAVE.staff.jr?`umiejętność ${staffSkill('jr')}`:'brak trenera — ocenia asystent, mało dokładnie'}); skaut może obejrzeć do 3 kandydatów (🔍), co daje pewniejszą ocenę i pokazuje charakter. ⚖ porównuje kandydata z dowolnym zawodnikiem.</p>
+   <div class="tw"><table><thead><tr><th class="l">Kandydat</th><th>Poz.</th><th>Poziom</th><th>Potencjał (ocena)</th><th class="l">Charakter</th><th class="l">Opinia trenera</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></div>
+   <div class="card"><h2>Nasi juniorzy według pozycji</h2>${mineTbl}</div>`;}
+// sam nabór (po sezonie): przyjęci do akademii, reszta do innych klubów; stypendia
+function nabIntake(k){const N=NAB();const s=S();const pay=juniorsOf(SAVE.team).filter(p=>p.stp).length;
+  if(!N||N.n!==s.n-1||N.done){if(pay){const c=pay*nabStp();money(-c,'Akademia');finLog(`Stypendia juniorów (${pay})`,-c);}return false;}
+  const sl=nabSlots();let acc=N.c.filter(c=>N.dec[c.id]==='acc');let auto=false;
+  if((!acc.length&&N.c.some(c=>!N.dec[c.id]))||(typeof dlg==='function'&&dlg('jr')&&!acc.length)){auto=true;const rec=nabRecIds();acc=N.c.filter(c=>rec.has(c.id)&&N.dec[c.id]!=='rej');}
+  acc=acc.slice(0,sl);const accIds=new Set(acc.map(p=>p.id));
+  for(const p of acc){delete p.cand;p.jAcad=today();p.stp=1;W().players.push(p);news(`🌱 Nabór do akademii: ${p.first} ${p.last} (${POS_NAMES[p.pos]}, ${p.age} l., potencjał wg trenera ${jrPotEst(p).map(v=>yStarN(v)).filter((v,i,a)=>a.indexOf(v)===i).join('–')}★).`);}
+  const c0=tmCountry(SAVE.team);const others=TEAMS.filter(t=>t.idx!==SAVE.team&&!isYT(t.idx)&&tmCountry(t.idx)===c0&&juniorsOf(t.idx).length<18);
+  for(const p of N.c){if(accIds.has(p.id))continue;delete p.cand;if(!others.length)continue;const t=others[Math.floor(R()*others.length)];p.tm=t.idx;assignNum(p,t.idx);p.nabRej={n:N.n};W().players.push(p);}
+  const tot=juniorsOf(SAVE.team).filter(p=>p.stp).length;if(tot){const c=tot*nabStp();money(-c,'Akademia');finLog(`Stypendia juniorów (${tot})`,-c);}
+  N.done=1;N.c=[];if(auto&&typeof sendMail==='function')sendMail({cat:'klub',from:'Trener juniorów',t:'Nabór: wybrałem kandydatów',s:`Przyjąłem ${acc.length} kandydatów.`,b:{type:'text',x:`Nie było Twojej decyzji, więc wybrałem kandydatów według swojej oceny:\n\n• ${acc.map(p=>`${p.first} ${p.last} (${POS_NAMES[p.pos]}, ${p.age} l.)`).join('\n• ')}\n\nPozostali kandydaci trafili do innych akademii.`},lab:'Juniorzy'});
+  syncTeams();return true;}
+// po latach: odrzucony kandydat robi karierę gdzie indziej
+function nabRegret(){if(!SAVE.world)return;for(const p of W().players){if(!p.nabRej||p.nabMsg||p.jr||p.tm<0||p.tm===SAVE.team)continue;if(rating(p)>=Math.max(72,lgRef(lgOf(p.tm)))){p.nabMsg=1;news(`😬 ${p.first} ${p.last}, którego nie przyjąłeś do akademii w sezonie ${p.nabRej.n}, gra dziś w ${TEAMS[p.tm].name} (ocena ${rating(p)}).`);}}}

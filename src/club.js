@@ -140,7 +140,7 @@ function juniorsOffseason(){
     if(!mine)for(const p of juniorsOf(t.idx))if(p.age>=20){if(t.players.length<16&&rating(p)>=teamStrength(t)-14){p.jr=false;p.wage=Math.max(40000,wageDemand(p));p.ce=n+2;t.players.push(p);}else{p.tm=-1;p.jr=false;}}
     syncTeams();
     const k=2+Math.floor(inf.akad/2)+(mine&&staffSkill('jr')>=15?1:0);
-    for(let i=0;i<k;i++){const p=genJunior(t.idx,16+(R()<0.4?1:0));W().players.push(p);if(mine)news(`🌱 Nabór do akademii: ${p.first} ${p.last} (${POS_NAMES[p.pos]}, ${p.age} l., potencjał ${'★'.repeat(Math.max(1,Math.min(5,Math.round((p.pot-62)/7))))}).`);}
+    if(!(mine&&typeof nabIntake==='function'&&nabIntake(k)))for(let i=0;i<k;i++){const p=genJunior(t.idx,16+(R()<0.4?1:0));W().players.push(p);if(mine)news(`🌱 Nabór do akademii: ${p.first} ${p.last} (${POS_NAMES[p.pos]}, ${p.age} l., potencjał ${'★'.repeat(Math.max(1,Math.min(5,Math.round((p.pot-62)/7))))}).`);}
     const js=juniorsOf(t.idx).sort((a,b)=>b.pot-a.pot);for(const p of js.slice(18)){p.tm=-1;p.jr=false;}
   }
   syncTeams();
