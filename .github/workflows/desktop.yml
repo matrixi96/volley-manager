@@ -66,5 +66,5 @@ jobs:
         run: |
           gh release delete windows-latest -y --cleanup-tag || true
           gh release create windows-latest desktop/dist/VolleyManager-Setup.exe desktop/dist/VolleyManager-Portable.exe \
-            --title "Volley Manager – Windows (wersja 1.0.${{ github.run_number }})" \
+            --title "Golden Set – Windows (wersja 1.0.${{ github.run_number }})" \
             --notes "VolleyManager-Setup.exe – instalator (skrót na pulpicie i w menu Start). VolleyManager-Portable.exe – wersja bez instalacji, uruchamiasz od razu. Przy pierwszym uruchomieniu Windows może pokazać „System Windows ochronił ten komputer” – kliknij „Więcej informacji” → „Uruchom mimo to” (plik nie ma płatnego certyfikatu wydawcy). Zapisy są trzymane w aplikacji; zapis z przeglądarki przeniesiesz kodem zapisu (Zapis gry → eksport/import)."

@@ -1,13 +1,13 @@
 {
   "name": "volley-manager",
-  "productName": "Volley Manager",
+  "productName": "Golden Set",
   "version": "1.0.0",
-  "description": "Volley Manager — menedżer siatkówki",
+  "description": "Golden Set: Volleyball Club Manager — menedżer klubu siatkarskiego",
   "author": "matrixi96",
   "main": "main.js",
   "build": {
     "appId": "io.github.matrixi96.volleymanager",
-    "productName": "Volley Manager",
+    "productName": "Golden Set",
     "files": [
       "main.js",
       "www/**/*"
@@ -36,7 +36,7 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "artifactName": "VolleyManager-Setup.exe",
-      "shortcutName": "Volley Manager",
+      "shortcutName": "Golden Set",
       "deleteAppDataOnUninstall": false
     },
     "portable": {

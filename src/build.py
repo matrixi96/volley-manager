@@ -3,16 +3,16 @@ Użycie: python src/build.py"""
 import pathlib
 src = pathlib.Path(__file__).parent
 root = src.parent
-parts = [(src / f).read_text(encoding='utf-8') for f in ['head.html', 'i18n.js', 'i18n_en.js', 'i18n_dom.js', 'engine.js', 'world.js', 'ui.js', 'season.js', 'manage.js', 'calendar.js', 'club.js', 'faces.js', 'tabs/trener.js', 'ownclub.js', 'matchview.js', 'tabs/mecz.js', 'people.js', 'tabs/poczta.js', 'tabs/transfery.js', 'tabs/finanse.js', 'cup.js', 'euro.js', 'dynamics.js', 'nt.js', 'tabs/staty.js', 'tacfam.js', 'achievements.js', 'tutorial.js', 'tabs/sztab.js', 'vision.js', 'sound.js', 'shell.js', 'uix.js', 'tabs/klub.js', 'fixes.js', 'tabs/trening.js', 'sparx.js', 'tabs/home.js', 'tabs/juniorzy.js', 'fixes2.js', 'mediax.js', 'guide.js', 'tabs/ustawienia.js', 'thermo.js', 'onboard.js', 'promo.js', 'money.js', 'compare.js', 'boot.js']]
+parts = [(src / f).read_text(encoding='utf-8') for f in ['head.html', 'i18n.js', 'i18n_en.js', 'i18n_dom.js', 'engine.js', 'world.js', 'ui.js', 'season.js', 'manage.js', 'calendar.js', 'club.js', 'faces.js', 'tabs/trener.js', 'ownclub.js', 'matchview.js', 'tabs/mecz.js', 'people.js', 'tabs/poczta.js', 'tabs/transfery.js', 'tabs/finanse.js', 'cup.js', 'euro.js', 'dynamics.js', 'nt.js', 'tabs/staty.js', 'tacfam.js', 'achievements.js', 'tutorial.js', 'tabs/sztab.js', 'vision.js', 'sound.js', 'shell.js', 'uix.js', 'tabs/klub.js', 'fixes.js', 'tabs/trening.js', 'sparx.js', 'tabs/home.js', 'tabs/juniorzy.js', 'fixes2.js', 'mediax.js', 'guide.js', 'tabs/ustawienia.js', 'thermo.js', 'onboard.js', 'promo.js', 'money.js', 'compare.js', 'navgrow.js', 'boot.js']]
 html = ''.join(parts) + '\n</script></body></html>\n'
-html = html.replace('<title>Volley Manager — prototyp</title>', '''<title>Volley Manager</title>
+html = html.replace('<title>Volley Manager — prototyp</title>', '''<title>Golden Set: Volleyball Club Manager</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#121a2b">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Volley Manager">''', 1)
+<meta name="apple-mobile-web-app-title" content="Golden Set">''', 1)
 html = html.replace('</body></html>', '''<script>if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
 </body></html>''', 1)
 import re, base64

@@ -30,7 +30,7 @@ const EN={
  'Na komputerze możesz po prostu przeciągać pozycje w menu po lewej. Tutaj — strzałkami (działa też na telefonie).':'On a computer just drag items in the left menu. Here you can use the arrows (works on phones too).',
  'Przywróć domyślną kolejność':'Restore default order','Język':'Language','Język / Language':'Language / Język',
  'Tłumaczenie na angielski jest w trakcie — część ekranów jest jeszcze po polsku.':'The English translation is in progress — some screens are still in Polish.',
- ' — przeciągnij, żeby zmienić kolejność':' — drag to reorder','VOLLEY MANAGER':'VOLLEY MANAGER',
+ ' — przeciągnij, żeby zmienić kolejność':' — drag to reorder','VOLLEY MANAGER':'VOLLEY MANAGER','GOLDEN SET':'GOLDEN SET','VOLLEYBALL CLUB MANAGER':'VOLLEYBALL CLUB MANAGER',
  // dźwięk
  'Dźwięk':'Sound','Dźwięk włączony':'Sound on','Głośność':'Volume','Dźwięki meczu (piłka, gwizdek, kibice)':'Match sounds (ball, whistle, crowd)','Powiadomienia (nowa wiadomość)':'Notifications (new message)','▶ Posłuchaj':'▶ Listen',
  'Dźwięki są generowane w grze. Szybka symulacja meczu jest cicha.':'Sounds are generated in-game. Quick match simulation is silent.',

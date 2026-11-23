@@ -84,5 +84,5 @@ jobs:
         run: |
           gh release delete android-latest -y --cleanup-tag || true
           gh release create android-latest VolleyManager.apk \
-            --title "Volley Manager – Android (wersja 1.${{ github.run_number }})" \
+            --title "Golden Set – Android (wersja 1.${{ github.run_number }})" \
             --notes "Pobierz VolleyManager.apk na telefonie i zainstaluj (zezwól na instalację z tego źródła). Aktualizacja instaluje się na poprzednią wersję – zapis gry zostaje."

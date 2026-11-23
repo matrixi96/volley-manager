@@ -62,7 +62,7 @@ function dcRecord(m,c){const s=S();const D=SAVE.dc||(SAVE.dc={});const k=s.n;con
   L.ms.push({d:today(),kind:c.kind,op:m.sides[1].team.idx,home:c.h===SAVE.team?1:0,won:m.winner===0?1:0,sw:m.setsWon.slice(),sets:m.sets.length,T:tot(m.sides[0]),O:tot(m.sides[1]),rs:(m.rs||[{},{}])[0],rsO:(m.rs||[{},{}])[1],dir:dir(0),dirO:dir(1),pt:m.pt||[{},{}],pl:pls});
   for(const kk of Object.keys(D))if(+kk<k-1)delete D[kk];}
 // ---- Centrum danych ----
-const DC_TABS=[['ov','Przegląd'],['rot','Ustawienia'],['att','Atak'],['srv','Zagrywka i przyjęcie'],['def','Blok i obrona'],['ms','Mecze']];
+const DC_TABS=[['ov','Przegląd'],['rot','Ustawienia\u2060'],['att','Atak'],['srv','Zagrywka i przyjęcie'],['def','Blok i obrona'],['ms','Mecze']];
 const WING_N={L4:'Lewe skrzydło (strefa 4)',R2:'Prawe skrzydło (strefa 2)',M:'Środek / pipe'};const DIR_N={cross:'skos',line:'prosta',tip:'kiwka',midS:'krótka / prosto',midL:'środek w lewo',midR:'środek w prawo',free:'wolna piłka'};
 function dcMs(){const s=S();const D=SAVE.dc||{};const n=ui.dcS||s.n;let ms=((D[n]||{}).ms||[]).slice();const f=ui.dcF||'all';
   if(f==='liga')ms=ms.filter(x=>x.kind!=='spar');else if(f==='spar')ms=ms.filter(x=>x.kind==='spar');else if(f==='last5')ms=ms.slice(-5);return ms;}
