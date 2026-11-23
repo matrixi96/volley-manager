@@ -204,7 +204,8 @@ function kitDefault(color){const light=lum(color)>0.7;const away=light?'#111827'
   return {h:{p:'plain',a:color,b:light?'#111827':'#ffffff',s:light?'#111827':kitDark(color),c:'v'},
           w:{p:'plain',a:away,b:color,s:light?'#111827':color,c:'v'},
           l:{p:'plain',a:lib,b:kitInk(lib)==='#111827'?'#111827':'#ffffff',s:light?'#111827':kitDark(color),c:'v'}};}
-function teamKit(ti){const t=TEAMS[ti];if(!t)return kitDefault('#64748b');const k=SAVE.kits&&SAVE.kits[ti];return k||kitDefault(t.color);}
+function kitOk(k){const H=/^#[0-9a-fA-F]{3,8}$/;return !!(k&&typeof k==='object'&&['h','w','l'].every(s=>k[s]&&typeof k[s]==='object'&&H.test(k[s].a)&&H.test(k[s].b)&&H.test(k[s].s)));}
+function teamKit(ti){const t=TEAMS[ti];if(!t)return kitDefault('#64748b');const k=SAVE.kits&&SAVE.kits[ti];return kitOk(k)?k:kitDefault(t.color);}
 // --- rysunek koszulki ze spodenkami (podgląd, edytor) ---
 function kitPat(k,w,clip){const b=k.b;switch(k.p){
   case 'v':return [0.3,0.43,0.57,0.7].map(x=>`<rect x="${w*x-3}" y="0" width="6" height="200" fill="${b}"/>`).join('');
@@ -224,7 +225,7 @@ function kitSvg(k,num,size){size=size||90;const id='kt'+(++KIT_UID);const body='
    <path d="M34 102L86 102L90 140L64 140L60 122L56 140L30 140Z" fill="${k.s}" stroke="#0b0f14" stroke-width="1.2"/><path d="M34 106L86 106" stroke="${k.b}" stroke-width="2" opacity=".8"/></svg>`;}
 // --- wybór kompletów na mecz (wyjazdowy, gdy domowe barwy są zbyt podobne) ---
 let KIT_BY_COLOR={};const LIBC0=libColor;
-function teamKitT(t){const k=SAVE.kits&&t&&t.idx!=null&&t.idx>=0&&SAVE.kits[t.idx];return k||kitDefault(t&&t.color||'#64748b');}
+function teamKitT(t){const k=SAVE.kits&&t&&t.idx!=null&&t.idx>=0&&SAVE.kits[t.idx];return kitOk(k)?k:kitDefault(t&&t.color||'#64748b');}
 function kitPick(m){const T=m.sides.map(s=>s.team);const K=T.map(teamKitT);let s=['h','h'];
   if(cdist(K[0].h.a,K[1].h.a)<110){const homeLeft=m.homeIdx==null||m.homeIdx===T[0].idx;const aw=homeLeft?1:0;s[aw]='w';
     if(cdist(K[aw].w.a,K[1-aw].h.a)<110)s[aw]='alt';}

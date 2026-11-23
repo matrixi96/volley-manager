@@ -1,4 +1,4 @@
-function vmBoot(){if(ST.mode==='idb'&&!ST.lsHad){try{const o=JSON.parse(stGet(KEY));if(o)SAVE=o;}catch(e){}rebuildIndex();restoreDefs();}
+function vmBoot(){if(ST.mode==='idb'&&!ST.lsHad){try{const o=JSON.parse(stGet(KEY));if(o)SAVE=sanSave(o);}catch(e){}rebuildIndex();restoreDefs();}
 applyCustom();
 // ================= START =================
 if(SAVE.team!=null){if(!SAVE.date&&!SAVE.world)SAVE.date=GAME_START;if(!SAVE.world)initWorld();else{syncTeams();ensureLeagues();}if(!SAVE.season)newSeason(1);migrateDates();initClub();try{ensureBg();}catch(e){console.error(e);}}

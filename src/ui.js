@@ -1,11 +1,26 @@
 // ================= INTERFEJS =================
 const TEAMS=TEAM_DEFS.map(genTeam);
 const KEY='vm_save_v2';
-let SAVE={};try{SAVE=JSON.parse(localStorage.getItem(KEY))||null;if(!SAVE){const old=JSON.parse(localStorage.getItem('vm_proto_v1'));SAVE=old&&old.team!=null?{team:old.team,lineup:old.lineup,tactics:old.tactics}:{};}}catch(e){SAVE={};}
+// ---- bezpieczeństwo zapisu: zapis (także wklejony kod zapisu) jest traktowany jako dane z zewnątrz ----
+// Prawidłowy zapis gry nie zawiera znaków < > " ' ` ; = \ ani kodu — usuwamy je z każdego tekstu i klucza,
+// pola-identyfikatory (wstawiane do przycisków) mogą mieć tylko litery, cyfry i - . : # _,
+// a kolory tylko postać #rrggbb. Dzięki temu cudzy, spreparowany kod zapisu nie uruchomi żadnego skryptu.
+const SAN_ID=new Set(['id','idx','tm','team','ti','pid','op','k','slot','sub','share','fee','tab','key','role','pos','cat','type','lg']);
+const SAN_COL=/^(color|colour|c1|c2|c3|bg|col|acc)$/;
+function sanStr(s){return s.replace(/[<>"'`;=\\]/g,'');}
+function sanSave(o,k,d){d=d||0;if(d>40)return undefined;if(typeof o==='string'){
+    if(SAN_COL.test(k||'')&&!/^#[0-9a-fA-F]{3,8}$/.test(o))return undefined;
+    if(SAN_ID.has(k)&&!/^[\w\-.:#|ąćęłńóśźżĄĆĘŁŃÓŚŹŻ ]*$/.test(o))return undefined;
+    return sanStr(o);}
+  if(typeof o==='number')return Number.isFinite(o)?o:0;if(o===null||typeof o==='boolean')return o;
+  if(Array.isArray(o)){const a=[];for(let i=0;i<o.length;i++){const v=sanSave(o[i],k,d+1);a.push(v===undefined?null:v);}return a;}
+  if(typeof o==='object'){const r={};for(const kk of Object.keys(o)){if(kk==='__proto__'||kk==='constructor'||kk==='prototype')continue;const ck=sanStr(kk);if(ck!==kk||/[()]/.test(kk))continue;const v=sanSave(o[kk],kk,d+1);if(v!==undefined)r[kk]=v;}return r;}
+  return undefined;}
+let SAVE={};try{SAVE=JSON.parse(localStorage.getItem(KEY))||null;if(SAVE)SAVE=sanSave(SAVE);if(!SAVE){const old=JSON.parse(localStorage.getItem('vm_proto_v1'));SAVE=old&&old.team!=null?{team:old.team,lineup:old.lineup,tactics:old.tactics}:{};}}catch(e){SAVE={};}
 const ui={confirmReset:false,confirm:null,msg:null,code:null,tab:'home',sort:'pos',match:null,view:'log',subSel:null,speed:1600,test:null,testA:1,testB:0,testN:200};
 let timer=null;
 const $=s=>document.querySelector(s);
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc=s=>String(s).replace(/[&<>"'`]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[c]));
 function myTeam(){return SAVE.team!=null?TEAMS[SAVE.team]:null;}
 function myLg(){return SAVE.team!=null?lgOf(SAVE.team):0;}
 function lgTeams(l){return lgIds(l).map(i=>TEAMS[i]);}

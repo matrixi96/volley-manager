@@ -1,3 +1,9 @@
+// akcje z podpowiedzi przedmeczowych: tylko znane funkcje i proste argumenty (liczby, krótkie teksty) — bez eval/new Function
+const SAFE_ACTS=new Set(['myTimeout','setDist','setServe','preDistQ','preSet','selSub','setBlk','setTgt','tacSet']);
+function safeAct(a){const m=/^\s*([A-Za-z_$][\w$]*)\((.*)\)\s*;?\s*$/.exec(String(a||''));if(!m||!SAFE_ACTS.has(m[1])||typeof window[m[1]]!=='function')return;
+  const args=[];const re=/\s*(?:'([^'\\]*)'|(-?\d+(?:\.\d+)?)|(true|false|null))\s*(?:,|$)/y;let i=0;const src=m[2];
+  while(i<src.length){re.lastIndex=i;const x=re.exec(src);if(!x)return;args.push(x[1]!=null?x[1]:x[2]!=null?+x[2]:x[3]==='true'?true:x[3]==='false'?false:null);i=re.lastIndex;if(i===x.index)return;}
+  return window[m[1]].apply(null,args);}
 // ================= OBOWIĄZKI: PRZEKAZANIE ZADAŃ SZTABOWI =================
 // SAVE.dlg = {on:{klucz:1}, quiet:1, log:[{d,t}], wk:data ostatniego podsumowania}
 const DLG=[
@@ -34,7 +40,7 @@ function dlgTalk(q){const P=PLAYERS[q.pid];if(!P)return;const p=P.p;const T=IX_T
 // ---- odprawa ----
 function dlgPrep(d){if(!dlg('prep'))return;const e=nextEvent();const c=myNext();if(!e||!c||c.kind==='spar'||c.kind==='nt')return;if(daysBetween(d,e.d)>1||daysBetween(d,e.d)<0)return;const key=e.d+mdKey(c);const D=DL();if(D.prepK===key)return;D.prepK=key;
   const op=c.h===SAVE.team?c.a:c.h;let L=[];try{L=preTips(op).filter(x=>x.btn&&x.act);}catch(e){}if(!L.length)return;
-  window._dlgPrep=1;try{quiet(()=>{for(const x of L){try{(new Function(x.act))();}catch(e){}}});}finally{window._dlgPrep=0;}dlgNote(`Analityk ustawił taktykę na ${TEAMS[op].name}: ${L.map(x=>x.t.replace(/\.$/,'')).join('; ')}.`);}
+  window._dlgPrep=1;try{quiet(()=>{for(const x of L){try{safeAct(x.act);}catch(e){}}});}finally{window._dlgPrep=0;}dlgNote(`Analityk ustawił taktykę na ${TEAMS[op].name}: ${L.map(x=>x.t.replace(/\.$/,'')).join('; ')}.`);}
 // ---- kontrakty ----
 function dlgContracts(d){if(!dlg('contr'))return;const s=S();if(!s)return;const md=d.slice(5);if(!(md==='02-01'||md==='05-01'))return;const t=myTeam();const pl=t.players.filter(p=>!p.jr&&!p.loan);
   const avg=pl.reduce((a,p)=>a+rating(p),0)/Math.max(1,pl.length);const rank=pl.slice().sort((a,b)=>rating(b)-rating(a));const top=new Set(rank.slice(0,12).map(p=>p.id));

@@ -326,10 +326,10 @@ function stInit(){return new Promise(res=>{const done=()=>{ST.ready=true;res();}
     tx.onerror=()=>{clearTimeout(to);done();};};});}
 function save(){try{if(typeof achCheck==='function')achCheck();}catch(e){console.error(e);}try{storageOk=stSet(KEY,JSON.stringify(SAVE))!==false;}catch(e){storageOk=false;}}
 function slotKey(i){return KEY+'_slot'+i;}
-function slotInfo(i){try{const o=JSON.parse(stGet(slotKey(i)));return o;}catch(e){return null;}}
+function slotInfo(i){try{const o=JSON.parse(stGet(slotKey(i)));return o?sanSave(o):null;}catch(e){return null;}}
 function descSave(o){if(!o||o.team==null)return 'pusty';const s=o.season;return `${esc(TEAMS[o.team].name)} · sezon ${s?sLabel(s.n):''} · ${s?PHASE_NAMES[s.phase]:''}${s&&s.phase==='liga'?' (kolejka '+(s.round+1)+')':''}${o.savedAt?' · '+esc(o.savedAt):''}`;}
 function saveSlot(i){persistLive();const o=Object.assign({},SAVE,{savedAt:new Date().toLocaleString('pl-PL')});try{if(stSet(slotKey(i),JSON.stringify(o))===false)throw 0;ui.msg=`Zapisano w slocie ${i}.`;}catch(e){ui.msg='Nie udało się zapisać — przeglądarka blokuje pamięć. Użyj kodu zapisu.';}render();}
-function loadObj(o){clearTimeout(timer);SAVE=o;delete SAVE.savedAt;restoreDefs();if(!SAVE.world)initWorld();else{syncTeams();ensureLeagues();}migrateDates();initClub();try{ensureBg();}catch(e){console.error(e);}ui.match=SAVE.live?deserMatch(SAVE.live):null;ui.confirm=null;ui.card=null;save();}
+function loadObj(o){clearTimeout(timer);SAVE=sanSave(o)||{};delete SAVE.savedAt;restoreDefs();if(!SAVE.world)initWorld();else{syncTeams();ensureLeagues();}migrateDates();initClub();try{ensureBg();}catch(e){console.error(e);}ui.match=SAVE.live?deserMatch(SAVE.live):null;ui.confirm=null;ui.card=null;save();}
 function loadSlot(i){const o=slotInfo(i);if(!o)return;loadObj(o);ui.msg=`Wczytano slot ${i}.`;ui.tab='mecz';render();}
 function delSlot(i){if(ui.confirm!=='del'+i){ui.confirm='del'+i;render();return;}try{stDel(slotKey(i));}catch(e){}ui.confirm=null;ui.msg=`Usunięto slot ${i}.`;render();}
 function exportCode(){persistLive();ui.code=btoa(unescape(encodeURIComponent(JSON.stringify(SAVE))));render();}
