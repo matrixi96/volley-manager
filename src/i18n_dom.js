@@ -8,7 +8,7 @@ const I18N_W=/[A-Za-z0-9ĄĆĘŁŃÓŚŹŻąćęłńóśźżÀ-ÿ]/;
 function i18nIdx(){if(I18N.idx)return I18N.idx;const m=new Map();
   for(const k in EN_DICT){const key=k.slice(0,2);let a=m.get(key);if(!a){a=[];m.set(key,a);}a.push(k);}
   for(const a of m.values())a.sort((x,y)=>y.length-x.length);return I18N.idx=m;}
-function i18nUnits(s){return s.replace(/(\d[\dkM.,%]*(?:\s?zł)?)\s+z\s+(\d)/g,'$1 of $2').replace(/(\d+)\s+l\.(?=\s|$|·|,)/g,'$1 y.').replace(/(\d+)\s+lat\b\.?/g,'$1').replace(/(\d)[\s ]tys\.(?=[\s ]|$|\/|\))/g,'$1k').replace(/(\d)[\s ]mln\b/g,'$1M').replace(/(\d)[\s ]mld\b/g,'$1bn');}
+function i18nUnits(s){return s.replace(/(\d),(\d)/g,'$1.$2').replace(/\bi (\d+) (more|więcej)/g,'and $1 more').replace(/\bza (\d+) (days|dni)/g,'in $1 days').replace(/(\d:\d)\s+z\s+/g,'$1 vs ').replace(/(\d[\dkM.,%]*(?:\s?zł)?)\s+z\s+(\d)/g,'$1 of $2').replace(/(\d+)\s+l\.(?=\s|$|·|,)/g,'$1 y.').replace(/(\d+)\s+lat\b\.?/g,'$1').replace(/(\d)[\s ]tys\.(?=[\s ]|$|\/|\))/g,'$1k').replace(/(\d)[\s ]mln\b/g,'$1M').replace(/(\d)[\s ]mld\b/g,'$1bn');}
 function i18nStr(s){if(LANG!=='en'||!s||s.length<2)return s;let r=I18N.memo.get(s);if(r!=null)return r;
   const t=s.trim();let out;
   const ex=EN_DICT[t]!=null?EN_DICT[t]:(typeof EN!=='undefined'&&EN[t]!=null&&!/\{\d\}/.test(t)?EN[t]:null);
@@ -22,12 +22,13 @@ function i18nStr(s){if(LANG!=='en'||!s||s.length<2)return s;let r=I18N.memo.get(
     out=o;}
   out=i18nUnits(out);
   if(I18N.memo.size>30000)I18N.memo.clear();I18N.memo.set(s,out);I18N.memo.set(out,out);return out;}
+const I18N_TH={M:'Pld',Z:'W',P:'L'};// nagłówki tabel: mecze, zwycięstwa, porażki (bez pętli: wyniki nie są kluczami)
 const I18N_ATTR=['title','placeholder','aria-label','data-tip'];
 function i18nNode(root){if(!root)return;
   if(root.nodeType===3){const p=root.parentNode;if(p&&!/^(SCRIPT|STYLE|TEXTAREA)$/.test(p.nodeName)){const v=root.nodeValue,r=i18nStr(v);if(r!==v)root.nodeValue=r;}return;}
   if(root.nodeType!==1)return;if(/^(SCRIPT|STYLE|TEXTAREA)$/.test(root.nodeName))return;
   const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null);const list=[];let n;while((n=w.nextNode()))list.push(n);
-  for(const x of list){const p=x.parentNode;if(!p||/^(SCRIPT|STYLE|TEXTAREA)$/.test(p.nodeName)||p.isContentEditable)continue;const v=x.nodeValue;if(!v||v.length<2)continue;const r=i18nStr(v);if(r!==v)x.nodeValue=r;}
+  for(const x of list){const p=x.parentNode;if(!p||/^(SCRIPT|STYLE|TEXTAREA)$/.test(p.nodeName)||p.isContentEditable)continue;const v=x.nodeValue;if(!v)continue;if(v.length<2){if(p.nodeName==='TH'&&I18N_TH[v])x.nodeValue=I18N_TH[v];else if(v==='P'&&p.nodeName==='I'&&p.classList.contains('l'))x.nodeValue='L';continue;}const r=i18nStr(v);if(r!==v)x.nodeValue=r;}
   const els=[root,...root.querySelectorAll('[title],[placeholder],[aria-label],[data-tip],input[type=button],input[type=submit]')];
   for(const e of els){if(!e.getAttribute)continue;for(const a of I18N_ATTR){const v=e.getAttribute(a);if(v){const r=i18nStr(v);if(r!==v)e.setAttribute(a,r);}}
     if(e.nodeName==='INPUT'&&(e.type==='button'||e.type==='submit')&&e.value){const r=i18nStr(e.value);if(r!==e.value)e.value=r;}}}
