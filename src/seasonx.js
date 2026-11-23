@@ -1,4 +1,4 @@
-// ================= RAPORT SEZONU, OSTATNIA SZANSA, SPOKOJNIEJSZY START =================
+// ================= RAPORT SEZONU I SPOKOJNIEJSZY START =================
 // S().srp = {exp, days, mor, chem, inj} — dane zbierane codziennie w trakcie ligi do raportu „dlaczego tak wyszło”.
 function srS(){const s=S();if(!s)return null;return s.srp||(s.srp={exp:null,n:0,days:0,mor:0,chem:0,inj:0});}
 function srRank(){const ids=lgIds(myLg()).filter(i=>!isYT(i)).sort((a,b)=>teamStrength(TEAMS[b])-teamStrength(TEAMS[a]));return {r:ids.indexOf(SAVE.team)+1,n:ids.length};}
@@ -39,11 +39,5 @@ function srMail(){const r=srBuild();if(!r)return;const from=typeof asyName==='fu
   sendMail({cat:'druz',from,t:`Podsumowanie sezonu: ${r.place}. miejsce — dlaczego tak wyszło`,s:r.concl.slice(0,90),b:{type:'srep',r},ic:'📋'});}
 {const _mb=mailBodyHtml;mailBodyHtml=function(m){const b=m.b||{};if(b.type==='srep'){const r=b.r;return `<p>${r.goal?`Cel zarządu: ${esc(goalTxt(r.goal,lgOf(SAVE.team)))} — ${r.met?'<b class="good">wykonany</b>':'<b class="bad">niewykonany</b>'}.`:''}</p><ul>${r.lines.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p><b>${esc(r.concl)}</b></p>`;}return _mb.apply(this,arguments);};}
 {const _se=seasonEvaluation;seasonEvaluation=function(){const r=_se.apply(this,arguments);try{srMail();}catch(e){console.error(e);}return r;};}
-// ---- ostatnia szansa: po pierwszym nieudanym sezonie w klubie zarząd daje ostrzeżenie zamiast zwolnienia ----
-{const _fc=fireCoach;fireCoach=function(why){try{if(/nieudanym sezonie/.test(why||'')&&!SAVE.ownClub&&S()){const B=SAVE.board;const n=S().n;
-    if(!(B.lastChance&&B.lastChanceTm===SAVE.team&&n-B.lastChance<=2)){B.lastChance=n;B.lastChanceTm=SAVE.team;B.conf=Math.max(B.conf||0,30);
-      news('👔 Zarząd daje ostatnią szansę: kolejny nieudany sezon oznacza zwolnienie.');
-      sendMail({cat:'zarz',from:'Zarząd klubu',t:'Ostatnia szansa',s:'Zarząd nie jest zadowolony z sezonu, ale nie zwalnia trenera',act:0,b:{type:'text',x:'Sezon nie spełnił naszych oczekiwań. Zdecydowaliśmy się jednak dać Panu jeszcze jedną szansę. Jeśli w kolejnym sezonie drużyna znów nie zrealizuje celu albo zaufanie zarządu spadnie do zera, rozstaniemy się. Prosimy przeanalizować podsumowanie sezonu przygotowane przez sztab.'}});
-      return;}}}catch(e){console.error(e);}return _fc.apply(this,arguments);};}
 // ---- spokojniejszy pierwszy dzień: kluby nie zapraszają na sparingi, zanim trener przejmie drużynę ----
 {const _sd=sparDaily;sparDaily=function(d){if(typeof ONB_START!=='undefined'&&ONB_START)return;return _sd.apply(this,arguments);};}

@@ -73,7 +73,6 @@ function advanceTo(t){
   try{if(mine.length)for(const x of tdays){SAVE._now=x;if(typeof trainDays==='function')trainDays([x]);if(typeof mailDaily==='function')mailDaily(x);if(typeof scoutDay==='function')scoutDay(x);if(typeof karDay==='function')karDay(x);if(typeof tlDay==='function')tlDay(x);if(typeof campDay==='function')campDay(x);}}catch(e){console.error(e);}
   delete SAVE._now;
   SAVE.date=d;updateAges();updateInjuries();
-  for(const p of born)if(p.tm===SAVE.team)news(`🎂 ${p.first} ${p.last} kończy ${p.age} lat.`);
 }
 function migrateDates(){fixNaNBal();
   if(!SAVE.season)return;ensureDates(SAVE.season);
