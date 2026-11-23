@@ -217,7 +217,7 @@ function oppReport(op,e){const t=TEAMS[op];const acc=clamp(oppAcc(),3,20);const 
   const form=teamForm(op);const tb=leagueTable?(()=>{try{return leagueTable().findIndex(x=>x.i===op)+1;}catch(e){return 0;}})():0;
   const names=[allScouts().length?scoutName(oppScout()?oppScout().id:allScouts()[0].id)+' (skaut)':null,SAVE.staff&&SAVE.staff.sta?`${SAVE.staff.sta.first[0]}. ${SAVE.staff.sta.last} (analityk)`:null].filter(Boolean);
   sendMail({cat:'skaut',from:names.join(' i ')||'Sztab szkoleniowy',t:`Raport o rywalu: ${t.name} (${fmtShort(e.d)})`,s:`Najgroźniejszy: ${key?key[1]:'—'}. Słabe przyjęcie: ${weak?weak.last:'—'}. ${rec.adir===4?'Wysoki blok — gramy po bloku.':''}`,
-    b:{type:'opp',op,md:e.d,acc:Math.round(acc),line,att,key:key?key[0]:null,weak:weak?[weak.id,weak.last,Math.round((weak.prz+(rnd()-0.5)*nz2*4))]:null,srv:srv?[srv.id,srv.last]:null,blk:Math.round(blkAvg*10)/10,form,pos:tb,str:teamStrength(t),rec,sty:styB},act:1,lab:'Następny rywal'});}
+    b:{type:'opp',op,md:e.d,acc:Math.round(acc),line,att,key:key?key[0]:null,weak:weak?[weak.id,weak.last,Math.round((weak.prz+(rnd()-0.5)*nz2*4))]:null,srv:srv?[srv.id,srv.last]:null,blk:Math.round(blkAvg*10)/10,form,pos:tb,str:teamStrength(t),rec,sty:styB},act:0,lab:'Następny rywal'});}
 function applyOppRec(mid){const m=mailBox().find(x=>x.id===mid);if(!m)return;const r=m.b.rec;const t=myTac();if(r.mCom!=null)t.mCom=r.mCom;t.blkL=r.blkL;t.blkR=r.blkR;t.adir=r.adir;t.serve=r.serve;if(r.tgt)t.tgt=r.tgt;
   SC().prep={op:m.b.op,d:m.b.md,ap:1};m.act=0;m.applied=1;save();render();}
 function oppPrepBonus(){const s=SAVE.sc;if(!s||!s.prep)return 0;const c=myNext();if(!c)return 0;const op=c.h===SAVE.team?c.a:c.h;if(s.prep.op!==op||s.prep.d!==today())return 0;return 0.006+(s.prep.ap?0.004:0);}

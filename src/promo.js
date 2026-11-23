@@ -135,7 +135,7 @@ function surCard(X){return `<div class="card"><h2>Nadwyżka finansowa</h2><p cla
   else if(typeof sendMail==='function')sendMail({cat:'fin',from:'Dyrektor finansowy',t:'Nadwyżka finansowa do rozdysponowania',s:`${fmt(X)} ponad bezpieczne saldo`,b:{type:'surplus',n:S().n,th:surTh()},act:1,lab:'Finanse'});}}}catch(e){console.error(e);}return r;};}
 // kluby komputera: niewydane pieniądze na transfery przechodzą na kolejny sezon (do 30% przychodu)
 {const _ab2=aiBudgets;aiBudgets=function(){const keep={};try{for(const t of TEAMS){const a=SAVE.ai[t.idx];if(a&&t.idx!==SAVE.team&&a.bud>0)keep[t.idx]=a.bud;}}catch(e){}
-  const r=_ab2.apply(this,arguments);try{for(const i in keep){const a=SAVE.ai[i];if(!a)continue;a.bud=round5k(a.bud+Math.min(keep[i]*0.5,aiRev(+i)*0.3));}}catch(e){console.error(e);}return r;};}
+  const r=_ab2.apply(this,arguments);try{for(const i in keep){const a=SAVE.ai[i];if(!a)continue;a.bud=round5k(Math.min(a.bud+Math.min(keep[i]*0.15,a.bud*0.25),Math.max(aiRev(+i)*0.5,600000)));}}catch(e){console.error(e);}return r;};}
 // ================= ROZSĄDNIEJSZE CELE ZARZĄDU =================
 // Cel „finał” tylko wtedy, gdy klub jest wyraźnie najsilniejszy (min. 3 pkt przewagi nad 3. drużyną), „półfinał” —
 // gdy ma wyraźną przewagę nad 5. drużyną. Zarząd nie zwalnia po sezonie, w którym cel minięto o jedno miejsce.
