@@ -27,15 +27,15 @@ const CREST_C2=['#ffffff','#111827','#facc15','#0f1b33','#dc2626','#16a34a','#25
 function crestOf(i){const t=TEAMS[i];if(!t)return null;if(SAVE.crestOv&&SAVE.crestOv[i])return SAVE.crestOv[i];if(SAVE.custom&&SAVE.custom.idx===i)return SAVE.custom.crest;return CLUB_CRESTS[i]||(i*7+3)%20;}
 function crestObj(d,color){if(d&&typeof d==='object')return Object.assign({c2:'#ffffff',bg:color},d,{bg:d.bg||color});const p=CRESTS[(d||0)%CRESTS.length];return {sh:p[0],pt:p[1],em:p[2],c2:'#ffffff',bg:color};}
 {const _tc=teamCrest;teamCrest=function(i,size){try{if(SAVE.crestOv&&SAVE.crestOv[i]){const t=TEAMS[i];return crestSvg(t.name,t.short,t.color,size,SAVE.crestOv[i]);}}catch(e){}return _tc.apply(this,arguments);};}
-function crestEditor(d,name,short,fn){
+function crestEditor(d,name,short,fn,compact){
   const sw=(f,list,cur)=>`<div class="row wrap" style="gap:5px">${list.map(c=>`<button class="cswatch ${cur===c?'on':''}" style="background:${c}" onclick="${fn}('${f}','${c}')" aria-label="${c}"></button>`).join('')}</div>`;
   const opt=(f,v,inner,on,title)=>`<button class="crestopt ${on?'on':''}" onclick="${fn}('${f}','${v}')" title="${esc(title||'')}">${inner}</button>`;
   const pv=o=>crestSvg(name,short,d.bg,40,Object.assign({},d,o));
-  return `<div class="crested"><div class="crestprev">${crestSvg(name,short,d.bg,150,d)}</div><div class="crestform">
+  return `<div class="crested">${compact?'':`<div class="crestprev">${crestSvg(name,short,d.bg,150,d)}</div>`}<div class="crestform">
    <div class="klab">${_t('Kształt')}</div><div class="crestgrid">${Object.keys(CREST_SHAPES).map(k=>opt('sh',k,pv({sh:k}),d.sh===k,k)).join('')}</div>
    <div class="klab">${_t('Wzór')}</div><div class="crestgrid">${CREST_PATTERNS.map(([k,n])=>opt('pt',k,pv({pt:k}),d.pt===k,_t(n))).join('')}</div>
    <div class="klab">${_t('Godło')}</div><div class="crestgrid">${CREST_EMBLEMS.map(k=>opt('em',k,pv({em:k,pt:'plain'}),d.em===k,k)).join('')}</div>
-   <div class="klab">${_t('Kolor główny')}</div>${sw('bg',CREST_C1,d.bg)}
+   ${compact?'':`<div class="klab">${_t('Kolor główny')}</div>${sw('bg',CREST_C1,d.bg)}`}
    <div class="klab">${_t('Kolor dodatkowy')}</div>${sw('c2',CREST_C2,d.c2)}
    <div class="klab">${_t('Rok założenia (opcjonalnie)')}</div><input type="number" min="1850" max="2100" value="${d.yr||''}" style="width:110px" onchange="${fn}('yr',this.value)">
   </div></div>`;}
@@ -50,7 +50,23 @@ function clubCrestCard(){if(SAVE.team==null)return '';const i=SAVE.team,t=TEAMS[
 if(typeof SUBT!=='undefined'&&SUBT.klub)SUBT.klub.push(['hb','Herb',/Herb klubu/i]);
 // kreator nowego klubu: własny herb zamiast samych gotowych wzorów
 function ocCrestCh(f,v){const o=ocDraft();if(!o.crest||typeof o.crest!=='object')o.crest=crestObj(o.crest,o.color);crestFix(o.crest,f,v);render();}
-{const _ov=ownClubView;ownClubView=function(){let h=_ov.apply(this,arguments);try{const o=ocDraft();const d=crestObj(o.crest,o.color);
-  const ed=`<details class="crestdet" ${o.crest&&typeof o.crest==='object'?'open':''}><summary>${_t('Zaprojektuj własny herb')}</summary>${crestEditor(d,o.name,o.short||autoShort(o.name)||'KS','ocCrestCh')}</details>`;
-  const mk='<h3>Charakter klubu</h3>';const i=h.indexOf(mk);if(i>=0)h=h.slice(0,i)+ed+h.slice(i);}catch(e){console.error(e);}return h;};}
+{const _ov=ownClubView;ownClubView=function(){{const o0=ocDraft();if(o0.crest&&typeof o0.crest==='object')o0.crest.bg=o0.color;} // kolor główny herbu = barwy klubu
+  let h=_ov.apply(this,arguments);try{const o=ocDraft();
+  const d=crestObj(o.crest,o.color);const own=o.crest&&typeof o.crest==='object';
+  const ed=`<div class="crestown"><div class="klab" style="margin-top:10px">${_t('Albo zaprojektuj własny herb')}${own?` <span class="tag">${_t('własny projekt')}</span>`:''}</div>
+    <p class="small mut" style="margin:2px 0 6px">${_t('Zacznij od dowolnego gotowego wzoru i zmieniaj kształt, wzór, godło i kolor dodatkowy. Kolor główny to barwy klubu wybrane niżej.')}</p>
+    ${crestEditor(d,o.name,o.short||autoShort(o.name)||'KS','ocCrestCh',true)}</div>`;
+  const mk='<h3>Barwy klubu</h3>';const i=h.indexOf(mk);if(i>=0)h=h.slice(0,i)+ed+h.slice(i);
+  h=h.replace('<h3>Herb klubu</h3><div class="crestgrid">',`<h3>Herb klubu</h3><div class="klab">${_t('Gotowy wzór')}</div><div class="crestgrid">`);}catch(e){console.error(e);}return h;};}
 // gotowy wzór w kreatorze ustawia indeks — wtedy własny projekt znika (zostaje wybrany wzór)
+
+// ---- kapitał założycielski: nowy klub dostaje 250 tys. zł na transfery w pierwszym sezonie ----
+// (także zapisy, w których klub założono przed tą zmianą — jeśli to wciąż pierwszy sezon kariery)
+const OC_CAPITAL=250000;
+function ocCapital(){if(SAVE.team==null||!SAVE.custom||SAVE.custom.idx!==SAVE.team||SAVE.ocCap||!S())return;if(SAVE.coach&&SAVE.coach.seasons)return;
+  const b=BUD();if(!b)return;SAVE.ocCap=S().n;b.trAdd=(b.trAdd||0)+OC_CAPITAL;money(OC_CAPITAL,'Sponsor');finLog('Kapitał założycielski od założycieli klubu',OC_CAPITAL);
+  sendMail({cat:'fin',from:'Zarząd klubu',t:'Kapitał założycielski: 250 tys. zł na transfery',s:'Założyciele klubu przekazali pieniądze na wzmocnienie składu',act:0,b:{type:'text',x:'Założyciele klubu przekazali na start 250 tys. zł. Cała kwota trafia do budżetu transferowego na ten sezon — wykorzystaj ją na wzmocnienie młodego składu.'}});}
+{const _fc=foundClub;foundClub=function(){const r=_fc.apply(this,arguments);try{ocCapital();save();}catch(e){console.error(e);}return r;};}
+// jednorazowo po aktualizacji: przelicz budżety bieżącego sezonu według nowych zasad (wydane kwoty zostają)
+function budMigr204(){if(SAVE.team==null||!S()||!SAVE.bud||SAVE.bud.v204)return;try{budPlan();SAVE.bud.v204=1;}catch(e){}}
+{const _vb=vmBoot;vmBoot=function(){const r=_vb.apply(this,arguments);try{budMigr204();ocCapital();}catch(e){}return r;};}

@@ -237,12 +237,14 @@ function budSplit(){return Object.assign({},BUD_DEF,SAVE.budSplit||{});}
 function fixedYear(){try{const x=SAVE.sc||{};const subs=Object.keys(x.sub||{}).filter(k=>x.sub[k]).length;return ((x.bud||0)+subs*(typeof SUB_COST!=='undefined'?SUB_COST:15000))*12;}catch(e){return 0;}}
 // zarząd wydaje tylko część oszczędności ponad bezpieczną poduszkę (500 tys.)
 // oszczędności liczą się do budżetu dopiero powyżej 1 mln zł (bezpiecznik przed przejadaniem rezerw)
-function budReserve(){return Math.max(0,(SAVE.fin?SAVE.fin.bal:0)-1000000);}
+function budResTh(){const e=SAVE.team!=null?(LG_ECO[myLg()]||1):1;return round5k(300000+700000*clamp((e-0.2)/0.8,0,1));}
+function budReserve(){return Math.max(0,(SAVE.fin?SAVE.fin.bal:0)-budResTh());}
 const BUD_RES_K=0.35,BUD_WG_SHARE=0.68;
+function budWgShare(){const e=SAVE.team!=null?(LG_ECO[myLg()]||1):1;return 0.68+0.07*clamp((1-e)/0.8,0,1);}
 function budPlan(){const s=S();const rev=Math.max(0,revForecast()*budAcc()-fixedYear());const reserve=budReserve();const pool=rev+reserve*BUD_RES_K;const sp=budSplit();
   const old=SAVE.bud&&SAVE.bud.n===s.n?SAVE.bud:null;
   const bs=budSplitAmt(pool,sp,reserve);
-  SAVE.bud={n:s.n,pool:round5k(pool),res:reserve,wg:bs.wg,op:bs.op,tr:bs.tr,trUsed:old?old.trUsed:0,opUsed:old?old.opUsed:0,trAdd:old?old.trAdd:0,extra:old?old.extra:0,warn:{}};
+  SAVE.bud={v204:1,n:s.n,pool:round5k(pool),res:reserve,wg:bs.wg,op:bs.op,tr:bs.tr,trUsed:old?old.trUsed:0,opUsed:old?old.opUsed:0,trAdd:old?old.trAdd:0,extra:old?old.extra:0,warn:{}};
   return SAVE.bud;}
 function BUD(){if(SAVE.team==null||!S())return null;if(SAVE.staffPool)for(const rl of ['fin','soc'])if(!SAVE.staffPool.some(x=>x.role===rl))for(let i=0;i<3;i++){const s=genStaff(rl,5+R()*14);s.wage=staffWage(s.skill);SAVE.staffPool.push(s);}if(!SAVE.bud||SAVE.bud.n!==S().n){const had=!!SAVE.bud;budPlan();if(had)budSeasonMail(true);}return SAVE.bud;}
 function wageBill(){return payroll()+staffPay();}
@@ -271,7 +273,7 @@ function budAsk(){if(typeof bmView==='function'){ui.ixTab='zarzad';go('rozmowy')
 function budSplitAmt(pool,sp,res){const M=budMins();const free=pool-M.wg-M.op;const f=budFree();const rT=(res||0)*0.25;// ćwierć oszczędności zawsze idzie na transfery
   if(free<=0)return {wg:round5k(M.wg),op:round5k(M.op),tr:round5k(rT)};
   let wg=M.wg+free*f.wg,op=M.op+free*f.op,tr=free*f.tr;
-  {const rev=pool-(res||0)*BUD_RES_K;const hi=(typeof surTh==='function'&&SAVE.fin&&SAVE.fin.bal>surTh())?0.95:0.85;const cap=Math.max(M.wg,Math.min(rev*hi,rev*BUD_WG_SHARE+(res||0)*0.25));if(wg>cap){tr+=wg-cap;wg=cap;}}
+  {const rev=pool-(res||0)*BUD_RES_K;const hi=(typeof surTh==='function'&&SAVE.fin&&SAVE.fin.bal>surTh())?0.95:0.85;const cap=Math.max(M.wg,Math.min(rev*hi,rev*budWgShare()+(res||0)*0.25));if(wg>cap){tr+=wg-cap;wg=cap;}}
   return {wg:round5k(wg),op:round5k(op),tr:round5k(Math.max(0,tr))};}
 // podział WOLNYCH pieniędzy (po zarezerwowaniu obecnych pensji i utrzymania): domyślnie głównie na transfery
 const BUD_FREE_DEF={wg:0.45,tr:0.35,op:0.2};
@@ -279,7 +281,8 @@ function budFree(){return Object.assign({},BUD_FREE_DEF,SAVE.budFree||{});}
 function budSetSplit(k,v){const sp=budFree();v=clamp(+v/100,0,1);sp[k]=v;const rest=['wg','op','tr'].filter(x=>x!==k);const sum=rest.reduce((a,x)=>a+sp[x],0);const fr=1-v;
   for(const x of rest)sp[x]=sum>0?sp[x]/sum*fr:fr/2;SAVE.budFree=sp;const b=BUD();if(b){const bs=budSplitAmt(b.pool,sp,b.res);b.wg=bs.wg;b.op=bs.op;b.tr=bs.tr;}save();render();}
 // suwaki: najpierw zarząd rezerwuje obecne pensje (+zapas) i utrzymanie obiektów; suwaki dzielą tylko to, co zostaje
-function budMins(){const wb=wageBill(),mn=maintenance()*12;return {wg:wb+Math.max(50000,wb*0.03),op:mn+20000};}
+function staffGapCost(){try{const have=staffCountNS();const lim=staffLimit();return Math.max(0,lim-have)*30000;}catch(e){return 0;}}
+function budMins(){const wb=wageBill(),mn=maintenance()*12;return {wg:wb+Math.max(50000,wb*0.03)+staffGapCost(),op:mn+20000};}
 function budSliders(b,sp0){const sp=budFree();const M=budMins();const free=b.pool-M.wg-M.op;const prev=k=>{const t=Object.assign({},sp);return budSplitAmt(b.pool,t,b.res)[k];};
   const head=`<div class="small" style="margin:6px 0;grid-column:1/-1">Pula na sezon: <b>${fmt(b.pool)}</b> · najpierw zarezerwowane: obecne pensje z zapasem <b>${fmt(M.wg)}</b> i utrzymanie obiektów <b>${fmt(M.op)}</b> · <b class="${free>0?'good':'bad'}">wolne do podziału: ${fmt(Math.max(0,free))}</b></div>`;
   if(free<=0)return `<div class="budsp"><b>Podział budżetu</b>${head}<div class="small bad">Suwaki są wyłączone — obecne pensje i utrzymanie obiektów zajmują całą pulę, więc nie ma czego dzielić. Budżet transferowy pochodzi teraz z oszczędności klubu (${fmt(b.tr)}).</div>
@@ -348,7 +351,7 @@ function budRefresh(){const b=BUD();const s=S();if(!b||!s||b.n!==s.n)return;cons
 
 // ostrzeżenie, gdy pensje zjadają zbyt dużą część przychodów
 function wageShare(){const rev=Math.max(1,revForecast()-fixedYear());return wageBill()/rev;}
-{const _bc2=budgetCard;budgetCard=function(){const h=_bc2.apply(this,arguments);try{const w=wageShare();if(w>BUD_WG_SHARE+0.03)return h+`<div class="card tmsg no"><b>⚠ Pensje to ${Math.round(w*100)}% przychodów</b> — bezpieczny poziom to ok. ${Math.round(BUD_WG_SHARE*100)}%. Zarząd nie zgodzi się na kolejne podwyżki, dopóki kontrakty nie spadną. Dobre sposoby: nie przedłużaj drogich kontraktów rezerwowych, sprzedaj zawodnika, zdobądź sponsorów albo awansuj (wyższe przychody).</div>`;}catch(e){}return h;};}
+{const _bc2=budgetCard;budgetCard=function(){const h=_bc2.apply(this,arguments);try{const w=wageShare();if(w>budWgShare()+0.03)return h+`<div class="card tmsg no"><b>⚠ Pensje to ${Math.round(w*100)}% przychodów</b> — bezpieczny poziom to ok. ${Math.round(budWgShare()*100)}%. Zarząd nie zgodzi się na kolejne podwyżki, dopóki kontrakty nie spadną. Dobre sposoby: nie przedłużaj drogich kontraktów rezerwowych, sprzedaj zawodnika, zdobądź sponsorów albo awansuj (wyższe przychody).</div>`;}catch(e){}return h;};}
 
 // ===== Social media klubu: obserwujący, feed, styl komunikacji, akcje, kryzysy, specjalista =====
 const SOC_LG_REF=[25000,9000,3500,14000,3000,32000,8000,30000,5000];// typowa liczba obserwujących klubu w lidze

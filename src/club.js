@@ -28,7 +28,7 @@ const SCOUT_MAX=6;
 // limit etatów w sztabie ustala zarząd: zależy od renomy klubu, można go podnieść prośbą do zarządu
 var STAFF_LIM=1;
 function myRepS(){const a=SAVE.ai&&SAVE.team!=null?SAVE.ai[SAVE.team]:null;return (a&&a.rep)||30;}
-function staffLimitBase(){return clamp(Math.round(4.5+myRepS()/9),6,13);}
+function staffLimitBase(){return clamp(Math.round(4.5+myRepS()/9),8,13);}
 // etaty bez skautów (skauci mają osobną pulę od zarządu); własny klub: bez limitu (decyduje właściciel)
 function staffCountNS(){return Object.entries(SAVE.staff||{}).filter(([r,v])=>v&&r!=='sk').length;}
 function scoutLimit(){return clamp(1+Math.floor(myRepS()/25),1,4);}
