@@ -108,12 +108,34 @@ IX_T.odrz={t:p=>`${p.first} ${p.last}: odrzuciłeś ofertę za mnie`,
 {const _ia=ixAnswer;ixAnswer=function(id,opt,auto){try{const q=IX().q.find(x=>x.id===id);if(q&&q.k==='odrz'&&opt==='_ignore'&&PLAYERS[q.pid])PLAYERS[q.pid].p.wantOut=S().n;}catch(e){}return _ia.apply(this,arguments);};}
 // prośba o transfer: zawodnik niezadowolony słabiej trenuje i psuje atmosferę, dopóki nie trafi na listę albo nie dostanie nowego kontraktu
 {const _cm2=clubMods;clubMods=function(ti){const m=_cm2.apply(this,arguments);try{if(ti===SAVE.team){const s=S();const n=myTeam().players.filter(p=>p.tReq===s.n&&!p.tl).length;if(n)return Object.assign({},m,{all:m.all*(1-0.04*n)});}}catch(e){}return m;};}
-// 4) Nadwyżka: przy bardzo wysokim saldzie właściciel co sezon zabiera część pieniędzy (inwestycje poza klubem, dywidenda).
-//    Nie dotyczy klubu założonego przez Ciebie — tam pieniądze zostają w klubie.
+// 4) Nadwyżka finansowa (saldo powyżej progu ligi) zostaje w klubie i idzie na drużynę.
+//    Twój klub: sam decydujesz — transfery, budżet sezonu (płace i transfery), spłata kredytu albo zostawić na koncie.
+//    Gdy kontrakty przekazałeś dyrektorowi finansowemu, sam dokłada ją do budżetu sezonu.
+//    Kluby komputera: zarząd przenosi niewydane pieniądze na transfery w kolejnym sezonie. Właściciel nie zabiera pieniędzy
+//    (nikt nie ma tu długów do pokrycia poza kredytem, który spłaca sam klub).
 const SURPLUS_TH=[6000000,3000000,2000000];
-{const _ns=nextSeason;nextSeason=function(){const r=_ns.apply(this,arguments);try{if(SAVE.team!=null&&!SAVE.ownClub&&SAVE.fin){const th=SURPLUS_TH[LG_LV[myLg()]]||2000000;const ex=SAVE.fin.bal-th;
-  if(ex>0){const take=round5k(ex*0.35);money(-take,'Wypłata dla właściciela');finLog('Wypłata dla właściciela z nadwyżki',-take);
-    if(typeof sendMail==='function')sendMail({cat:'fin',from:'Zarząd klubu',t:'Wypłata z nadwyżki dla właściciela',s:`Właściciel zabrał ${fmt(take)} z nadwyżki`,b:{type:'text',x:`Saldo klubu przekroczyło ${fmt(th)}. Zgodnie z polityką właściciela część nadwyżki (35% kwoty powyżej progu, czyli ${fmt(take)}) trafia do właściciela na inwestycje poza klubem.\n\nŻeby pieniądze pracowały dla drużyny, wydawaj je na wzmocnienia, sztab i obiekty.`},lab:'Finanse'});}}}catch(e){console.error(e);}return r;};}
+function surTh(){return SURPLUS_TH[LG_LV[myLg()]]||2000000;}
+function surAmt(){return SAVE.fin?round5k(Math.max(0,SAVE.fin.bal-surTh())):0;}
+function surApply(kind,auto){const b=BUD();const X=surAmt();const s=S();if(!b||!X||!s)return;const sv=SAVE.sur;if(sv&&sv.n===s.n&&sv.done)return;
+  const counted=Math.min(X,b.res||0);const add=round5k(X-counted*BUD_RES_K);b.res=Math.max(0,(b.res||0)-counted);let txt='';
+  if(kind==='tr'){b.surTr=(b.surTr||0)+add;txt=`+${fmt(add)} do budżetu transferowego`;}
+  else if(kind==='sez'){const wg=round5k(add*0.6);b.surWg=(b.surWg||0)+wg;b.surTr=(b.surTr||0)+(add-wg);txt=`+${fmt(wg)} do budżetu płacowego i +${fmt(add-wg)} do transferowego`;}
+  else if(kind==='kredyt'){const L=SAVE.fin.loan;if(!L)return;const pay=Math.min(X,Math.round(L.left));money(-pay,'Kredyt');finLog('Spłata kredytu z nadwyżki',-pay);L.left-=pay;if(L.left<=1000)SAVE.fin.loan=null;txt=`${fmt(pay)} na spłatę kredytu`;}
+  else txt='pieniądze zostają na koncie';
+  SAVE.sur={n:s.n,done:1,kind,txt};news(`💼 Nadwyżka finansowa: ${txt}${auto?' (dyrektor finansowy)':''}.`);if(!auto){ui.spMsg=null;save();render();}}
+{const _bl=budLeft;budLeft=function(){const r=_bl.apply(this,arguments);try{const b=BUD();if(b){r.tr+=(b.surTr||0);r.wg+=(b.surWg||0);}}catch(e){}return r;};}
+{const _bc3=budgetCard;budgetCard=function(){const h=_bc3.apply(this,arguments);try{const b=BUD();const s=S();if(b&&(b.surTr||b.surWg))return h+`<div class="card small"><b>💼 Nadwyżka w tym sezonie:</b> ${b.surTr?`+${fmt(b.surTr)} na transfery`:''}${b.surTr&&b.surWg?' · ':''}${b.surWg?`+${fmt(b.surWg)} na płace`:''} (wliczone w budżety powyżej).</div>`;
+  const X=surAmt();if(X>0&&!(SAVE.sur&&SAVE.sur.n===s.n&&SAVE.sur.done))return h+surCard(X);}catch(e){console.error(e);}return h;};}
+function surButtons(X){const L=SAVE.fin&&SAVE.fin.loan;return `<div class="row wrap" style="gap:8px;margin-top:8px"><button class="btn sm" onclick="surApply('tr')">Na transfery (+${fmt(X)})</button><button class="btn sm" onclick="surApply('sez')">Do budżetu sezonu (płace i transfery)</button>${L?`<button class="ghost sm" onclick="surApply('kredyt')">Spłać kredyt</button>`:''}<button class="ghost sm" onclick="surApply('konto')">Zostaw na koncie</button></div>`;}
+function surCard(X){return `<div class="card"><h2>Nadwyżka finansowa</h2><p class="small">Saldo klubu przekracza ${fmt(surTh())} o <b>${fmt(X)}</b>. Zdecyduj, na co przeznaczyć tę kwotę w tym sezonie. Rozbudowę obiektów możesz też opłacić z konta w zakładce Infrastruktura.</p>${surButtons(X)}</div>`;}
+{const _mb2=mailBodyHtml;mailBodyHtml=function(m){const b=m.b||{};if(b.type!=='surplus')return _mb2.apply(this,arguments);const s=S();const done=SAVE.sur&&SAVE.sur.n===b.n&&SAVE.sur.done;const X=surAmt();
+  return `<p class="mtext">Saldo klubu przekroczyło ${fmt(b.th)}. Nadwyżka zostaje w klubie — to Ty decydujesz, czy dołożyć ją do transferów, do budżetu sezonu, spłacić kredyt czy zostawić na koncie (np. na rozbudowę obiektów).</p>${done?`<p class="mtext"><b>Decyzja:</b> ${esc(SAVE.sur.txt)}.</p>`:(s&&s.n===b.n&&X>0?surButtons(X):'<p class="mut small">Nadwyżka jest już nieaktualna.</p>')}`;};}
+{const _ns=nextSeason;nextSeason=function(){const r=_ns.apply(this,arguments);try{if(SAVE.team!=null&&SAVE.fin&&S()){const X=surAmt();if(X>0){budPlan();
+  if(typeof dlg==='function'&&dlg('contr')&&!SAVE.ownClub)surApply('sez',true);
+  else if(typeof sendMail==='function')sendMail({cat:'fin',from:'Dyrektor finansowy',t:'Nadwyżka finansowa do rozdysponowania',s:`${fmt(X)} ponad bezpieczne saldo`,b:{type:'surplus',n:S().n,th:surTh()},act:1,lab:'Finanse'});}}}catch(e){console.error(e);}return r;};}
+// kluby komputera: niewydane pieniądze na transfery przechodzą na kolejny sezon (do 30% przychodu)
+{const _ab2=aiBudgets;aiBudgets=function(){const keep={};try{for(const t of TEAMS){const a=SAVE.ai[t.idx];if(a&&t.idx!==SAVE.team&&a.bud>0)keep[t.idx]=a.bud;}}catch(e){}
+  const r=_ab2.apply(this,arguments);try{for(const i in keep){const a=SAVE.ai[i];if(!a)continue;a.bud=round5k(a.bud+Math.min(keep[i]*0.5,aiRev(+i)*0.3));}}catch(e){console.error(e);}return r;};}
 // ================= ROZSĄDNIEJSZE CELE ZARZĄDU =================
 // Cel „finał” tylko wtedy, gdy klub jest wyraźnie najsilniejszy (min. 3 pkt przewagi nad 3. drużyną), „półfinał” —
 // gdy ma wyraźną przewagę nad 5. drużyną. Zarząd nie zwalnia po sezonie, w którym cel minięto o jedno miejsce.
