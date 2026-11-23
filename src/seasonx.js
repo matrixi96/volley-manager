@@ -41,13 +41,14 @@ function srMore(r){const s=S(),R=srS(),me=SAVE.team,ps=s.ps||{},t=myTeam();const
   const nm=p=>p.first[0]+'. '+p.last;
   // najlepsi zawodnicy sezonu
   const mine=t.players.map(p=>Object.assign({p},ps[p.id]||{})).filter(x=>x.m);
-  const best=mine.slice().sort((a,b)=>(b.pts||0)-(a.pts||0)).slice(0,3).map(x=>[nm(x.p),x.p.pos,x.m,x.pts||0,x.mvp||0]);
+  const best=mine.slice().sort((a,b)=>(b.pts||0)-(a.pts||0)).slice(0,3).map(x=>[nm(x.p),x.p.pos,x.m,x.pts||0,x.mvp||0,x.rn>0?Math.round(x.rs/x.rn*10)/10:null]);
   // transfery sezonu: przyszli i odeszli
   const H=(SAVE.trh||[]).filter(x=>x.n===s.n);const avg=(()=>{const xs=t.players.filter(p=>!p.jr).map(p=>rating(p)).sort((a,b)=>b-a).slice(0,7);return xs.reduce((a,b)=>a+b,0)/Math.max(1,xs.length);})();
   const games=Math.max(1,...mine.map(x=>x.m||0));
-  const tin=H.filter(x=>x.inn).map(x=>{const p=P(x.id);const st=ps[x.id]||{};const here=p&&p.tm===me;const rNow=p?rating(p):x.r;const share=(st.m||0)/games;
-    let v;if(!here)v='już odszedł';else if(share>=0.6&&rNow>=avg-3)v='trafiony';else if(share>=0.3||rNow>=avg-6)v='przydatny';else v='nietrafiony';
-    return {nm:x.nm,pos:x.pos,fee:x.fee||0,loan:!!x.loan,r0:x.r,r1:rNow,m:st.m||0,pts:st.pts||0,v};});
+  // werdykt z średniej oceny meczowej w sezonie (ocena liczona w roli zawodnika): trafiony ≥ 7,0; przydatny ≥ 6,5
+  const tin=H.filter(x=>x.inn).map(x=>{const p=P(x.id);const st=ps[x.id]||{};const rNow=p?rating(p):x.r;const sr=st.rn>0?Math.round(st.rs/st.rn*10)/10:null;
+    let v;if(sr==null||st.rn<5)v='za mało meczów';else if(sr>=7)v='trafiony';else if(sr>=6.5)v='przydatny';else v='nietrafiony';
+    return {nm:x.nm,pos:x.pos,fee:x.fee||0,loan:!!x.loan,r0:x.r,r1:rNow,m:st.m||0,pts:st.pts||0,sr,v};});
   const tout=H.filter(x=>!x.inn).map(x=>({nm:x.nm,pos:x.pos,fee:x.fee||0,r:x.r,o:x.o}));
   const spent=tin.reduce((a,x)=>a+x.fee,0),earned=tout.reduce((a,x)=>a+x.fee,0);
   // postępy (zawodnicy, którzy byli w kadrze przez cały sezon)
@@ -64,10 +65,10 @@ function srHtml(r){const T=(head,rows)=>rows.length?`<table class="srt"><tr>${he
   const sg=v=>v>0?`<b class="good">+${v}</b>`:v<0?`<b class="bad">${v}</b>`:'0';const vc=v=>v==='trafiony'?`<b class="good">${v}</b>`:v==='nietrafiony'?`<b class="bad">${v}</b>`:v;
   let h=`<style>.srt{border-collapse:collapse;width:100%;margin:4px 0 10px;font-size:13px}.srt th{text-align:left!important;font-weight:600;opacity:.7;padding:3px 6px}.srt td{text-align:left!important;padding:3px 6px;border-top:1px solid rgba(255,255,255,.08)}.srh{margin:14px 0 4px;font-size:15px}</style>`;
   h+=`<h3 class="srh">Wynik</h3>${r.goal?`<p>Cel zarządu: ${esc(goalTxt(r.goal,lgOf(SAVE.team)))} — ${r.met?'<b class="good">wykonany</b>':'<b class="bad">niewykonany</b>'}.</p>`:''}<ul>${r.lines.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p><b>${esc(r.concl)}</b></p>`;
-  if(r.best&&r.best.length)h+=`<h3 class="srh">Najlepsi zawodnicy</h3>`+T(['Zawodnik','Poz.','Mecze','Punkty','MVP'],r.best.map(x=>[esc(x[0]),x[1],x[2],x[3],x[4]]));
+  if(r.best&&r.best.length)h+=`<h3 class="srh">Najlepsi zawodnicy</h3>`+T(['Zawodnik','Poz.','Mecze','Punkty','MVP','Śr. ocena'],r.best.map(x=>[esc(x[0]),x[1],x[2],x[3],x[4],x[5]==null?'—':String(x[5]).replace('.',',')]));
   if(r.tin){h+=`<h3 class="srh">Transfery</h3>`;
     if(!r.tin.length&&!r.tout.length)h+='<p class="mut">W tym sezonie nie było transferów.</p>';
-    if(r.tin.length)h+=`<p class="small mut">Przyszli</p>`+T(['Zawodnik','Poz.','Koszt','Ocena przy transferze → teraz','Mecze','Punkty','Werdykt'],r.tin.map(x=>[esc(x.nm),x.pos,x.loan?'wypożyczenie':x.fee?fmt(x.fee):'za darmo',`${x.r0} → ${x.r1}`,x.m,x.pts,vc(x.v)]));
+    if(r.tin.length)h+=`<p class="small mut">Przyszli</p>`+T(['Zawodnik','Poz.','Koszt','Ocena przy transferze → teraz','Mecze','Śr. ocena w sezonie','Werdykt'],r.tin.map(x=>[esc(x.nm),x.pos,x.loan?'wypożyczenie':x.fee?fmt(x.fee):'za darmo',`${x.r0} → ${x.r1}`,x.m,x.sr==null?'—':String(x.sr).replace('.',','),vc(x.v)]))+'<p class="small mut">Werdykt: trafiony — średnia ocena meczowa w swojej roli co najmniej 7,0; przydatny — 6,5–6,9; nietrafiony — poniżej 6,5 (liczone przy co najmniej 5 meczach).</p>';
     if(r.tout.length)h+=`<p class="small mut">Odeszli</p>`+T(['Zawodnik','Poz.','Kwota','Ocena'],r.tout.map(x=>[esc(x.nm),x.pos,x.fee?fmt(x.fee):'—',x.r]));
     if(r.spent||r.earned)h+=`<p>Wydane na transfery: <b>${fmt(r.spent)}</b>, zarobione ze sprzedaży: <b>${fmt(r.earned)}</b>, bilans: ${r.earned-r.spent>=0?`<b class="good">${fmt(r.earned-r.spent)}</b>`:`<b class="bad">${fmt(r.earned-r.spent)}</b>`}.</p>`;}
   if(r.up&&(r.up.length||r.down.length)){h+=`<h3 class="srh">Postępy zawodników</h3>`;
