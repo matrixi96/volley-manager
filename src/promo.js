@@ -70,18 +70,44 @@ function tixMove(oldLg,newLg){const e=ECO();const f=(LG_TIX[LG_LV[newLg]]||1)/(L
     for(const i of top){const a=SAVE.ai[i];if(a.wg<W*0.85){a.wg=round5k(W*0.85);a.bud=round5k(a.bud*1.25);}}}
  }catch(e){console.error(e);}return r;};}
 // 2) Gwiazdy Twojego klubu dostają oferty od bogatych klubów; odrzucenie takiej oferty zawodnik bierze do siebie.
+// Kto jest „gwiazdą”: ocena co najmniej średnia Twojej ligi + 6 (min. 84) i jeden z 3 najlepszych w kadrze.
+// Raz na okno losujemy, czy przyjdzie oferta (ok. 50%; więcej, gdy zawodnik ma powód odejść), i dzień jej przyjścia.
+function starOfferChance(p){const s=S();let c=0.4;const t=myTeam();try{if(typeof pSat==='function'&&pSat(p,t).v<45)c+=0.2;}catch(e){}
+  if(p.ce!=null&&p.ce<=s.n)c+=0.15;if((hasT(p,'amb')||hasT(p,'suk'))&&(LG_LV[myLg()]>0||((SAVE.coach&&SAVE.coach.hist||[]).slice(-1)[0]||{}).place>2))c+=0.15;
+  if(p.wantOut!=null&&p.wantOut>=s.n-1)c+=0.15;if(hasT(p,'loj'))c-=0.25;if(p.extN===s.n)c-=0.2;return clamp(c,0.05,0.95);}
 function starBidDay(d){if(SAVE.team==null||!SAVE.world||!windowOpen())return;const s=S();const myRep=SAVE.ai[SAVE.team]?SAVE.ai[SAVE.team].rep:50;
-  const ref=Math.max(...allLgs().filter(l=>LG_LV[l]===0).map(lgRef));
-  for(const p of myTeam().players){if(p.jr||p.loan||p.tl||p.age>31||p.stOff===s.n)continue;if(typeof newSign==='function'&&newSign(p))continue;const r=rating(p);if(r<Math.max(84,ref+6))continue;
-    if(R()>0.025)continue;const fee=round5k(pValue(p)*(1.1+R()*0.25));
+  const thr=Math.max(84,lgRef(myLg())+6);const top3=myTeam().players.filter(p=>!p.jr&&!p.loan).sort((a,b)=>rating(b)-rating(a)).slice(0,3);
+  for(const p of top3){if(p.tl||p.age>31||rating(p)<thr)continue;if(typeof newSign==='function'&&newSign(p))continue;
+    if(!p.stR||p.stR.n!==s.n)p.stR={n:s.n,ok:R()<starOfferChance(p),day:addDays(d,3+Math.floor(R()*35)),done:0};
+    const st=p.stR;if(!st.ok||st.done||d<st.day)continue;st.done=1;const fee=round5k(pValue(p)*(1.1+R()*0.25));
     const bs=TEAMS.filter(t=>t.idx!==SAVE.team&&SAVE.ai[t.idx]&&LG_LV[lgOf(t.idx)]===0&&!isYT(t.idx)&&SAVE.ai[t.idx].rep>=myRep-8&&SAVE.ai[t.idx].bud>=fee&&teamWages(t.idx)+wageDemand(p)<=wageCap(t.idx)*1.1&&t.players.length<17).sort((a,b)=>SAVE.ai[b.idx].rep-SAVE.ai[a.idx].rep);
     if(!bs.length)continue;const b=bs[Math.floor(R()*Math.min(3,bs.length))];if((SAVE.inbox||[]).some(o=>o.pid===p.id&&o.tm===b.idx))continue;
-    p.stOff=s.n;const o={pid:p.id,tm:b.idx,fee,max:round5k(fee*1.12),pat:2,star:1,d};SAVE.inbox=SAVE.inbox||[];SAVE.inbox.push(o);
+    const o={pid:p.id,tm:b.idx,fee,max:round5k(fee*1.12),pat:2,star:1,d};SAVE.inbox=SAVE.inbox||[];SAVE.inbox.push(o);
     sendMail({cat:'trans',from:TEAMS[b.idx].name,t:`Oferta za ${p.first} ${p.last}: ${fmt(fee)}`,s:`${p.last} wie o ofercie i chciałby porozmawiać o przejściu.`,b:{type:'offer',pid:p.id,tm:b.idx,fee},act:1,lab:'Oferta kupna'});
     news(`📨 ${TEAMS[b.idx].name} składa ofertę za ${p.first} ${p.last} (${fmt(fee)}). Zawodnik jest zainteresowany.`);}}
 {const _tl=tlDay;tlDay=function(d){const r=_tl.apply(this,arguments);try{starBidDay(d);}catch(e){console.error(e);}return r;};}
-{const _ri=rejectInbox;rejectInbox=function(i){const o=SAVE.inbox&&SAVE.inbox[i];try{if(o&&o.star&&PLAYERS[o.pid]){const p=PLAYERS[o.pid].p;const amb=hasT(p,'amb')||hasT(p,'suk');addMor(p,amb?-15:-9);
-  news(`😠 ${p.first} ${p.last} jest rozczarowany, że nie pozwoliłeś mu odejść do ${TEAMS[o.tm].name}.`);}}catch(e){console.error(e);}return _ri.apply(this,arguments);};}
+function starRejected(o){if(!o||!o.star||!PLAYERS[o.pid])return;const p=PLAYERS[o.pid].p;const s=S();const amb=hasT(p,'amb')||hasT(p,'suk');addMor(p,amb?-15:-9);
+  if(p.wantOut!=null&&p.wantOut>=s.n-1&&p.wantOut<s.n){addMor(p,-12);p.unh=(p.unh||0)+3;p.tReq=s.n;news(`📝 ${p.first} ${p.last} składa oficjalną prośbę o transfer — to już drugi raz, gdy nie pozwoliłeś mu odejść.`);return;}
+  news(`😠 ${p.first} ${p.last} jest rozczarowany, że nie pozwoliłeś mu odejść do ${TEAMS[o.tm].name}.`);
+  try{const X=IX();if(!X.q.some(q=>q.pid===p.id))ixOpen({k:'odrz',pid:p.id,club:o.tm},today());}catch(e){console.error(e);}}
+{const _ri=rejectInbox;rejectInbox=function(i){try{starRejected(SAVE.inbox&&SAVE.inbox[i]);}catch(e){console.error(e);}return _ri.apply(this,arguments);};}
+// oferta gwiazdy wygasa z końcem okna: brak odpowiedzi = odmowa
+{const _td=tlDay;tlDay=function(d){try{if(SAVE.team!=null&&SAVE.world&&!windowOpen()&&SAVE.inbox&&SAVE.inbox.some(o=>o.star)){for(const o of SAVE.inbox.filter(o=>o.star))starRejected(o);SAVE.inbox=SAVE.inbox.filter(o=>!o.star);}}catch(e){console.error(e);}return _td.apply(this,arguments);};}
+// rozmowa po odrzuconej ofercie
+IX_T.odrz={t:p=>`${p.first} ${p.last}: odrzuciłeś ofertę za mnie`,
+  x:(p,q)=>`„Odrzuciłeś ofertę ${TEAMS[q.club]?TEAMS[q.club].name:'mocnego klubu'}. Chcę wiedzieć, na czym stoję — co dalej ze mną w tym klubie?”`,
+  o:[['podwyzka','Zostań — w ciągu miesiąca dostaniesz lepszy kontrakt.',p=>ixChance(p,0.75+(IX().cred-60)/200,{chc:0.1,amb:-0.1}),
+      (p,q,ok)=>{if(ok){addMor(p,6);relAdd(p,4);ixPromise(p,'podwyzka',30,{w:p.wage});return 'Zgodził się zostać. Obiecana podwyżka min. 10% w ciągu 30 dni — karta zawodnika → kontrakt.';}addMor(p,-6);p.wantOut=S().n;return 'Nie wierzy w obietnicę. Będzie myślał o odejściu.';}],
+    ['rola','Będziesz jednym z liderów i podstawowym zawodnikiem.',p=>ixChance(p,0.55,{amb:0.1,kap:0.15,loj:0.15}),
+      (p,q,ok)=>{p.role='klu';if(ok){addMor(p,5);relAdd(p,4);return 'Przyjął to dobrze — chce poprowadzić drużynę.';}addMor(p,-8);p.wantOut=S().n;return 'To dla niego za mało. Wciąż myśli o odejściu.';}],
+    ['zostan','Jesteś dla mnie kluczowy — nie sprzedam cię.',p=>ixChance(p,0.4,{loj:0.35,oby:0.1,amb:-0.25,suk:-0.2}),
+      (p,q,ok)=>{if(ok){addMor(p,3);relAdd(p,3);return 'Zostaje i czuje się doceniony.';}addMor(p,-12);relAdd(p,-8);p.wantOut=S().n;return 'Jest rozczarowany. Przy kolejnej ofercie będzie naciskał na odejście.';}],
+    ['puszcze','Rozumiem. Wystawię cię na listę transferową.',p=>0.95,
+      (p,q,ok)=>{if(typeof tlSet==='function')tlSet(p.id,Math.round(pValue(p)*1.1));addMor(p,8);relAdd(p,4);ixPromise(p,'lista',60,{});return 'Docenił szczerość. Jest na liście transferowej — nie zdejmuj go, bo to złamana obietnica.';}]]};
+// brak rozmowy po odrzuconej ofercie = zawodnik chce odejść
+{const _ia=ixAnswer;ixAnswer=function(id,opt,auto){try{const q=IX().q.find(x=>x.id===id);if(q&&q.k==='odrz'&&opt==='_ignore'&&PLAYERS[q.pid])PLAYERS[q.pid].p.wantOut=S().n;}catch(e){}return _ia.apply(this,arguments);};}
+// prośba o transfer: zawodnik niezadowolony słabiej trenuje i psuje atmosferę, dopóki nie trafi na listę albo nie dostanie nowego kontraktu
+{const _cm2=clubMods;clubMods=function(ti){const m=_cm2.apply(this,arguments);try{if(ti===SAVE.team){const s=S();const n=myTeam().players.filter(p=>p.tReq===s.n&&!p.tl).length;if(n)return Object.assign({},m,{all:m.all*(1-0.04*n)});}}catch(e){}return m;};}
 // 4) Nadwyżka: przy bardzo wysokim saldzie właściciel co sezon zabiera część pieniędzy (inwestycje poza klubem, dywidenda).
 //    Nie dotyczy klubu założonego przez Ciebie — tam pieniądze zostają w klubie.
 const SURPLUS_TH=[6000000,3000000,2000000];
@@ -94,3 +120,5 @@ const SURPLUS_TH=[6000000,3000000,2000000];
 {const _gf=goalFor;goalFor=function(ti){let g=_gf.apply(this,arguments);try{const L=lgIds(lgOf(ti)).map(i=>teamStrength(TEAMS[i])).sort((a,b)=>b-a);const me=teamStrength(TEAMS[ti]);
   if(g===2&&L.length>2&&me-L[2]<3)g=4;if(g===4&&L.length>4&&me-L[4]<3)g=8;}catch(e){}return g;};}
 {const _fc=fireCoach;fireCoach=function(why){try{const ev=S()&&S().eval;if(/nieudanym sezonie/.test(why||'')&&ev&&ev.place<=ev.goal+1){SAVE.board.conf=Math.max(SAVE.board.conf||0,25);news('👔 Zarząd jest rozczarowany, ale cel minięto tylko o jedno miejsce — dostajesz kolejny sezon.');return;}}catch(e){console.error(e);}return _fc.apply(this,arguments);};}
+
+{const _dr=dlgRenew;dlgRenew=function(p){const r=_dr.apply(this,arguments);try{if(r!==false&&p){p.extN=S().n;delete p.tReq;}}catch(e){}return r;};}

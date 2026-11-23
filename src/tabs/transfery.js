@@ -54,7 +54,7 @@ function negAgentOffer(w,y,b,r){const n=NG();const p=PLAYERS[n.pid].p;const a=n.
   a.wAsk=Math.max(a.wMin,round5k(a.wAsk-(a.wAsk-w)*ST[4]*(low?0.3:1)));a.bAsk=Math.max(a.bMin,round5k(a.bAsk-(a.bAsk-b)*ST[4]*(low?0.3:1)));
   negLog('ag',`${ag.first} ${ag.last}: „${low?'To za mało, nawet nie ma o czym mówić. ':''}Możemy przyjąć ${fmt(a.wAsk)} rocznie i ${fmt(a.bAsk)} premii${y!==a.yPref?`, najlepiej na ${a.yPref} ${a.yPref===1?'sezon':'sezony'}`:''}.${a.pat===1?' Ostatnia szansa.':''}”`);render();}
 function negSign(){const n=NG();if(!n||!n.ok||!n.terms)return;const p=PLAYERS[n.pid].p;const t=n.terms;const from=p.tm;
-  if(n.kind==='renew'){if(t.r)roleSet(p,t.r);if(typeof budWageOver==='function')budWageOver(t.w-p.wage);p.wage=t.w;p.ce=contractEndFor(t.y);achEv('renew');if(t.b){money(-t.b,'Transfery');finLog(`Premia za przedłużenie: ${p.first} ${p.last}`,-t.b);}
+  if(n.kind==='renew'){if(t.r)roleSet(p,t.r);if(typeof budWageOver==='function')budWageOver(t.w-p.wage);p.wage=t.w;p.ce=contractEndFor(t.y);achEv('renew');p.extN=S().n;delete p.tReq;if(t.b){money(-t.b,'Transfery');finLog(`Premia za przedłużenie: ${p.first} ${p.last}`,-t.b);}
     news(`✍️ ${p.first} ${p.last} przedłużył kontrakt do ${ceDate(p.ce)} (${fmt(t.w)}/rok).`);ui.neg=null;save();return tradeMsg(true,`${p.last} przedłużył kontrakt do ${ceDate(p.ce)}.`);}
   if(!windowOpen())return tradeMsg(false,'Okno transferowe się zamknęło.');
   if(typeof budCan==='function'){const e=budCan('tr',(from>=0?n.fee:0)+(t.b||0));if(e)return tradeMsg(false,e);budWageOver(t.w);}
