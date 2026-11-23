@@ -32,7 +32,7 @@ const NAV_L=Object.fromEntries(NAV.map(x=>[x[0],x[2]]));NAV_L.poczta='Poczta';NA
 function sideNav(){const mini=ui.tab==='mecz'&&(liveMatch()||(ui.match&&!(ui.match.over&&ui.view==='post')));const newsN=typeof unreadN==='function'?unreadN():0;
   const item=k=>`<button class="nav ${ui.tab===k?'on':''}" onclick="ui.navOpen=false;go('${k}')" title="${NAV_L[k]}"><span class="ic">${ico(k)}</span><span class="tx">${NAV_L[k]}</span>${k==='poczta'&&newsN?`<span class="nbad">${newsN}</span>`:''}${k==='rozmowy'&&typeof rozN==='function'&&rozN()?`<span class="nbad">${rozN()}</span>`:''}${k==='osiagniecia'&&typeof achFreshN==='function'&&achFreshN()?`<span class="nbad">${achFreshN()}</span>`:''}</button>`;
   return `<aside class="side ${mini?'mini':''} ${ui.navOpen?'open':''}">
-   <div class="sbrand"><span class="sbm">${ico('mecz',20)}</span><span class="tx">GOLDEN SET</span></div>
+   <div class="sbrand"><span class="sbm">${typeof gsBall==='function'?gsBall(22):ico('mecz',20)}</span><span class="tx">GOLDEN SET</span></div>
    ${NAV_GROUPS.map(([g,ks])=>`<div class="ngh tx">${g}</div>${ks.map(item).join('')}`).join('')}
    <div class="navgap"></div>
    <div class="nfoot">${item('zapis')}<button class="nav small ${ui.tab==='test'?'on':''}" onclick="ui.navOpen=false;go('test')" title="Test silnika"><span class="ic">${ico('test')}</span><span class="tx">Test silnika</span></button></div>

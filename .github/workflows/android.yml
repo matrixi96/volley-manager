@@ -47,8 +47,8 @@ jobs:
           cd app
           mkdir -p assets && cp ../android/assets/*.png assets/
           npx --yes @capacitor/assets@3 generate --android \
-            --iconBackgroundColor '#0b1220' --iconBackgroundColorDark '#0b1220' \
-            --splashBackgroundColor '#0b1220' --splashBackgroundColorDark '#0b1220'
+            --iconBackgroundColor '#0f1b33' --iconBackgroundColorDark '#0f1b33' \
+            --splashBackgroundColor '#0f1b33' --splashBackgroundColorDark '#0f1b33'
 
       - name: Wersja i klucz podpisu
         run: |
