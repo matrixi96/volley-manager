@@ -3,7 +3,7 @@ Użycie: python src/build.py"""
 import pathlib
 src = pathlib.Path(__file__).parent
 root = src.parent
-parts = [(src / f).read_text(encoding='utf-8') for f in ['head.html', 'i18n.js', 'i18n_en.js', 'i18n_dom.js', 'engine.js', 'world.js', 'ui.js', 'season.js', 'manage.js', 'calendar.js', 'club.js', 'faces.js', 'tabs/trener.js', 'ownclub.js', 'matchview.js', 'tabs/mecz.js', 'people.js', 'tabs/poczta.js', 'tabs/transfery.js', 'tabs/finanse.js', 'cup.js', 'euro.js', 'dynamics.js', 'nt.js', 'tabs/staty.js', 'tacfam.js', 'achievements.js', 'tutorial.js', 'tabs/sztab.js', 'vision.js', 'sound.js', 'shell.js', 'uix.js', 'tabs/klub.js', 'fixes.js', 'tabs/trening.js', 'sparx.js', 'tabs/home.js', 'tabs/juniorzy.js', 'fixes2.js', 'mediax.js', 'guide.js', 'tabs/ustawienia.js', 'thermo.js', 'onboard.js', 'boot.js']]
+parts = [(src / f).read_text(encoding='utf-8') for f in ['head.html', 'i18n.js', 'i18n_en.js', 'i18n_dom.js', 'engine.js', 'world.js', 'ui.js', 'season.js', 'manage.js', 'calendar.js', 'club.js', 'faces.js', 'tabs/trener.js', 'ownclub.js', 'matchview.js', 'tabs/mecz.js', 'people.js', 'tabs/poczta.js', 'tabs/transfery.js', 'tabs/finanse.js', 'cup.js', 'euro.js', 'dynamics.js', 'nt.js', 'tabs/staty.js', 'tacfam.js', 'achievements.js', 'tutorial.js', 'tabs/sztab.js', 'vision.js', 'sound.js', 'shell.js', 'uix.js', 'tabs/klub.js', 'fixes.js', 'tabs/trening.js', 'sparx.js', 'tabs/home.js', 'tabs/juniorzy.js', 'fixes2.js', 'mediax.js', 'guide.js', 'tabs/ustawienia.js', 'thermo.js', 'onboard.js', 'promo.js', 'boot.js']]
 html = ''.join(parts) + '\n</script></body></html>\n'
 html = html.replace('<title>Volley Manager — prototyp</title>', '''<title>Volley Manager</title>
 <link rel="manifest" href="manifest.webmanifest">
