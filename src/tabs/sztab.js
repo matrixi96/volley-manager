@@ -47,19 +47,19 @@ function dlgContracts(d){if(!dlg('contr'))return;const s=S();if(!s)return;const 
 // ---- transfery: uzupełnianie brakujących pozycji ----
 function dlgTransfers(d){if(!dlg('trans')||!windowOpen())return;const D=DL();const s=S();if(D.trLast&&daysBetween(D.trLast,d)<3)return;D.trLast=d;
   D.trN=D.trN||{};if((D.trN[s.n]||0)>=3)return;const t=myTeam();const mine=t.players.filter(p=>!p.jr&&!(p.loan&&p.loan.from===SAVE.team&&p.tm!==SAVE.team));if(t.players.length>=SQUAD_MAX)return;
-  const need=Object.keys(POS_STD).filter(k=>mine.filter(p=>p.pos===k).length<POS_STD[k]).sort((a,b)=>(mine.filter(p=>p.pos===a).length-POS_STD[a])-(mine.filter(p=>p.pos===b).length-POS_STD[b]));const upg=!need.length;let cut=null;if(upg){if((D.trU&&D.trU[s.n]||0)>=3)return;
+  const need=Object.keys(POS_STD).filter(k=>mine.filter(p=>p.pos===k).length<POS_STD[k]).sort((a,b)=>(mine.filter(p=>p.pos===a).length-POS_STD[a])-(mine.filter(p=>p.pos===b).length-POS_STD[b]));const upg=!need.length;let cut=null;if(upg){if((D.trU&&D.trU[s.n]||0)>=(SAVE.myPromo===s.n?5:3))return;
     // kadra pełna: zwalniamy miejsce, oddając najsłabszego zmiennika (poza najlepszą dwunastką, z pozycji z nadwyżką)
     if(t.players.length>=SQUAD_MAX-1){const rk=mine.slice().sort((a,b)=>rating(b)-rating(a));const t12=new Set(rk.slice(0,12).map(p=>p.id));
       cut=rk.slice().reverse().find(p=>!t12.has(p.id)&&!p.loan&&mine.filter(x=>x.pos===p.pos).length>POS_STD[p.pos]&&!(typeof newSign==='function'&&newSign(p))&&releaseCost(p)<=Math.max(60000,SAVE.fin.bal*0.03));if(!cut)return;}
     // kadra kompletna: szukamy wzmocnienia na pozycji, gdzie podstawowy skład jest najsłabszy
     const ST={R:1,A:1,P:2,S:2,L:1};const wk=Object.keys(ST).map(k=>{const r=mine.filter(p=>p.pos===k).map(p=>rating(p)).sort((a,b)=>b-a);return {k,v:r[ST[k]-1]||0};}).sort((a,b)=>a.v-b.v);
-    need.push(...wk.slice(0,2).map(x=>x.k));D._upBar={};for(const x of wk)D._upBar[x.k]=x.v+3;}
+    need.push(...wk.slice(0,SAVE.myPromo===s.n?3:2).map(x=>x.k));D._upBar={};const lr=SAVE.myPromo===s.n?lgRef(myLg())-2:0;for(const x of wk)D._upBar[x.k]=Math.max(x.v+3,Math.min(lr,x.v+8));}
   const top=mine.map(p=>rating(p)).sort((a,b)=>b-a).slice(0,12);const avg=top.reduce((a,b)=>a+b,0)/Math.max(1,top.length);const sk=dlgSk('trans');const myRep=SAVE.ai[SAVE.team].rep;const miss=need.reduce((a,k)=>a+POS_STD[k]-mine.filter(p=>p.pos===k).length,0);const maxW=budLeft().wg*(miss>1?Math.max(0.35,1/miss*1.3):1);
   for(const pos of need){const posR=mine.filter(p=>p.pos===pos).map(p=>rating(p));const bar=upg?D._upBar[pos]:Math.min(avg-6,posR.length?Math.max(...posR)-2:avg-6);
     const cands=[];for(const p of W().players){if(p.pos!==pos||p.jr||p.retired||p.inj>0||p.tm===SAVE.team||p.loan||p.age<19||p.age>32)continue;
       if(p.tm>=0){if(isYT(p.tm)||(isStarter(p)&&!p.tl)||TEAMS[p.tm].players.length<=SQUAD_MIN+1||SAVE.ai[p.tm].rep>myRep+15)continue;}
       const est=rating(p)+(R()-0.5)*(20-sk)/2;if(est<bar)continue;const fee=p.tm<0?0:Math.round(pValue(p)*(p.tl?1:1.15)/10000)*10000;const w=wageNeeded(p);
-      if(fee>0&&(budCan('tr',fee)||SAVE.fin.bal-fee<0))continue;if(w>(upg?budLeft().wg*0.8+(cut?cut.wage||0:0):maxW))continue;if(cut&&rating(p)<rating(cut)+6)continue;cands.push({p,est,fee,w,sc:est+(p.tm<0?3:0)-fee/250000});}
+      if(fee>0&&(budCan('tr',fee)||SAVE.fin.bal-fee<0))continue;if(w>(upg?budLeft().wg*(SAVE.myPromo===s.n?1:0.8)+(cut?cut.wage||0:0):maxW))continue;if(cut&&rating(p)<rating(cut)+6)continue;cands.push({p,est,fee,w,sc:est+(p.tm<0?3:0)-fee/250000});}
     if(!cands.length){if(upg)continue;if(!D.trMiss||D.trMiss[pos]!==s.n){D.trMiss=D.trMiss||{};D.trMiss[pos]=s.n;dlgNote(`Skaut nie znalazł nikogo na pozycję ${POS_NAMES[pos]||pos}, kto zmieściłby się w budżetach i podniósł poziom kadry.`);}continue;}
     cands.sort((a,b)=>b.sc-a.sc);const c=cands[0];const p=c.p;const from=p.tm;
     if(c.fee){money(-c.fee,'Transfery');SAVE.ai[from].bud+=c.fee;finLog(`Zakup (skaut): ${p.first} ${p.last} (${TEAMS[from].short})`,-c.fee);}

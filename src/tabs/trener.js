@@ -28,9 +28,11 @@ function ccPool(){const d=ccDraft();const e=C_EXP.find(x=>x[0]===d.exp);const us
 function ccAdj(k,dv){const d=ccDraft();const v=d.attrs[k]+dv;if(v<1||v>C_MAX)return;if(dv>0&&ccPool()<=0)return;d.attrs[k]=v;render();}
 function ccExp(k){const d=ccDraft();d.exp=k;while(ccPool()<0){const top=C_ATTR.map(a=>a[0]).sort((a,b)=>d.attrs[b]-d.attrs[a])[0];d.attrs[top]--;}render();}
 function ccRandom(){const d=ccDraft();for(const [k] of C_ATTR)d.attrs[k]=C_BASE;let p=ccPool();while(p>0){const k=C_ATTR[Math.floor(R()*C_ATTR.length)][0];if(d.attrs[k]<C_MAX){d.attrs[k]++;p--;}}render();}
+function migr0(){return !!(SAVE&&SAVE.team!=null&&!SAVE.coach);}
 function ccNext(){const d=ccDraft();d.first=($('#ccf')||{}).value||d.first;d.last=($('#ccl')||{}).value||d.last;d.age=+(($('#cca')||{}).value||d.age);
   if(!d.first.trim()||!d.last.trim()){ui.ccErr='Wpisz imię i nazwisko trenera.';render();return;}
   if(!(d.age>=28&&d.age<=70)){ui.ccErr='Wiek trenera: od 28 do 70 lat.';render();return;}
+  if(ccPool()>0&&!migr0()&&ui.ccPoolOk!==ccPool()){ui.ccPoolOk=ccPool();ui.ccErr=`Masz jeszcze ${ccPool()} pkt do rozdania. Rozdaj je przyciskami + albo kliknij „Rozdaj losowo”. Kliknij „Dalej” jeszcze raz, żeby przejść bez nich.`;render();return;}
   ui.ccErr=null;
   const e=C_EXP.find(x=>x[0]===d.exp);const attrs={};for(const [k] of C_ATTR)attrs[k]=Math.min(20,d.attrs[k]+(e[5][k]||0));
   const c={first:d.first.trim(),last:d.last.trim(),exp:d.exp,rep:e[3],attrs,face:d.face,hist:[],trophies:[],seasons:0};
@@ -45,13 +47,13 @@ function coachCreateView(){
   if(d.step===2&&ui.pendingCoach)return clubPickView();
   const migr=SAVE.team!=null;
   return `<div class="card"><h2>${migr?'Stwórz swojego trenera':'Nowa gra: stwórz trenera'}</h2><p class="mut">${migr?'Twój zapis nie ma jeszcze trenera. Stwórz go, a gra potoczy się dalej od miejsca, w którym skończyłeś.':'To Ty prowadzisz drużynę. Od doświadczenia zależą punkty do rozdania i reputacja, a od reputacji to, które kluby będą chciały Cię zatrudnić.'}</p>
-  ${ui.ccErr?`<div class="tmsg no">${esc(ui.ccErr)}</div>`:''}
+  
   <div class="cc"><div class="ccface">${faceSvg(d.face,{size:140,age:d.age,color:'#ffb020',kind:'coach'})}<button class="ghost" onclick="ui.cc.face='c'+Math.floor(Math.random()*1e9);render()">🎲 Losuj twarz</button></div>
   <div class="ccform"><div class="row wrap"><label class="lu"><span>Imię</span><input id="ccf" value="${esc(d.first)}" oninput="ui.cc.first=this.value" maxlength="20"></label><label class="lu"><span>Nazwisko</span><input id="ccl" value="${esc(d.last)}" oninput="ui.cc.last=this.value" maxlength="24"></label><label class="lu"><span>Wiek</span><input id="cca" type="number" min="28" max="70" value="${d.age}" oninput="ui.cc.age=+this.value" style="width:80px"></label></div>
   <h3>Doświadczenie</h3><div class="opts">${C_EXP.map(([k,n,ds,rep,pts,bon])=>`<button class="opt ${d.exp===k?'on':''}" onclick="ccExp('${k}')"><b>${n}</b><small>${ds}</small><small class="mut">Reputacja ${rep} · ${pts} pkt${Object.keys(bon).length?' · bonus: '+Object.entries(bon).map(([a,v])=>C_ATTR.find(x=>x[0]===a)[1]+' +'+v).join(', '):''}</small></button>`).join('')}</div></div></div>
   <div class="row wrap" style="margin-top:14px"><h3 style="margin:0">Atrybuty trenera</h3><span class="sp"></span><span>Do rozdania: <b class="${pool>0?'good':''}">${pool}</b> pkt</span><button class="ghost" onclick="ccRandom()">🎲 Rozdaj losowo</button></div>
   <div class="ccattrs">${[['skill','Umiejętności'],['ment','Cechy mentalne']].map(([g,gn])=>`<div><h4>${gn}</h4>${C_ATTR.filter(a=>a[2]===g).map(([k,n,,ds])=>{const e=C_EXP.find(x=>x[0]===d.exp);const b=e[5][k]||0;return `<div class="ccrow"><div><b>${n}</b><br><small class="mut">${ds}</small></div><div class="ccv"><button class="ghost" onclick="ccAdj('${k}',-1)">−</button><span class="attr ${aCls(d.attrs[k]+b)}">${d.attrs[k]+b}</span><button class="ghost" onclick="ccAdj('${k}',1)">+</button></div></div>`;}).join('')}</div>`).join('')}</div>
-  <div class="row" style="margin-top:14px"><span class="sp"></span><button class="btn" onclick="ccNext()">${migr?'Zapisz trenera':'Dalej: wybór klubu →'}</button></div></div>`;
+  ${ui.ccErr?`<div class="tmsg no" style="margin-top:14px">${esc(ui.ccErr)}</div>`:''}<div class="row" style="margin-top:14px"><span class="sp"></span><button class="btn" onclick="ccNext()">${migr?'Zapisz trenera':'Dalej: wybór klubu →'}</button></div></div>`;
 }
 function clubPickView(){const c=ui.pendingCoach;
   return `<div class="card"><div class="row wrap">${coachFace(c,64)}<div><h2 style="margin:0">${esc(c.first)} ${esc(c.last)}</h2><div class="mut small">${C_EXP.find(x=>x[0]===c.exp)[1]} · reputacja <b>${c.rep}</b></div></div><span class="sp"></span><button class="ghost" onclick="ui.cc.step=1;ui.pendingCoach=null;render()">← Wróć do trenera</button></div>

@@ -3,8 +3,8 @@
 // „Rozumiem” zamyka go dla tej zakładki; przycisk „?” na pasku pod nagłówkiem otwiera go ponownie.
 const GUIDES={
  home:['Ekran główny','Twoje centrum dowodzenia: najbliższy mecz, forma drużyny, tabela i najważniejsze wiadomości w jednym miejscu.',
-  ['Przycisk „Kontynuuj” w prawym górnym rogu przesuwa czas do następnego wydarzenia (trening, mecz, wiadomość wymagająca decyzji).',
-   'Panel analizy rywala pokazuje mocne i słabe strony najbliższego przeciwnika — przyda się przy ustawianiu taktyki.',
+  ['Przyciski w prawym górnym rogu przesuwają czas: „Następny dzień” o jeden dzień, „Graj mecz” do najbliższego meczu. Gra zatrzyma się sama, gdy coś wymaga Twojej decyzji.',
+   'Notatki przed meczem (po prawej) pokazują, czy rywal jest silniejszy, a „Sprawdź skład” prowadzi prosto do ustawienia drużyny.',
    'Kliknij herb albo nazwę drużyny, żeby przejść do jej szczegółów.']],
  poczta:['Poczta','Tu trafiają raporty sztabu, oferty transferowe, sprawy zarządu, mediów i agentów.',
   ['Wiadomości z przyciskami wymagają Twojej decyzji — zakładka „Zadania” zbiera je w jednym miejscu.',

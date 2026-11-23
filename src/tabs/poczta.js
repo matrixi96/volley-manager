@@ -16,7 +16,7 @@ function stripEmoji(t){return String(t).replace(/^\p{Extended_Pictographic}(‍\
 const NEWS_MAP=[[/^🚑/,'med','Lekarz klubowy','Kontuzja'],[/^🤝/,'spon','Dział marketingu','Sponsorzy'],[/^✅ .*wrócił/,'med','Lekarz klubowy','Powrót do zdrowia'],[/^❌ Zostałeś/,'zarz','Zarząd klubu','Decyzja zarządu'],[/^👔/,'zarz','Zarząd klubu','Wiadomość od zarządu'],
   [/^(✍️|💰|👋|📄 R)/,'trans','Dyrektor sportowy','Kadra i kontrakty'],[/^🔁/,'liga','Media','Transfer w lidze'],[/^(🧑‍🏫|📄 Z)/,'klub','Sekretariat klubu','Sztab szkoleniowy'],
   [/^(🏗️|🎉)/,'klub','Zarządca obiektów','Infrastruktura'],[/^(🌱|⬆️|⬇️|📄 J)/,'druz','Akademia','Juniorzy'],[/^(🏆|⭐|📣|📈|😮)/,'liga','Biuro ligi','Liga'],
-  [/^(😤|📢|©️|🎂)/,'druz','Kapitan drużyny','Szatnia']];
+  [/^(😤|📢|©️)/,'druz','Kapitan drużyny','Szatnia']];
 function mailFromNews(t){if(/^(✅ Wygrana|❌ Porażka)/.test(t))return;const r=NEWS_MAP.find(x=>x[0].test(t));if(!r)return;const tx=stripEmoji(t);
   sendMail({cat:r[1],from:r[2],t:tx,s:r[3],b:{type:'text',x:tx},ic:(t.match(/^\p{Extended_Pictographic}/u)||[''])[0]});}
 // ---- generatory ----

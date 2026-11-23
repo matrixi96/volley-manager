@@ -9,7 +9,7 @@ function sparFirst(){const s=S();const t=addDays(today(),1);const lp=s.spar.res.
 function sparCanPlan(){const s=S();return !!s&&(s.phase==='off'||s.phase==='spar');}
 function sparTaken(d){const s=S();if(s.sdates.slice(0,nSpar()).includes(d))return 'sparing';if((s.spar.inv||[]).some(x=>x.d===d&&x.st==='wait'))return 'zaproszenie';
   try{if(typeof extraNext==='function'){const e=extraNext(d);if(e&&e.d===d)return 'mecz';}}catch(e){}return null;}
-function sparFreeDays(){const out=[];const a=sparFirst(),b=sparLast();if(a>b)return out;let d=a;while(d<=b&&out.length<80){if(!sparTaken(d))out.push(d);d=addDays(d,1);}return out;}
+function sparFreeDays(){const out=[];const now=addDays(SAVE._now||today(),3);let a=sparFirst();const b=sparLast();if(a<now)a=now;if(a>b)return out;let d=a;while(d<=b&&out.length<80){if(!sparTaken(d))out.push(d);d=addDays(d,1);}return out;}
 // wstaw sparing w kolejności dat (tylko za już rozegranymi)
 function sparInsert(op,d,home){const s=S();sparHm();const k0=s.spar.res.length;let k=k0;while(k<s.spar.opps.length&&s.sdates[k]<=d)k++;s.spar.opps.splice(k,0,op);s.sdates.splice(k,0,d);s.spar.hm.splice(k,0,!!home);}
 function sparCancel(k){const s=S();sparHm();if(k<s.spar.res.length)return;const op=s.spar.opps[k];s.spar.opps.splice(k,1);s.sdates.splice(k,1);s.spar.hm.splice(k,1);
