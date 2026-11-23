@@ -61,3 +61,36 @@ function tixMove(oldLg,newLg){const e=ECO();const f=(LG_TIX[LG_LV[newLg]]||1)/(L
   if(typeof sendMail==='function')sendMail({cat:'fin',from:'Dział marketingu',t:f>1?'Ceny biletów po awansie':'Ceny biletów po spadku',s:near?`Bilet: ${old} → ${e.tix} zł`:'Propozycja nowych cen',b:{type:'text',x:near?`Kibice w ${f>1?'wyższej':'niższej'} lidze akceptują ${f>1?'wyższe':'niższe'} ceny. Zmieniliśmy cenę biletu z ${old} zł na ${e.tix} zł, a karnety i lożę VIP proporcjonalnie. Możesz to zmienić w zakładce Infrastruktura → Dzień meczowy.`:`Twoja cena biletu (${e.tix} zł) jest inna niż typowa, więc jej nie ruszaliśmy. Typowa cena w nowej lidze to ok. ${Math.round(refPrice(SAVE.team))} zł — sprawdź Infrastruktura → Dzień meczowy.`},lab:'Finanse'});}
 {const _alm=applyLeagueMoves;applyLeagueMoves=function(old){const mv=old&&old.moves&&old.moves.find(x=>x.i===SAVE.team);const oldLg=SAVE.team!=null?lgOf(SAVE.team):null;const r=_alm.apply(this,arguments);
   try{if(mv&&oldLg!=null&&oldLg!==mv.to){spMove(oldLg,mv.to,!!mv.up);tixMove(oldLg,mv.to);}}catch(e){console.error(e);}return r;};}
+// ================= RÓWNOWAGA NA SZCZYCIE: bogate kluby komputera, gwiazdy na celowniku, nadwyżki =================
+// 1) Bogate kluby komputera w najwyższych ligach mają budżety na miarę przychodów (renoma), a czołówka Twojej ligi
+//    dorównuje Twoim płacom — walczą z Tobą o gwiazdy.
+{const _ab=aiBudgets;aiBudgets=function(){const r=_ab.apply(this,arguments);try{
+  for(const t of TEAMS){const ti=t.idx;if(ti===SAVE.team||!SAVE.ai[ti])continue;const lg=lgOf(ti);if(LG_LV[lg]!==0)continue;const a=SAVE.ai[ti];const k=1+clamp((a.rep-60)/35,0,1)*0.7;a.wg=round5k(a.wg*k);a.bud=round5k(a.bud*(1+(k-1)*0.6));}
+  if(SAVE.team!=null&&LG_LV[myLg()]===0){const W=teamWages(SAVE.team);const top=lgIds(myLg()).filter(i=>i!==SAVE.team&&SAVE.ai[i]).sort((x,y)=>SAVE.ai[y].rep-SAVE.ai[x].rep).slice(0,3);
+    for(const i of top){const a=SAVE.ai[i];if(a.wg<W*0.85){a.wg=round5k(W*0.85);a.bud=round5k(a.bud*1.25);}}}
+ }catch(e){console.error(e);}return r;};}
+// 2) Gwiazdy Twojego klubu dostają oferty od bogatych klubów; odrzucenie takiej oferty zawodnik bierze do siebie.
+function starBidDay(d){if(SAVE.team==null||!SAVE.world||!windowOpen())return;const s=S();const myRep=SAVE.ai[SAVE.team]?SAVE.ai[SAVE.team].rep:50;
+  const ref=Math.max(...allLgs().filter(l=>LG_LV[l]===0).map(lgRef));
+  for(const p of myTeam().players){if(p.jr||p.loan||p.tl||p.age>31||p.stOff===s.n)continue;if(typeof newSign==='function'&&newSign(p))continue;const r=rating(p);if(r<Math.max(84,ref+6))continue;
+    if(R()>0.025)continue;const fee=round5k(pValue(p)*(1.1+R()*0.25));
+    const bs=TEAMS.filter(t=>t.idx!==SAVE.team&&SAVE.ai[t.idx]&&LG_LV[lgOf(t.idx)]===0&&!isYT(t.idx)&&SAVE.ai[t.idx].rep>=myRep-8&&SAVE.ai[t.idx].bud>=fee&&teamWages(t.idx)+wageDemand(p)<=wageCap(t.idx)*1.1&&t.players.length<17).sort((a,b)=>SAVE.ai[b.idx].rep-SAVE.ai[a.idx].rep);
+    if(!bs.length)continue;const b=bs[Math.floor(R()*Math.min(3,bs.length))];if((SAVE.inbox||[]).some(o=>o.pid===p.id&&o.tm===b.idx))continue;
+    p.stOff=s.n;const o={pid:p.id,tm:b.idx,fee,max:round5k(fee*1.12),pat:2,star:1,d};SAVE.inbox=SAVE.inbox||[];SAVE.inbox.push(o);
+    sendMail({cat:'trans',from:TEAMS[b.idx].name,t:`Oferta za ${p.first} ${p.last}: ${fmt(fee)}`,s:`${p.last} wie o ofercie i chciałby porozmawiać o przejściu.`,b:{type:'offer',pid:p.id,tm:b.idx,fee},act:1,lab:'Oferta kupna'});
+    news(`📨 ${TEAMS[b.idx].name} składa ofertę za ${p.first} ${p.last} (${fmt(fee)}). Zawodnik jest zainteresowany.`);}}
+{const _tl=tlDay;tlDay=function(d){const r=_tl.apply(this,arguments);try{starBidDay(d);}catch(e){console.error(e);}return r;};}
+{const _ri=rejectInbox;rejectInbox=function(i){const o=SAVE.inbox&&SAVE.inbox[i];try{if(o&&o.star&&PLAYERS[o.pid]){const p=PLAYERS[o.pid].p;const amb=hasT(p,'amb')||hasT(p,'suk');addMor(p,amb?-15:-9);
+  news(`😠 ${p.first} ${p.last} jest rozczarowany, że nie pozwoliłeś mu odejść do ${TEAMS[o.tm].name}.`);}}catch(e){console.error(e);}return _ri.apply(this,arguments);};}
+// 4) Nadwyżka: przy bardzo wysokim saldzie właściciel co sezon zabiera część pieniędzy (inwestycje poza klubem, dywidenda).
+//    Nie dotyczy klubu założonego przez Ciebie — tam pieniądze zostają w klubie.
+const SURPLUS_TH=[6000000,3000000,2000000];
+{const _ns=nextSeason;nextSeason=function(){const r=_ns.apply(this,arguments);try{if(SAVE.team!=null&&!SAVE.ownClub&&SAVE.fin){const th=SURPLUS_TH[LG_LV[myLg()]]||2000000;const ex=SAVE.fin.bal-th;
+  if(ex>0){const take=round5k(ex*0.35);money(-take,'Wypłata dla właściciela');finLog('Wypłata dla właściciela z nadwyżki',-take);
+    if(typeof sendMail==='function')sendMail({cat:'fin',from:'Zarząd klubu',t:'Wypłata z nadwyżki dla właściciela',s:`Właściciel zabrał ${fmt(take)} z nadwyżki`,b:{type:'text',x:`Saldo klubu przekroczyło ${fmt(th)}. Zgodnie z polityką właściciela część nadwyżki (35% kwoty powyżej progu, czyli ${fmt(take)}) trafia do właściciela na inwestycje poza klubem.\n\nŻeby pieniądze pracowały dla drużyny, wydawaj je na wzmocnienia, sztab i obiekty.`},lab:'Finanse'});}}}catch(e){console.error(e);}return r;};}
+// ================= ROZSĄDNIEJSZE CELE ZARZĄDU =================
+// Cel „finał” tylko wtedy, gdy klub jest wyraźnie najsilniejszy (min. 3 pkt przewagi nad 3. drużyną), „półfinał” —
+// gdy ma wyraźną przewagę nad 5. drużyną. Zarząd nie zwalnia po sezonie, w którym cel minięto o jedno miejsce.
+{const _gf=goalFor;goalFor=function(ti){let g=_gf.apply(this,arguments);try{const L=lgIds(lgOf(ti)).map(i=>teamStrength(TEAMS[i])).sort((a,b)=>b-a);const me=teamStrength(TEAMS[ti]);
+  if(g===2&&L.length>2&&me-L[2]<3)g=4;if(g===4&&L.length>4&&me-L[4]<3)g=8;}catch(e){}return g;};}
+{const _fc=fireCoach;fireCoach=function(why){try{const ev=S()&&S().eval;if(/nieudanym sezonie/.test(why||'')&&ev&&ev.place<=ev.goal+1){SAVE.board.conf=Math.max(SAVE.board.conf||0,25);news('👔 Zarząd jest rozczarowany, ale cel minięto tylko o jedno miejsce — dostajesz kolejny sezon.');return;}}catch(e){console.error(e);}return _fc.apply(this,arguments);};}

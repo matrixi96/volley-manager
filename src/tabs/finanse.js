@@ -236,7 +236,8 @@ function budSplit(){return Object.assign({},BUD_DEF,SAVE.budSplit||{});}
 // koszty stałe spoza pensji i utrzymania (skauting, bazy danych) — wcześniej nie były w planie i co roku „zjadały” oszczędności
 function fixedYear(){try{const x=SAVE.sc||{};const subs=Object.keys(x.sub||{}).filter(k=>x.sub[k]).length;return ((x.bud||0)+subs*(typeof SUB_COST!=='undefined'?SUB_COST:15000))*12;}catch(e){return 0;}}
 // zarząd wydaje tylko część oszczędności ponad bezpieczną poduszkę (500 tys.)
-function budReserve(){return Math.max(0,(SAVE.fin?SAVE.fin.bal:0)-500000);}
+// oszczędności liczą się do budżetu dopiero powyżej 1 mln zł (bezpiecznik przed przejadaniem rezerw)
+function budReserve(){return Math.max(0,(SAVE.fin?SAVE.fin.bal:0)-1000000);}
 const BUD_RES_K=0.35,BUD_WG_SHARE=0.68;
 function budPlan(){const s=S();const rev=Math.max(0,revForecast()*budAcc()-fixedYear());const reserve=budReserve();const pool=rev+reserve*BUD_RES_K;const sp=budSplit();
   const old=SAVE.bud&&SAVE.bud.n===s.n?SAVE.bud:null;
@@ -270,7 +271,7 @@ function budAsk(){if(typeof bmView==='function'){ui.ixTab='zarzad';go('rozmowy')
 function budSplitAmt(pool,sp,res){const M=budMins();const free=pool-M.wg-M.op;const f=budFree();const rT=(res||0)*0.25;// ćwierć oszczędności zawsze idzie na transfery
   if(free<=0)return {wg:round5k(M.wg),op:round5k(M.op),tr:round5k(rT)};
   let wg=M.wg+free*f.wg,op=M.op+free*f.op,tr=free*f.tr;
-  {const rev=pool-(res||0)*BUD_RES_K;const cap=Math.max(M.wg,rev*BUD_WG_SHARE+(res||0)*0.25);if(wg>cap){tr+=wg-cap;wg=cap;}}
+  {const rev=pool-(res||0)*BUD_RES_K;const cap=Math.max(M.wg,Math.min(rev*0.85,rev*BUD_WG_SHARE+(res||0)*0.25));if(wg>cap){tr+=wg-cap;wg=cap;}}
   return {wg:round5k(wg),op:round5k(op),tr:round5k(Math.max(0,tr))};}
 // podział WOLNYCH pieniędzy (po zarezerwowaniu obecnych pensji i utrzymania): domyślnie głównie na transfery
 const BUD_FREE_DEF={wg:0.45,tr:0.35,op:0.2};
