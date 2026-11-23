@@ -6,7 +6,7 @@ Manager siatkówki na PC i telefon, działający offline.
 
 **Windows:** https://github.com/matrixi96/volley-manager/releases/tag/windows-latest — `VolleyManager-Setup.exe` (instalator) albo `VolleyManager-Portable.exe` (bez instalacji). Aplikacja (Electron, katalog `desktop/`) buduje się automatycznie po każdej zmianie gry; F11 = pełny ekran, Ctrl +/− = powiększenie.
 
-**Android (APK):** https://github.com/matrixi96/volley-manager/releases/tag/android-latest — pobierz `VolleyManager.apk` na telefonie i zainstaluj. Plik buduje się automatycznie (GitHub Actions, Capacitor) po każdej zmianie gry; nowa wersja instaluje się na starą i zapis zostaje. Klucz w `android/debug.keystore` służy tylko do podpisywania tej prywatnej wersji (nie do Sklepu Play).
+**Android (APK):** https://github.com/matrixi96/volley-manager/releases/tag/android-latest — pobierz `VolleyManager.apk` na telefonie i zainstaluj. Plik buduje się automatycznie (GitHub Actions, Capacitor) po każdej zmianie gry; nowa wersja instaluje się na starą i zapis zostaje. APK to wersja do wydania podpisana prywatnym kluczem, który jest tylko w sekretach repozytorium (`ANDROID_KEYSTORE_B64`, `ANDROID_KEYSTORE_PASS`, alias `goldenset`) — bez nich budowanie się zatrzymuje. Kopię klucza trzymaj poza repozytorium: bez niej nie da się wydać aktualizacji, która zainstaluje się na starą wersję.
 
 ## Co jest w grze
 - Kreator trenera (imię, wiek, doświadczenie, umiejętności i cechy mentalne), reputacja, cele zarządu, zwolnienia i oferty pracy.

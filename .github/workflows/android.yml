@@ -50,28 +50,33 @@ jobs:
             --iconBackgroundColor '#0f1b33' --iconBackgroundColorDark '#0f1b33' \
             --splashBackgroundColor '#0f1b33' --splashBackgroundColorDark '#0f1b33'
 
-      - name: Wersja i klucz podpisu
+      - name: Wersja
         run: |
           cd app/android
           sed -i "s/versionCode 1$/versionCode ${{ github.run_number }}/" app/build.gradle
           sed -i "s/versionName \"1.0\"/versionName \"1.${{ github.run_number }}\"/" app/build.gradle
           grep -n "versionCode\|versionName" app/build.gradle
-          # stały klucz = aktualizacje instalują się na starą wersję bez utraty zapisu
-          mkdir -p ~/.android && cp ../../android/debug.keystore ~/.android/debug.keystore
 
-      - name: Zbuduj APK
+      - name: Zbuduj APK (wersja do wydania)
         run: |
           cd app
           npx cap sync android
-          cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk ../../VolleyManager.apk
+          cd android && chmod +x gradlew && ./gradlew assembleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release-unsigned.apk ../../unsigned.apk
 
-      - name: Podpisz stałym kluczem
+      - name: Podpisz prywatnym kluczem (z sekretów repozytorium)
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
         run: |
+          if [ -z "$KS_B64" ] || [ -z "$KS_PASS" ]; then echo "Brak sekretów ANDROID_KEYSTORE_B64 / ANDROID_KEYSTORE_PASS — APK nie zostanie podpisany ani opublikowany."; exit 1; fi
+          umask 077
+          echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
           BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
-          $BT/apksigner sign --ks android/debug.keystore --ks-pass pass:android \
-            --key-pass pass:android --ks-key-alias androiddebugkey VolleyManager.apk
-          $BT/apksigner verify --print-certs VolleyManager.apk | grep -i "DN"
+          $BT/zipalign -p -f 4 unsigned.apk aligned.apk
+          $BT/apksigner sign --ks "$RUNNER_TEMP/release.jks" --ks-pass env:KS_PASS --key-pass env:KS_PASS --ks-key-alias goldenset --out VolleyManager.apk aligned.apk
+          rm -f "$RUNNER_TEMP/release.jks"
+          $BT/apksigner verify --print-certs VolleyManager.apk | grep -i "DN\|SHA-256"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -85,4 +90,4 @@ jobs:
           gh release delete android-latest -y --cleanup-tag || true
           gh release create android-latest VolleyManager.apk \
             --title "Golden Set – Android (wersja 1.${{ github.run_number }})" \
-            --notes "Pobierz VolleyManager.apk na telefonie i zainstaluj (zezwól na instalację z tego źródła). Aktualizacja instaluje się na poprzednią wersję – zapis gry zostaje."
+            --notes "Pobierz VolleyManager.apk na telefonie i zainstaluj (zezwól na instalację z tego źródła). Aktualizacja instaluje się na poprzednią wersję – zapis gry zostaje. UWAGA: od wersji z nowym kluczem podpisu (listopad 2026) starą aplikację trzeba raz odinstalować – najpierw skopiuj kod zapisu (Zapis gry → Kod zapisu), potem zainstaluj nową wersję i wklej kod."
