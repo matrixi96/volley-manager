@@ -13,7 +13,6 @@ function myLineup(){const t=myTeam();if(!validLineup(t,SAVE.lineup)){SAVE.lineup
 function myTac(){if(!SAVE.tactics){SAVE.tactics={serve:1,dist:0};}return SAVE.tactics;}
 function aCls(v){return v>=16?'a4':v>=13?'a3':v>=9?'a2':'a1';}
 function stars(r){const n=Math.max(1,Math.min(5,Math.round((r-66)/5)));return '★'.repeat(n)+'<span class="mut">'+'★'.repeat(5-n)+'</span>';}
-function pName(p){return esc(p.first[0]+'. '+p.last);}
 
 function render(){
   const app=$('#app');const t=myTeam();

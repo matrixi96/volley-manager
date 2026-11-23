@@ -151,7 +151,7 @@ function mailBodyHtml(m){const b=m.b||{};
   if(typeof sponsMailHtml==='function'&&/^(spons|spexp)$/.test(b.type))return sponsMailHtml(m);
   if(b.type==='offer')return offerMailHtml(m);
   if(b.type==='fin')return finMailHtml(b);
-  if(b.type==='md'&&typeof mdMailHtml==='function')return mdMailHtml(b);
+  if(b.type==='md'&&b.rec&&typeof mdFinMailHtml==='function')return mdFinMailHtml(b);
   if(b.type==='fit')return fitMailHtml(b);
   if(b.type==='camp'&&typeof campMailHtml==='function')return campMailHtml(b);
   if(b.type==='talk'&&typeof talkMailHtml==='function')return talkMailHtml(b);

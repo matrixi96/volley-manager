@@ -14,7 +14,7 @@ function mdMailHtml(m){const b=m.b;const M=MD();
      <p class="small mut">Relacje z mediami: ${M.rel}/100. ${b.w==='pre'?'Bez odpowiedzi przed meczem relacje lekko spadną.':'Bez odpowiedzi do następnego meczu relacje lekko spadną.'}</p>`;}
   const L=b.done||[];
   return `<p class="mtext">${L.length?'Zapis konferencji:':'Ta konferencja już się odbyła.'}</p>${L.map(l=>`<div class="mdq"><b>🎤 ${esc(l.t)}</b><div class="small" style="margin-top:4px">${l.a?'„'+esc(l.a)+'” — ':''}<span class="mut">${esc(l.r)}</span></div></div>`).join('')}`;}
-{const _mb=mailBodyHtml;mailBodyHtml=function(m){if(m.b&&m.b.type==='md')return mdMailHtml(m);return _mb.apply(this,arguments);};}
+{const _mb=mailBodyHtml;mailBodyHtml=function(m){if(m.b&&m.b.type==='md'&&!m.b.rec)return mdMailHtml(m);return _mb.apply(this,arguments);};}
 function mdTagLog(n0,w){const M=MD();const P=w==='pre'?M.pre:M.post;if(!P||!M.log||!M.log[0])return;if(M.log[0].op==null){M.log[0].op=P.op;M.log[0].w=w;}}
 // zapis odpowiedzi w wiadomości + zdjęcie „Wymaga działania”
 function mdSync(w){const M=MD();const P=w==='pre'?M.pre:M.post;if(!P)return;const m=mailBox().find(x=>x.b&&x.b.type==='md'&&x.b.w===w&&x.b.key===P.key);if(!m)return;

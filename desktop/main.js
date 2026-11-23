@@ -11,7 +11,7 @@ let win=null;
 app.on('second-instance',()=>{if(win){if(win.isMinimized())win.restore();win.focus();}});
 app.whenReady().then(()=>{
   protocol.handle('app',req=>{let p=decodeURIComponent(new URL(req.url).pathname);if(!p||p==='/')p='/index.html';
-    const f=path.normalize(path.join(ROOT,p));if(!f.startsWith(ROOT))return new Response('',{status:403});return net.fetch(pathToFileURL(f).toString());});
+    const f=path.normalize(path.join(ROOT,p));if(f!==ROOT&&!f.startsWith(ROOT+path.sep))return new Response('',{status:403});return net.fetch(pathToFileURL(f).toString());});
   Menu.setApplicationMenu(null);
   const s=loadState();
   win=new BrowserWindow({width:s.width||1440,height:s.height||900,x:s.x,y:s.y,minWidth:960,minHeight:620,backgroundColor:'#0b1220',title:'Golden Set',
