@@ -163,7 +163,7 @@ function roundTick(kind,home,att,opp){
 }
 
 // ---- transfery ----
-function windowOpen(){const p=S().phase;return p==='off'||p==='spar';}
+function windowOpen(){const s=S();if(!s)return false;const p=s.phase;if(p==='off'||p==='spar')return true;if(p==='liga'){ensureDates(s);return !!s.winEnd&&today()<=s.winEnd;}return false;}
 function posCount(t,pos){return t.players.filter(p=>p.pos===pos).length;}
 var ST_C=null;// pamięć podręczna składów na czas przerwy między sezonami
 function isStarter(p){if(p.tm<0)return false;if(ST_C){let s=ST_C[p.tm];if(!s)s=ST_C[p.tm]=new Set(Object.values(autoLineup(TEAMS[p.tm])));return s.has(p.id);}const lu=autoLineup(TEAMS[p.tm]);return Object.values(lu).includes(p.id);}

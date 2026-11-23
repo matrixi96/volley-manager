@@ -174,7 +174,7 @@ function foundClub(){const o=ocDraft();const c=ui.pendingCoach;
   SAVE.fin={bal:OC_BUDGET,log:[],sea:{},prev:null};
   SAVE.ownClub=true;syncTeams();
   SAVE.lineup=autoLineup(TEAMS[ti]);SAVE.coach=c;c.joined=GAME_START;c.founder=ti;
-  newSeason(1);initBoard(true);
+  newSeason(1,'off');initBoard(true);
   news(`🏗️ Powstaje nowy klub: ${o.name}${o.city?' ('+o.city+')':''}! Zaczyna w 2. Lidze, zajmując miejsce ${oldName}. Pierwszym trenerem zostaje ${c.first} ${c.last}.`);
   news(`⭐ Gwiazda zespołu: ${star.first} ${star.last} (${POS_NAMES[star.pos]}, ${star.age} l., ocena ${rating(star)}).`);
   ui.cc=null;ui.pendingCoach=null;ui.oc=null;ui.tab='home';syncDate();save();render();}

@@ -3,7 +3,7 @@ const MON_GEN=['stycznia','lutego','marca','kwietnia','maja','czerwca','lipca','
 const MON_NOM=['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
 const DOW=['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'];
 const DOW_S=['nd.','pn.','wt.','śr.','czw.','pt.','sob.'];
-const GAME_START='2026-08-01';
+const GAME_START='2026-06-01';
 function dP(s){const [y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d);}
 function dS(t){const x=new Date(t);return x.getUTCFullYear()+'-'+String(x.getUTCMonth()+1).padStart(2,'0')+'-'+String(x.getUTCDate()).padStart(2,'0');}
 function addDays(s,n){return dS(dP(s)+n*86400000);}
@@ -22,16 +22,17 @@ function today(){return SAVE.date||GAME_START;}
 const SLOTS=[[-1,'20:30'],[0,'14:45'],[0,'17:30'],[0,'20:30'],[1,'14:45'],[1,'17:30']];
 function ensureDates(s){
   const Y=seasonYear(s.n);
-  if(!s.sdates){let d=nextDow(`${Y}-08-15`,6);s.sdates=[];for(let k=0;k<N_SPAR;k++){s.sdates.push(d);d=addDays(d,k%2?3:4);}}if(!s.winEnd)s.winEnd=s.sdates[N_SPAR-1];
+  if(!s.sdates){let d=nextDow(`${Y}-08-15`,6);s.sdates=[];for(let k=0;k<N_SPAR;k++){s.sdates.push(d);d=addDays(d,k%2?3:4);}}
   if(!s.rdates){let d=nextDow(`${Y}-09-26`,6);s.rdates=[];const ex=Math.max(0,s.rounds.length-22);let k=0;while(s.rdates.length<s.rounds.length){const md=d.slice(5);const brk=(d.slice(0,4)==String(Y)&&md>='12-20')||(d.slice(0,4)==String(Y+1)&&md<='01-06');if(!brk){s.rdates.push(d);k++;const mid=addDays(d,4);if(k%2===0&&s.rdates.length<s.rounds.length&&s.rdates.length-k<ex)s.rdates.push(mid);}d=addDays(d,7);}}
   if(!s.podates){const st=addDays(s.rdates[s.rdates.length-1],14);s.podates=[0,4,7,11,14,18,21,25,28,32,35,39,42,46,49].map(o=>addDays(st,o));}
   if(!s.offDate)s.offDate=`${Y}-06-01`;
+  if(s.rdates&&s.rdates.length)s.winEnd=addDays(s.rdates[0],-1);
   if(s.po&&s.po.day==null){let day=0;for(const st of ['QF','SF','F']){const g=s.po.series.filter(x=>x.st===st).map(x=>x.games.length);if(g.length)day+=Math.max(...g);}s.po.day=day;}
 }
 function fixtureWhen(s,r,f){const i=s.rounds[r].findIndex(x=>x[0]===f[0]&&x[1]===f[1]);const sl=SLOTS[Math.max(0,i)%SLOTS.length];return {d:addDays(s.rdates[r],sl[0]),t:sl[1]};}
 function poTime(d){return dow(d)===6?'17:30':'20:30';}
 function nextEvent(){const s=S();if(!s)return null;ensureDates(s);
-  if(s.phase==='off'){if(typeof ntInit==='function')ntInit();const ex=typeof extraNext==='function'?extraNext(s.sdates?s.sdates[0]:null):null;if(ex)return {d:ex.d<today()?today():ex.d,t:'20:00'};return {d:s.offDate};}
+  if(s.phase==='off'){if(typeof ntInit==='function')ntInit();const ex=typeof extraNext==='function'?extraNext(offLimit(s)):null;if(ex)return {d:ex.d<today()?today():ex.d,t:'20:00'};return {d:s.offDate<today()?today():s.offDate};}
   if(s.phase==='spar'){const k=s.spar.res.length;return k<nSpar()?{d:s.sdates[k],t:'18:00'}:null;}
   if(s.phase==='liga'){const f=(s.rounds[s.round]||[]).find(f=>f[0]===SAVE.team||f[1]===SAVE.team);if(!f)return null;const w=fixtureWhen(s,s.round,f);const ex=typeof extraNext==='function'?extraNext(w.d):null;return ex?{d:ex.d,t:'20:30'}:w;}
   if(s.phase==='po'){const d=s.podates[Math.min(s.po.day,s.podates.length-1)];const ex=typeof extraNext==='function'?extraNext(d):null;return ex?{d:ex.d,t:'20:30'}:{d,t:poTime(d)};}

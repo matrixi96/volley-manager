@@ -83,7 +83,7 @@ function pickTeamView(){
   return `<div class="card"><h2>Wybierz klub</h2><p class="mut">Fikcyjna polska liga, 12 drużyn. Sezon: 7 sparingów, 22 kolejki (mecz i rewanż), a potem play-off dla czołowej ósemki. Słabszy klub to większe wyzwanie.</p>
   <div class="grid">${TEAMS.map(t=>`<button class="teamcard" style="--c:${t.color}" onclick="pickTeam(${t.idx})"><b>${esc(t.name)}</b><span class="stars">${stars(teamStrength(t))}</span><small class="mut">Siła składu: ${teamStrength(t)}</small></button>`).join('')}</div></div>`;
 }
-function pickTeam(i){const c=ui.pendingCoach;SAVE={team:i,tactics:{serve:1,dist:0},date:GAME_START};initWorld();SAVE.lineup=autoLineup(TEAMS[i]);if(c){SAVE.coach=c;c.joined=GAME_START;}newSeason(1);initBoard(true);ui.cc=null;ui.pendingCoach=null;syncDate();ui.match=null;ui.tab='home';render();}
+function pickTeam(i){const c=ui.pendingCoach;SAVE={team:i,tactics:{serve:1,dist:0},date:GAME_START};initWorld();SAVE.lineup=autoLineup(TEAMS[i]);if(c){SAVE.coach=c;c.joined=GAME_START;}newSeason(1,'off');initBoard(true);ui.cc=null;ui.pendingCoach=null;syncDate();ui.match=null;ui.tab='home';render();}
 function changeClub(){if(!ui.confirmReset){ui.confirmReset=true;render();return;}ui.confirmReset=false;ui.match=null;clearTimeout(timer);SAVE={};resetTeams();save();render();}
 
 // ---------- skład ----------

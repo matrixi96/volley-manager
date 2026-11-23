@@ -5,11 +5,14 @@ rebuildIndex();
 const N_SPAR=7;
 function S(){return SAVE.season;}
 function makeFixtures(n0){const n=n0%2?n0+1:n0;const t=[...Array(n).keys()].sort(()=>R()-0.5);const rounds=[];for(let r=0;r<n-1;r++){const pr=[];for(let i=0;i<n/2;i++){const a=t[i],b=t[n-1-i];if(a>=n0||b>=n0)continue;pr.push(r%2?[b,a]:[a,b]);}rounds.push(pr);t.splice(1,0,t.pop());}return rounds;}
+// najbliższy termin, przed którym mogą wypaść mecze pucharowe/kadry: w przerwie koniec lipca, w przygotowaniach najbliższy sparing albo start ligi
+function offLimit(s){return `${seasonYear(s.n)}-07-31`;}
+function sparLimit(s){ensureDates(s);const k=s.spar.res.length;return s.sdates&&s.sdates[k]?s.sdates[k]:s.rdates[0];}
 function newSeason(n,phase){
   if(typeof worldMigrate==='function'&&SAVE.lg)worldMigrate();
   const ids=lgIds(myLg());const first=makeFixtures(ids.length).map(rd=>rd.map(([h,a])=>[ids[h],ids[a]]));const second=first.map(rd=>rd.map(([h,a])=>[a,h]));
   const others=ids.filter(i=>i!==SAVE.team).sort(()=>R()-0.5).slice(0,N_SPAR);
-  SAVE.season={n:n||1,phase:phase||'spar',spar:{opps:others,res:[]},rounds:first.concat(second),round:0,results:[],po:null,final:null,ps:{}};
+  SAVE.season={n:n||1,phase:phase||'spar',spar:{opps:[],res:[],hm:[]},sdates:[],rounds:first.concat(second),round:0,results:[],po:null,final:null,ps:{}};void others;
   bgInit(SAVE.season);
   if(SAVE.world)for(const p of SAVE.world.players)p.base=snap(p);
   ensureDates(SAVE.season);
@@ -66,8 +69,8 @@ function simFixture(h,a,stats){const m=simMatch(participant(h,true),participant(
 // ---- mecz użytkownika ----
 function myNext(){
   const s=S();
-  if(s.phase==='off'){const ex=typeof extraNext==='function'?extraNext(s.sdates?s.sdates[0]:null):null;return ex?ex.ctx:null;}
-  if(s.phase==='spar'){const ex0=typeof extraNext==='function'?extraNext(s.sdates?s.sdates[Math.min(s.spar.res.length,s.sdates.length-1)]:null):null;if(ex0)return ex0.ctx;const k=s.spar.res.length;if(k>=nSpar())return null;const o=s.spar.opps[k];return sparHome(k)?{kind:'spar',h:SAVE.team,a:o}:{kind:'spar',h:o,a:SAVE.team};}
+  if(s.phase==='off'){const ex=typeof extraNext==='function'?extraNext(offLimit(s)):null;return ex?ex.ctx:null;}
+  if(s.phase==='spar'){const ex0=typeof extraNext==='function'?extraNext(sparLimit(s)):null;if(ex0)return ex0.ctx;const k=s.spar.res.length;if(k>=nSpar())return null;const o=s.spar.opps[k];return sparHome(k)?{kind:'spar',h:SAVE.team,a:o}:{kind:'spar',h:o,a:SAVE.team};}
   if(s.phase==='liga'){const f=(s.rounds[s.round]||[]).find(f=>f[0]===SAVE.team||f[1]===SAVE.team);if(!f)return null;const ex=typeof extraNext==='function'?extraNext(fixtureWhen(s,s.round,f).d):null;if(ex)return ex.ctx;return {kind:'liga',h:f[0],a:f[1]};}
   if(s.phase==='po'){const pd=s.podates[Math.min(s.po.day,s.podates.length-1)];const ex=typeof extraNext==='function'?extraNext(pd):null;if(ex)return ex.ctx;const sr=activeSeries().find(x=>x.hi===SAVE.team||x.lo===SAVE.team);if(!sr)return null;const h=seriesHome(sr);return {kind:'po',sid:sr.id,h,a:h===sr.hi?sr.lo:sr.hi};}
   if(s.phase==='end'){const ex=typeof extraNext==='function'?extraNext(null):null;return ex?ex.ctx:null;}

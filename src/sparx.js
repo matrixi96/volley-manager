@@ -5,7 +5,7 @@ function nSpar(){const s=S();return s&&s.spar&&s.spar.opps?s.spar.opps.length:N_
 function sparHome(k){const s=S();const h=s&&s.spar&&s.spar.hm;return h&&h[k]!=null?h[k]:k%2===0;}
 function sparHm(){const s=S();if(!s.spar.hm)s.spar.hm=s.spar.opps.map((o,k)=>k%2===0);return s.spar.hm;}
 function sparLast(){const s=S();ensureDates(s);return addDays(s.rdates[0],-2);}
-function sparFirst(){const s=S();const t=addDays(today(),1);const lp=s.spar.res.length?s.sdates[s.spar.res.length-1]:null;return lp&&lp>=t?addDays(lp,1):t;}
+function sparFirst(){const s=S();ensureDates(s);const p0=`${seasonYear(s.n)}-08-01`;const t0=addDays(today(),1);const t=t0<p0?p0:t0;const lp=s.spar.res.length?s.sdates[s.spar.res.length-1]:null;return lp&&lp>=t?addDays(lp,1):t;}
 function sparCanPlan(){const s=S();return !!s&&(s.phase==='off'||s.phase==='spar');}
 function sparTaken(d){const s=S();if(s.sdates.slice(0,nSpar()).includes(d))return 'sparing';if((s.spar.inv||[]).some(x=>x.d===d&&x.st==='wait'))return 'zaproszenie';
   try{if(typeof extraNext==='function'){const e=extraNext(d);if(e&&e.d===d)return 'mecz';}}catch(e){}return null;}
@@ -19,8 +19,8 @@ function sparAcceptP(op,home){const me=teamStrength(myTeam()),th=teamStrength(TE
   let p=0.78;if(th-me>6)p-=0.25;if(th-me>12)p-=0.2;if(repT-repM>20)p-=0.15;if(lgOf(op)<myLg())p-=0.1;if(!home)p+=0.1;if(lgOf(op)>myLg())p+=0.1;
   const s=S();const n=s.spar.opps.filter(x=>x===op).length;p-=0.3*n;return clamp(p,0.05,0.95);}
 function sparInvite(op,d,home,quiet){const s=S();op=+op;if(!sparCanPlan()||!TEAMS[op]||op===SAVE.team)return;if(!d||sparTaken(d)||d<sparFirst()||d>sparLast()){if(!quiet){ui.sparMsg={ok:0,t:'Ten termin jest już zajęty albo niedostępny.'};render();}return;}
-  s.spar.inv=s.spar.inv||[];s.spar.nid=(s.spar.nid||0)+1;s.spar.inv.push({id:s.spar.nid,op,d,home:!!home,st:'wait',ans:addDays(today(),R()<0.6?1:2),by:quiet?'asy':'me'});
-  if(!quiet){ui.sparMsg={ok:1,t:`Wysłano zaproszenie do ${TEAMS[op].name} na ${fmtDMY(d)}. Odpowiedź w ciągu 1–2 dni.`};save();render();}}
+  s.spar.inv=s.spar.inv||[];s.spar.nid=(s.spar.nid||0)+1;s.spar.inv.push({id:s.spar.nid,op,d,home:!!home,st:'wait',ans:s.phase==='off'?today():addDays(today(),R()<0.6?1:2),by:quiet?'asy':'me'});if(s.phase==='off'){try{sparDaily(today());}catch(e){}}
+  if(!quiet){ui.sparMsg={ok:1,t:`Wysłano zaproszenie do ${TEAMS[op].name} na ${fmtDMY(d)}. ${s.phase==='off'?' Odpowiedź jest już w poczcie.':' Odpowiedź w ciągu 1–2 dni.'}`};save();render();}}
 function sparInvCancel(id){const s=S();s.spar.inv=(s.spar.inv||[]).filter(x=>x.id!==id);save();render();}
 function sparDaily(d){const s=S();if(!s||!s.spar||!sparCanPlan())return;const inv=s.spar.inv||[];
   for(const x of inv){if(x.st!=='wait'||x.ans>d)continue;const T=TEAMS[x.op];

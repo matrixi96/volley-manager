@@ -38,7 +38,7 @@ const LIM={
     // pełny sezon
     const t0=Date.now();let g=0;const sErr=[];
     try{while(g++<500){const s=S();if(s.phase==='end')break;if(SAVE.fired){SAVE.fired=null;SAVE.offers=null;}const c=myNext();
-      if(!c){if(s.phase==='po'){simPoAll();continue;}if(s.phase==='spar'){endSpar();if(S().phase==='liga')continue;s.phase='liga';syncDate();continue;}break;}simNext();ui.match=null;ui.view=null;}}catch(e){sErr.push(e.message);}
+      if(!c){if(s.phase==='off'){ui.confirm='start';startSeasonFromOff();continue;}if(s.phase==='po'){simPoAll();continue;}if(s.phase==='spar'){endSpar();if(S().phase==='liga')continue;s.phase='liga';syncDate();continue;}break;}simNext();ui.match=null;ui.view=null;}}catch(e){sErr.push(e.message);}
     const s=S();out._sezon={faza:s.phase,ms:Date.now()-t0,bledy:sErr};
     try{nextSeason();out._nowySezon='ok';}catch(e){out._nowySezon=e.message;}
     return out;},SEED);

@@ -70,3 +70,17 @@ function ocCapital(){if(SAVE.team==null||!SAVE.custom||SAVE.custom.idx!==SAVE.te
 // jednorazowo po aktualizacji: przelicz budżety bieżącego sezonu według nowych zasad (wydane kwoty zostają)
 function budMigr204(){if(SAVE.team==null||!S()||!SAVE.bud||SAVE.bud.v204)return;try{budPlan();SAVE.bud.v204=1;}catch(e){}}
 {const _vb=vmBoot;vmBoot=function(){const r=_vb.apply(this,arguments);try{budMigr204();ocCapital();}catch(e){}return r;};}
+
+// ---- przerwa między sezonami (od 1 czerwca): czas płynie dzień po dniu, przygotowania ruszają 1 sierpnia ----
+function prepStart(s){s=s||S();return `${seasonYear(s.n)}-08-01`;}
+{const _nd=nextDay;nextDay=function(){try{const s=S();if(s&&s.phase==='off'&&!SAVE.fired&&!liveMatch()){
+    const t=addDays(today(),1);const ex=typeof extraNext==='function'?extraNext(offLimit(s)):null;
+    if(ex&&ex.d<=today())return _nd.apply(this,arguments);// dziś mecz kadry/pucharu
+    if(t>=prepStart(s)){ui.confirm='start';startSeasonFromOff();ui.tab='home';render();return;}// 1 sierpnia: start przygotowań
+    advanceTo(t);save();ui.tab='home';render();return;}}catch(e){console.error(e);}return _nd.apply(this,arguments);};}
+// start przygotowań nie wcześniej niż 1 sierpnia (okres między startem a 1 sierpnia mija dzień po dniu)
+{const _so=startSeasonFromOff;startSeasonFromOff=function(){const s=S();const r=_so.apply(this,arguments);try{if(s&&s.phase==='spar'&&today()<prepStart(s)){advanceTo(prepStart(s));syncDate();save();render();}}catch(e){console.error(e);}return r;};}
+// ekran główny w przerwie: co robić
+{const _hv=homeView;homeView=function(){let h=_hv.apply(this,arguments);try{const s=S();if(s&&s.phase==='off'&&!SAVE.fired){const left=daysBetween(today(),prepStart(s));
+  h=h.replace('<p class="mut">Brak zaplanowanych meczów w tej fazie sezonu.</p><button class="btn" onclick="nextAction()">Dalej</button>',
+   `<p class="mut">${_t('Przerwa między sezonami — okno transferowe jest otwarte.')} ${left>0?_t('Przygotowania ruszają 1 sierpnia')+` (${left} ${_t('dni')}).`:''} ${_t('Umów sparingi i obóz, wzmocnij skład, a potem rozpocznij przygotowania.')}</p><div class="row wrap" style="gap:8px"><button class="btn" onclick="go('mecz')">${_t('Sparingi i przygotowania')}</button><button class="ghost" onclick="go('transfery')">${_t('Transfery')}</button></div>`);}}catch(e){console.error(e);}return h;};}
