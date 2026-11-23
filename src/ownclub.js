@@ -1,6 +1,7 @@
 // ================= WŁASNY KLUB =================
 const OWN_COLORS=['#0ea5e9','#2563eb','#7c3aed','#db2777','#dc2626','#ea580c','#ca8a04','#16a34a','#0d9488','#475569','#111827','#be123c'];
-function applyCustom(){const c=SAVE.custom;if(!c)return;const t=TEAMS[c.idx];t.name=c.name;t.short=c.short;t.color=c.color;t.city=c.city;}
+function cleanName(s){return String(s==null?'':s).replace(/[<>&"'`]/g,'').slice(0,40);}
+function applyCustom(){const c=SAVE.custom;if(!c)return;const t=TEAMS[c.idx];if(!t)return;c.name=cleanName(c.name);c.short=cleanName(c.short).slice(0,4);c.city=cleanName(c.city);if(!/^#[0-9a-fA-F]{3,8}$/.test(c.color||''))c.color='#2563eb';t.name=c.name;t.short=c.short;t.color=c.color;t.city=c.city;}
 const CREST_SHAPES={
   shield:'M50 4 L92 16 L88 62 Q82 92 50 106 Q18 92 12 62 L8 16Z',
   round:'M50 7 A48 48 0 1 1 49.9 7Z',

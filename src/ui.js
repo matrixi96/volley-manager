@@ -318,7 +318,7 @@ function postMatchView(){
   return `<div class="card post ${won?'won':'lost'}"><h2>${won?'Zwycięstwo! 🎉':'Porażka'} <small class="mut">${m.ctx?({spar:'sparing',liga:'liga',po:'play-off'})[m.ctx.kind]:''}</small></h2>
   <div class="final">${esc(m.sides[0].team.name)} <b>${m.setsWon[0]}:${m.setsWon[1]}</b> ${esc(m.sides[1].team.name)}</div>
   <div class="mut">(${m.sets.map(s=>s[0]+':'+s[1]).join(', ')})</div>
-  <p>MVP: <b>${esc(mvp.first)} ${esc(mvp.last)}</b> (${POS_NAMES[mvp.pos]}, ${w.team.name}): ${mvp.st.kill+mvp.st.blk+mvp.st.ace} pkt</p>
+  <p>MVP: <b>${esc(mvp.first)} ${esc(mvp.last)}</b> (${POS_NAMES[mvp.pos]}, ${esc(w.team.name)}): ${mvp.st.kill+mvp.st.blk+mvp.st.ace} pkt</p>
   <div class="row wrap"><button class="btn" onclick="ui.match=null;render()">Dalej</button><button class="ghost" onclick="ui.view='log';render()">Komentarz meczu</button></div></div>
   <div class="card">${statsBlock(m)}</div>`;
 }

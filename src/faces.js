@@ -32,12 +32,15 @@ function faceSvg(seed,o){
   s+=`<rect width="100" height="100" fill="url(#b${U})"/>`;
   // ubranie
   const shirt='M6 100 Q10 77 33 73 Q50 81 67 73 Q90 77 94 100Z';
-  if(o.kind==='coach'||o.kind==='staff'){s+=`<path d="M8 100 Q12 78 32 74 L50 84 L68 74 Q88 78 92 100Z" fill="${o.kind==='coach'?'#1f2937':'#334155'}"/><path d="M8 100 Q12 78 32 74 L50 84 L68 74 Q88 78 92 100Z" fill="url(#j${U})"/><path d="M42 76 L50 92 L58 76 L50 82Z" fill="#f8fafc"/><path d="M48 82 L52 82 L53 96 L50 99 L47 96Z" fill="${jersey}"/><path d="M32 74 L44 96 M68 74 L56 96" stroke="#0005" stroke-width="1.2"/>`;}
+  let postNeck='';
+  if(o.kind==='coach'&&o.outfit&&o.outfit!=='suit'&&typeof coachOutfitSvg==='function'){const r2=coachOutfitSvg(o.outfit,jersey,U,shirt,dark);s+=r2.body;postNeck=r2.neck;}
+  else if(o.kind==='coach'||o.kind==='staff'){s+=`<path d="M8 100 Q12 78 32 74 L50 84 L68 74 Q88 78 92 100Z" fill="${o.kind==='coach'?'#1f2937':'#334155'}"/><path d="M8 100 Q12 78 32 74 L50 84 L68 74 Q88 78 92 100Z" fill="url(#j${U})"/><path d="M42 76 L50 92 L58 76 L50 82Z" fill="#f8fafc"/><path d="M48 82 L52 82 L53 96 L50 99 L47 96Z" fill="${jersey}"/><path d="M32 74 L44 96 M68 74 L56 96" stroke="#0005" stroke-width="1.2"/>`;}
   else{const k=kit||{p:'plain',a:jersey,b:dark(jersey),c:'r'};s+=`<defs><clipPath id="k${U}"><path d="${shirt}"/></clipPath></defs><path d="${shirt}" fill="${k.a}"/><g clip-path="url(#k${U})">`;
     const b=k.b;s+=({v:[26,40,54,68].map(x=>`<rect x="${x}" y="70" width="6" height="30" fill="${b}"/>`).join(''),h:`<rect x="0" y="88" width="100" height="7" fill="${b}"/>`,hoops:`<rect x="0" y="82" width="100" height="4" fill="${b}"/><rect x="0" y="91" width="100" height="4" fill="${b}"/>`,sash:`<path d="M20 74 L30 74 L64 100 L50 100Z" fill="${b}"/>`,half:`<rect x="50" y="70" width="50" height="30" fill="${b}"/>`,side:`<rect x="6" y="70" width="16" height="30" fill="${b}"/><rect x="78" y="70" width="16" height="30" fill="${b}"/>`})[k.p]||'';
     s+=`<rect x="0" y="70" width="100" height="30" fill="url(#j${U})"/></g>`+(k.c==='v'?`<path d="M38 74 L50 86 L62 74" fill="none" stroke="${k.b}" stroke-width="3"/>`:`<path d="M38 74 Q50 84 62 74" fill="none" stroke="${k.b}" stroke-width="3"/>`);}
   // szyja z cieniem pod żuchwą
   s+=`<path d="M${cx-8.5} ${cy+16} L${cx-9} ${cy+33} Q${cx} ${cy+37} ${cx+9} ${cy+33} L${cx+8.5} ${cy+16}Z" fill="${skinD}"/><ellipse cx="${cx}" cy="${cy+fh-2}" rx="${fw*0.55}" ry="5" fill="${skinDD}" opacity=".55"/>`;
+  if(postNeck)s+=postNeck;
   // uszy
   for(const g of [-1,1])s+=`<ellipse cx="${cx+g*fw}" cy="${cy+2}" rx="4.2" ry="6.5" fill="${skin}"/><path d="M${cx+g*(fw+1.5)} ${cy-2} Q${cx+g*(fw+2.5)} ${cy+2} ${cx+g*(fw+1)} ${cy+6}" fill="none" stroke="${skinDD}" stroke-width="1.1" opacity=".7"/>`;
   // twarz
