@@ -6,6 +6,7 @@ const DLG=[
  ['prep','Odprawa przed meczem','sta','Analityk sam stosuje rady z odprawy (zagrywka, blok, rozegranie) przed każdym meczem.'],
  ['train','Plan treningowy','asy','Asystent układa plan tygodnia pod terminarz i zmęczenie (tryb „asystent” w Treningu).'],
  ['contr','Przedłużanie kontraktów','fin','Dyrektor przedłuża ważnych zawodników (ocena co najmniej średnia drużyny, do 32 lat) w granicach budżetu płacowego. Słabszych puszcza po sezonie.'],
+ ['infra','Rozbudowa obiektów','fin','Dyrektor sam rozbudowuje obiekty, ale tylko z pieniędzy ponad bezpieczne saldo (próg nadwyżki ligi). Kolejność: centrum treningowe, centrum medyczne, hala, odnowa, akademia, siedziba, sklep.'],
  ['spons','Sponsorzy','fin','Dyrektor podpisuje oferty sponsorów (tytularnego, gdy go brak). Nigdy nie zrywa umów.'],
  ['agents','Kontakty agentów','fin','Dyrektor odpowiada agentom: zgadza się na rozmowy o kontraktach ważnych zawodników, inne prośby grzecznie odrzuca.'],
  ['scout','Przydziały skautów','sk','Skaut sam rozpoczyna przydziały pod najsłabsze pozycje w kadrze, gdy ma wolne miejsce.'],
