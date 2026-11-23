@@ -104,11 +104,11 @@ function calView(){
     cells+=`<div class="cd ${d===td?'today':''} ${d<td?'past':''} ${winOpen(d)?'win':''} ${brk(d)?'brk':''}"><div class="dn">${dd}${d.endsWith('-01')?' <span title="Wypłata pensji i rata sponsora">💰</span>':''}</div>
     ${es.map(e=>{let res='';if(e.r){const my=e.r.h===SAVE.team?e.r.sw[0]:e.r.sw[1],op=e.r.h===SAVE.team?e.r.sw[1]:e.r.sw[0];res=`<b class="${my>op?'good':'bad'}">${my}:${op}</b>`;}
       return `<div class="ce ${e.kind}" style="--c:${TEAMS[e.op].color}"><span>${e.home?'🏠':'✈️'} ${esc(TEAMS[e.op].short)}</span>${res||`<small>${e.t||''}</small>`}<div class="ck">${e.kind==='spar'?'sparing':e.kind==='po'?STAGE[e.st]:'liga · K'+e.k}</div></div>`;}).join('')}
-    ${b.map(p=>`<div class="cb" title="Urodziny">🎂 ${esc(p.last)}</div>`).join('')}${BLD().some(b=>b.until===d)?`<div class="cb" style="color:#facc15">🏗️ koniec budowy</div>`:''}</div>`;}
+    ${BLD().some(b=>b.until===d)?`<div class="cb" style="color:#facc15">🏗️ koniec budowy</div>`:''}</div>`;}
   return `<div class="card"><div class="row wrap"><button class="ghost" onclick="ui.calM='${shift(-1)}';render()">◀</button><h2 style="margin:0;min-width:200px;text-align:center">${MON_NOM[M-1]} ${Y}</h2><button class="ghost" onclick="ui.calM='${shift(1)}';render()">▶</button><span class="sp"></span><button class="ghost" onclick="ui.calM=null;render()">Dziś</button></div>
   <p class="small mut">Dziś: <b style="color:var(--txt)">${fmtLong(td)}</b> · Sezon ${sLabel(s.n)}</p>
   <div class="cal"><div class="ch">pn.</div><div class="ch">wt.</div><div class="ch">śr.</div><div class="ch">czw.</div><div class="ch">pt.</div><div class="ch">sob.</div><div class="ch">nd.</div>${cells}</div>
-  <div class="legend2 small mut"><span><i class="lg win"></i> okno transferowe</span><span><i class="lg brk"></i> przerwa świąteczna</span><span>🏠 u siebie · ✈️ na wyjeździe</span><span>💰 wypłaty (1. dnia miesiąca)</span><span>🎂 urodziny zawodników</span></div></div>
+  <div class="legend2 small mut"><span><i class="lg win"></i> okno transferowe</span><span><i class="lg brk"></i> przerwa świąteczna</span><span>🏠 u siebie · ✈️ na wyjeździe</span><span>💰 wypłaty (1. dnia miesiąca)</span></div></div>
   ${keyDates()}`;
 }
 function keyDates(){const s=S();ensureDates(s);const Y=seasonYear(s.n);
