@@ -410,7 +410,7 @@ function socAction(k){const s=SOC();const a=SOC_ACT.find(x=>x[0]===k);if(!s||!a)
   if(ui.confirm!=='soc'+k){ui.confirm='soc'+k;render();return;}ui.confirm=null;
   money(-a[3],'Marketing');finLog(`Social media: ${a[1].replace(/^\S+ /,'')}`,-a[3]);s.cd[k]=today();
   let d=socGain(a[4]*(0.5+sk/20));let extra='';
-  if(k==='qa'){const p=socTop();if(p){addMor(p,3);if((hasT(p,'ind')||hasT(p,'kap'))&&R()<0.2*(1-sk/30)){d+=socGain(-0.02);extra=` ${p.last} palnął coś niefortunnego — część kibiców się obraziła.`;}socPost(`Q&A z ${p.first} ${p.last} — pytajcie! 🎤`,extra?'bad':'good',0.08,'🎤');}}
+  if(k==='qa'){const p=socTop();if(p){addMor(p,3);if((hasT(p,'ind')||hasT(p,'kap'))&&R()<0.2*(1-sk/30)){d+=socGain(-0.02);extra=` ${p.last} palnął coś niefortunnego — część kibiców się obraziła.`;}try{if(typeof qaBuild==='function')ui._qa={qa:qaBuild(p,!!extra),pid:p.id};}catch(e){console.error(e);}socPost(`Q&A: ${p.first} ${p.last} odpowiada na pytania kibiców`,extra?'bad':'good',0.08,'🎤');}}
   else socPost(a[1].replace(/^\S+ /,'')+` — już na naszych profilach!`,'good',0.06,a[1].split(' ')[0]);
   ui.socMsg={ok:!extra,t:`${a[1].replace(/^\S+ /,'')}: ${d>=0?'+':''}${fmtK(d)} obserwujących.${extra}`};save();render();}
 // co miesiąc: naturalny wzrost, wpadki zawodników, renoma, raport specjalisty
