@@ -4,20 +4,28 @@ const SKIN_W=[18,22,22,15,9,6,4];
 const HAIRC=['#1c1917','#2d1f16','#4a3222','#6b4a2e','#8d6b48','#c8a165','#b45309','#9ca3af'];
 const HAIRC_W=[16,20,18,14,10,9,4,0];
 const EYEC=['#5b3a1e','#3f6e9e','#4b7a4d','#6b7280','#2a1a10'];
+// kolory włosów do wyboru w kreatorze twarzy (z siwymi)
+const HAIR_PICK=['#1c1917','#2d1f16','#4a3222','#6b4a2e','#8d6b48','#c8a165','#b45309','#9ca3af','#d1d5db'];
+const FACE_SHAPES=[[25.5,33,0.15],[28,34,0.5],[30.5,35,0.9]];
+function lkI(v,n){v=Number(v);return Number.isInteger(v)&&v>=0&&v<n?v:null;}
 function strSeed(s){let h=2166136261;for(const c of String(s)){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}
 function wPick(r,arr,w){let t=w.reduce((a,b)=>a+b,0),x=r()*t;for(let i=0;i<arr.length;i++){x-=w[i];if(x<=0)return arr[i];}return arr[arr.length-1];}
 function faceSvg(seed,o){
-  o=o||{};const r=mulberry32(strSeed(seed));const size=o.size||48;const age=o.age||25;const jersey=o.color||'#3b82f6';
-  const skin=o.skin!=null?SKINS[o.skin]:wPick(r,SKINS,SKIN_W);
+  o=o||{};const L=o.look&&typeof o.look==='object'?o.look:{};const OUT=o.out;const r=mulberry32(strSeed(seed));const size=o.size||48;const age=o.age||25;const jersey=o.color||'#3b82f6';
+  let skin=o.skin!=null?SKINS[o.skin]:wPick(r,SKINS,SKIN_W);
   let hairC=wPick(r,HAIRC,HAIRC_W);if(age>=45&&r()<(age-40)/30)hairC=age>=58?'#d1d5db':'#9ca3af';
-  const eyeC=EYEC[Math.floor(r()*EYEC.length)];
-  const fw=25+r()*6,fh=31+r()*5,jaw=r();const cx=50,cy=46;
-  const hairStyle=age>=50&&r()<0.25?0:Math.floor(r()*8);
-  const beard=o.kind==='junior'?(r()<0.08?1:0):Math.floor(r()*(age>=30?6:4.5)); // 0 brak,1 zarost,2 broda,3 kozia,4 wąsy,5 pełna
+  let eyeC=EYEC[Math.floor(r()*EYEC.length)];
+  let fw=25+r()*6,fh=31+r()*5,jaw=r();const cx=50,cy=46;
+  let hairStyle=age>=50&&r()<0.25?0:Math.floor(r()*8);
+  let beard=o.kind==='junior'?(r()<0.08?1:0):Math.floor(r()*(age>=30?6:4.5)); // 0 brak,1 zarost,2 broda,3 kozia,4 wąsy,5 pełna
   const band=o.kind==='player'&&r()<0.18;
   const brow=1.6+r()*1.8,browTilt=(r()-0.5)*4;
   const eyeY=cy-2+r()*3,eyeDx=9+r()*2.5,eyeR=2.4+r()*0.8;
-  const noseT=Math.floor(r()*3),mouthT=Math.floor(r()*4);
+  let noseT=Math.floor(r()*3),mouthT=Math.floor(r()*4);
+  // własny wygląd (kreator twarzy trenera) nadpisuje wylosowane cechy
+  if(OUT){Object.assign(OUT,{skin:Math.max(0,SKINS.indexOf(skin)),hc:Math.max(0,HAIR_PICK.indexOf(hairC)),ec:Math.max(0,EYEC.indexOf(eyeC)),shape:fw<27?0:fw<29.5?1:2,hair:hairStyle,beard,nose:noseT,mouth:mouthT});}
+  {let v;if((v=lkI(L.skin,SKINS.length))!=null)skin=SKINS[v];if((v=lkI(L.hc,HAIR_PICK.length))!=null)hairC=HAIR_PICK[v];if((v=lkI(L.ec,EYEC.length))!=null)eyeC=EYEC[v];
+   if((v=lkI(L.shape,3))!=null){[fw,fh,jaw]=FACE_SHAPES[v];}if((v=lkI(L.hair,8))!=null)hairStyle=v;if((v=lkI(L.beard,6))!=null)beard=v;if((v=lkI(L.nose,3))!=null)noseT=v;if((v=lkI(L.mouth,4))!=null)mouthT=v;}
   const sh=(c,f)=>{const n=parseInt(c.slice(1),16);return `rgb(${[n>>16,n>>8&255,n&255].map(v=>Math.max(0,Math.min(255,Math.round(f>1?v+(255-v)*(f-1):v*f)))).join(',')})`;};
   const dark=c=>sh(c,0.78);
   const U='f'+strSeed(seed)%99999+'_'+(++FACE_UID);

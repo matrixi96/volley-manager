@@ -35,12 +35,12 @@ function ccNext(){const d=ccDraft();d.first=($('#ccf')||{}).value||d.first;d.las
   if(ccPool()>0&&!migr0()&&ui.ccPoolOk!==ccPool()){ui.ccPoolOk=ccPool();ui.ccErr=`Masz jeszcze ${ccPool()} pkt do rozdania. Rozdaj je przyciskami + albo kliknij „Rozdaj losowo”. Kliknij „Dalej” jeszcze raz, żeby przejść bez nich.`;render();return;}
   ui.ccErr=null;
   const e=C_EXP.find(x=>x[0]===d.exp);const attrs={};for(const [k] of C_ATTR)attrs[k]=Math.min(20,d.attrs[k]+(e[5][k]||0));
-  const c={first:cleanName(d.first.trim()),last:cleanName(d.last.trim()),exp:d.exp,rep:e[3],attrs,face:d.face,outfit:d.outfit||'suit',hist:[],trophies:[],seasons:0};
+  const c={first:cleanName(d.first.trim()),last:cleanName(d.last.trim()),exp:d.exp,rep:e[3],attrs,face:d.face,look:d.look||null,outfit:d.outfit||'suit',hist:[],trophies:[],seasons:0};
   const ref=SAVE.date||GAME_START;const y=+ref.slice(0,4)-d.age;c.dob=`${y-(R()<0.5?1:0)}-${String(1+Math.floor(R()*12)).padStart(2,'0')}-${String(1+Math.floor(R()*28)).padStart(2,'0')}`;
   if(SAVE.team!=null){SAVE.coach=c;c.joined=today();initBoard(true);ui.cc=null;save();render();return;}
   ui.pendingCoach=c;d.step=2;render();}
 function coachAge(c){return ageAt(c.dob,SAVE.date||GAME_START);}
-function coachFace(c,size){return faceSvg(c.face,{size:size||48,age:coachAge(c),color:SAVE.team!=null?TEAMS[SAVE.team].color:'#ffb020',kind:'coach',outfit:c.outfit});}
+function coachFace(c,size){return faceSvg(c.face,{size:size||48,age:coachAge(c),color:SAVE.team!=null?TEAMS[SAVE.team].color:'#ffb020',kind:'coach',outfit:c.outfit,look:c.look});}
 function coachCreateView(){
   const d=ccDraft();const pool=ccPool();
   if(d.step===3&&ui.pendingCoach)return ownClubView();
@@ -48,7 +48,7 @@ function coachCreateView(){
   const migr=SAVE.team!=null;
   return `<div class="card"><h2>${migr?'Stwórz swojego trenera':'Nowa gra: stwórz trenera'}</h2><p class="mut">${migr?'Twój zapis nie ma jeszcze trenera. Stwórz go, a gra potoczy się dalej od miejsca, w którym skończyłeś.':'To Ty prowadzisz drużynę. Od doświadczenia zależą punkty do rozdania i reputacja, a od reputacji to, które kluby będą chciały Cię zatrudnić.'}</p>
   
-  <div class="cc"><div class="ccface">${faceSvg(d.face,{size:140,age:d.age,color:'#ffb020',kind:'coach',outfit:d.outfit})}<button class="ghost" onclick="ui.cc.face='c'+Math.floor(Math.random()*1e9);render()">🎲 Losuj twarz</button></div>
+  <div class="cc"><div class="ccface">${faceSvg(d.face,{size:140,age:d.age,color:'#ffb020',kind:'coach',outfit:d.outfit,look:d.look})}<button class="ghost" onclick="ui.cc.face='c'+Math.floor(Math.random()*1e9);ui.cc.look=null;render()">🎲 Losuj twarz</button></div>
   <div class="ccform"><div class="row wrap"><label class="lu"><span>Imię</span><input id="ccf" value="${esc(d.first)}" oninput="ui.cc.first=this.value" maxlength="20"></label><label class="lu"><span>Nazwisko</span><input id="ccl" value="${esc(d.last)}" oninput="ui.cc.last=this.value" maxlength="24"></label><label class="lu"><span>Wiek</span><input id="cca" type="number" min="28" max="70" value="${d.age}" oninput="ui.cc.age=+this.value" style="width:80px"></label></div>
   <h3>Doświadczenie</h3><div class="opts">${C_EXP.map(([k,n,ds,rep,pts,bon])=>`<button class="opt ${d.exp===k?'on':''}" onclick="ccExp('${k}')"><b>${n}</b><small>${ds}</small><small class="mut">Reputacja ${rep} · ${pts} pkt${Object.keys(bon).length?' · bonus: '+Object.entries(bon).map(([a,v])=>C_ATTR.find(x=>x[0]===a)[1]+' +'+v).join(', '):''}</small></button>`).join('')}</div></div></div>
   <div class="row wrap" style="margin-top:14px"><h3 style="margin:0">Atrybuty trenera</h3><span class="sp"></span><span>Do rozdania: <b class="${pool>0?'good':''}">${pool}</b> pkt</span><button class="ghost" onclick="ccRandom()">🎲 Rozdaj losowo</button></div>

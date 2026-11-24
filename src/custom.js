@@ -7,16 +7,17 @@ function coachOutfitSvg(k,col,U,shirt,dark){const suit='M8 100 Q12 78 32 74 L50 
   if(k==='polo'){const d=dark(col);return {body:`<path d="${shirt}" fill="${col}"/><path d="${shirt}" fill="url(#j${U})"/><path d="M50 79 L50 90" stroke="${d}" stroke-width="1.2"/><circle cx="50" cy="83" r="0.9" fill="#fff"/><circle cx="50" cy="87" r="0.9" fill="#fff"/>`,neck:`<path d="M37 72 L50 80 L44 85 L35 76Z" fill="${col}" stroke="${d}" stroke-width=".8"/><path d="M63 72 L50 80 L56 85 L65 76Z" fill="${col}" stroke="${d}" stroke-width=".8"/>`};}
   if(k==='turtle')return {body:`<path d="${suit}" fill="#4b5563"/>${sh}<path d="M40 74 L50 96 L60 74 L50 80Z" fill="#111827"/><path d="M32 74 L44 96 M68 74 L56 96" stroke="#0006" stroke-width="1.2"/>`,neck:`<path d="M40 66 Q50 69 60 66 L61 78 Q50 82 39 78Z" fill="#111827"/><path d="M40 70 Q50 73 60 70 M40 74 Q50 77 60 74" fill="none" stroke="#374151" stroke-width=".8"/>`};
   return {body:'',neck:''};}
-function outfitPicker(cur,face,age,col,fn){return `<div class="row wrap" style="gap:8px">${COACH_OUTFITS.map(([k,n])=>`<button class="outfit ${(cur||'suit')===k?'on':''}" onclick="${fn}('${k}')" title="${_t(n)}">${faceSvg(face,{size:64,age,color:col,kind:'coach',outfit:k})}<small>${_t(n)}</small></button>`).join('')}</div>`;}
+function outfitPicker(cur,face,age,col,fn,look){return `<div class="row wrap" style="gap:8px">${COACH_OUTFITS.map(([k,n])=>`<button class="outfit ${(cur||'suit')===k?'on':''}" onclick="${fn}('${k}')" title="${_t(n)}">${faceSvg(face,{size:64,age,color:col,kind:'coach',outfit:k,look})}<small>${_t(n)}</small></button>`).join('')}</div>`;}
 // kreator trenera: wybór stroju pod twarzą
 function ccOutfit(k){ccDraft().outfit=k;render();}
 {const _cv=coachCreateView;coachCreateView=function(){let h=_cv.apply(this,arguments);try{const d=ccDraft();if(d.step!==1)return h;
-  const mk='<h3>Doświadczenie</h3>';const i=h.indexOf(mk);if(i>=0)h=h.slice(0,i)+`<h3>${_t('Strój trenera')}</h3>`+outfitPicker(d.outfit,d.face,d.age,'#ffb020','ccOutfit')+h.slice(i);}catch(e){console.error(e);}return h;};}
+  const mk='<h3>Doświadczenie</h3>';const i=h.indexOf(mk);if(i>=0)h=h.slice(0,i)+`<h3>${_t('Wygląd trenera')}</h3>`+faceEditor(d.face,d.look,d.age,'#ffb020',d.outfit,'ccLook')+`<h3>${_t('Strój trenera')}</h3>`+outfitPicker(d.outfit,d.face,d.age,'#ffb020','ccOutfit',d.look)+h.slice(i);}catch(e){console.error(e);}return h;};}
 // zakładka Trener: zmiana stroju w każdej chwili
 function coachOutfitSet(k){const c=coach();if(!c)return;c.outfit=k;save();render();}
 {const _co=coachView;coachView=function(){const h=_co.apply(this,arguments);try{const c=coach();if(!c)return h;
-  const card=`<div class="card"><h2>${_t('Strój trenera')}</h2><p class="small mut">${_t('Tak będziesz wyglądać przy linii boiska, w menu i na konferencjach. Strój klubowy przyjmuje barwy prowadzonej drużyny.')}</p>${outfitPicker(c.outfit,c.face,coachAge(c),SAVE.team!=null?TEAMS[SAVE.team].color:'#ffb020','coachOutfitSet')}</div>`;
-  const i=h.indexOf('<div class="card"><h2>Atrybuty trenera</h2>');return i>=0?h.slice(0,i)+card+h.slice(i):h+card;}catch(e){console.error(e);return h;}};}
+  const card=`<div class="card"><h2>${_t('Strój trenera')}</h2><p class="small mut">${_t('Tak będziesz wyglądać przy linii boiska, w menu i na konferencjach. Strój klubowy przyjmuje barwy prowadzonej drużyny.')}</p>${outfitPicker(c.outfit,c.face,coachAge(c),SAVE.team!=null?TEAMS[SAVE.team].color:'#ffb020','coachOutfitSet',c.look)}</div>`;
+  const fcard=`<div class="card"><h2>${_t('Wygląd trenera')}</h2><p class="small mut">${_t('Ułóż twarz sam: karnacja, fryzura, zarost, oczy, nos i usta.')}</p>${faceEditor(c.face,c.look,coachAge(c),SAVE.team!=null?TEAMS[SAVE.team].color:'#ffb020',c.outfit,'coachLook')}</div>`;
+  const i=h.indexOf('<div class="card"><h2>Atrybuty trenera</h2>');return i>=0?h.slice(0,i)+fcard+card+h.slice(i):h+fcard+card;}catch(e){console.error(e);return h;}};}
 
 // ---- własny herb klubu ----
 // projekt herbu: {sh,pt,em,c2,bg,yr} — ten sam format co herby klubów ligowych (crestSvg obsługuje obiekt)
@@ -84,3 +85,20 @@ function prepStart(s){s=s||S();return `${seasonYear(s.n)}-08-01`;}
 {const _hv=homeView;homeView=function(){let h=_hv.apply(this,arguments);try{const s=S();if(s&&s.phase==='off'&&!SAVE.fired){const left=daysBetween(today(),prepStart(s));
   h=h.replace('<p class="mut">Brak zaplanowanych meczów w tej fazie sezonu.</p><button class="btn" onclick="nextAction()">Dalej</button>',
    `<p class="mut">${_t('Przerwa między sezonami — okno transferowe jest otwarte.')} ${left>0?_t('Przygotowania ruszają 1 sierpnia')+` (${left} ${_t('dni')}).`:''} ${_t('Umów sparingi i obóz, wzmocnij skład, a potem rozpocznij przygotowania.')}</p><div class="row wrap" style="gap:8px"><button class="btn" onclick="go('mecz')">${_t('Sparingi i przygotowania')}</button><button class="ghost" onclick="go('transfery')">${_t('Transfery')}</button></div>`);}}catch(e){console.error(e);}return h;};}
+
+// ---- kreator twarzy trenera: każdą cechę wybierasz sam (zamiast losowania) ----
+function lookFull(face,look,age){const out={};faceSvg(face,{size:10,age,kind:'coach',out});return Object.assign(out,look||{});}
+function faceEditor(face,look,age,col,outfit,fn){const L=lookFull(face,look,age);
+  const sw=(k,arr)=>`<div class="row wrap" style="gap:6px">${arr.map((c,i)=>`<button class="fsw ${L[k]===i?'on':''}" style="background:${c}" onclick="${fn}('${k}',${i})" aria-label="${i+1}"></button>`).join('')}</div>`;
+  const th=(k,n,names,vb)=>`<div class="row wrap" style="gap:6px">${Array.from({length:n},(_,i)=>`<button class="outfit fth ${L[k]===i?'on':''}" onclick="${fn}('${k}',${i})" title="${names?_t(names[i]):i+1}">${(f=>vb?f.replace('viewBox="0 0 100 100"',`viewBox="${vb}"`):f)(faceSvg(face,{size:52,age,color:col,kind:'coach',outfit,look:Object.assign({},L,{[k]:i})}))}${names?`<small>${_t(names[i])}</small>`:''}</button>`).join('')}</div>`;
+  const row=(t,c)=>`<div class="fer"><b class="small">${_t(t)}</b>${c}</div>`;
+  return `<div class="feditor"><div class="feprev">${faceSvg(face,{size:150,age,color:col,kind:'coach',outfit,look:L})}<button class="ghost sm" onclick="${fn}('rnd',0)">🎲 ${_t('Losuj')}</button></div><div class="fecol">
+   ${row('Karnacja',sw('skin',SKINS))}${row('Kształt twarzy',th('shape',3,['Wąska','Średnia','Szeroka']))}
+   ${row('Fryzura',th('hair',8,null,'12 0 76 76'))}${row('Kolor włosów',sw('hc',HAIR_PICK))}
+   ${row('Zarost',th('beard',6,['Brak','Kilkudniowy','Broda','Kozia bródka','Wąsy','Pełna broda'],'18 30 64 64'))}${row('Kolor oczu',sw('ec',EYEC))}
+   ${row('Nos',th('nose',3,null,'37 40 26 26'))}${row('Usta',th('mouth',4,null,'38 50 24 24'))}</div></div>`;}
+function lookSet(o,k,v,age){if(k==='rnd'){o.face='c'+Math.floor(Math.random()*1e9);o.look=null;return;}
+  const n={skin:SKINS.length,hc:HAIR_PICK.length,ec:EYEC.length,shape:3,hair:8,beard:6,nose:3,mouth:4}[k];v=Number(v);if(!n||!Number.isInteger(v)||v<0||v>=n)return;
+  o.look=lookFull(o.face,o.look,age);o.look[k]=v;}
+function ccLook(k,v){const d=ccDraft();lookSet(d,k,v,d.age);render();}
+function coachLook(k,v){const c=coach();if(!c)return;lookSet(c,k,v,coachAge(c));save();render();}
