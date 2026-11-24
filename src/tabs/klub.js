@@ -230,7 +230,8 @@ function kitPick(m){const T=m.sides.map(s=>s.team);const K=T.map(teamKitT);let s
   if(cdist(K[0].h.a,K[1].h.a)<110){const homeLeft=m.homeIdx==null||m.homeIdx===T[0].idx;const aw=homeLeft?1:0;s[aw]='w';
     if(cdist(K[aw].w.a,K[1-aw].h.a)<110)s[aw]='alt';}
   const out=[0,1].map(i=>{if(s[i]==='alt'){const hc=K[1-i].h.a;const a=lum(hc)>0.7?'#111827':'#f1f5f9';return {p:'plain',a,b:hc,s:a,c:'v'};}return K[i][s[i]];});
-  const libs=[0,1].map(i=>{let l=K[i].l;if(Math.min(cdist(l.a,out[0].a),cdist(l.a,out[1].a))<90){const a=LIBC0(out[i].a,out[1-i].a);l={p:'plain',a,b:kitInk(a),s:out[i].s,c:'v'};}return l;});
+  // libero musi odróżniać się od koszulek obu drużyn: najpierw zamiana kolorów jego własnego stroju (dodatkowy jako główny), dopiero potem kolor zastępczy
+  const libs=[0,1].map(i=>{let l=K[i].l;const clash=c=>Math.min(cdist(c,out[0].a),cdist(c,out[1].a))<90;if(clash(l.a)){const inv=Object.assign({},l,{a:l.b,b:l.a});if(!clash(inv.a))l=inv;else{const a=LIBC0(out[i].a,out[1-i].a);l={p:'plain',a,b:kitInk(a),s:out[i].s,c:'v'};}}return l;});
   return {k:out,l:libs};}
 kitColors=function(m){const P=kitPick(m);KIT_BY_COLOR={};P.k.forEach((k,i)=>{KIT_BY_COLOR[k.a]=k;KIT_BY_COLOR['L'+k.a]=P.l[i];});return P.k.map(k=>k.a);};
 // libero: kolor z kompletu libero (gdy pasuje), inaczej dotychczasowy dobór
@@ -249,7 +250,7 @@ function kitEditor(kits,setKey,onCh){const k=kits[setKey];const sw=(f)=>KIT_COLO
     <div class="klab">${_t('Kolor główny')}</div><div class="kcols">${sw('a')}</div>
     <div class="klab">${_t('Kolor dodatkowy (wzór, kołnierz, numer)')}</div><div class="kcols">${sw('b')}</div>
     <div class="klab">${_t('Spodenki')}</div><div class="kcols">${sw('s')}</div>
-    <div class="klab">${_t('Kołnierz')}</div><div class="row" style="gap:6px"><button class="ghost sm ${k.c!=='r'?'on':''}" onclick="${onCh}('${setKey}','c','v')">V-neck</button><button class="ghost sm ${k.c==='r'?'on':''}" onclick="${onCh}('${setKey}','c','r')">${_t('Okrągły')}</button></div></div></div>`;}
+    <div class="klab">${_t('Kołnierz')}</div><div class="row" style="gap:6px"><button class="ghost sm ${k.c!=='r'?'on':''}" onclick="${onCh}('${setKey}','c','v')">V-neck</button><button class="ghost sm ${k.c==='r'?'on':''}" onclick="${onCh}('${setKey}','c','r')">${_t('Okrągły')}</button></div>${kits.l&&kits.h&&kits.w&&(cdist(kits.l.a,kits.h.a)<90||cdist(kits.l.a,kits.w.a)<90)?`<div class="trwarn small" style="margin-top:10px">⚠️ ${_t('Kolor główny stroju libero jest zbyt podobny do koszulki drużyny. Przepisy wymagają, żeby libero się wyróżniał — w meczu jego strój będzie miał zamienione kolory (dodatkowy jako główny). Wybierz inny kolor główny, żeby grał dokładnie w tym stroju.')}</div>`:''}</div></div>`;}
 // kreator nowego klubu
 function ocKit(){const o=ocDraft();if(!o.kit||o.kitCol!==o.color&&!o.kitTouched){o.kit=kitDefault(o.color);o.kitCol=o.color;}return o.kit;}
 function ocKitCh(s,f,v){const o=ocDraft();const K=ocKit();if(f==='_sel'){ui.ocKs=s;render();return;}K[s][f]=v;o.kitTouched=true;ui.ocKs=s;render();}
