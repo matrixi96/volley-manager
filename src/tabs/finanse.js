@@ -430,7 +430,7 @@ function socialView(){const s=SOC();if(!s)return '';const sk=socSk();const r=soc
   const md=s.m0?s.fol-s.m0:0;
   const stats=`<div class="kstrip"><div><span>Obserwujący</span><b class="acc">${fmtK(s.fol)}</b><small>${s.m0?`${md>=0?'+':''}${fmtK(md)} w tym miesiącu`:'liczone od dziś'}</small></div>
    <div><span>Zasięg w lidze</span><b>${Math.round(r*100)}%</b><small>typowy klub ${LG_N[myLg()]}: ${fmtK(SOC_LG_REF[myLg()])}</small></div>
-   <div><span>Wpływ na przychody</span><b>${pct(socSpB())}</b><small>sponsorzy · frekwencja ${pct(socCrowdB())} · sklep ${pct(socShopB())}</small></div>
+   <div><span>Wpływ na przychody</span><b>${pct(socSpB())}</b><small>sponsorzy ${pct(socSpB())} · frekwencja ${pct(socCrowdB())} · sklep ${pct(socShopB())}</small><small class="mut">liczone względem typowego klubu w lidze (100% zasięgu = 0%)</small></div>
    <div><span>Specjalista</span><b>${sk?esc(socName()):'brak'}</b><small>${sk?`umiejętność ${sk}/20`:'zatrudnisz go w zakładce Sztab'}</small></div></div>`;
   const msg=ui.socMsg?`<div class="card tmsg ${ui.socMsg.ok?'ok':'no'}">${esc(ui.socMsg.t)}</div>`:'';
   const cr=s.cr?`<div class="card soccr"><h2 style="margin:0 0 4px">⚠️ Kryzys w sieci</h2><p>${esc(s.cr.txt)}</p><p class="small mut">Bez reakcji przez 7 dni klub domyślnie milczy. ${sk?`Szansa udanego kontrataku: ${Math.round((0.35+sk*0.025)*100)}%.`:'Bez specjalisty kontratak to loteria (35%).'}</p>
