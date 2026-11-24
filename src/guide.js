@@ -14,7 +14,7 @@ const GUIDES={
   ['Chwal za dobrą formę, upominaj za słabą — ale uważaj na charakter zawodnika, niektórzy źle znoszą krytykę.',
    'Zawodnicy sami zgłaszają sprawy (gra w podstawie, kontrakt, transfer). Ignorowanie ich obniża morale.',
    'Odprawa przed meczem i w przerwie wpływa na nastawienie drużyny.']],
- mecz:['Mecz i sezon','Tutaj rozgrywasz mecze: oglądasz akcje na żywo albo symulujesz wynik.',
+ mecz:['Mecz','Tutaj rozgrywasz mecze: oglądasz akcje na żywo albo symulujesz wynik.',
   ['W trakcie meczu możesz brać czasy, robić zmiany, zmieniać taktykę i wydawać polecenia z linii bocznej.',
    'Asystent podpowiada, co dzieje się na boisku — warto czytać jego uwagi w czasie przerw.',
    'Pamiętaj o limicie obcokrajowców: zmiana obcokrajowca może wejść tylko za obcokrajowca.']],

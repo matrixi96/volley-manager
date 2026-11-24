@@ -84,7 +84,7 @@ function prepStart(s){s=s||S();return `${seasonYear(s.n)}-08-01`;}
 // ekran główny w przerwie: co robić
 {const _hv=homeView;homeView=function(){let h=_hv.apply(this,arguments);try{const s=S();if(s&&s.phase==='off'&&!SAVE.fired){const left=daysBetween(today(),prepStart(s));
   h=h.replace('<p class="mut">Brak zaplanowanych meczów w tej fazie sezonu.</p><button class="btn" onclick="nextAction()">Dalej</button>',
-   `<p class="mut">${_t('Przerwa między sezonami — okno transferowe jest otwarte.')} ${left>0?_t('Przygotowania ruszają 1 sierpnia')+` (${left} ${_t('dni')}).`:''} ${_t('Umów sparingi i obóz, wzmocnij skład, a potem rozpocznij przygotowania.')}</p><div class="row wrap" style="gap:8px"><button class="btn" onclick="go('mecz')">${_t('Sparingi i przygotowania')}</button><button class="ghost" onclick="go('transfery')">${_t('Transfery')}</button></div>`);}}catch(e){console.error(e);}return h;};}
+   `<p class="mut">${_t('Przerwa między sezonami — okno transferowe jest otwarte.')} ${left>0?_t('Przygotowania ruszają 1 sierpnia')+` (${left} ${_t('dni')}).`:''} ${_t('Umów sparingi i obóz, wzmocnij skład, a potem rozpocznij przygotowania.')}</p><div class="row wrap" style="gap:8px"><button class="btn" onclick="goPrep()">${_t('Sparingi i przygotowania')}</button><button class="ghost" onclick="go('transfery')">${_t('Transfery')}</button></div>`);}}catch(e){console.error(e);}return h;};}
 
 // ---- kreator twarzy trenera: każdą cechę wybierasz sam (zamiast losowania) ----
 function lookFull(face,look,age){const out={};faceSvg(face,{size:10,age,kind:'coach',out});return Object.assign(out,look||{});}
@@ -113,3 +113,23 @@ function injMailScan(){try{if(SAVE.team==null||!SAVE.world||SAVE.fired)return;co
 {const _r=render;render=function(){injMailScan();return _r.apply(this,arguments);};}
 {const _mb=mailBodyHtml;mailBodyHtml=function(m){const b=m.b||{};if(b.type==='injnow'){const P=PLAYERS[b.id];const p=P&&P.p;
   return `<p>Trenerze, ${p?`<b>${esc(p.first)} ${esc(p.last)}</b> (${esc(p.pos||'')})`:'zawodnik'} doznał kontuzji: <b>${esc(String(b.what).toLowerCase())}</b>.</p><p>Przewidywana przerwa: ok. <b>${Number(b.days)||'?'} dni</b>, powrót ok. <b>${esc(fmtDMY(b.back))}</b>. Do tego czasu nie może grać — sprawdź wyjściową szóstkę.</p>${p?`<div class="row wrap" style="gap:8px"><button class="btn" onclick="openPop('${esc(String(b.id))}')">${_t('Karta zawodnika')}</button><button class="ghost" onclick="go('sklad')">${_t('Skład')}</button></div>`:''}`;}return _mb.apply(this,arguments);};}
+
+// ---- zakładka „Mecz”: tylko rozegranie meczu; planowanie sparingów i przygotowań przeniesione do Terminarza ----
+function goPrep(){ui.sub=ui.sub||{};ui.sub.kalendarz='p';go('kalendarz');}
+function prepHtml(){const s=S();if(!s||SAVE.fired)return '';let h='';
+  if(s.phase==='off')h+=offView();
+  if(s.phase==='spar'){h+=`<div class="card"><h2>Rozpoczęcie ligi</h2><p class="small mut">Sparingi służą do testowania składu i taktyki. Możesz z nich zrezygnować i od razu zacząć ligę.</p><button class="ghost" onclick="skipSpar()">Pomiń sparingi i zacznij ligę</button></div>`;}
+  if(typeof sparCard==='function')h+=sparCard();
+  if(s.phase==='spar'&&s.spar.res.length)h+=`<div class="card"><h2>Wyniki sparingów</h2>${s.spar.res.map((g,k)=>`<div class="res me"><span class="mut small">${fmtShort(s.sdates[k])}</span> ${resTxt(g)}</div>`).join('')}</div>`;
+  return h;}
+{const _cv=calView;calView=function(){const h=_cv.apply(this,arguments);try{return h+prepHtml();}catch(e){console.error(e);return h;}};}
+{const _sv=seasonView;seasonView=function(){const s=S();if(!s||SAVE.fired||s.phase==='end')return _sv.apply(this,arguments);
+  try{const head=ui.msg?`<div class="card msg">${ui.msg}</div>`:'';const c=myNext();let out='';
+    const none=(t,sub,btn)=>`<div class="card"><h2>${t}</h2><p class="mut">${sub}</p>${btn||''}</div>`;
+    const lab=c?(c.kind==='nt'?`🎌 ${s.nt.comps[c.ci].n}`:c.kind==='euro'?euroLab(c):c.kind==='cup'?cupName(myCountry()):c.kind==='spar'?`Sparing — mecz towarzyski, nie liczy się do tabeli`:c.kind==='po'?(()=>{const sr=s.po.series.find(x=>x.id===c.sid);return sr?`${STAGE[sr.st]} · mecz ${sr.games.length+1} · stan rywalizacji ${seriesScore(sr)} (gra się do ${sr.need} zwycięstw)`:'Play-off';})():s.phase==='liga'?`Kolejka ${s.round+1}/${s.rounds.length}`:'Mecz'):'';
+    if(c)out=nextCard(c,lab);
+    else if(s.phase==='off')out=none('Brak meczu','Przerwa między sezonami. Sparingi umówisz w Terminarzu, przygotowania ruszają 1 sierpnia.',`<button class="btn" onclick="goPrep()">Sparingi i przygotowania</button>`);
+    else if(s.phase==='spar')out=none('Sparingi zakończone','Wszystkie umówione sparingi zostały rozegrane.',`<div class="row wrap" style="gap:8px"><button class="btn" onclick="endSpar();render()">Rozpocznij ligę</button><button class="ghost" onclick="goPrep()">Umów kolejny sparing</button></div>`);
+    else if(s.phase==='po')out=none(s.po.series.some(x=>x.hi===SAVE.team||x.lo===SAVE.team)?'Twoja drużyna odpadła z play-off':'Twoja drużyna nie awansowała do play-off','Sezon trwa dla innych drużyn.',`<div class="row wrap"><button class="btn" onclick="simPoDay()">Rozegraj kolejny dzień</button><button class="ghost" onclick="simPoAll()">Symuluj do końca sezonu</button></div>`);
+    else out=none('Brak meczu','Twoja drużyna nie ma teraz zaplanowanego meczu.');
+    return head+out;}catch(e){console.error(e);return _sv.apply(this,arguments);}};}
