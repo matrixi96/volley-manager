@@ -49,7 +49,7 @@ if(typeof DLG!=='undefined'&&!DLG.some(x=>x[0]==='spar'))DLG.push(['spar','Organ
 // --- karta planowania sparingów (Mecz i sezon, przed ligą) ---
 function sparCard(){if(!sparCanPlan())return '';const s=S();ensureDates(s);sparHm();const k0=s.spar.res.length;const n=nSpar();
   const rows=[];for(let k=0;k<n;k++){const op=s.spar.opps[k];const r=s.spar.res[k];const conf=ui.confirm==='spc'+k;
-    rows.push(`<tr class="${r?'':'up'}"><td class="l">${fmtShort(s.sdates[k])}</td><td class="l"><button class="link tlk" onclick="openTeam(${op})">${teamCrest(op,16)} ${esc(TEAMS[op].name)}</button> <small class="mut">${LG_SHORT[lgOf(op)]} · ${teamStrength(TEAMS[op])}</small></td><td>${sparHome(k)?'D':'W'}</td><td>${r?resTxt(r):k>=k0?`<button class="link small bad" onclick="${conf?`sparCancel(${k})`:`ui.confirm='spc${k}';render()`}">${conf?'Na pewno odwołać?':'Odwołaj'}</button>`:''}</td></tr>`);}
+    rows.push(`<tr class="${r?'':'up'}"><td class="l">${fmtShort(s.sdates[k])}</td><td class="l"><button class="link tlk" onclick="openTeam(${op})">${teamCrest(op,16)} ${esc(TEAMS[op].name)}</button> <small class="mut">${LG_SHORT[lgOf(op)]} · ${teamStrength(TEAMS[op])}</small></td><td>${sparHome(k)?'D':'W'}</td><td>${r?resTxt(r):k>=k0?`<button class="link small bad" onclick="sparCancel(${k})">Odwołaj</button>`:''}</td></tr>`);}
   const inv=(s.spar.inv||[]).filter(x=>x.st==='wait');const free=sparFreeDays();const me=teamStrength(myTeam());
   const teams=TEAMS.filter(t=>t&&t.idx>=0&&t.idx!==SAVE.team&&!isYT(t.idx)&&lgOf(t.idx)<=Math.min(myLg()+2,2)&&LG_C[lgOf(t.idx)]===LG_C[myLg()]);
   const grp={};for(const t of teams)(grp[lgOf(t.idx)]=grp[lgOf(t.idx)]||[]).push(t);

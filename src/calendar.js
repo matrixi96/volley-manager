@@ -84,7 +84,7 @@ function migrateDates(){fixNaNBal();
 // ---- widok kalendarza ----
 function myEvents(){
   const s=S();ensureDates(s);const ev={};const add=(d,o)=>(ev[d]=ev[d]||[]).push(o);
-  s.spar.opps.forEach((o,k)=>{const home=sparHome(k);const r=s.spar.res[k];if(s.phase!=='spar'&&!r)return;add(s.sdates[k],{kind:'spar',op:o,home,t:'18:00',r});});
+  s.spar.opps.forEach((o,k)=>{const home=sparHome(k);const r=s.spar.res[k];if(s.phase!=='spar'&&s.phase!=='off'&&!r)return;add(s.sdates[k],{kind:'spar',op:o,home,t:'18:00',r,k});});
   s.rounds.forEach((rd,r)=>{const f=rd.find(x=>x[0]===SAVE.team||x[1]===SAVE.team);if(!f)return;const w=fixtureWhen(s,r,f);const res=s.results[r]&&s.results[r].find(x=>x.me);add(w.d,{kind:'liga',op:f[0]===SAVE.team?f[1]:f[0],home:f[0]===SAVE.team,t:w.t,r:res,k:r+1});});
   if(s.po)for(const sr of s.po.series)for(const g of sr.games)if(g.me&&g.d)add(g.d,{kind:'po',op:g.h===SAVE.team?g.a:g.h,home:g.h===SAVE.team,r:g,st:sr.st});
   if(s.cups&&s.cups[myCountry()]){const C=s.cups[myCountry()];C.rounds.forEach((rd,i)=>{const t=rd.ties.find(x=>x.h===SAVE.team||x.a===SAVE.team);if(t)add(C.dates[i],{kind:'cup',op:t.h===SAVE.team?t.a:t.h,home:t.h===SAVE.team&&!t.neutral,t:'20:30',r:t.res?Object.assign({me:1},t.res):null});});}
@@ -104,7 +104,7 @@ function calView(){
   for(let dd=1;dd<=dim;dd++){const d=`${cur}-${String(dd).padStart(2,'0')}`;const es=ev[d]||[];const b=bd[d.slice(5)]||[];
     cells+=`<div class="cd ${d===td?'today':''} ${d<td?'past':''} ${winOpen(d)?'win':''} ${brk(d)?'brk':''}"><div class="dn">${dd}${d.endsWith('-01')?' <span title="Wypłata pensji i rata sponsora">💰</span>':''}</div>
     ${es.map(e=>{let res='';if(e.r){const my=e.r.h===SAVE.team?e.r.sw[0]:e.r.sw[1],op=e.r.h===SAVE.team?e.r.sw[1]:e.r.sw[0];res=`<b class="${my>op?'good':'bad'}">${my}:${op}</b>`;}
-      return `<div class="ce ${e.kind}" style="--c:${TEAMS[e.op].color}"><span>${e.home?'🏠':'✈️'} ${esc(TEAMS[e.op].short)}</span>${res||`<small>${e.t||''}</small>`}<div class="ck">${e.kind==='spar'?'sparing':e.kind==='po'?STAGE[e.st]:'liga · K'+e.k}</div></div>`;}).join('')}
+      return `<div class="ce ${e.kind}" style="--c:${TEAMS[e.op].color}"><span>${e.home?'🏠':'✈️'} ${esc(TEAMS[e.op].short)}</span>${res||`<small>${e.t||''}</small>`}<div class="ck">${e.kind==='spar'?'sparing'+(!e.r&&e.k!=null&&typeof sparCanPlan==='function'&&sparCanPlan()?` <button class="link small bad" title="Odwołaj sparing" onclick="event.stopPropagation();sparCancel(${e.k})">✕ odwołaj</button>`:''):e.kind==='po'?STAGE[e.st]:'liga · K'+e.k}</div></div>`;}).join('')}
     ${BLD().some(b=>b.until===d)?`<div class="cb" style="color:#facc15">🏗️ koniec budowy</div>`:''}</div>`;}
   return `<div class="card"><div class="row wrap"><button class="ghost" onclick="ui.calM='${shift(-1)}';render()">◀</button><h2 style="margin:0;min-width:200px;text-align:center">${MON_NOM[M-1]} ${Y}</h2><button class="ghost" onclick="ui.calM='${shift(1)}';render()">▶</button><span class="sp"></span><button class="ghost" onclick="ui.calM=null;render()">Dziś</button></div>
   <p class="small mut">Dziś: <b style="color:var(--txt)">${fmtLong(td)}</b> · Sezon ${sLabel(s.n)}</p>
