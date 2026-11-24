@@ -22,15 +22,14 @@ app.whenReady().then(()=>{
   const s=loadState();
   win=new BrowserWindow({width:s.width||1440,height:s.height||900,x:s.x,y:s.y,minWidth:960,minHeight:620,backgroundColor:'#0b1220',title:'Golden Set',
     icon:path.join(ROOT,'icon-512.png'),autoHideMenuBar:true,show:false,webPreferences:{contextIsolation:true,sandbox:true,nodeIntegration:false,webSecurity:true,webviewTag:false,navigateOnDragDrop:false,spellcheck:false}});
-  // gra zawsze startuje na całym ekranie (zmaksymalizowane okno); jeśli ostatnio był tryb pełnoekranowy (F11) — wraca do niego
-  win.maximize();if(s.full)win.setFullScreen(true);
+  // gra zawsze startuje w trybie pełnoekranowym (F11 przełącza na okno i z powrotem)
+  win.maximize();win.setFullScreen(true);
   win.once('ready-to-show',()=>{win.show();setTimeout(checkUpdate,4000);});
   win.setTitle('Golden Set '+app.getVersion());win.on('page-title-updated',e=>e.preventDefault());
   win.loadURL('app://gra/index.html');
   win.on('close',()=>{try{fs.writeFileSync(stFile(),JSON.stringify(Object.assign(win.getNormalBounds(),{max:win.isMaximized(),full:win.isFullScreen()})));}catch(e){}});
   win.webContents.on('before-input-event',(e,i)=>{if(i.type!=='keyDown')return;
     if(i.key==='F11'){win.setFullScreen(!win.isFullScreen());e.preventDefault();}
-    else if(i.key==='Escape'&&win.isFullScreen()){win.setFullScreen(false);}
     else if((i.control||i.meta)&&(i.key==='='||i.key==='+')){win.webContents.setZoomLevel(win.webContents.getZoomLevel()+0.5);e.preventDefault();}
     else if((i.control||i.meta)&&i.key==='-'){win.webContents.setZoomLevel(win.webContents.getZoomLevel()-0.5);e.preventDefault();}
     else if((i.control||i.meta)&&i.key==='0'){win.webContents.setZoomLevel(0);e.preventDefault();}});
