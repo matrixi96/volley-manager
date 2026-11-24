@@ -102,3 +102,14 @@ function lookSet(o,k,v,age){if(k==='rnd'){o.face='c'+Math.floor(Math.random()*1e
   o.look=lookFull(o.face,o.look,age);o.look[k]=v;}
 function ccLook(k,v){const d=ccDraft();lookSet(d,k,v,d.age);render();}
 function coachLook(k,v){const c=coach();if(!c)return;lookSet(c,k,v,coachAge(c));save();render();}
+
+// ---- natychmiastowa wiadomość o kontuzji zawodnika (oprócz cotygodniowego raportu medycznego) ----
+function injMailScan(){try{if(SAVE.team==null||!SAVE.world||SAVE.fired)return;const seen=SAVE.injSeen=SAVE.injSeen||{};const t=myTeam();if(!t)return;
+  const med=SAVE.staff&&SAVE.staff.med;const from=med?`${med.first[0]}. ${med.last} (fizjoterapeuta)`:'Pion medyczny';
+  for(const p of t.players){if(!(p.inj>0)){delete seen[p.id];continue;}const key=p.injUntil||String(p.inj);if(seen[p.id]===key)continue;seen[p.id]=key;
+    const back=p.injUntil||addDays(today(),p.inj);const days=Math.max(1,daysBetween(today(),back));
+    sendMail({cat:'med',weekly:1,from,t:`Kontuzja: ${p.first} ${p.last}`,s:`${p.injN||'Uraz'} — przerwa ok. ${days} dni, powrót ok. ${fmtDMY(back)}.`,b:{type:'injnow',id:p.id,what:p.injN||'Uraz',days,back},lab:'Kontuzja',ic:'🚑'});}
+}catch(e){console.error(e);}}
+{const _r=render;render=function(){injMailScan();return _r.apply(this,arguments);};}
+{const _mb=mailBodyHtml;mailBodyHtml=function(m){const b=m.b||{};if(b.type==='injnow'){const P=PLAYERS[b.id];const p=P&&P.p;
+  return `<p>Trenerze, ${p?`<b>${esc(p.first)} ${esc(p.last)}</b> (${esc(p.pos||'')})`:'zawodnik'} doznał kontuzji: <b>${esc(String(b.what).toLowerCase())}</b>.</p><p>Przewidywana przerwa: ok. <b>${Number(b.days)||'?'} dni</b>, powrót ok. <b>${esc(fmtDMY(b.back))}</b>. Do tego czasu nie może grać — sprawdź wyjściową szóstkę.</p>${p?`<div class="row wrap" style="gap:8px"><button class="btn" onclick="openPop('${esc(String(b.id))}')">${_t('Karta zawodnika')}</button><button class="ghost" onclick="go('sklad')">${_t('Skład')}</button></div>`:''}`;}return _mb.apply(this,arguments);};}
