@@ -16,20 +16,23 @@ function ptFeed(){const out=[];const s=S();
   // reprezentacje: ostatnie wyniki turniejów
   if(s&&s.nt)for(const cp of s.nt.comps){const done=cp.gm.concat(cp.ko).filter(x=>x.res&&x.d<=today()).sort((a,b)=>a.d<b.d?1:-1).slice(0,3);
     for(const x of done)out.push({d:x.d,k:'Reprezentacja',nt:{h:x.h,a:x.a,sw:x.res.sw},t:`${cp.n}: ${esc(natN(x.h))} ${x.res.sw.join(':')} ${esc(natN(x.a))}`,go:"ui.sub=ui.sub||{};ui.sub.kadra='k';go('kadra')"});
-    if(cp.champ)out.push({d:cp.koD[2],k:'Reprezentacja',ic:'🏅',t:`${cp.n}: złoto dla ${esc(natN(cp.champ))}`,go:"go('kadra')"});}
+    if(cp.champ)out.push({d:cp.koD[2],k:'Reprezentacja',ic:'🏅',champ:cp.champ,cn:cp.n,t:`${cp.n}: złoto — ${esc(natN(cp.champ))}`,go:"go('kadra')"});}
   // social media klubu
-  try{const S0=SOC();if(S0)for(const p of S0.feed.slice(0,5))out.push({d:p.d,k:'Social media',ic:p.ic||'📣',t:esc(String(p.t).slice(0,120)),b:`❤ ${(p.likes||0).toLocaleString('pl-PL')}`,go:"go('social')"});}catch(e){}
+  try{const S0=SOC();if(S0)for(const p of S0.feed.slice(0,5))out.push({d:p.d,k:'Social media',ic:p.ic||'📣',t:esc(String(p.t).slice(0,120)),b:`❤ ${(p.likes||0).toLocaleString('pl-PL')}`,go:`socOpen(${p.id})`});}catch(e){}
   // wiadomości ligi / klubu
-  for(const n of (SAVE.news||[]).slice(0,16)){const t=String(n.t);const k=/🎌|kadr|reprezent/i.test(t)?'Reprezentacja':/transfer|podpisał|sprzeda|kupi|wypożycz/i.test(t)?'Transfery':/🚑|kontuz|uraz/i.test(t)?'Medyczne':/zarząd|budżet|finans/i.test(t)?'Klub':'Liga';
+  for(const n of (SAVE.news||[]).slice(0,24)){const t=String(n.t);if(/^🏅\s*(Osiągnięcie|Odblokowano)/.test(t)||/^📞/.test(t)||(/^[✅❌]/.test(t)&&L&&L.d===n.d))continue;// osiągnięcia to nie wiadomości ze świata
+    const k=/🎌|kadr|reprezent/i.test(t)?'Reprezentacja':/transfer|podpisał|sprzeda|kupi|wypożycz/i.test(t)?'Transfery':/🚑|kontuz|uraz/i.test(t)?'Medyczne':/zarząd|budżet|finans/i.test(t)?'Klub':'Liga';
     out.push({d:n.d,k,ic:newsIcon(t),t:esc(t.replace(/^\p{Extended_Pictographic}️?\s*/u,'')),go:null});}
   try{if(typeof mdFeed==='function')out.push(...mdFeed());}catch(e){console.error(e);}
   out.sort((a,b)=>(a.d<b.d?1:a.d>b.d?-1:(b.big||0)-(a.big||0)||(b.pr||0)-(a.pr||0)));
+  // każda wiadomość (poza konferencjami i postami) otwiera artykuł
+  if(typeof aOpen==='function'){FEED_LAST=out;out.forEach((x,i)=>{if(x.k!=='Media'&&x.k!=='Social media')x.go=`aOpen(${i})`;});}
   const big=out.find(x=>x.big||x.nt)||out[0];const rest=out.filter(x=>x!==big).slice(0,9);
   const tag=k=>`<span class="ptk ptk-${({Mecz:'m',Reprezentacja:'r','Social media':'s',Transfery:'t',Medyczne:'x',Klub:'k',Liga:'l',Media:'md'})[k]||'l'}">${k}</span>`;
   let hero='';if(big){const sc=big.score?`<div class="pthero-sc">${teamCrest(big.score.h,54)}<b>${big.score.sw[0]} – ${big.score.sw[1]}</b>${teamCrest(big.score.a,54)}</div>`:big.nt?`<div class="pthero-sc"><span class="ptfl">${natFl(big.nt.h)}</span><b>${big.nt.sw[0]} – ${big.nt.sw[1]}</b><span class="ptfl">${natFl(big.nt.a)}</span></div>`:`<div class="pthero-sc"><span class="ptfl">${big.ic||'📰'}</span></div>`;
     hero=`<button class="pthero" ${big.go?`onclick="${big.go}"`:''}>${sc}<div class="pthero-t">${big.t}</div>${big.b?`<div class="small mut">${big.b}</div>`:''}<div class="ptmeta">🕑 ${ptAgo(big.d)} ${tag(big.k)}</div></button>`;}
   const list=rest.map(x=>`<button class="ptn" ${x.go?`onclick="${x.go}"`:''}><span class="ptni">${x.nt?natFl(x.nt.h):x.ic||'📰'}</span><span><span class="ptnt">${x.t}</span><span class="ptmeta">🕑 ${ptAgo(x.d)} ${tag(x.k)}${x.b?` · ${x.b}`:''}</span></span></button>`).join('');
-  return ptCard('Wiadomości',hero+`<div class="ptnl">${list}</div>`,null,'ptfeed');}
+  return ptCard('Wiadomości ze świata',hero+`<div class="ptnl">${list}</div>`,null,'ptfeed');}
 function ptFix(){const ev=myEvents();const rows=[];for(const d of Object.keys(ev).sort())for(const e of ev[d])rows.push({d,...e});
   const td=today();const pi=rows.findIndex(r=>!r.r);const from=Math.max(0,(pi<0?rows.length:pi)-3);const sl=rows.slice(from,from+12);
   const kind=e=>e.kind==='spar'?'Sparing':e.kind==='liga'?LG_SHORT[myLg()]:e.kind==='cup'?'Puchar':e.kind==='euro'?'Europa':e.kind==='po'?'Play-off':'';
