@@ -133,3 +133,35 @@ function prepHtml(){const s=S();if(!s||SAVE.fired)return '';let h='';
     else if(s.phase==='po')out=none(s.po.series.some(x=>x.hi===SAVE.team||x.lo===SAVE.team)?'Twoja drużyna odpadła z play-off':'Twoja drużyna nie awansowała do play-off','Sezon trwa dla innych drużyn.',`<div class="row wrap"><button class="btn" onclick="simPoDay()">Rozegraj kolejny dzień</button><button class="ghost" onclick="simPoAll()">Symuluj do końca sezonu</button></div>`);
     else out=none('Brak meczu','Twoja drużyna nie ma teraz zaplanowanego meczu.');
     return head+out;}catch(e){console.error(e);return _sv.apply(this,arguments);}};}
+
+// ---- dzień meczowy: Skład → Taktyka → przemowa przed meczem → start meczu ----
+const PM_TALK=[['calm','Spokojnie, róbcie swoje','„Gramy swoje, bez nerwów.”'],['char','Pokażcie charakter!','„Chcę widzieć walkę o każdą piłkę!”'],['win','Oczekuję zwycięstwa','„Jesteśmy faworytem i musimy to udowodnić.”'],['free','Nie mamy nic do stracenia','„Presja jest po ich stronie. Bawcie się grą!”'],['trust','Wierzę w was','„Ufam każdemu z was. Dacie radę.”']];
+function pmKey(c){return c?[c.kind,c.h,c.a,S().n,today()].join('|'):'';}
+function pmStart(){const c=myNext();if(!c)return;ui.pm={step:1,key:pmKey(c),res:null};go('sklad');}
+function pmNext(){if(!ui.pm)return;if(ui.pm.step===1){ui.pm.step=2;go('taktyka');}else if(ui.pm.step===2){ui.pm.step=3;go('mecz');}}
+function pmCancel(){ui.pm=null;render();}
+function pmFav(){try{const c=myNext();const op=c.h===SAVE.team?c.a:c.h;const d=lineupStrength(myTeam(),myLineup())-teamStrength(TEAMS[op]);return d>=4?1:d<=-4?-1:0;}catch(e){return 0;}}
+function pmTalk(k){if(!ui.pm||ui.pm.res)return;const fav=pmFav();const t=myTeam();const lu=myLineup();const ids=new Set(Object.values(lu));const ps=t.players.filter(p=>ids.has(p.id));const res=[];
+  const aut=SAVE.coach&&SAVE.coach.attrs?(SAVE.coach.attrs.mot||10):10;const R0=mulberry32(strSeed(ui.pm.key+k));
+  for(const p of ps){const T=x=>hasT(p,x);const mor=p.mor==null?60:p.mor;let d=0;
+    if(k==='calm')d=T('ner')?4:T('spo')||T('pro')?2:T('wer')||T('zde')?-1:1;
+    else if(k==='char')d=T('zde')||T('amb')||T('suk')||T('wer')?4:T('ner')?-3:T('len')?-1:1;
+    else if(k==='win')d=fav>0?(T('amb')||T('suk')||T('pro')?3:T('ner')?-2:1):fav<0?(T('ner')?-4:-2):(T('amb')||T('suk')?2:T('ner')?-2:0);
+    else if(k==='free')d=fav<0?(T('ner')?4:3):fav>0?(T('len')?-3:-2):(T('ner')?2:0);
+    else if(k==='trust')d=mor<50?4:mor<70?2:1;
+    d=Math.round(d*(0.8+aut/40)+(R0()-0.5));if(d)addMor(p,d);res.push([p.id,d]);}
+  ui.pm.res={k,r:res};save();render();}
+const _pmPlay=playNext;
+playNext=function(){if(SAVE.fired)return;const c=myNext();if(!c)return;if(ui.pm&&ui.pm.step===3&&ui.pm.res){ui.pm=null;return _pmPlay.apply(this,arguments);}pmStart();};
+function pmTalkCard(){const fav=pmFav();const c=myNext();if(!c)return '';const op=TEAMS[c.h===SAVE.team?c.a:c.h];const R=ui.pm.res;
+  const t=myTeam();const P=id=>t.players.find(p=>p.id===id);
+  return `<div class="card pmcard"><div class="pmstep">${_t('Dzień meczowy')} · ${_t('krok')} 3/3</div><h2 style="margin:4px 0">${_t('Przemowa przed meczem')}</h2>
+   <p class="small mut">${_t('Rywal')}: <b>${esc(op.name)}</b> · ${fav>0?_t('jesteście faworytem'):fav<0?_t('rywal jest faworytem'):_t('wyrównany mecz')}. ${_t('Każdy zawodnik zareaguje inaczej — zależnie od charakteru i morale.')}</p>
+   ${R?`<div class="pmres">${R.r.map(([id,d])=>{const p=P(id);return p?`<div class="pmr">${pFace(p,30)}<span>${esc(p.first[0])}. ${esc(p.last)}</span><b class="${d>0?'good':d<0?'bad':'mut'}">${d>0?'+'+d:d<0?d:'0'}</b></div>`:'';}).join('')}</div><p class="small">${_t('Powiedziałeś')}: <b>${esc(_t(PM_TALK.find(x=>x[0]===R.k)[1]))}</b></p><button class="btn" onclick="playNext()">▶ ${_t('Rozpocznij mecz')}</button>`
+     :`<div class="pmopts">${PM_TALK.map(([k,n,q])=>`<button class="ghost pmopt" onclick="pmTalk('${k}')"><b>${_t(n)}</b><small>${_t(q)}</small></button>`).join('')}</div>`}
+   <div style="margin-top:10px"><button class="link small" onclick="pmCancel()">${_t('Anuluj')}</button></div></div>`;}
+{const _sv=seasonView;seasonView=function(){if(ui.pm&&ui.pm.step===3&&!liveMatch())return pmTalkCard();return _sv.apply(this,arguments);};}
+// pasek kroków na zakładkach Skład i Taktyka
+{const _r=render;render=function(){const r=_r.apply(this,arguments);try{if(ui.pm&&(ui.pm.step===1&&ui.tab==='sklad'||ui.pm.step===2&&ui.tab==='taktyka')){const main=document.querySelector('main');if(main&&!main.querySelector('.pmbar')){const d=document.createElement('div');d.className='card pmbar';
+  d.innerHTML=`<div><div class="pmstep">${_t('Dzień meczowy')} · ${_t('krok')} ${ui.pm.step}/3</div><b>${ui.pm.step===1?_t('Sprawdź wyjściową szóstkę i libero'):_t('Ustaw taktykę na ten mecz')}</b></div><span class="sp"></span><button class="link small" onclick="pmCancel()">${_t('Anuluj')}</button><button class="btn" onclick="pmNext()">${ui.pm.step===1?_t('Zatwierdź skład'):_t('Zatwierdź taktykę')} →</button>`;
+  const ctx=main.querySelector('.ctx');if(ctx&&ctx.nextSibling)main.insertBefore(d,ctx.nextSibling);else main.insertBefore(d,main.firstChild);}}}catch(e){console.error(e);}return r;};}
