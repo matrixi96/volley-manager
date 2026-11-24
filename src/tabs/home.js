@@ -72,7 +72,7 @@ function ptScout(){let n=0,tasks=0;try{n=SC().short.length;tasks=SC().tasks.leng
   return ptCard('Baza danych zawodników',`<div class="ptrow"><span>🌍 <b>${W().players.length.toLocaleString('pl-PL')}</b> <span class="small mut">zawodników w bazie</span></span></div><div class="ptrow"><span><b>${n}</b> <span class="small mut">obserwowanych · ${tasks} zadań skautów</span></span></div>`,['Skauting',"go('skauting')"]);}
 homeView=function(){const s=S();if(!s)return '';
   return `${ui.msg?`<div class="card msg">${ui.msg}</div>`:''}${hvHero()}
-   <div class="ptgrid"><div class="ptcol">${ptMail()}</div><div class="ptcol">${ptFeed()}${ptFix()}</div><div class="ptcol">${ptTable()}${ptLeaders()}</div><div class="ptcol">${ptRival()}${ptData()}${ptBudgets()}${ptTraining()}${ptScout()}</div></div>
+   <div class="ptgrid"><div class="ptcol">${typeof ptSocial==='function'&&SOC()?ptSocial():ptMail()}</div><div class="ptcol">${ptFeed()}${ptFix()}</div><div class="ptcol">${ptTable()}${ptLeaders()}</div><div class="ptcol">${ptRival()}${ptData()}${ptBudgets()}${ptTraining()}${ptScout()}</div></div>
    ${typeof hvRival==='function'?hvRival():''}`;};
 
 // ================= PROFIL DRUŻYNY (po kliknięciu klubu) =================

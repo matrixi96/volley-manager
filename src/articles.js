@@ -64,6 +64,7 @@ function artModal(){const x=ui.art;if(!x)return '';const a=aArticle(x);const her
 const SOC_NICK=['kibic_od_zawsze','siatkowka_moja_pasja','ania.volley','marek_z_trybun','blok_i_obrona','zagrywka_123','fan_klubu','ola_siatkarka','tomek_kibic','krzysiek.sport','libero_life','asystent_trenera_amator'];
 const SOC_CM={good:['Brawo chłopaki! 🔥','To jest nasz klub! 💪','Tak się gra!','Dumny z tej drużyny','Co za mecz, ciary 😍','Tak trzymać do końca sezonu!','Atak w końcu funkcjonuje 👏','Hala dziś niosła!'],
   bad:['Wstyd…','Trenerze, co to było?','Czas na zmiany','Gdzie walka?!','Bez ambicji…','Przyjęcie do poprawy, i to szybko','Za takie granie nie kupię karnetu','Ktoś musi wziąć odpowiedzialność'],
+  inj:['Zdrowiej szybko! 💪','Czekamy na powrót!','Wracaj szybko, brakuje Cię na boisku','Trzymaj się! ❤️','Cała hala czeka 💛','Spokojnie, zdrowie najważniejsze'],
   mid:['Głowa do góry','Następnym razem będzie lepiej','Czekamy na więcej','Wierzymy w was 💛','Kiedy kolejny mecz u siebie?','Powodzenia!','Ciekawe, kto zagra w szóstce','Super wiadomość 👍']};
 function socOpen(id){ui.socP=id;if(!ui.card)ui.card='_';render();}
 function socClose(){ui.socP=null;if(ui.card==='_')ui.card=null;render();}
@@ -73,3 +74,34 @@ function socModal(){const s=SOC();const p=s&&s.feed.find(x=>x.id===ui.socP);if(!
   return `<div class="modal" onclick="if(event.target===this)socClose()"><div class="mcard artcard"><div class="row" style="justify-content:space-between;align-items:center"><div class="row" style="gap:8px">${teamCrest(SAVE.team,30)}<b>${esc(myTeam().name)}</b><small class="mut">· ${fmtDMY(p.d)}</small></div><button class="ghost sm" onclick="socClose()">✕</button></div>
    <p class="socbig">${p.ic||'📣'} ${esc(p.t)}</p><div class="small mut">❤ ${fmtK(p.likes||0)} · 💬 ${cms.length} · 🔁 ${fmtK(Math.round((p.likes||0)*0.06))}</div><h3 style="margin:14px 0 6px">${aL('Komentarze','Comments')}</h3>${list}</div></div>`;}
 {const _cm=cardModal;cardModal=function(){if(ui.art)return artModal();if(ui.socP!=null)return socModal();return _cm.apply(this,arguments);};}
+// ---- panel „Social media” na ekranie głównym: posty klubu, wpisy kibiców i zawodników o naszym klubie ----
+const SOC_FAN={good:['Co za forma {T}! 🔥','{T} w tym sezonie to inna drużyna 💪','Byłem dziś w hali — atmosfera nie do opisania! {T} 💛','Tak się gra! #{S}','Ten zespół da nam w tym roku dużo radości 🏐'],
+  bad:['{T}, tak nie można grać…','Kolejny słaby mecz. Czas na zmiany? #{S}','Przyjęcie leży, atak nie istnieje. {T} 😤','Kibicuję od lat, ale dziś było ciężko patrzeć','Panie trenerze, plan B by się przydał…'],
+  mid:['Kiedy kolejny mecz u siebie? #{S}','Ciekawe, kto zagra w szóstce w następnym meczu','Trzymam kciuki za {T}! 🤞','Nowe koszulki {T} 🔥 kto już kupił?','Wierzę w ten zespół 💛 #{S}']};
+const SOC_PL={win:['Dzięki za doping! Dalej razem 💪','Ważne zwycięstwo. Pracujemy dalej 🏐','Drużyna! 🔥 Dzięki, że byliście z nami'],loss:['Głowy do góry, wracamy silniejsi','Nie tak to miało wyglądać. Bierzemy się do roboty'],inj:['Mała przerwa, wrócę silniejszy 💪','Dziękuję za wiadomości wsparcia ❤️ Rehabilitacja ruszyła']};
+let SOCX_LAST=[];
+function socItems(){const s=SOC();if(!s)return [];const T=myTeam();const tn=T.name,sh=String(T.short||tn).replace(/\s/g,'');const out=[];
+  for(const p of s.feed.slice(0,20)){out.push({w:'klub',d:p.d,t:p.t,ic:p.ic,likes:p.likes||0,id:p.id,mood:p.mood});
+    const {r,pick}=aRng('fan'+p.id);const nf=p.mood==='good'||p.mood==='bad'?3:1;
+    for(let i=0;i<nf;i++){if(r()<0.2)continue;out.push({w:'kibic',d:p.d,who:'@'+pick(SOC_NICK),t:pick(SOC_FAN[p.mood]||SOC_FAN.mid).replace('{T}',tn).replace('{S}',sh),likes:Math.round((p.likes||0)*(0.01+r()*0.05)),mood:p.mood,k:'f'+p.id+'_'+i});}
+    const mm=/MVP:\s*([^\s!]+(?:\s[^\s!👏]+)?)/.exec(p.t||'');if(mm){const pl=T.players.find(x=>(x.first+' '+x.last)===mm[1].trim()||x.last===mm[1].trim());if(pl){const won=p.mood!=='bad';out.push({w:'zaw',d:p.d,pid:pl.id,who:pl.first+' '+pl.last,t:pick(won?SOC_PL.win:SOC_PL.loss),likes:Math.round(pFol(pl)*(0.15+r()*0.2)),mood:p.mood,k:'p'+p.id});}}}
+  try{for(const m of mailBox()){if(!m.b||m.b.type!=='injnow')continue;const P=PLAYERS[m.b.id];if(!P||P.p.tm!==SAVE.team)continue;const {r,pick}=aRng('inj'+m.id);out.push({w:'zaw',d:m.d,pid:m.b.id,who:P.p.first+' '+P.p.last,t:pick(SOC_PL.inj),likes:Math.round(pFol(P.p)*(0.2+r()*0.2)),mood:'inj',k:'i'+m.id});}}catch(e){}
+  return out.sort((a,b)=>a.d<b.d?1:a.d>b.d?-1:0);}
+function ptSocial(){const s=SOC();if(!s)return '';const f=ui.ptSf||'all';const all=socItems();const xs=(f==='all'?all:all.filter(x=>x.w===f)).slice(0,16);SOCX_LAST=xs;
+  const md=s.m0?s.fol-s.m0:null;const T=myTeam();let last='';
+  const rows=xs.map((x,i)=>{const dh=x.d!==last?`<div class="ptmd">${fmtLong(x.d).replace(/ \d{4}$/,'')}</div>`:'';last=x.d;
+    const av=x.w==='klub'?teamCrest(SAVE.team,26):x.w==='zaw'&&PLAYERS[x.pid]?pFace(PLAYERS[x.pid].p,26):`<span class="socav">${esc(String(x.who||'?').slice(1,2).toUpperCase())}</span>`;
+    const who=x.w==='klub'?esc(T.name):esc(x.who);const tag=x.w==='klub'?_t('Klub'):x.w==='zaw'?_t('Zawodnik'):_t('Kibic');
+    return dh+`<button class="ptm socrow" onclick="socXOpen(${i})"><span class="socwho">${av}<b>${who}</b></span><span class="ptmc" style="--mc:${x.w==='klub'?'var(--acc)':x.w==='zaw'?'#60a5fa':'#f472b6'}">${tag}</span><span class="ptmt" style="font-weight:400">${x.ic?x.ic+' ':''}${esc(x.t)}</span><span class="ptmh">❤ ${fmtK(x.likes)}</span></button>`;}).join('');
+  const n=k=>all.filter(x=>x.w===k).length;
+  return ptCard(_t('Social media'),`<div class="socstrip"><div><span>${_t('Obserwujący')}</span><b>${fmtK(s.fol)}</b></div><div><span>${_t('W tym miesiącu')}</span><b class="${md==null?'':md>=0?'good':'bad'}">${md==null?'—':(md>=0?'+':'')+fmtK(md)}</b></div></div>
+   <div class="pttabs"><button class="${f==='all'?'on':''}" onclick="ui.ptSf='all';render()">${_t('Wszystko')}</button><button class="${f==='klub'?'on':''}" onclick="ui.ptSf='klub';render()">${_t('Klub')} (${n('klub')})</button><button class="${f==='kibic'?'on':''}" onclick="ui.ptSf='kibic';render()">${_t('Kibice')} (${n('kibic')})</button><button class="${f==='zaw'?'on':''}" onclick="ui.ptSf='zaw';render()">${_t('Zawodnicy')} (${n('zaw')})</button></div>
+   <div class="ptml">${rows||`<p class="small mut">${_t('Jeszcze nic się nie dzieje. Posty pojawią się po meczach i transferach.')}</p>`}</div>`,[_t('Social media'),"go('social')"],'ptmail');}
+function socXOpen(i){const x=SOCX_LAST[i];if(!x)return;if(x.w==='klub')return socOpen(x.id);ui.socX=JSON.parse(JSON.stringify(x));if(!ui.card)ui.card='_';render();}
+function socXClose(){ui.socX=null;if(ui.card==='_')ui.card=null;render();}
+function socXModal(){const x=ui.socX;const {r,pick}=aRng('x'+x.k);const pool=SOC_CM[x.mood]||SOC_CM.mid;const rest=pool.slice().sort(()=>r()-0.5);const n=2+Math.floor(r()*4);
+  const list=rest.slice(0,n).map(t=>`<div class="soccm"><b>@${esc(pick(SOC_NICK))}</b> ${esc(t)}<div class="small mut">❤ ${Math.max(1,Math.round(x.likes*0.03*r()))}</div></div>`).join('');
+  const av=x.w==='zaw'&&PLAYERS[x.pid]?pFace(PLAYERS[x.pid].p,34):`<span class="socav">${esc(String(x.who||'?').slice(1,2).toUpperCase())}</span>`;
+  return `<div class="modal" onclick="if(event.target===this)socXClose()"><div class="mcard artcard"><div class="row" style="justify-content:space-between;align-items:center"><div class="row" style="gap:8px">${av}<b>${esc(x.who)}</b><small class="mut">· ${fmtDMY(x.d)}</small></div><button class="ghost sm" onclick="socXClose()">✕</button></div>
+   <p class="socbig">${esc(x.t)}</p><div class="small mut">❤ ${fmtK(x.likes)} · 💬 ${n}</div><h3 style="margin:14px 0 6px">${aL('Komentarze','Comments')}</h3>${list}${x.w==='zaw'&&PLAYERS[x.pid]?`<div class="row" style="margin-top:12px"><button class="btn" onclick="socXClose();openPop('${esc(String(x.pid))}')">${aL('Karta zawodnika','Player card')}</button></div>`:''}</div></div>`;}
+{const _cm=cardModal;cardModal=function(){if(ui.socX)return socXModal();return _cm.apply(this,arguments);};}
