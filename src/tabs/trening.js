@@ -222,7 +222,7 @@ function campCanBook(){const s=S();return !campOf()&&(s.phase==='off'||s.phase==
 function campBook(k){const c=CAMPS.find(x=>x[0]===k);if(!c||!campCanBook())return;const cost=campCost(c);
   // obóz to jednorazowy wydatek przed sezonem, płacony z salda klubu (nie z miesięcznego budżetu operacyjnego)
   if(SAVE.fin.bal-cost<-500000){ui.campErr=`Za mało pieniędzy na obóz (${fmt(cost)}).`;render();return;}ui.campErr=null;
-  if(ui.confirm!=='camp'+k){ui.confirm='camp'+k;render();return;}ui.confirm=null;
+  ui.confirm=null;
   money(-cost,'Obóz');finLog(`Obóz przygotowawczy: ${c[1]} (${c[2]})`,-cost);const s=S();
   SAVE.camp={k,season:s.n,cost,start:s.phase==='off'?null:addDays(today(),1),until:s.phase==='off'?null:addDays(today(),c[4]),done:0};
   news(`🏕️ Zarezerwowano obóz przygotowawczy: ${c[1]} (${c[2]}), ${c[4]} dni.${s.phase==='off'?' Ruszy razem z przygotowaniami do sezonu.':''}`);save();tradeMsg(true,`Obóz w ${c[1]} zarezerwowany.`);}
@@ -471,15 +471,14 @@ function campChooser(){const c=campOf();
   const s=S();const A=campAwayInfo();const tomorrow=addDays(today(),1);const when=ui.campWhen||(A?'late':'now');
   const startD=when==='late'&&A?A.back:s.phase==='off'?null:tomorrow;
   const dots=v=>v<=0?(v<0?'<span class="bad">▼</span>':'<span class="mut">—</span>'):'<span class="cdots">'+'●'.repeat(Math.max(1,Math.round(v)))+'</span>';
-  const rows=CAMPS.map(C=>{const cost=campCost(C);const fx=C[6];const on=ui.confirm==='camp'+C[0];
-    return `<tr class="${on?'on':''}"><td class="l"><span style="font-size:17px">${C[3]}</span> <b>${esc(C[1])}</b><div class="small mut">${esc(C[2])} · ${C[4]} dni</div></td><td><b style="color:var(--acc)">${fmt(cost)}</b></td>
-     <td>${dots(fx.kon)}</td><td>${dots(fx.zgr)}</td><td>${dots(fx.tak)}</td><td>${dots(fx.mor)}</td><td>${dots(fx.reg)}</td><td class="${fx.inj>1.05?'bad':fx.inj<0.95?'good':'mut'}">${fx.inj>1.05?'wyższe':fx.inj<0.95?'niższe':'normalne'}</td>
-     <td><button class="${on?'btn':'ghost'} sm" onclick="campBook2('${C[0]}')">${on?'Potwierdź':'Wybierz'}</button></td></tr>${on?`<tr class="on"><td colspan="9" class="l small">${esc(C[7])} Płatne jednorazowo z salda klubu: ${fmt(SAVE.fin.bal)} → <b>${fmt(SAVE.fin.bal-cost)}</b>.${startD?` Termin: <b>${fmtDMY(startD)} – ${fmtDMY(addDays(startD,C[4]-1))}</b>.`:' Wyjazd razem ze startem przygotowań.'}</td></tr>`:''}`;}).join('');
-  return `<p>Trenerze, przed sezonem możemy wyjechać na obóz przygotowawczy. Każde miejsce daje co innego — wybierz jedno. Efekt wzmacnia trener przygotowania fizycznego (${staffSkill('fiz')}/20).</p>
+  const rows=CAMPS.map(C=>{const cost=campCost(C);const fx=C[6];const on=false;
+    return `<tr class="${on?'on':''}"><td class="l"><span style="font-size:17px">${C[3]}</span> <b>${esc(C[1])}</b><div class="small mut">${esc(C[2])} · ${C[4]} dni</div><div class="small mut campdesc">${esc(C[7])}</div></td><td><b style="color:var(--acc)">${fmt(cost)}</b><div style="margin-top:6px"><button class="btn sm" onclick="campBook2('${C[0]}')">Jedziemy</button></div><div class="small mut">saldo po: ${fmt(SAVE.fin.bal-cost)}</div></td>
+     <td>${dots(fx.kon)}</td><td>${dots(fx.zgr)}</td><td>${dots(fx.tak)}</td><td>${dots(fx.mor)}</td><td>${dots(fx.reg)}</td><td class="${fx.inj>1.05?'bad':fx.inj<0.95?'good':'mut'}">${fx.inj>1.05?'wyższe':fx.inj<0.95?'niższe':'normalne'}</td></tr>${on?`<tr class="on"><td colspan="9" class="l small">${esc(C[7])} Płatne jednorazowo z salda klubu: ${fmt(SAVE.fin.bal)} → <b>${fmt(SAVE.fin.bal-cost)}</b>.${startD?` Termin: <b>${fmtDMY(startD)} – ${fmtDMY(addDays(startD,C[4]-1))}</b>.`:' Wyjazd razem ze startem przygotowań.'}</td></tr>`:''}`;}).join('');
+  return `<p>Trenerze, przed sezonem możemy wyjechać na obóz przygotowawczy. Każde miejsce daje co innego — wybierz jedno. Efekt wzmacnia trener przygotowania fizycznego (${staffSkill('fiz')}/20). Koszt jest płacony jednorazowo z salda klubu.${startD?` Termin wyjazdu: od <b>${fmtDMY(startD)}</b>.`:' Wyjazd razem ze startem przygotowań.'}</p>
    ${A?`<div class="trwarn small">🎌 Na kadrze: ${A.ps.map(p=>`<b>${esc(p.last)}</b>`).join(', ')} — wrócą ok. <b>${fmtDMY(A.back)}</b>. Zawodnicy nieobecni przez ponad połowę obozu nie skorzystają z niego.</div>`:''}
    ${s.phase==='spar'||A?`<div class="row wrap" style="gap:8px;margin:8px 0"><span class="small mut">Termin wyjazdu:</span><div class="seg"><button class="${when==='now'?'on':''}" onclick="ui.campWhen='now';render()">${s.phase==='off'?'Ze startem przygotowań':`Jutro (${fmtShort(tomorrow)})`}</button>${A?`<button class="${when==='late'?'on':''}" onclick="ui.campWhen='late';render()">Po powrocie kadrowiczów (${fmtShort(A.back)})</button>`:''}</div></div>`:''}
    ${ui.campErr?`<div class="tmsg no">${esc(ui.campErr)}</div>`:''}
-   <div class="tw"><table class="camptab"><thead><tr><th class="l">Miejsce</th><th>Koszt</th><th title="Kondycja">Kond.</th><th title="Zgranie">Zgr.</th><th title="Taktyka">Takt.</th><th title="Morale">Mor.</th><th title="Świeżość">Śwież.</th><th>Urazy</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;}
+   <div class="tw"><table class="camptab"><thead><tr><th class="l">Miejsce</th><th>Koszt</th><th title="Kondycja">Kond.</th><th title="Zgranie">Zgr.</th><th title="Taktyka">Takt.</th><th title="Morale">Mor.</th><th title="Świeżość">Śwież.</th><th>Urazy</th></tr></thead><tbody>${rows}</tbody></table></div>`;}
 function campBook2(k){const s=S();const A=campAwayInfo();const when=ui.campWhen||(A?'late':'now');const had=campOf();
   campBook(k);const c=campOf();if(c&&!had){if(when==='late'&&A&&A.back>addDays(today(),1)){c.start=null;c.until=null;c.plan=A.back;}
     const M=mailBox().find(m=>m.b&&m.b.type==='camp'&&m.act);if(M)M.act=0;ui.campWhen=null;save();render();}}
