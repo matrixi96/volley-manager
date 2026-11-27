@@ -1,11 +1,8 @@
 // ================= EKRAN PRZETWARZANIA DNIA (po „Następny dzień” / „Dalej”) =================
 // Pokazuje: następny mecz, nowe wiadomości, artykuł dnia, kalendarz na 2 tygodnie, terminarz i fragment tabeli.
-// Tryby (Ustawienia): auto — zamyka się sam po kilku sekundach (najechanie/kliknięcie zatrzymuje), stay — do zamknięcia, off — wyłączony.
-function dpMode(){let m='auto';try{m=localStorage.getItem('vm_dp')||'auto';}catch(e){}return ['auto','stay','off'].includes(m)?m:'auto';}
+// Tryby (Ustawienia): run — dni mijają same aż do decyzji/dnia meczowego/zatrzymania; off — wyłączony.
+function dpMode(){let m='run';try{m=localStorage.getItem('vm_dp')||'run';}catch(e){}return m==='off'?'off':'run';}
 function dpSetMode(m){try{localStorage.setItem('vm_dp',m);}catch(e){}render();}
-let DP_T=null;
-function dpClose(){clearTimeout(DP_T);DP_T=null;const el=document.getElementById('dpov');if(el)el.remove();}
-function dpPin(){clearTimeout(DP_T);DP_T=null;const b=document.querySelector('#dpov .dpbar i');if(b)b.style.animation='none';const t=document.querySelector('#dpov .dphint');if(t)t.textContent=_t('Zamknij, gdy skończysz czytać');}
 function dpGoMecz(){dpClose();go('mecz');}
 function dpGoMail(id){dpClose();const m=mailBox().find(x=>x.id===id);if(!m)return;ui.mailSel=id;if(typeof mailOpen==='function')mailOpen(id);go('poczta');}
 function dpNext(){const c=myNext();if(!c)return `<div class="dpnext dpnone"><b>${_t('Brak zaplanowanego meczu')}</b></div>`;const w=nextEvent();const op=c.h===SAVE.team?c.a:c.h;const home=c.h===SAVE.team;
@@ -29,19 +26,38 @@ function dpFix(){const ev=myEvents();const ks=Object.keys(ev).sort();const t=tod
     return `<div class="dpf ${d>=t&&d===fut[0]?'nx':''}"><span class="mut">${fmtShort(d)}</span><span>${e.op!=null&&TEAMS[e.op]?teamCrest(e.op,14)+' '+esc(TEAMS[e.op].short):''}</span><b class="${res?(won?'good':'bad'):'mut'}">${res?res.join(':'):(e.home?'D':'W')+(e.t?' '+e.t:'')}</b></div>`;}).join('')||`<p class="small mut">${_t('Brak meczów.')}</p>`;}
 function dpTable(){try{const s=S();if(s.phase!=='liga'&&s.phase!=='po')return '';const tb=leagueTable();const i=tb.findIndex(x=>x.i===SAVE.team);if(i<0)return '';const a=Math.max(0,Math.min(i-2,tb.length-5));
   return `<h4>${_t('Tabela')}</h4>`+tb.slice(a,a+5).map((x,j)=>`<div class="dpf ${x.i===SAVE.team?'nx':''}"><span>${a+j+1}.</span><span>${esc(TEAMS[x.i].short)}</span><b>${x.pts}</b></div>`).join('');}catch(e){return '';}}
-function dpShow(d0){const mode=dpMode();if(mode==='off')return;dpClose();const el=document.createElement('div');el.id='dpov';el.className='dpov';
-  el.innerHTML=`<div class="dpbox" onmouseenter="dpPin()" onclick="if(event.target.closest('button'))return;dpPin()"><div class="dptop"><div><b>${_t('Nowy dzień')}</b> · ${fmtLong(today())}</div><span class="dphint small mut">${mode==='auto'?_t('Zamknie się za chwilę — najedź, żeby zatrzymać'):''}</span><button class="ghost sm" onclick="dpClose()">✕</button></div>
-   <div class="dpbar"><i class="${mode==='auto'?'run':''}"></i></div>
-   <div class="dpgrid"><div class="dpcol">${dpNext()}<div class="dppan"><h4>${_t('Nowe wiadomości')}</h4>${dpMails(d0)}</div></div>
+// ---- ciągłe przetwarzanie: dzień po dniu, aż do wiadomości wymagającej decyzji, dnia meczowego albo ręcznego zatrzymania ----
+let DP={run:false,d0:null,acts:null,t:null};
+function dpActIds(){return new Set(mailBox().filter(m=>m.act).map(m=>m.id));}
+function dpStopWhy(){try{if(SAVE.fired)return 'fired';if(ui.start||!S())return 'menu';if(typeof liveMatch==='function'&&liveMatch())return 'match';
+  const nm=mailBox().find(m=>m.act&&!DP.acts.has(m.id));if(nm)return {mail:nm};
+  const c=myNext();const w=c?nextEvent():null;if(c&&w&&w.d<=today())return 'matchday';}catch(e){console.error(e);return 'err';}return null;}
+function dpRender(){const el=document.getElementById('dpov');if(!el)return;const on=DP.run;
+  el.querySelector('.dpbox').innerHTML=`<div class="dptop"><div><b>${on?_t('Przetwarzanie'):_t('Zatrzymano')}</b> · ${fmtLong(today())}</div><span class="dphint small mut">${on?_t('Dni mijają do najbliższej decyzji albo meczu'):''}</span>${on?`<button class="btn sm" onclick="dpStop()">⏸ ${_t('Zatrzymaj')}</button>`:`<button class="btn sm" onclick="dpResume()">▶ ${_t('Kontynuuj')}</button>`}<button class="ghost sm" onclick="dpClose()">✕</button></div>
+   <div class="dpbar"><i class="${on?'run':''}"></i></div>
+   <div class="dpgrid"><div class="dpcol">${dpNext()}<div class="dppan"><h4>${_t('Nowe wiadomości')}</h4>${dpMails(DP.d0)}</div></div>
    <div class="dpcol">${dpArticle()}<div class="dppan"><h4>${_t('Kalendarz')}</h4>${dpCal()}</div></div>
-   <div class="dpcol"><div class="dppan"><h4>${_t('Terminarz')}</h4>${dpFix()}${dpTable()}</div></div></div></div>`;
-  el.addEventListener('click',e=>{if(e.target===el)dpClose();});document.body.appendChild(el);
-  if(mode==='auto')DP_T=setTimeout(dpClose,4500);}
-function dpAfter(d0){try{if(SAVE.team==null||SAVE.fired||!S()||ui.start)return;if(today()===d0)return;if(liveMatch&&liveMatch())return;if(ui.pm)return;dpShow(d0);}catch(e){console.error(e);}}
-{const _nd=nextDay;nextDay=function(){const d0=today();const r=_nd.apply(this,arguments);dpAfter(d0);return r;};}
-{const _na=nextAction;nextAction=function(){const d0=today();const r=_na.apply(this,arguments);dpAfter(d0);return r;};}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('dpov'))dpClose();});
+   <div class="dpcol"><div class="dppan"><h4>${_t('Terminarz')}</h4>${dpFix()}${dpTable()}</div></div></div>`;}
+function dpClose(){DP.run=false;clearTimeout(DP.t);const el=document.getElementById('dpov');if(el)el.remove();}
+function dpOpen(d0){dpClose();DP.d0=d0;const el=document.createElement('div');el.id='dpov';el.className='dpov';el.innerHTML='<div class="dpbox"></div>';
+  el.addEventListener('click',e=>{if(e.target===el)dpStop();});document.body.appendChild(el);}
+function dpFinish(why){DP.last=why&&why.mail?'mail:'+why.mail.t:why;dpClose();
+  if(why&&why.mail){ui.mailSel=why.mail.id;if(typeof mailOpen==='function')mailOpen(why.mail.id);go('poczta');}
+  else if(why==='matchday')go('mecz');else render();}
+function dpTick(){if(!DP.run)return;let why=dpStopWhy();if(why)return dpFinish(why);const d=today();
+  try{_dpNd();}catch(e){console.error(e);return dpFinish('err');}
+  if(today()===d)return dpFinish(null);// dzień się nie zmienił — oddaj sterowanie grze
+  why=dpStopWhy();if(why)return dpFinish(why);dpRender();DP.t=setTimeout(dpTick,900);}
+function dpStop(){DP.run=false;clearTimeout(DP.t);dpRender();render();}
+function dpResume(){if(DP.run)return;DP.run=true;DP.acts=dpActIds();dpRender();DP.t=setTimeout(dpTick,400);}
+function dpStart(d0,acts){if(dpMode()==='off')return;DP.acts=acts;DP.run=true;const why=dpStopWhy();if(why)return dpFinish(why);dpOpen(d0);DP.run=true;dpRender();DP.t=setTimeout(dpTick,900);}
+let _dpNd=null;
+function dpWrap(fn){return function(){if(DP.run)return;const d0=today(),acts=dpActIds();const r=fn.apply(this,arguments);try{if(today()!==d0&&SAVE.team!=null&&!SAVE.fired&&!(typeof liveMatch==='function'&&liveMatch())&&!ui.pm)dpStart(d0,acts);}catch(e){console.error(e);}return r;};}
+{const _nd=nextDay;_dpNd=function(){return _nd.apply(this,arguments);};nextDay=dpWrap(_nd);}
+// „Dalej”: zamiast skoku do następnego wydarzenia — dni mijają po kolei z podglądem
+{const _na=nextAction;const w=dpWrap(_na);nextAction=function(){if(!DP.run&&dpMode()!=='off'){try{const s=S();const e=s&&!SAVE.fired&&!(typeof liveMatch==='function'&&liveMatch())?nextEvent():null;if(e&&e.d>today())return nextDay();}catch(er){console.error(er);}}return w.apply(this,arguments);};}
+document.addEventListener('keydown',e=>{if(!document.getElementById('dpov'))return;if(e.key==='Escape')dpClose();else if(e.key===' '&&!/INPUT|TEXTAREA/.test((e.target||{}).tagName||'')){e.preventDefault();DP.run?dpStop():dpResume();}});
 // ustawienie w „Ustawienia i zapis gry” oraz w menu startowym
-function dpCard(){const m=dpMode();const o=[['auto','Zamyka się sam'],['stay','Zostaje do zamknięcia'],['off','Wyłączony']];
-  return `<div class="card"><h2>${_t('Ekran nowego dnia')}</h2><p class="small mut">${_t('Podsumowanie po kliknięciu „Następny dzień” lub „Dalej”: następny mecz, nowe wiadomości, artykuł dnia, kalendarz i terminarz.')}</p><div class="seg">${o.map(([k,n])=>`<button class="${m===k?'on':''}" onclick="dpSetMode('${k}')">${_t(n)}</button>`).join('')}</div></div>`;}
+function dpCard(){const m=dpMode();const o=[['run','Włączony'],['off','Wyłączony']];
+  return `<div class="card"><h2>${_t('Ekran nowego dnia')}</h2><p class="small mut">${_t('Po kliknięciu „Następny dzień” lub „Dalej” dni mijają same (z podglądem: następny mecz, nowe wiadomości, artykuł dnia, kalendarz, terminarz) — aż do wiadomości wymagającej decyzji, dnia meczowego albo zatrzymania (przycisk lub spacja).')}</p><div class="seg">${o.map(([k,n])=>`<button class="${m===k?'on':''}" onclick="dpSetMode('${k}')">${_t(n)}</button>`).join('')}</div></div>`;}
 {const _sv=saveView;saveView=function(){return dpCard()+_sv.apply(this,arguments);};}

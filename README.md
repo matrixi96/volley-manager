@@ -41,7 +41,7 @@ Układ plików:
 - `src/tabs/` — po jednym pliku na zakładkę: `home.js` (Ekran główny), `mecz.js`, `trening.js`, `transfery.js`, `finanse.js`, `sztab.js`, `juniorzy.js`, `klub.js` (Infrastruktura), `trener.js`, `poczta.js`, `staty.js`, `ustawienia.js`.
 - `src/` — rdzeń gry (m.in. `promo.js`: beniaminek, sponsorzy i równowaga na szczycie; `money.js`: premie i inwestycje; `onboard.js`: start nowej gry; `compare.js`: porównanie zawodników i wyszukiwanie podobnych; `i18n_en.js` i `i18n_dom.js`: angielski): silnik meczu (`engine.js`), świat i ligi (`world.js`, `thermo.js`), sezon i kalendarz, interfejs i menu (`ui.js`, `shell.js`, `uix.js`), widok hali (`matchview.js`, `3d/`), poprawki wspólne dla kilku zakładek (`fixes.js`, `fixes2.js`, `sparx.js`, `mediax.js`, `guide.js`) i start gry (`boot.js`).
 - Kolejność łączenia plików jest w `src/build.py` i ma znaczenie: późniejsze pliki rozszerzają funkcje z wcześniejszych.
-Przy większych aktualizacjach podbij nazwę cache w `sw.js` (np. `volley-manager-v218` → `v219`), żeby telefony szybciej pobrały nową wersję.
+Przy większych aktualizacjach podbij nazwę cache w `sw.js` (np. `volley-manager-v219` → `v220`), żeby telefony szybciej pobrały nową wersję.
 
 ## Testy
 
