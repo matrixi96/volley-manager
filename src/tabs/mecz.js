@@ -454,7 +454,8 @@ function asstAll(m){const a=m.sides[0],b=m.sides[1];const sk=staffSkill('asy');c
   if(A.rec>=4){const r=A.recPos/A.rec;const worst=a.pl.filter(p=>p.st.rec>=3).sort((x,y)=>(x.st.recPos/x.st.rec)-(y.st.recPos/y.st.rec))[0];
     out.push({g:'Przyjęcie',t:r<0.45?`Przyjęcie słabe: ${pc(A.recPos,A.rec)} pozytywnego.${worst?` Najwięcej problemów ma ${worst.last} (${pc(worst.st.recPos,worst.st.rec)}).`:''} Przemowa „Skupcie się na przyjęciu” albo zmiana przyjmującego.`:`Przyjęcie w porządku: ${pc(A.recPos,A.rec)} pozytywnego.`,btn:r<0.45&&a.to>0?'Weź czas':null,act:'myTimeout()'});}
   // atak
-  if(A.att>=6){const best=a.pl.filter(p=>p.st.att>=4).sort((x,y)=>y.st.kill/y.st.att-x.st.kill/x.st.att)[0];const poor=a.pl.filter(p=>p.st.att>=5).sort((x,y)=>x.st.kill/x.st.att-y.st.kill/y.st.att)[0];
+  if(A.att>=6){// najlepiej kończący: realny lider ataku (min. 3 próby i 2 skończone, skuteczność co najmniej 45%) — inaczej nikogo nie wyróżniamy
+    const best=a.pl.filter(p=>p.st.att>=3&&p.st.kill>=2&&p.st.kill/p.st.att>=0.45).sort((x,y)=>(y.st.kill/y.st.att-x.st.kill/x.st.att)||(y.st.kill-x.st.kill))[0];const poor=a.pl.filter(p=>p.st.att>=5).sort((x,y)=>x.st.kill/x.st.att-y.st.kill/y.st.att)[0];
     let t=`Nasz atak: ${pc(A.kill,A.att)} skuteczności.`;if(best)t+=` Najlepiej kończy ${best.last} (${best.st.kill}/${best.st.att}).`;if(poor&&poor!==best&&poor.st.kill/poor.st.att<0.3)t+=` ${poor.last} ma tylko ${poor.st.kill}/${poor.st.att}.`;
     const dist=best&&best.pos==='A'&&a.tactics.dist!==3?{btn:'Graj na atakującego',act:'setDist(3)'}:best&&best.pos==='S'&&a.tactics.dist!==2&&A.recPos/Math.max(1,A.rec)>0.55?{btn:'Graj środkiem',act:'setDist(2)'}:best&&best.pos==='P'&&a.tactics.dist!==1?{btn:'Graj na skrzydła',act:'setDist(1)'}:{};
     out.push(Object.assign({g:'Atak',t},sk>=8?dist:{}));}
